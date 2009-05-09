@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configurationDescriptor version="47">
+  <logicalFolder name="root" displayName="root" projectFiles="true">
+    <logicalFolder name="HeaderFiles"
+                   displayName="Header Files"
+                   projectFiles="true">
+      <itemPath>db_connection.h</itemPath>
+      <itemPath>Main_Window.h</itemPath>
+    </logicalFolder>
+    <logicalFolder name="ResourceFiles"
+                   displayName="Resource Files"
+                   projectFiles="true">
+    </logicalFolder>
+    <logicalFolder name="SourceFiles"
+                   displayName="Source Files"
+                   projectFiles="true">
+      <itemPath>db_connection.cpp</itemPath>
+      <itemPath>main.cpp</itemPath>
+      <itemPath>Main_Window.cpp</itemPath>
+    </logicalFolder>
+    <logicalFolder name="ExternalFiles"
+                   displayName="Important Files"
+                   projectFiles="false">
+      <itemPath>Makefile</itemPath>
+    </logicalFolder>
+  </logicalFolder>
+  <sourceEncoding>UTF-8</sourceEncoding>
+  <projectmakefile>Makefile</projectmakefile>
+  <confs>
+    <conf name="Debug" type="1">
+      <toolsSet>
+        <developmentServer>localhost</developmentServer>
+        <compilerSet>GNU|GNU</compilerSet>
+        <platform>2</platform>
+      </toolsSet>
+      <compileType>
+        <cCompilerTool>
+          <includeDirectories>
+            <directoryPath>/usr/include/gtk-2.0</directoryPath>
+            <directoryPath>/usr/include/mysql++</directoryPath>
+          </includeDirectories>
+          <commandLine>`pkg-config --cflags --libs gtk+-2.0` -lmysqlclient -lmysqlpp -I/usr/include/mysql -I/usr/include/mysql++ -DBIG_JOINS=1 -fPIC -Wl,-Bsymbolic-functions</commandLine>
+        </cCompilerTool>
+        <ccCompilerTool>
+          <includeDirectories>
+            <directoryPath>/usr/include/gtk-2.0</directoryPath>
+            <directoryPath>/usr/include/mysql++</directoryPath>
+          </includeDirectories>
+          <commandLine>`pkg-config --cflags --libs gtk+-2.0` -lmysqlclient -lmysqlpp -I/usr/include/mysql -I/usr/include/mysql++ -DBIG_JOINS=1 -fPIC -Wl,-Bsymbolic-functions</commandLine>
+        </ccCompilerTool>
+        <linkerTool>
+          <output>dist/Debug/GNU-Linux-x86/gtk_test</output>
+          <linkerAddLib>
+            <directoryPath>/usr/include/gtk-2.0</directoryPath>
+          </linkerAddLib>
+          <linkerLibItems>
+          </linkerLibItems>
+        </linkerTool>
+      </compileType>
+      <item path="Main_Window.cpp">
+        <itemTool>1</itemTool>
+      </item>
+      <item path="Main_Window.h">
+        <itemTool>3</itemTool>
+      </item>
+      <item path="db_connection.cpp">
+        <itemTool>1</itemTool>
+      </item>
+      <item path="db_connection.h">
+        <itemTool>3</itemTool>
+      </item>
+      <item path="main.cpp">
+        <itemTool>1</itemTool>
+      </item>
+    </conf>
+    <conf name="Release" type="1">
+      <toolsSet>
+        <developmentServer>localhost</developmentServer>
+        <compilerSet>GNU|GNU</compilerSet>
+        <platform>2</platform>
+      </toolsSet>
+      <compileType>
+        <cCompilerTool>
+          <developmentMode>5</developmentMode>
+        </cCompilerTool>
+        <ccCompilerTool>
+          <developmentMode>5</developmentMode>
+        </ccCompilerTool>
+        <fortranCompilerTool>
+          <developmentMode>5</developmentMode>
+        </fortranCompilerTool>
+        <linkerTool>
+          <linkerLibItems>
+          </linkerLibItems>
+        </linkerTool>
+      </compileType>
+      <item path="Main_Window.cpp">
+        <itemTool>1</itemTool>
+      </item>
+      <item path="Main_Window.h">
+        <itemTool>3</itemTool>
+      </item>
+      <item path="db_connection.cpp">
+        <itemTool>1</itemTool>
+      </item>
+      <item path="db_connection.h">
+        <itemTool>3</itemTool>
+      </item>
+      <item path="main.cpp">
+        <itemTool>1</itemTool>
+      </item>
+    </conf>
+  </confs>
+</configurationDescriptor>
