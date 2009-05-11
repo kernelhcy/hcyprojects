@@ -4,6 +4,9 @@
     <logicalFolder name="HeaderFiles" displayName="头文件" projectFiles="true">
     </logicalFolder>
     <logicalFolder name="SourceFiles" displayName="源文件" projectFiles="true">
+      <itemPath>countCFiles.sh</itemPath>
+      <itemPath>CreateFiles.sh</itemPath>
+      <itemPath>main.cpp</itemPath>
     </logicalFolder>
     <logicalFolder name="ResourceFiles" displayName="资源文件" projectFiles="true">
     </logicalFolder>
@@ -25,6 +28,15 @@
           </linkerLibItems>
         </linkerTool>
       </compileType>
+      <item path="CreateFiles.sh">
+        <itemTool>3</itemTool>
+      </item>
+      <item path="countCFiles.sh">
+        <itemTool>3</itemTool>
+      </item>
+      <item path="main.cpp">
+        <itemTool>1</itemTool>
+      </item>
     </conf>
     <conf name="Release" type="1">
       <toolsSet>
@@ -47,6 +59,15 @@
           </linkerLibItems>
         </linkerTool>
       </compileType>
+      <item path="CreateFiles.sh">
+        <itemTool>3</itemTool>
+      </item>
+      <item path="countCFiles.sh">
+        <itemTool>3</itemTool>
+      </item>
+      <item path="main.cpp">
+        <itemTool>1</itemTool>
+      </item>
     </conf>
   </confs>
 </configurationDescriptor>
