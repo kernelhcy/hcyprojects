@@ -5,6 +5,7 @@ import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Calendar;
 
 public class MainAcceptThread
 {
@@ -33,7 +34,7 @@ public class MainAcceptThread
 		catch (IOException e)
 		{
 			// TODO Auto-generated catch block
-			System.out.println("创建ServerSocket出错...");
+			System.out.println("Create ServerSocket error...");
 			e.printStackTrace();
 		}
 	}
@@ -42,11 +43,13 @@ public class MainAcceptThread
 	{
 		if (serverSocket == null)
 		{
-			System.out.println("服务器启动失败...");
+			System.out.println("Start server failed...");
 			return;
 		}
-		System.out.println("开始接受请求...");
-		serverGui.writeInfo("开始接受请求...\n");
+		System.out.println("Begin accept...");
+		serverGui.writeInfo("Begin accept...");
+        serverGui.writeInfo("Time:"+Calendar.getInstance().getTime().toString());
+        serverGui.writeInfo("\n");
 		while (!isshutdown)
 		{
 			
@@ -60,6 +63,13 @@ public class MainAcceptThread
 				input = new String(buffer,0,len);
 				if("GetFileLength".equals(input))
 				{
+
+                    serverGui.writeInfo("\nAction: GetFileLength \n");
+                    serverGui.writeInfo("Time:"+Calendar.getInstance().getTime().toString());
+                    serverGui.writeInfo("\nIP:"+tempconn.getInetAddress().getHostAddress());
+                    serverGui.writeInfo(" Port:"+tempconn.getPort());
+                    serverGui.writeInfo("\n");
+
 					//返回客户端确认信息
 					outToClient.write("done".getBytes());
 					outToClient.flush();
@@ -73,6 +83,13 @@ public class MainAcceptThread
 				}
 				else if("Transfer".equals(input))
 				{
+
+                    serverGui.writeInfo("\nAction: Transfer \n");
+                    serverGui.writeInfo("Time:"+Calendar.getInstance().getTime().toString());
+                    serverGui.writeInfo("\nIP:"+tempconn.getInetAddress().getHostAddress());
+                    serverGui.writeInfo(" Port:"+tempconn.getPort());
+                    serverGui.writeInfo("\n");
+
 					//返回客户端确认信息
 					outToClient.write("done".getBytes());
 					outToClient.flush();
@@ -111,7 +128,7 @@ public class MainAcceptThread
 			}
 			catch (IOException e)
 			{
-				System.out.println("创建连接socket失败或socket关闭.");
+				System.out.println("Create socket error or socket has been closed.");
 			}
 			
 			if(isshutdown)
@@ -119,8 +136,8 @@ public class MainAcceptThread
 				try
 				{
 					serverSocket.close();
-					System.out.println("关闭serversocket...");
-					serverGui.writeInfo("关闭serversocket.\n");
+					System.out.println("Closing serversocket...");
+					serverGui.writeInfo("\nClosing serversocket.\n");
 				}
 				catch (IOException e)
 				{
@@ -136,7 +153,7 @@ public class MainAcceptThread
 			try
 			{
 				serverSocket.close();
-				System.out.println("关闭serversocket...");
+				System.out.println("Closing serversocket...");
 			}
 			catch (IOException e)
 			{
@@ -158,7 +175,7 @@ public class MainAcceptThread
 			try
 			{
 				serverSocket.close();
-				System.out.println("关闭serversocket...");
+				System.out.println("Closing serversocket...");
 			}
 			catch (IOException e)
 			{

@@ -54,9 +54,16 @@ public class FileLengthFeedBackThread implements Runnable
 			if(fileNameLength != -1)
 			{
 				input = new String(buffer,0,fileNameLength);
-				System.out.println("客户端请求文件： "+input);
+				System.out.println("Requested file name： "+input);
 				File file = new File(input);
-				length = file.length();
+				if(file.exists())
+                {
+                    length = file.length();
+                }
+                else
+                {
+                    length = -1;
+                }
 			}
 			
 			/*
