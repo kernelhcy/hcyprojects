@@ -119,15 +119,13 @@ public class TCPClientMain
 				}
 				
 				//写入文件
-				tofile.write(result, 0, temp);
+				//tofile.write(result, 0, temp);
 				//tofile.flush();
 				
 				temp = inFromServer.read(result);
 				//System.out.println(temp);
 			}
-			endTime = System.currentTimeMillis();
 			
-			System.out.println();
 			//tofile.flush();
 			
 		}
@@ -148,8 +146,9 @@ public class TCPClientMain
 		{
 			try
 			{
+                endTime = System.currentTimeMillis();
 				tofile.close();
-				System.out.println("总用时： " + (endTime - startTime) / 1000 + " s.");
+				System.out.println("总用时： " + (endTime - startTime) + " ms.");
 				System.out.println("接受到文件大小： " + length  + " b.");
 				// System.out.println("平均传送速率： "+(length/1024/1024)/((long)(endTime-startTime)/1000)+" Mb/s");
 				System.out.println("关闭连接.");
@@ -205,7 +204,7 @@ public class TCPClientMain
 	public static void main(String[] args)
 	{
 		// TODO Auto-generated method stub
-		new TCPClientMain("localhost", 1234).connect();
+		new TCPClientMain("192.168.0.76", 1234).connect();
 	}
 	
 }

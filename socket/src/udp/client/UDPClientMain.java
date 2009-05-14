@@ -48,7 +48,7 @@ public class UDPClientMain
 	 */
 	public UDPClientMain()
 	{
-		this("localhost",1234);
+		this("192.168.0.76",1234);
 	}
 	
 	/**
@@ -153,7 +153,7 @@ public class UDPClientMain
 				
 				length += receivePacket.getLength();
 				//将数据写入文件
-				dos.write(receiveData,0,receivePacket.getLength());
+				//dos.write(receiveData,0,receivePacket.getLength());
 				//System.out.println(receiveData);
 			}
 		
@@ -192,7 +192,7 @@ public class UDPClientMain
 			
 			System.out.println("数据接收完毕.");
 			System.out.println("接收到的数据长度: "+length+" b.");
-			System.out.println("总共耗时： "+(endTime-beginTime)/1000+"s");
+			System.out.println("总共耗时： "+(endTime-beginTime)+"ms");
 			//关闭socket
 			clientSocket.close();
 		}

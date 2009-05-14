@@ -144,8 +144,8 @@ public class TransferThreadClient implements Runnable
 				len = inFromServer.read(buffer);
 			}
 			
-			System.out.println("接收完毕。");
-			System.out.println("接收到的数据总长度为："+totalLen);
+			System.out.println("Transfer Over!");
+			System.out.println("Total length:"+totalLen);
 		}
 		catch (IOException e)
 		{

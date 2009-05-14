@@ -34,7 +34,7 @@ public class ClientGUI
         label1.setFont(new Font("Courier New", Font.PLAIN, 16));
         label2 = new JLabel("Save As:");
         label2.setFont(new Font("Courier New", Font.PLAIN, 16));
-        transferFileNameField = new JTextField("/home/hcy/1.jpg");
+        transferFileNameField = new JTextField("/home/hcy/test.jpg");
         transferFileNameField.setFont(new Font("Courier New", Font.PLAIN, 16));
         savedFileNameField = new JTextField("/home/hcy/2.jpg");
         savedFileNameField.setFont(new Font("Courier New", Font.PLAIN, 16));
@@ -43,7 +43,7 @@ public class ClientGUI
         label4 = new JLabel("Port: ");
         label3.setFont(new Font("Courier New", Font.PLAIN, 16));
         label4.setFont(new Font("Courier New", Font.PLAIN, 16));
-        hostNameField = new JTextField("localhost");
+        hostNameField = new JTextField("192.168.0.76");
         portField = new JTextField("1234");
         hostNameField.setFont(new Font("Courier New", Font.PLAIN, 16));
         portField.setFont(new Font("Courier New", Font.PLAIN, 16));
@@ -200,7 +200,7 @@ public class ClientGUI
                                 File file = new File(savedFileNameField.getText());
                                 long length = transfer.getFileLength() + 1;
                                 value = (int) (((float) file.length() / length) * 100);
-                                System.out.println(file.length());
+                                //System.out.println(file.length());
                                 jpb.setValue(++value);
                                 Thread.sleep(10);
                             }
