@@ -191,7 +191,7 @@ public class ServerGUI
 
         mainFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 
-        mainFrame.setSize(520, 350);
+        mainFrame.setSize(520, 400);
         mainFrame.setVisible(true);
     }
 

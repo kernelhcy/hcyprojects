@@ -27,7 +27,7 @@ public class ClientGUI
     public ClientGUI()
     {
         mainFrame = new JFrame("Client");
-        mainFrame.setSize(400, 210);
+        mainFrame.setSize(400, 220);
         mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         label1 = new JLabel("File Name:");
