@@ -110,7 +110,7 @@ public class TCPServerMain
 				System.out.println("请求数据：" + input);
 				
 				//从文件1.jpg中读取数据
-				File file = new File("生命之鹰.jpg");
+				File file = new File("/home/hcy/test.jpg");
 				dis = new BufferedInputStream(new FileInputStream(file));
 				result = new byte[BUFFERSIZE];
 				System.out.println("输出数据...");

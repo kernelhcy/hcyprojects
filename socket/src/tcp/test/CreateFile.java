@@ -15,7 +15,7 @@ public class CreateFile
 	public static void main(String[] args) throws IOException
 	{
 		// TODO Auto-generated method stub
-		File file = new File("test.jpg");
+		File file = new File("/home/hcy/test.jpg");
 		
 		file.delete();
 		file.createNewFile();
@@ -25,7 +25,7 @@ public class CreateFile
 		System.out.println("writting...");
 		int cnt = 0;
 		
-		while(cnt < 10000000)
+		while(cnt < 1000000)
 		{
 			++cnt;
 			bw.write("datadatadatadatadatadatadatadatadatadatadatadatadatadatadatadatadatadatadatadatadata");

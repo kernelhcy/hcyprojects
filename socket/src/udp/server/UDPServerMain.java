@@ -116,7 +116,7 @@ public class UDPServerMain
 			
 			//发送数据
 			System.out.println("发送数据...");
-			File file = new File("1.jpg");
+			File file = new File("/home/hcy/test.jpg");
 			BufferedInputStream dis = new BufferedInputStream(new FileInputStream(file));
 			int cnt = dis.read(sendData);
 			while(cnt != -1)
@@ -124,21 +124,7 @@ public class UDPServerMain
 				serverSocket.send(sendPacket);
 				cnt = dis.read(sendData);
 				
-				/*
-				 * 降低传输速度。
-				 * 降低丢包率。 
-				 */
-				//=======================================
-				try
-				{
-					Thread.sleep(10);
-				}
-				catch (InterruptedException e)
-				{
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				//========================================
+				
 			}
 			dis.close();
 			System.out.println("发送完毕.");

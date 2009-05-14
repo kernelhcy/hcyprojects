@@ -8,8 +8,9 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketException;
 
+
 public class TransferThreadServer implements Runnable
-{
+  {
 
     /**
      *
@@ -19,7 +20,7 @@ public class TransferThreadServer implements Runnable
      * @param len
      */
     public TransferThreadServer(Socket con, String fileName, long startPos, long len)
-    {
+      {
         this.connetcionSocket = con;
         this.fileName = fileName;
         this.startPos = startPos;
@@ -27,19 +28,19 @@ public class TransferThreadServer implements Runnable
 
         System.out.println("开始位置：" + startPos + "\t输出长度：" + transferLength);
 
-    }
+      }
 
     /**
      *
      */
     @Override
     public void run()
-    {
+      {
         /*
          * 设置连接超时。不限时。
          */
         try
-        {
+          {
             buffer = new byte[BUFFERSIZE];
 
             connetcionSocket.setSoTimeout(0);
@@ -63,76 +64,74 @@ public class TransferThreadServer implements Runnable
             long totalLen = 0;
 
             if (transferLength < BUFFERSIZE)
-            {
+              {
                 outToClient.write(buffer, 0, len < transferLength ? len : (int) transferLength);
                 outToClient.flush();
                 totalLen = transferLength;
                 len = -1;//不进入循环
-            }
+              }
             totalLen += len;
             while (len != -1 && totalLen <= transferLength)
-            {
+              {
                 /**
-                     * 必须按照缓冲区中实际的数据量写入流中，不可用outTOClient.write(result);简单地
-                     * 将缓冲区统统写到流中，否则会报connection reset异常！！！
-                     */
+                 * 必须按照缓冲区中实际的数据量写入流中，不可用outTOClient.write(result);简单地
+                 * 将缓冲区统统写到流中，否则会报connection reset异常！！！
+                 */
                 outToClient.write(buffer, 0, len);
                 len = dis.read(buffer);
                 if (len < 0)
-                {
+                  {
                     break;
-                }
+                  }
                 totalLen += len;
-            }
+                Thread.sleep(10);
+              }
             /*
-                *	最后一次可能的传送，传送的数据小于BUFFERSIZE
-                */
+             *	最后一次可能的传送，传送的数据小于BUFFERSIZE
+             */
             if (totalLen < transferLength)
-            {
+              {
                 len = dis.read(buffer, 0, (int) (transferLength - totalLen));
                 if (len > 0)
-                {
+                  {
                     outToClient.write(buffer, 0, len);
-                }
+                  }
 
-            }
+              }
             outToClient.flush();
             System.out.println("输出文件长度：" + totalLen);
-        }
-        catch (SocketException e)
-        {
+          } catch (InterruptedException ex)
+          {
+          } catch (SocketException e)
+          {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        }
-        catch (IOException e)
-        {
+          } catch (IOException e)
+          {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        }
-        finally
-        {
+          } finally
+          {
             try
-            {
+              {
                 // 关闭流和socket
                 dis.close();
                 inFromClient.close();
                 outToClient.close();
                 connetcionSocket.close();
-            }
-            catch (IOException e)
-            {
+              } catch (IOException e)
+              {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
-            }
-        }
+              }
+          }
 
-    }
-    
+      }
     /*
-      * *******************************
-      *        声明成员变量
-      * *******************************
-      */
+     * *******************************
+     *        声明成员变量
+     * *******************************
+     */
     // 缓存大小
     private static final int BUFFERSIZE = 1024;
     // 客户端发送的数据
@@ -152,4 +151,4 @@ public class TransferThreadServer implements Runnable
     private BufferedOutputStream outToClient = null;
     //
     private BufferedInputStream dis = null;
-}
+  }
