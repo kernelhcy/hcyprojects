@@ -58,9 +58,15 @@ public class MainAcceptThread
 				Socket tempconn = serverSocket.accept();
 				inFromClient = new BufferedInputStream(tempconn.getInputStream());
 				outToClient = new BufferedOutputStream(tempconn.getOutputStream());
+
+                System.out.println("Get input");
+
 				buffer = new byte[BUFFERSIZE];
 				int len = inFromClient.read(buffer);
 				input = new String(buffer,0,len);
+
+                System.out.println(input);
+
 				if("GetFileLength".equals(input))
 				{
 
@@ -124,6 +130,26 @@ public class MainAcceptThread
 					//newThread.setDaemon(true);
 					newThread.start();
 				}
+                else if("Filelist".equals(input))
+                {
+                    System.out.println("Action: Get Filelist ");
+                    serverGui.writeInfo("\nAction: Get Filelist \n");
+                    serverGui.writeInfo("Time:"+Calendar.getInstance().getTime().toString());
+                    serverGui.writeInfo("\nIP:"+tempconn.getInetAddress().getHostAddress());
+                    serverGui.writeInfo(" Port:"+tempconn.getPort());
+                    serverGui.writeInfo("\n");
+
+					//返回客户端确认信息
+					//outToClient.write("done".getBytes());
+					//outToClient.flush();
+
+					// 创建新的线程处理请求
+					SendBackFileList action = new SendBackFileList(tempconn);
+					Thread newThread = new Thread(action);
+					//设置为守护线程
+					//newThread.setDaemon(true);
+					newThread.start();
+                }
 				
 			}
 			catch (IOException e)

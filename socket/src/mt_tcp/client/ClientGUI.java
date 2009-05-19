@@ -23,11 +23,10 @@ import javax.swing.JTextField;
 public class ClientGUI
 {
 
-    
     public ClientGUI()
     {
         mainFrame = new JFrame("Client");
-        mainFrame.setSize(400, 220);
+        mainFrame.setSize(windowWidth, windowHeight);
         mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         label1 = new JLabel("File Name:");
@@ -83,6 +82,10 @@ public class ClientGUI
         numberThreadsFiled.setFont(new Font("Courier New", Font.PLAIN, 16));
         btnPanel.add(label5);
         btnPanel.add(numberThreadsFiled);
+
+
+        //空白
+        btnPanel.add(new JLabel("              "));
 
         transferBtn = new JButton("Transfer...");
         transferBtn.setFont(new Font("Courier New", Font.PLAIN, 14));
@@ -232,6 +235,24 @@ public class ClientGUI
 
         btnPanel.add(transferBtn);
 
+        //get file list
+        getFilelist = new JButton("Get Filelist");
+        getFilelist.setFont(new Font("Courier New", Font.PLAIN, 14));
+        getFilelist.addActionListener(new ActionListener()
+        {
+
+            @Override
+            public void actionPerformed(ActionEvent e)
+            {
+                System.out.println("Get file list");
+                Thread getList = new Thread(new GetFilelist("localhost", 1234, "/home/hcy/workspace"));
+
+                getList.start();
+            }
+        });
+
+
+        btnPanel.add(getFilelist);
         mainPanel.add(btnPanel, BorderLayout.CENTER);
 
 
@@ -249,8 +270,6 @@ public class ClientGUI
     {
         new ClientGUI();
     }
-
-
     private JFrame mainFrame = null;
     private JPanel mainPanel = null;
     private JButton transferBtn = null;
@@ -267,5 +286,7 @@ public class ClientGUI
     private JLabel label5 = null;
     private JTextField numberThreadsFiled = null;
     private volatile boolean isTransferring = false;
-
+    private JButton getFilelist = null;
+    private int windowWidth = 350;
+    private int windowHeight = 240;
 }

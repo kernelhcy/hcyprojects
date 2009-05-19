@@ -19,23 +19,6 @@ import javax.swing.JTextField;
 public class ServerGUI
 {
 
-    private ServerGUI self = this;
-    private JFrame mainFrame = null;
-    private JPanel mainPanel = null;
-    private JPanel panel1 = null;
-    private JPanel panel2 = null;
-    private FlowLayout fl1 = null;
-    private FlowLayout fl2 = null;
-    private BorderLayout bl = null;
-    private JButton startButton = null;
-    private JButton stopButton = null;
-    private JButton exitButton = null;
-    private JLabel label1 = null;
-    private JTextField listenPort = null;
-    private MainAcceptThread server = null;
-    private JTextArea info = null;
-    private JScrollPane jsp = null;
-
     public ServerGUI()
     {
 
@@ -191,7 +174,7 @@ public class ServerGUI
 
         mainFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 
-        mainFrame.setSize(520, 400);
+        mainFrame.setSize(windowWidth, windowHeight);
         mainFrame.setVisible(true);
     }
 
@@ -225,6 +208,28 @@ public class ServerGUI
 //        jsp.setFont(new Font("宋体", Font.PLAIN, 14));
         mainPanel.add(jsp, BorderLayout.SOUTH);
     }
+
+
+    private ServerGUI self = this;
+    private JFrame mainFrame = null;
+    private JPanel mainPanel = null;
+    private JPanel panel1 = null;
+    private JPanel panel2 = null;
+    private FlowLayout fl1 = null;
+    private FlowLayout fl2 = null;
+    private BorderLayout bl = null;
+    private JButton startButton = null;
+    private JButton stopButton = null;
+    private JButton exitButton = null;
+    private JLabel label1 = null;
+    private JTextField listenPort = null;
+    private MainAcceptThread server = null;
+    private JTextArea info = null;
+    private JScrollPane jsp = null;
+
+    private int windowWidth = 520;
+    private int windowHeight = 350;
+
 
     /**
      * 主方法
