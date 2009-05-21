@@ -2,19 +2,37 @@
  * File:   main.cpp
  * Author: hcy
  *
- * Created on 2009年5月11日, 上午11:47
  */
 
-#include <stdlib.h>
-#include <iostream>
+#include "headers.h"
+
 using namespace std;
+
+void e_h()
+{
+    printf("Program exit .\n");
+}
+
+void e_h1()
+{
+    printf("Program exit 1.\n");
+}
+
+void e_h2()
+{
+    printf("Program exit 2.\n");
+}
 /*
  * 
  */
 int main(int argc, char** argv)
 {
 
-    cout<<"hello cpp"<<endl;
-    return (EXIT_SUCCESS);
+    atexit(e_h);
+    atexit(e_h1);
+    atexit(e_h2);
+    //run();
+    exit(0);
+    //return (EXIT_SUCCESS);
 }
 
