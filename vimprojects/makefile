@@ -5,4 +5,4 @@ OS_process_communicate.o : OS_process_communicate.cpp headers.h
 main.o : main.cpp headers.h
 	g++ -c main.cpp  -o main.o
 clean :
-	rm *.o
+	rm *.o main
