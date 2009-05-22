@@ -1,10 +1,9 @@
-#include <stdlib.h>
-#include <iostream>
-using namespace std;
+#include "headers.h"
 
 int main(int agrc,char * argv)
 {
 
-	cout<<"Hello vim \n";
+	run();
+	std::cout<<"Hello vim \n";
 	return EXIT_SUCCESS;
 }
