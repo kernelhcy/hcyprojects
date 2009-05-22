@@ -131,6 +131,10 @@ void show_msg2(int sig)
 
 const int INPUT = 0;
 const int OUTPUT = 1;
+const int BUFFERSIZE = 100;
+char outtopipe[BUFFERSIZE];
+char infrompipe[BUFFERSIZE];
+
 void message_communicate()
 {
     int pipedes[2];
@@ -147,8 +151,14 @@ void message_communicate()
         std::cout << "Child Process One." << std::endl;
         //close the read pipe
         close(pipedes[INPUT]);
+
+        lockf(pipddes[OUTPUT],F_LOCK,BUFFERSIZE);
+
         //write message through pipe to parent process
         write(pipedes[OUTPUT], "Child process 1 is sending a message!!\n", strlen("Child process 1 is sending a message!!\n"));
+
+        lockf(pipddes[OUTPUT],F_ULOCK,BUFFERSIZE);
+
         close(pipedes[OUTPUT]);
         return;
     }
@@ -159,8 +169,14 @@ void message_communicate()
         std::cout << "Child Process Two." << std::endl;
         //close the read pipe
         close(pipedes[INPUT]);
+
+        lockf(pipddes[OUTPUT],F_LOCK,BUFFERSIZE);
+
         //
         write(pipedes[OUTPUT], "Child process 2 is sending a message!!\n", strlen("Child process 2 is sending a message!!\n"));
+
+        lockf(pipddes[OUTPUT],F_ULOCK,BUFFERSIZE);
+
         close(pipedes[OUTPUT]);
         return;
     }
