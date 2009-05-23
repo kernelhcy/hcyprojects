@@ -28,12 +28,12 @@ void e_h2()
 int main(int argc, char** argv)
 {
 
-    atexit(e_h);
-    atexit(e_h1);
-    atexit(e_h2);
-    //run();
-    exit(0);
-    //return (EXIT_SUCCESS);
+    //atexit(e_h);
+    //atexit(e_h1);
+    //atexit(e_h2);
+    run();
+    //exit(0);
+    return (EXIT_SUCCESS);
 }
 
 

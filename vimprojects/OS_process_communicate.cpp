@@ -11,6 +11,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <bits/signum.h> 
+#include <sys/file.h>
 /*
  ******************************************
  * soft interrupt process communication
@@ -123,7 +124,7 @@ void show_msg2(int sig)
 }
 
 
-/********************************************/
+/*****************************************************************************/
 
 /*
  * Process message communication
@@ -131,6 +132,9 @@ void show_msg2(int sig)
 
 const int INPUT = 0;
 const int OUTPUT = 1;
+const int BUFFERSIZE = 100;
+char topipe[BUFFERSIZE],frompipe[BUFFERSIZE];
+
 void message_communicate()
 {
     int pipedes[2];
@@ -139,7 +143,8 @@ void message_communicate()
     child1 = fork();
     /*
      * In the child process, the return of fork() is ZERO!!!
-     * In the parent process,the return of fork() is the process id of the child process.
+     * In the parent process,the return of fork() is the
+	 * process id of the child process.
      *
      */
     if (child1 == 0)//Child process 1
@@ -147,9 +152,21 @@ void message_communicate()
         std::cout << "Child Process One." << std::endl;
         //close the read pipe
         close(pipedes[INPUT]);
-        //write message through pipe to parent process
-        write(pipedes[OUTPUT], "Child process 1 is sending a message!!\n", strlen("Child process 1 is sending a message!!\n"));
-        close(pipedes[OUTPUT]);
+		
+		sleep(5);
+		std::cout << "Child 1 lock the pipe.\n";
+		flock(pipedes[OUTPUT], LOCK_EX);
+        
+		sleep(5);
+		
+		sprintf(topipe, "Child process 1 is sending a message!!\n");
+		//write message through pipe to parent process
+        write(pipedes[OUTPUT], topipe, BUFFERSIZE);
+		
+		std::cout << "Child 1 unlock the pipe.\n";
+		flock(pipedes[OUTPUT], LOCK_UN);
+		
+		close(pipedes[OUTPUT]);
         return;
     }
 
@@ -160,17 +177,39 @@ void message_communicate()
         //close the read pipe
         close(pipedes[INPUT]);
         //
-        write(pipedes[OUTPUT], "Child process 2 is sending a message!!\n", strlen("Child process 2 is sending a message!!\n"));
-        close(pipedes[OUTPUT]);
+		
+		sleep(5);
+		std::cout << "Child 2 lock the pipe.\n";
+		flock(pipedes[OUTPUT], LOCK_EX);
+        
+		sleep(5);
+		sprintf(topipe, "Child process 2 is sending a message!!\n");
+		//write message through pipe to parent process
+        write(pipedes[OUTPUT], topipe, BUFFERSIZE);
+		
+
+		std::cout << "Child 2 unlock the pipe.\n";
+		flock(pipedes[OUTPUT], LOCK_UN);
+        
+		close(pipedes[OUTPUT]);
         return;
     }
 
     //Parent process
-    char buffer[200];
     int len;
-    len = read(pipedes[INPUT], buffer, sizeof(buffer));
-    std::cout << buffer;
-    
+
+	//Read message sent from child process 1
+	//and wait for child process 1 to exit
+    len = read(pipedes[INPUT], frompipe, BUFFERSIZE);
+    std::cout << frompipe;
+    waitpid(child1, &status, 0);
+
+	//Read message sent by child process 2
+	//and wait for child process 2 to exit
+    len = read(pipedes[INPUT], frompipe, BUFFERSIZE);
+    std::cout << frompipe;
+    waitpid(child2, &status, 0);
+
     close(pipedes[INPUT]);
 
     return;
@@ -178,12 +217,13 @@ void message_communicate()
 
 /*
  * The Enter of the Program
+ * 函数的入口
  */
 void run()
 {
     //std::cout << "Process Communication Test." << std::endl;
-    interrupt_communicate();
-    //message_communicate();
+    //interrupt_communicate();
+    message_communicate();
 }
 
 
