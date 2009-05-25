@@ -20,56 +20,34 @@
  *
  * ***/ 
 
-#include <qapplication.h> 
-#include <qlabel.h> 
-#include <qpushbutton.h>
-#include <QSlider>
-
-#include <QSpinBox>
-#include <QHBoxLayout>
-void handler();
+#include <QApplication> 
+#include "finddialog.h" 
 
 int main(int argc, char **argv) 
 { 
 
-	QApplication app(argc, argv); 
+//	QApplication app(argc, argv); 
 
-//	QLabel *label = new QLabel("<h2><i>Hello</i>,<font color=red> world!</font></h2>", 0 ); 
+//	QLabel *label = new QLabel( "Hello, world!", 0 ); 
+
 //	label->setAlignment(Qt::AlignVCenter | Qt::AlignHCenter ); 
+
 //	label->setGeometry(10, 10, 200, 80); 
+	
 //	label->show(); 
 
-//	QPushButton *button=new QPushButton("Hello,world!", 0);
-//	QObject::connect(button,SIGNAL(clicked()),&app,SLOT(handler()));
-//	button->resize(100,30);
-//	button->show();
+//	QPushButton hello("Hello word!", 0);
+//	hello.resize(100,30);
+//	hello.show();
 
-	QWidget *window = new QWidget();
-	window -> setWindowTitle("Entet Your Age:");
+//	int result = app.exec(); 
 
-	QSpinBox *spinbox = new QSpinBox();
-	QSlider *slider = new QSlider(Qt::Horizontal);
-	spinbox -> setRange(0,130);
-	slider -> setRange(0,130);
-	QObject::connect(spinbox,SIGNAL(valueChanged(int)),slider,SLOT(setValue(int)));
-	QObject::connect(slider,SIGNAL(valueChanged(int)),spinbox,SLOT(setValue(int)));
-	spinbox -> setValue(35);
+	QApplication app(argc, argv);
 
-	QHBoxLayout *layout = new QHBoxLayout;
+	FindDialog *dialog = new FindDialog();
 
-	layout->addWidget(spinbox);
-
-	layout->addWidget(slider);
-
-	window->setLayout(layout);
-
-	window->show();
-
+	dialog -> show();
 
 	return app.exec(); 
-} 
 
-void handler()
-{
-	printf("exit...\n");
-}
+} 
