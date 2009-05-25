@@ -1,3 +1,8 @@
 #!/bin/bash
+echo "making..."
+echo ""
 make
+echo ""
+echo "running..."
+echo ""
 exec ./main

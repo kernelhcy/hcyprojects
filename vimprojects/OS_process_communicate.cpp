@@ -153,9 +153,8 @@ void message_communicate()
         //close the read pipe
         close(pipedes[INPUT]);
 		
-		sleep(5);
 		std::cout << "Child 1 lock the pipe.\n";
-		flock(pipedes[OUTPUT], LOCK_EX);
+		lockf(pipedes[OUTPUT], LOCK_EX, 0);
         
 		sleep(5);
 		
@@ -164,7 +163,7 @@ void message_communicate()
         write(pipedes[OUTPUT], topipe, BUFFERSIZE);
 		
 		std::cout << "Child 1 unlock the pipe.\n";
-		flock(pipedes[OUTPUT], LOCK_UN);
+		lockf(pipedes[OUTPUT], LOCK_UN, 0);
 		
 		close(pipedes[OUTPUT]);
         return;
@@ -178,18 +177,16 @@ void message_communicate()
         close(pipedes[INPUT]);
         //
 		
-		sleep(5);
 		std::cout << "Child 2 lock the pipe.\n";
-		flock(pipedes[OUTPUT], LOCK_EX);
+		lockf(pipedes[OUTPUT], LOCK_EX, 0);
         
-		sleep(5);
 		sprintf(topipe, "Child process 2 is sending a message!!\n");
 		//write message through pipe to parent process
         write(pipedes[OUTPUT], topipe, BUFFERSIZE);
 		
 
 		std::cout << "Child 2 unlock the pipe.\n";
-		flock(pipedes[OUTPUT], LOCK_UN);
+		lockf(pipedes[OUTPUT], LOCK_UN, 0);
         
 		close(pipedes[OUTPUT]);
         return;
