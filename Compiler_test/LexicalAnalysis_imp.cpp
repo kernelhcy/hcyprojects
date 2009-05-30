@@ -4,7 +4,7 @@
 #include "LexicalAnalysis.h"
 
 LexicalAnalysis::LexicalAnalysis(FileAction& fa_p)
-: ch(' '), buffer_size(5), index(0), fa(fa_p), len(0)
+: ch(' '), buffer_size(15), index(0), fa(fa_p), len(0)
 {
     //std::cout << "The Lexical Analysis" << std::endl;
 
@@ -29,162 +29,191 @@ LexicalAnalysis::LexicalAnalysis(FileAction& fa_p)
     keywords.push_back("else"); //8
     keywords.push_back("do"); //9
     keywords.push_back("while"); //10
-
-
-
+    
     //open the source file
     fa.open_file();
 
+    //fill the buffer
+    len = fill_buffer();
 }
 
 LexicalAnalysis::~LexicalAnalysis()
 {
     delete[] buffer;
     str_token.~basic_string();
+    fa.~FileAction();
 }
 
-void LexicalAnalysis::analysis()
+int LexicalAnalysis::get_next_word()
 {
     int code;
     int value;
 
     int con;
 
-    len = fill_buffer();
+    ch = ' ';
+    str_token.clear();
 
-    while (len > 0)
+    if (get_char(ch) == 0)
     {
-        ch = ' ';
-        str_token.clear();
+        fa.close_file();
+        return -1;
+    };
 
-        if (get_char(ch) == 0)
-        {
-            fa.close_file();
-            exit(0);
-        };
-        
-        if (get_bc(ch) == 0)
-        {
-            fa.close_file();
-            exit(0);
-        };
+    if (get_bc(ch) == 0)
+    {
+        fa.close_file();
+        return -1;
+    };
 
-        if (is_letter(ch))
+    if (is_letter(ch))
+    {
+        //Get a word!
+        while (is_digit(ch) || is_letter(ch))
         {
-            //Get a word!
-            while (is_digit(ch) || is_letter(ch))
+            concat();
+            con = get_char(ch);
+
+            if (con == 0)
             {
-                concat();
-                con=get_char(ch);
-
-                if(con==0)
-                {
-                    break;
-                }
+                break;
             }
-
-            retract();
-            code = reserve();
-            /*
-             * By default, zero is not the id of any key word!
-             */
-            if (code == 0)
-            {
-                //Get a label!
-                value = insert_id();
-                output(12, str_token.data());
-            } else
-            {
-                output(code, str_token.data());
-            }
-
-            /*
-             *  The buffer is empty which means that the source file has no entry.
-             *  Job is done!
-             *  Exit.
-             */
-            if(con==0)
-            {
-                fa.close_file();
-                exit(0);
-            }
-
-        } else if (is_digit(ch))
-        {
-            //Got a constant!
-            while (is_digit(ch))
-            {
-                concat();
-                con=get_char(ch);
-
-                if(con==0)
-                {
-                    break;
-                }
-            }
-            retract();
-            value = insert_const();
-            output(11, str_token.data());
-
-            //Done
-            if(con==0)
-            {
-                fa.close_file();
-                exit(0);
-            }
-        } else if (ch == '=')
-        {
-            output(17, "=");
-        } else if (ch == '+')
-        {
-            output(13, "+");
-        } else if (ch == '-')
-        {
-            output(14, "-");
-        } else if (ch == '(')
-        {
-            output(15, "(");
-        } else if (ch == ')')
-        {
-            output(16, ")");
-        } else if (ch == '<')
-        {
-            output(19, "<");
-        } else if (ch == '>')
-        {
-            output(18, ">");
-        } else if (ch == ';')
-        {
-            output(20, ";");
-        } else if (ch == ',')
-        {
-            output(23, ",");
-        } else if (ch == ':')
-        {
-            con==get_char(ch);
-            
-            if (ch == '=')
-            {
-                output(21, ":=");
-            } else
-            {
-                retract();
-                output(21, ":");
-            }
-
-            //Done
-            if(con==0)
-            {
-                fa.close_file();
-                exit(0);
-            }
-        } else
-        {
-            std::cerr << "Sytax Error!!\n";
-            fa.close_file();
-            exit(1);
         }
 
+        retract();
+        code = reserve();
+        /*
+         * By default, zero is not the id of any key word!
+         */
+        if (code == 0)
+        {
+            //Get a label!
+            value = insert_id();
+            output(12, str_token.data());
+            code = 12;
+        } else
+        {
+            output(code, str_token.data());
+        }
+
+        /*
+         *  The buffer is empty which means that the source file has no entry.
+         *  Job is done!
+         *  Exit.
+         */
+        if (con == 0)
+        {
+            fa.close_file();
+            return -1;
+        }
+
+    } else if (is_digit(ch))
+    {
+        //Got a constant!
+        while (is_digit(ch))
+        {
+            concat();
+            con = get_char(ch);
+
+            if (con == 0)
+            {
+                break;
+            }
+        }
+        retract();
+        value = insert_const();
+        output(11, str_token.data());
+        code = 11;
+        //Done
+        if (con == 0)
+        {
+            fa.close_file();
+            exit(0);
+        }
+    } else if (ch == '=')
+    {
+        output(19, "=");
+        code = 19;
+    } else if (ch == '+')
+    {
+        output(13, "+");
+        code = 13;
+    } else if (ch == '-')
+    {
+        output(14, "-");
+        code = 14;
+    } else if (ch == '*')
+    {
+        output(15, "*");
+        code = 15;
+    } else if (ch == '/')
+    {
+        output(16, "/");
+        code = 16;
+    } else if (ch == '(')
+    {
+        output(17, "(");
+        code = 17;
+    } else if (ch == ')')
+    {
+        output(18, ")");
+        code = 18;
+    } else if (ch == '<')
+    {
+        output(21, "<");
+        code = 21;
+    } else if (ch == '>')
+    {
+        output(20, ">");
+        code = 20;
+    } else if (ch == ';')
+    {
+        output(22, ";");
+        code = 22;
+    } else if (ch == ',')
+    {
+        output(25, ",");
+        code = 25;
+    } else if (ch == ':')
+    {
+        con == get_char(ch);
+
+        if (ch == '=')
+        {
+            output(24, ":=");
+            code = 24;
+        } else
+        {
+            retract();
+            output(23, ":");
+            code = 23;
+        }
+
+        //Done
+        if (con == 0)
+        {
+            fa.close_file();
+            return -1;
+        }
+    } else
+    {
+        std::cerr << "Sytax Error!!\n";
+
+        fa.close_file();
+        return -1;
+    }
+    return code;
+
+
+}
+
+void LexicalAnalysis::analysis()
+{
+    int id = get_next_word();
+
+    while (id > 0)
+    {
+        id = get_next_word();
 
     }
 
@@ -193,7 +222,7 @@ void LexicalAnalysis::analysis()
 
 void LexicalAnalysis::output(int id, const char* entry)
 {
-    fa.get_ofstrem() << "(  " << id << " ,   " << entry << "  )" << std::endl;
+    //fa.get_ofstrem() << "(  " << id << " ,   " << entry << "  )" << std::endl;
     //std::cout << "(  " << id << " ,   " << entry << "  )" << std::endl;
 
 }
@@ -343,3 +372,17 @@ int LexicalAnalysis::set_buffer_size(int size)
         exit(1);
     }
 }
+
+void LexicalAnalysis::print_buffer()
+{
+    while(index < buffer_size)
+    {
+        std::cout<<buffer[index];
+        ++index;
+    }
+    //more 
+    fill_buffer();
+    std::cout<<buffer;
+    std::cout<<"\n";
+}
+

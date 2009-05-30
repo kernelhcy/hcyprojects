@@ -1,27 +1,26 @@
 #include "FileActions.h"
 
-FileAction::FileAction(std::ifstream& ifs_p,std::ofstream& ofs_p):ifs(ifs_p),ofs(ofs_p)
+FileAction::FileAction(std::ifstream& ifs_p, std::ofstream& ofs_p) : ifs(ifs_p), ofs(ofs_p)
 {
-    in_path="in";
-    out_path="out";
-    
+    in_path = "in";
+    out_path = "out";
+
 }
 
-FileAction::FileAction(const std::string& f_in_path,const std::string& f_out_path
-        ,std::ifstream& ifs_p,std::ofstream& ofs_p)
-    :in_path(f_in_path),out_path(f_out_path),ifs(ifs_p),ofs(ofs_p)
+FileAction::FileAction(const std::string& f_in_path, const std::string& f_out_path
+        , std::ifstream& ifs_p, std::ofstream& ofs_p)
+: in_path(f_in_path), out_path(f_out_path), ifs(ifs_p), ofs(ofs_p)
 {
     //set_path(f_path);
-    
+
 }
 
 FileAction::~FileAction()
 {
     //delete[] path;
     this->close_file();
-    
-}
 
+}
 
 const std::string& FileAction::get_in_path()
 {
@@ -30,7 +29,7 @@ const std::string& FileAction::get_in_path()
 
 void FileAction::set_in_path(const std::string& path)
 {
-    this->in_path=path;
+    this->in_path = path;
 }
 
 const std::string& FileAction::get_out_path()
@@ -40,7 +39,7 @@ const std::string& FileAction::get_out_path()
 
 void FileAction::set_out_path(const std::string& path)
 {
-    this->out_path=path;
+    this->out_path = path;
 }
 
 int FileAction::open_file()
@@ -51,22 +50,22 @@ int FileAction::open_file()
 
 
     //openning input file failed.
-    if(ifs==NULL)
+    if (ifs == NULL)
     {
-        std::cerr<<"Open Source File Error!"<<std::endl;
+        std::cerr << "Open Source File Error!" << std::endl;
         return 0;
     }
 
     //open the output file
 
-    ofs.open(out_path.data(),std::ios::out);
+    ofs.open(out_path.data(), std::ios::out);
 
-    if(ofs==NULL)
+    if (ofs == NULL)
     {
-        std::cerr<<"Open Output File Error!"<<std::endl;
+        std::cerr << "Open Output File Error!" << std::endl;
         return 0;
     }
-    
+
 
     return 1;
 }
@@ -85,51 +84,51 @@ int FileAction::fill_buffer(char* buffer, int size)
     //std::cout<<"fill buffer \n";
 
     //clear up the buffer
-    memset(buffer,'\0',size);
+    memset(buffer, '\0', size);
 
-    char temp=' ';
-    int index=0;
-    if(ifs==NULL)
+    char temp = ' ';
+    int index = 0;
+    if (ifs == NULL)
     {
         return 0;
     }
 
-    while (!ifs.eof()&&size>0)
+    while (!ifs.eof() && size > 0)
     {
         //get a character
         ifs.get(temp);
 
         //delete the enter charater
-        if(temp=='\n')
+        if (temp == '\n')
         {
             continue;
         }
 
 
-        if(ifs.eof())//end of the file
+        if (ifs.eof())//end of the file
         {
             break;
         }
 
-        buffer[index]=temp;
+        buffer[index] = temp;
         ++index;
-        
+
 
         //delete the noused black space
-        if(temp==' '||temp == '\n')
+        if (temp == ' ' || temp == '\n')
         {
-            while(temp==' '||temp == '\n')
+            while (temp == ' ' || temp == '\n')
             {
                 ifs.get(temp);
             }
 
             //put the first character while is not ' ' into the buffer
-            buffer[index]=temp;
+            buffer[index] = temp;
             ++index;
 
             //the capacity of the buffer 
             --size;
-            if(size<=0)
+            if (size <= 0)
             {
                 break;
             }
@@ -138,12 +137,14 @@ int FileAction::fill_buffer(char* buffer, int size)
         --size;
     }
 
+    //std::cout<<buffer<<std::endl;
+
     return index;
 }
 
 char FileAction::get_char()
 {
-    char temp= ' ';
+    char temp = ' ';
     ifs.get(temp);
     return temp;
 }

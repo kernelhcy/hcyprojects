@@ -36,16 +36,18 @@
  *         | constant    |    11    |
  *         | labels      |    12    |
  *         |    +        |    13    |
- *         |    _        |    14    |
- *         |    (        |    15    |
- *         |    )        |    16    |
- *         |    =        |    17    |
- *         |    >        |    18    |
- *         |    <        |    19    |
- *         |    ;        |    20    |
- *         |    :        |    21    |
- *         |    :=       |    22    |
- *         |    ,        |    23    |
+ *         |    -        |    14    |
+ *         |    *        |    15    |
+ *         |    /        |    16    |
+ *         |    (        |    17    |
+ *         |    )        |    18    |
+ *         |    =        |    19    |
+ *         |    >        |    20    |
+ *         |    <        |    21    |
+ *         |    ;        |    22    |
+ *         |    :        |    23    |
+ *         |    :=       |    24    |
+ *         |    ,        |    25    |
  *         +-------------+----------+
  *
  *  The index of the key word add one in the vector is the id of this key word;
@@ -61,6 +63,13 @@ public:
      *
      */
     void analysis();
+
+    /*
+     * Get the next word of the sentence.
+     * Used by the syntax analysis program.
+     *
+     */
+    int get_next_word();
 
    
     /*
@@ -97,6 +106,19 @@ public:
      *  Get the table of the constant.
      */
     std::list<std::string>& get_const_table();
+
+    /*
+     *  Fill the buffer.
+     *  Return value:
+     *      the number of the characters fill into the buffer.
+     *  If return 0, the end of the file has been accessed.
+     */
+    int fill_buffer();
+
+    /*
+     * Print the left content in tht buffer
+     */
+    void print_buffer();
     
 private:
     //store the character readed from the buffer
@@ -133,13 +155,7 @@ private:
      */
     FileAction& fa;
 
-    /*
-     *  Fill the buffer.
-     *  Return value:
-     *      the number of the characters fill into the buffer.
-     *  If return 0, the end of the file has been accessed.
-     */
-    int fill_buffer();
+    
 
     /*
      *  Out put the result to the output file

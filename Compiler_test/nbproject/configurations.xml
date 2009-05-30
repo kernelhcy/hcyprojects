@@ -4,11 +4,13 @@
     <logicalFolder name="HeaderFiles" displayName="头文件" projectFiles="true">
       <itemPath>FileActions.h</itemPath>
       <itemPath>LexicalAnalysis.h</itemPath>
+      <itemPath>SyntaxAnalysis.h</itemPath>
     </logicalFolder>
     <logicalFolder name="SourceFiles" displayName="源文件" projectFiles="true">
       <itemPath>FileAction_imp.cpp</itemPath>
       <itemPath>LexicalAnalysis_imp.cpp</itemPath>
       <itemPath>main.cpp</itemPath>
+      <itemPath>SyntaxAnalysis_Imp.cpp</itemPath>
       <itemPath>test.p</itemPath>
     </logicalFolder>
     <logicalFolder name="ResourceFiles" displayName="资源文件" projectFiles="true">
@@ -41,6 +43,12 @@
         <itemTool>3</itemTool>
       </item>
       <item path="LexicalAnalysis_imp.cpp">
+        <itemTool>1</itemTool>
+      </item>
+      <item path="SyntaxAnalysis.h">
+        <itemTool>3</itemTool>
+      </item>
+      <item path="SyntaxAnalysis_Imp.cpp">
         <itemTool>1</itemTool>
       </item>
       <item path="main.cpp">
@@ -81,6 +89,12 @@
         <itemTool>3</itemTool>
       </item>
       <item path="LexicalAnalysis_imp.cpp">
+        <itemTool>1</itemTool>
+      </item>
+      <item path="SyntaxAnalysis.h">
+        <itemTool>3</itemTool>
+      </item>
+      <item path="SyntaxAnalysis_Imp.cpp">
         <itemTool>1</itemTool>
       </item>
       <item path="main.cpp">

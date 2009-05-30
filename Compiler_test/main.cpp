@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include "LexicalAnalysis.h"
+#include "SyntaxAnalysis.h"
 #include <string>
 
 /*
@@ -29,9 +30,16 @@ int main(int argc, char** argv)
     std::ofstream ofs;
     FileAction fa(in_file_name, out_file_name, ifs, ofs);
     LexicalAnalysis la(fa);
-    la.analysis();
+//    la.analysis();
 
-    return (EXIT_SUCCESS);
+    SyntaxAnalysis sa(la);
+    sa.analysis();
+    sa.~SyntaxAnalysis();
+
+    std::cout<<"Over!!\n";
+
+    exit(0);
+    //return (EXIT_SUCCESS);
 }
 
 
