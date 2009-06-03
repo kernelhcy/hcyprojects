@@ -18,10 +18,13 @@ echo "create $num files."
 cnt="1"
 entry="#include <stdlib.h>\nint main()\n{\n\treturn 0;\n}\n"
 
-#echo -e  $entry
+#创建目录
+mkdir ./my
+#更改工作目录
+cd ./my
+
 while [ $cnt -lt $num ]
 do
-	touch $cnt.c
+	echo -e $entry>>f$cnt.c
 	cnt=$[$cnt+1]
-	echo -e $entry>>$cnt.c
 done
