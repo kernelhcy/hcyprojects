@@ -5,20 +5,18 @@
  */
 
 #include "FileActions.h"
-#include <stdlib.h>
-#include <iostream>
 #include "LexicalAnalysis.h"
 #include "SyntaxAnalysis.h"
+#include <stdlib.h>
+#include <iostream>
 #include <string>
 
 /*
  * 
  */
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
 
-    if (argc != 3)
-    {
+    if (argc != 3) {
         std::cerr << "Bad Paremeters!\n";
         exit(1);
     }
@@ -30,13 +28,15 @@ int main(int argc, char** argv)
     std::ofstream ofs;
     FileAction fa(in_file_name, out_file_name, ifs, ofs);
     LexicalAnalysis la(fa);
-//    la.analysis();
 
+    //la.analysis();
+
+    std::cout << "Being...\n";
     SyntaxAnalysis sa(la);
-    sa.analysis();
+    int status = sa.analysis();
     sa.~SyntaxAnalysis();
 
-    std::cout<<"Over!!\n";
+    std::cout << "Over!!\nStatus:" << status << std::endl;
 
     exit(0);
     //return (EXIT_SUCCESS);

@@ -72,11 +72,12 @@ int FileAction::open_file()
 
 int FileAction::close_file()
 {
+    
     ifs.close();
     //std::cout<<"closing input source file...\n";
     ofs.close();
     //std::cout<<"closing output file...\n";
-    return 1;
+    return 0;
 }
 
 int FileAction::fill_buffer(char* buffer, int size)

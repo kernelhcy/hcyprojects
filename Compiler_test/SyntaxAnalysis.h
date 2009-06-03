@@ -24,8 +24,9 @@ public:
     ~SyntaxAnalysis();
     /*
      *  Analysising
+     *  The return value: 0 :success; 1:there are some syntax errors.
      */
-    void analysis();
+    int analysis();
     
 private:
     //The lexical analysis class

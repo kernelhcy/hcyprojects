@@ -104,7 +104,7 @@ SyntaxAnalysis::~SyntaxAnalysis()
     la.~LexicalAnalysis();
 }
 
-void SyntaxAnalysis::analysis()
+int SyntaxAnalysis::analysis()
 {
     //get the next word's id
     int word_id = la.get_next_word();
@@ -165,7 +165,7 @@ void SyntaxAnalysis::analysis()
             {
                 std::cout << "语法错误！！位置：";
                 print_error_position();
-                exit(1);
+                return 1;
             }
 
             //Just print the infomation of the sentence.
@@ -206,15 +206,6 @@ void SyntaxAnalysis::analysis()
                     //Over.
                     if (word_id <= 0)
                     {
-                        //                        //the if then else bug
-                        //                        print_stack();
-                        //                        print_info();
-                        //                        info = 0;
-                        //
-                        //                        while (s.size() > 0)
-                        //                        {
-                        //                            s.pop();
-                        //                        }
                         break;
                     }
 
@@ -228,12 +219,13 @@ void SyntaxAnalysis::analysis()
             {
                 std::cout << "语法错误！！位置: ";
                 print_error_position();
-                exit(1);
+                return 1;
             }
         }
 
 
     }
+    return 0;
 }
 
 bool SyntaxAnalysis::is_finalword(int id)

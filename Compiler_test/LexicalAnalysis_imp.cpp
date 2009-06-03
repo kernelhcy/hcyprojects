@@ -39,9 +39,10 @@ LexicalAnalysis::LexicalAnalysis(FileAction& fa_p)
 
 LexicalAnalysis::~LexicalAnalysis()
 {
+    fa.~FileAction();
     delete[] buffer;
     str_token.~basic_string();
-    fa.~FileAction();
+    
 }
 
 int LexicalAnalysis::get_next_word()
