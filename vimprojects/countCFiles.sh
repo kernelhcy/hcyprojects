@@ -14,7 +14,7 @@ count()
 	cd ./my
 	echo -n "Number of matcher for $1 : "
     #创建临时变量，统计并记录文件个数。	
-    local cnt=`ls $1 | wc -w`
+    local cnt=`ls $1 | wc -l`
     #输出文件个数
 	echo $cnt
 };
