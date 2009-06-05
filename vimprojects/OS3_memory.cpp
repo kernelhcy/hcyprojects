@@ -7,7 +7,7 @@ void LRU();
 void NUR();
 void OPT();
 void init();
-
+void clear_memory();
 /*
  * 定义数据结构，表示硬盘中的页
  */
@@ -34,6 +34,10 @@ struct Frame
 	//记录此帧中的页面已经多长时间没被调用
 	//用于LRU算法
 	int no_use_time;
+
+	//用于NUR算法
+	//表示此帧中的页面在本次时间片中被使用的情况
+	bool has_used;
 };
 
 //进程页面数,页号是从0到PP-1
@@ -41,7 +45,7 @@ const int PP = 10;
 //内存分配的帧数
 const int AP = 5;
 //记录页面总共使用的次数
-const int total_instruction = 500;
+const int total_instruction = 20;
 //总共换人页面的次数
 int diseffect = 0;
 
@@ -69,6 +73,7 @@ void init()
 		pagecontrol[i].page_id = -1;
 		pagecontrol[i].is_free = true;
 		pagecontrol[i].no_use_time = 0;
+		pagecontrol[i].has_used = false;
 	}
 	
 	//初始化页面序列
@@ -80,6 +85,28 @@ void init()
 	//	std::cout << main_t[i] << " ";
 	}
 	std::cout << std::endl;
+}
+
+/*
+ * 清除内存帧信息。
+ */
+void clear_memory()
+{
+	diseffect = 0;
+
+	for(int i = 0; i < AP; ++i)
+	{
+		pagecontrol[i].page_id = -1;
+		pagecontrol[i].is_free = true;
+		pagecontrol[i].no_use_time = 0;
+		pagecontrol[i].has_used = false;
+	}
+	
+	for(int i = 0; i < PP; ++i)
+	{
+		pages[i].frame_id = -1;
+		pages[i].is_in_memory = false;
+	}
 }
 
 /*
@@ -101,6 +128,8 @@ void FIFO_show_queue(int *queue, int queue_len, int now_page, int head)
 void FIFO()
 {
 	std::cout<<"FIFO:\n";
+
+	clear_memory();
 
 	int queue[AP];//队列
 	int queue_len  = 0;//队列长度
@@ -195,7 +224,8 @@ void LRU()
 {
 	std::cout<<"LRU: \n";
 
-	diseffect = 0;
+	clear_memory();
+
 	for(int i = 0; i < total_instruction; ++i)
 	{
 		//输出当前内存的使用情况
@@ -273,6 +303,107 @@ void LRU()
 }
 
 /*
+ * NUR算法中打印信息
+ */
+void NUR_print_info()
+{
+
+}
+
+//定义周期
+const int CLEAR_PERIOD = 5;
+/*
+ * 模拟NRU算法
+ */
+void NUR()
+{
+	std::cout << "NUR: \n";
+
+	clear_memory();
+
+	int period = -1;
+	for(int i = 0; i < total_instruction; ++i)
+	{
+		//判断时间周期是否已经完成
+		++period;
+		if(period >= CLEAR_PERIOD)//周期以到，清空使用信息
+		{
+			for(int j = 0; j < AP; ++j)
+			{
+				pagecontrol[j].has_used = false;
+			}
+		}
+
+
+		if(!pages[main_t[i]].is_in_memory)//此页不在内存中。
+		{
+			++diseffect;
+			
+			//寻找空闲的帧
+			int free_frame_id = -1;
+			for(int j = 0; j < AP; ++j)
+			{
+				if(pagecontrol[j].is_free)
+				{
+					free_frame_id = j;
+					break;
+				}
+			}
+
+			if(free_frame_id < 0)//没有空闲的帧
+			{
+				//寻找此周期内未被使用的帧
+				//并选择id最小的一个
+				int tmp_id = -1;
+				for(int j = 0; j < AP; ++j)
+				{
+					if(!pagecontrol[j].has_used)
+					{
+						tmp_id = j;
+						break;
+					}
+				}
+
+				if(tmp_id < 0)//没有未被使用的帧，所有帧在此周期内被访问过。
+				{
+					//置换第一个帧中的页面。
+					tmp_id = 0;
+				}
+				
+				//置换出页面
+				pages[pagecontrol[tmp_id].page_id].is_in_memory = false;
+				
+				//更新帧和页面的信息
+				pagecontrol[tmp_id].page_id = main_t[i];
+				pagecontrol[tmp_id].has_used = true;
+
+				pages[main_t[i]].frame_id = tmp_id;
+				pages[main_t[i]].is_in_memory = true;
+
+			}
+			else //有空闲的帧
+			{
+				pagecontrol[free_frame_id].is_free = false;
+				pagecontrol[free_frame_id].page_id = main_t[i];
+				pagecontrol[free_frame_id].has_used = true;
+
+				pages[main_t[i]].frame_id = free_frame_id;
+				pages[main_t[i]].is_in_memory = true;
+			}
+		}
+		else//此页已经在内存中了
+		{
+			//标记此帧在这个周期中被使用了。
+			pagecontrol[main_t[i]].has_used = true;
+
+		}
+
+	}
+
+	std::cout << "\t命中率：" << (1 - (float)diseffect/(float)total_instruction)*100 << "%\n";
+}
+
+/*
  *
  * 程序入口
  * 
@@ -286,4 +417,5 @@ void run()
 
 	FIFO();
 	LRU();
+	NUR();
 }

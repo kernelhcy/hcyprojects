@@ -5,4 +5,10 @@ make
 echo ""
 echo "running..."
 echo ""
-exec ./main
+cnt=$1
+while [ "$cnt" -gt "0" ]
+do
+	./main
+	cnt=$[$cnt-1]
+	sleep 1
+done
