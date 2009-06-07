@@ -242,7 +242,7 @@ void message_communicate()
  * The Enter of the Program
  * 函数的入口
  */
-void run()
+void run(bool show_details)
 {
     //std::cout << "Process Communication Test." << std::endl;
     interrupt_communicate();
