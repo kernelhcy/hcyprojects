@@ -2,10 +2,10 @@
 #include <time.h>
 
 //函数声明
-void FIFO();
-void LRU();
-void NUR();
-void OPT();
+void FIFO(bool);
+void LRU(bool);
+void NUR(bool);
+void OPT(bool);
 void init();
 void clear_memory();
 /*
@@ -18,8 +18,13 @@ struct Page
 	
 	//表示该页是否在内存中
 	bool is_in_memory;
+
+	//此页下一次被用到距离现在的间隔。
+	//INFINITE表示不回被再用到。
+	int c_distance;
 };
 
+const int INFINITE = 65535;
 /*
  * 定义数据结构，表示内存中的帧
  */
@@ -66,6 +71,7 @@ void init()
 	{
 		pages[i].frame_id = -1;
 		pages[i].is_in_memory = false;
+		pages[i].c_distance = INFINITE;
 	}
 
 	for(int i = 0; i < AP; ++i)
@@ -78,11 +84,11 @@ void init()
 	
 	//初始化页面序列
 	srand((int)time(0));
-	std::cout << "instructions: ";
+	//std::cout << "instructions: ";
 	for(int i = 0; i < total_instruction; ++i)
 	{
 		main_t[i] = rand()%PP;
-	//	std::cout << main_t[i] << " ";
+	//	std::cout << main_t2 Queue: 5 [i] << " ";
 	}
 	std::cout << std::endl;
 }
@@ -112,9 +118,13 @@ void clear_memory()
 /*
  * 显示FIFO算法中，队列中的内容
  */
-void FIFO_show_queue(int *queue, int queue_len, int now_page, int head)
+void FIFO_show_queue(int *queue, int queue_len, int now_page, int head, bool page_fault)
 {
 	
+	if(page_fault)
+	{
+		std::cout << "Page fault!!";
+	}
 	std::cout <<now_page << " Queue: ";
 	for(int j = 0, k = head; j < queue_len; ++j, k = (k + 1) % AP)
 	{
@@ -125,23 +135,29 @@ void FIFO_show_queue(int *queue, int queue_len, int now_page, int head)
 /*
  * 模拟先进先出算法
  */
-void FIFO()
+void FIFO(bool show_details)
 {
-	std::cout<<"FIFO:\n";
+	std::cout<<"FIFO:";
 
 	clear_memory();
 
 	int queue[AP];//队列
 	int queue_len  = 0;//队列长度
-	int head = 0,tail = 0;//队列的头和尾
+	int head = 0,tail = 0;//队列的头和e 
 	
 	//清空队列
-	memset(queue, 0, sizeof(queue)/sizeof(int));
+	for(int i = 0; i < AP; ++i)
+	{
+		queue[i] = 0;
+	}
 
 	for(int i = 0; i < total_instruction; ++i)
 	{
 		//输出当前队列的信息
-		//FIFO_show_queue(&queue[0],queue_len,main_t[i],head);
+		if(show_details)
+		{
+			FIFO_show_queue(&queue[0],queue_len,main_t[i],head, !pages[main_t[i]].is_in_memory);
+		}
 
 		if(!pages[main_t[i]].is_in_memory)//此页不在内存中
 		{
@@ -186,7 +202,7 @@ void FIFO()
 				pages[queue[head]].is_in_memory = false;
 
 				//更新帧的信息
-				pagecontrol[queue[head]].page_id = main_t[i];
+				pagecontrol[pages[main_t[i]].frame_id].page_id = main_t[i];
 				
 				//更新对列，将页加入队尾
 				head = (head + 1) % AP;
@@ -207,9 +223,13 @@ void FIFO()
  * 显示LRU算法中内存信息。
  * 输出内存帧中页的id和最长未被使用时间。
  */
-void LRU_show_memory(int now_page)
+void LRU_show_memory(int now_page, bool page_fault)
 {
 	
+	if(page_fault)
+	{
+		std::cout << "Page fault!!";
+	}
 	std::cout << now_page << " Memory: ";
 	for(int j = 0; j < AP; ++j)
 	{
@@ -220,17 +240,20 @@ void LRU_show_memory(int now_page)
 /*
  * 模拟LRU算法
  */
-void LRU()
+void LRU(bool show_details)
 {
-	std::cout<<"LRU: \n";
+	std::cout<<"LRU:";
 
 	clear_memory();
 
 	for(int i = 0; i < total_instruction; ++i)
 	{
+		
 		//输出当前内存的使用情况
-		//LRU_show_memory(main_t[i]);
-
+		if(show_details)
+		{
+			LRU_show_memory(main_t[i],!pages[main_t[i]].is_in_memory);
+		}
 		//首先将内存中所有页面的未被使用的时间加一
 		//
 		for(int j = 0; j < AP; ++j)
@@ -280,7 +303,6 @@ void LRU()
 				}
 				//更新被替换出去的页面的信息
 				pages[pagecontrol[longest_id].page_id].is_in_memory = false;
-				pages[pagecontrol[longest_id].page_id].frame_id = -1;
 				//替换页面
 				pagecontrol[longest_id].no_use_time = 0;
 				pagecontrol[longest_id].page_id = main_t[i];
@@ -305,9 +327,20 @@ void LRU()
 /*
  * NUR算法中打印信息
  */
-void NUR_print_info()
+void NUR_print_info(int now_page, bool page_fault)
 {
+	
+	if(page_fault)
+	{
+		std::cout << "Page fault!!";
+	}
 
+	std::cout << now_page << " Memory: ";
+	for(int j = 0; j < AP; ++j)
+	{
+		std::cout << pagecontrol[j].page_id << "(" << pagecontrol[j].has_used << ")" << " ";
+	}
+	std::cout << std::endl;
 }
 
 //定义周期
@@ -315,23 +348,29 @@ const int CLEAR_PERIOD = 5;
 /*
  * 模拟NRU算法
  */
-void NUR()
+void NUR(bool show_details)
 {
-	std::cout << "NUR: \n";
+	std::cout << "NUR:";
 
 	clear_memory();
 
-	int period = -1;
+	int period = 0; 
 	for(int i = 0; i < total_instruction; ++i)
 	{
+		if(show_details)
+		{
+			NUR_print_info(main_t[i], !pages[main_t[i]].is_in_memory);
+		}
 		//判断时间周期是否已经完成
 		++period;
 		if(period >= CLEAR_PERIOD)//周期以到，清空使用信息
 		{
+			//std::cout << "Period over.\n";
 			for(int j = 0; j < AP; ++j)
 			{
 				pagecontrol[j].has_used = false;
 			}
+			period = 0;
 		}
 
 
@@ -394,7 +433,7 @@ void NUR()
 		else//此页已经在内存中了
 		{
 			//标记此帧在这个周期中被使用了。
-			pagecontrol[main_t[i]].has_used = true;
+			pagecontrol[pages[main_t[i]].frame_id].has_used = true;
 
 		}
 
@@ -404,18 +443,131 @@ void NUR()
 }
 
 /*
+ * 计算当前位置，各个页面下次被用到的时间。
+ */
+void compute_distance(int start_pos)
+{
+	//
+	for(int i = 0; i < PP; ++i)
+	{
+		pages[i].c_distance = INFINITE;
+	}
+
+	int distance = 0;
+	for(int i = start_pos; i < total_instruction; ++i)
+	{
+		++distance;
+		if(pages[main_t[i]].c_distance >= INFINITE)
+		{
+			pages[main_t[i]].c_distance = distance;
+		}
+	}
+}
+
+
+void OPT_show_info(int now_page, bool page_fault)
+{
+
+	if(page_fault)
+	{
+		std::cout << "Page fault!!";
+	}
+	std::cout << now_page << " Memory: ";
+	for(int j = 0; j < AP; ++j)
+	{
+		std::cout << pagecontrol[j].page_id << "(" << pages[pagecontrol[j].page_id].c_distance << ")" << " ";
+	}
+	std::cout << std::endl;
+}
+/*
+ * 模拟OPT算法
+ */
+void OPT(bool show_details)
+{
+	std::cout << "OPT:";
+
+	clear_memory();
+	
+
+	for(int i = 0; i < total_instruction; ++i)
+	{
+		//计算各个页面的下次使用时间
+		compute_distance(i);
+		
+		if(show_details)
+		{
+			OPT_show_info(main_t[i],!pages[main_t[i]].is_in_memory);
+		}
+
+		if(!pages[main_t[i]].is_in_memory)//页面不在内存中
+		{
+			++diseffect;
+
+			//寻找空闲的帧
+			int free_frame_id = -1;
+			for(int j = 0; j < AP; ++j)
+			{
+				if(pagecontrol[j].is_free)
+				{
+					free_frame_id = j;
+					break;
+				}
+			}
+
+			if(free_frame_id < 0)//没有空闲的帧
+			{
+				//寻找最晚被引用的页面
+				int longest_distance = -1, longest_id = -1;
+				for(int j = 0; j < AP; ++j)
+				{
+					if(pages[pagecontrol[j].page_id].c_distance > longest_distance)
+					{
+						longest_distance = pages[pagecontrol[j].page_id].c_distance;
+						longest_id = j;
+					}
+				}
+
+				pages[pagecontrol[longest_id].page_id].is_in_memory = false;
+
+				pagecontrol[longest_id].page_id = main_t[i];
+				pagecontrol[longest_id].is_free = false;
+
+				pages[main_t[i]].is_in_memory = true;
+				pages[main_t[i]].frame_id = longest_id;
+
+			}
+			else//有空闲的帧
+			{
+				pagecontrol[free_frame_id].page_id = main_t[i];
+				pagecontrol[free_frame_id].is_free = false;
+
+				pages[main_t[i]].is_in_memory = true;
+				pages[main_t[i]].frame_id = free_frame_id;
+			}
+
+		}
+		else//页面在内存中
+		{
+			continue;
+		}
+	}
+
+	std::cout << "\t命中率：" << (1 - (float)diseffect/(float)total_instruction)*100 << "%\n";
+}
+/*
  *
  * 程序入口
  * 
  */ 
-void run()
+void run(bool show_details)
 {
-	std::cout << "running...\n";
+//	std::cout << "running...\n";
 
 	//初始化
 	init();
 
-	FIFO();
-	LRU();
-	NUR();
+	FIFO(show_details);
+	LRU(show_details);
+	NUR(show_details);
+	OPT(show_details);
 }

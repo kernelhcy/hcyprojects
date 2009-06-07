@@ -5,33 +5,27 @@
  */
 
 #include "headers.h"
-
 using namespace std;
 
-void e_h()
-{
-    printf("Program exit .\n");
-} 
 
-void e_h1()
-{
-    printf("Program exit 1.\n");
-}
-
-void e_h2()
-{
-    printf("Program exit 2.\n");
-}
 /*
  * 
  */
 int main(int argc, char** argv)
 {
+	
+	bool show_details = false;
 
-    //atexit(e_h);
-    //atexit(e_h1);
-    //atexit(e_h2);
-    run();
+	std::cout << "\nShow details,run: "<< argv[0] <<" details.\n";
+	if(argc > 1)
+	{
+		if(strcmp("details",argv[1]) == 0)
+		{
+			show_details = true;	
+		}
+	}
+
+    run(show_details);
     //exit(0);
     return (EXIT_SUCCESS);
 }

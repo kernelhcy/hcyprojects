@@ -13,7 +13,8 @@
 /*
  * Enter
  */
-void run();
+void run(bool show_details);
+
 
 #endif	/* _HEADERS_H */
 
