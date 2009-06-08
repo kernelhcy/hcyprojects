@@ -10,87 +10,87 @@ void run(bool show_details)
 {
 	system("clear");//清屏
 
-	std::cout << "HCY's Fils System.\n";
-	std::cout << "Version 0.001. \n";
+	printf("HCY's Fils System.\n");
+	printf("Version 0.001. \n");
 	
 	init();
 
-	std::cout << "Input \"help or h\" for help infromation.\n";
+	printf("Input \"help or h\" for help infromation.\n");
 	
-	std::string cmd;
+	char cmd[10];
 
 	while(true)
 	{
-		std::cout <<"cmd:";
-		std::cin >> cmd;
+		printf("cmd:");
+		scanf("%s",cmd);
 		
-		if(cmd == "quit" || cmd == "q")
+		if(strcmp("quit",cmd) == 0|| strcmp("q", cmd) == 0)
 		{
 			break;
 		}
-		else if(cmd == "help" || cmd == "h")
+		else if(strcmp("help", cmd) == 0 || strcmp("h", cmd) == 0)
 		{
 			show_help_info();
 		}
-		else if(cmd == "ls")
+		else if(strcmp("ls", cmd) == 0)
 		{
-			ls();
+			printf("显示当前目录内容。\n");
 		}
-		else if(cmd == "mkdir")
+		else if(strcmp("mkdir", cmd) == 0)
 		{
-			mkdir();
+			printf("创建目录。\n");
 		}
-		else if(cmd == "rmdir")
+		else if(strcmp("rmdir", cmd) == 0)
 		{
-			rmdir();
+			printf("删除目录。\n");
 		}
-		else if(cmd == "chdir" || cmd == "cd")
+		else if(strcmp("chdir", cmd) == 0 || strcmp("cd", cmd) == 0)
 		{
-			chdir();
+			printf("更换当前工作目录。\n");
 		}
-		else if(cmd == "create")
+		else if(strcmp("create", cmd) ==0 )
 		{
-			create_f();
+			printf("创建文件。\n");
 		}
-		else if(cmd == "delete")
+		else if(strcmp("delete", cmd) == 0)
 		{
-			delete_f();
+			printf("删除文件。\n");
 		}
-		else if(cmd == "open")
+		else if(strcmp("open", cmd) == 0)
 		{
-			open_f();
+			printf("打开文件。\n");
 		}
-		else if(cmd == "close")
+		else if(strcmp("close", cmd) == 0)
 		{
-			close_f();
+			printf("关闭文件。\n");
 		}
-		else if(cmd == "write")
+		else if(strcmp("write", cmd) == 0)
 		{
-			write_f();
+			printf("向文件中写入数据。\n");
 		}
-		else if(cmd == "read")
+		else if(strcmp("read", cmd) == 0)
 		{
-			read_f();
+			printf("读文件中的数据。\n");
 		}
-		else if(cmd == "pwd")
+		else if(strcmp("pwd", cmd) == 0)
 		{
-			pwd();
+			printf("显示当前工作目录。\n");
 		}
-		else if(cmd == "login")
+		else if(strcmp("login", cmd) == 0)
 		{
-			login();
+			printf("登录。\n");
 		}
-		else if(cmd == "logout")
+		else if(strcmp("logout", cmd) == 0)
 		{
-			logout();
+			printf("登出。\n");
 		}
-		else if(cmd == "cat")
+		else if(strcmp("cat", cmd) == 0)
 		{
-			cat();
+			printf("显示文件内容。\n");
 		}
 		else
 		{
-			std::cout << "No such command!\nType \"help or h\" for help information.\n";
+			printf("No such command!\nType \"help or h\" for help information.\n");
 			continue;
 		}
 
@@ -99,7 +99,7 @@ void run(bool show_details)
 
 	if(show_details)
 	{
-		std::cout << "Show details.\n";
+		printf( "Show details.\n");
 	}
 }
 
@@ -114,75 +114,75 @@ int init()
 
 /************************************/
 
-int ls()
+char * ls(char *path)
 {
 	std::cout << "ls\n";
 	return 0;
 }
-int mkdir()
+int mkdir(char *path)
 {
 	std::cout << "mkdir\n";
 	return 0;
 }
-int rmdir()
+int rmdir(char *path)
 {
 	std::cout << "rmdir\n";
 	return 0;
 }
-int chdir()
+int chdir(char *path)
 {
 	std::cout << "chdir\n";
 	return 0;
 }
-int create_f()
+int create_f(char *name, int mode)
 {
 	std::cout << "create\n";
 	return 0;
 }
-int delete_f()
+int delete_f(char *name)
 {
 	std::cout << "delete\n";
 	return 0;
 }
-int open_f()
+int open_f(char *name, const char* mode)
 {
 	std::cout << "open\n";
 	return 0;
 }
-int close_f()
+int close_f(char *name)
 {
 	std::cout << "close\n";
 	return 0;
 }
-int write_f()
+int write_f(char *name, char *buffer, int length)
 {
 	std::cout << "write\n";
 	return 0;
 }
-int read_f()
+int read_f(char *name, char *buffer, int length)
 {
 	std::cout << "read\n";
 	return 0;
 }
-int pwd()
+char* pwd()
 {
 	std::cout << "pwd\n";
-	return 0;
+	return NULL;
 }
-int login()
+int login(char *user_name, char *passwd)
 {
 	std::cout << "login\n";
 	return 0;
 }
-int logout()
+int logout(char *user_name)
 {
 	std::cout <<"logout\n";
 	return 0;
 }
-int cat()
+char* cat(char *file_name)
 {
 	std::cout <<"cat\n";
-	return 0;
+	return NULL;
 }
 void show_help_info()
 {
