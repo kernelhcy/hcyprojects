@@ -306,6 +306,10 @@ char* cat(char *file_name)
 }
 void show_help_info()
 {
-	std::cout << "ls mkdir rmdir chdir create delete open close write read quit login logout pwd cat\n";
+	printf("\n  帮助信息。\n");
+
+	printf("\tls\t显示当前目录的内容。\n\tmkdir\t创建目录。\n\trmdir\t删除目录。\n\tchdir\t更改当前工作目录。\n\tcreate\t创建文件。\n\tdelete\t删除文件。\n\topen\t打开文件。\n\tclose\t关闭文件。\n\twrite\t向文件中写数据。\n\tread\t读文件中的数据。\n\tquit\t退出。\n\tlogin\t用户登录。\n\tlogout\t用户登出。\n\tpwd\t显示当前工作目录。\n\tcat\t显示文件内容。\n");
+	return ;
 }
+
 
