@@ -1,8 +1,9 @@
 #include "headers.h"
 #include "fs.h"
-
+#include "fs_structs.h"
 int init();
-
+int read_fs();
+int create_fs();
 /*
  * 程序入口
  */
@@ -13,8 +14,14 @@ void run(bool show_details)
 	printf("HCY's Fils System.\n");
 	printf("Version 0.001. \n");
 	
-	init();
+	int state = init();
 
+	if(state == -1)//文件系统运行失败。
+	{
+		printf("文件系统出错！！退出...\n");
+		return;
+	}
+	
 	printf("Input \"help or h\" for help infromation.\n");
 	
 	char cmd[10];
@@ -108,10 +115,123 @@ void run(bool show_details)
  */
 int init()
 {
-	std::cout << "初始化文件系统...\n";
+	printf("初始化文件系统...\n");
+	
+	//打开文件
+	FILE *fd = NULL;
+	fd = fopen("./fsdata","r");
+	
+	int state;
+	if(NULL == fd)
+	{
+		//创建文件系统。
+		state = create_fs();
+	}
+	else
+	{
+		//加载文件系统。
+		state = read_fs();
+	}
+	
+	//文件系统运行失败。。。
+	if(state == -1)
+	{
+		
+		return -1;
+	}
+	
 	return 0;
 }
 
+/*
+ * 从硬盘中读去文件系统的信息。
+ * 
+ */
+int read_fs()
+{
+	printf("文件系统加载中...\n");
+	
+	return 0;
+	
+}
+
+/*
+ * 创建文件系统。
+ * 用于第一次使用文件系统，类似于格式化硬盘。
+ */
+int create_fs()
+{
+	printf("创建文件系统...\n");
+	FILE *fd = NULL;
+	fd = fopen("./fsdata","a+");
+    
+    if(NULL == fd)
+    {
+    	printf("文件系统创建失败！！\n");
+    	return -1;
+    }
+    
+	//创建超级块并写入文件系统。
+	struct supernode sn;
+
+	//初始化超级块
+	sn.s_isize = INODE_SIZE;
+	sn.s_bsize = BNODE_SIZE;
+	sn.s_nfree = BNODE_SIZE;
+	sn.s_pfree = 0;
+	sn.s_ninode = INODE_SIZE;
+	sn.s_pinode = 0;
+	sn.s_rinode = 0;
+	sn.s_fmod = 's';
+
+	fwrite(&sn, sizeof(struct supernode), 1, fd);
+	
+	//创建inode节点位图，并写入文件
+	struct imap i_map;
+	for(int i = 0; i < IMAP_SIZE; ++i)
+	{
+		i_map.bits[i] = 0xffffffff;
+	}
+	fwrite(&i_map, sizeof(struct imap), 1, fd);
+
+	//创建物理块位图，并写入文件。
+	struct bmap b_map;
+	for(int i = 0; i < BMAP_SIZE; ++i)
+	{
+		b_map.bits[i] = 0xffffffff;
+	}
+	fwrite(&b_map, sizeof(struct bmap), 1, fd);
+
+	//创建inode并写入文件
+	struct dinode node;
+	node.di_number = 0;
+	node.di_mode = 0;
+
+	node.di_uid = -1;
+	node.di_gid = -1;
+
+	node.di_size = -1;
+	for(int i = 0; i < NADDR; ++i)
+	{
+		node.di_addr[i] = -1;
+	}
+	
+	for(int i = 0; i < INODE_SIZE; ++i)
+	{
+		fwrite(&node, sizeof(struct dinode), 1, fd);
+	}
+
+	//创建物理块，写入文件。
+	struct block blo;
+	for(int i = 0; i < BNODE_SIZE; ++i)
+	{
+		fwrite(&blo, sizeof(struct block), 1, fd);
+	}
+
+	fclose(fd);
+	
+	return 0;
+}
 /************************************/
 
 char * ls(char *path)

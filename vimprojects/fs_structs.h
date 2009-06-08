@@ -6,23 +6,25 @@
  *
  */
 
-#define BLOCK_SIZE 512  	//物理块的大小
-#define NADDR 512     		//每个文件最大使用的物理块数
+#define BLOCK_SIZE 256  	//物理块的大小
+#define NADDR 256     		//每个文件最大使用的物理块数
 
 #define DIR_NAME_SIZE 512   //目录名的最大长度
 #define DIR_NUM 512     	//目录的最大个数
+#define DIR_FILE 512        //目录中最大的文件或目录个数
 
 #define NICFREE 512     	//空闲物理块栈的大小
 #define NICINOD 512     	//空闲i节点数组大小
 
 #define USR_NAME_SIZE 20    //用户名的长度
 #define PWD_SIZE 20     	//用户密码长度
+#define USR_OFILE_NUM 100   //用户打开的文件最大个数
 
-#define INODE_SIZE 1024    	//i节点的最大个数
-#define BNODE_SIZE 1048576 	//物理节点的最大个数
+#define INODE_SIZE 256    	//i节点的最大个数
+#define BNODE_SIZE 65536 	//物理节点的最大个数
 
-#define IMAP_SIZE 16       	//i节点位图的长度，INODE_SIZE/64
-#define BMAP_SIZE 16384    	//物理块位图的长度，BNODE_SIZE/64
+#define IMAP_SIZE 4       	//i节点位图的长度，INODE_SIZE/64
+#define BMAP_SIZE 1024    	//物理块位图的长度，BNODE_SIZE/64
 /*
  * i节点
  */
@@ -62,7 +64,7 @@ struct dinode
  */
 struct block
 {
-	int b_id;
+	//int b_id;
 	char enrty[BLOCK_SIZE];
 };
 
@@ -72,7 +74,7 @@ struct block
 struct imap
 {
 	long long bits[IMAP_SIZE];
-}
+};
 
 /*
  * 物理块位图
@@ -80,7 +82,7 @@ struct imap
 struct bmap
 {
 	long long bits[BMAP_SIZE];
-}
+};
 
 /*
  * 目录结构
@@ -89,6 +91,8 @@ struct directory
 {
  	char d_name[DIR_NAME_SIZE];         /*目录名*/
  	unsigned int d_ino;               	/*目录号*/
+	char *file_name[DIR_FILE];          /*目录中的文件的文件名*/
+	int file_inode[DIR_FILE];           /*目录中文件的inode号*/
 };
 
 /*
@@ -127,8 +131,8 @@ struct user
  */
 struct dir
 {
- 	strut directory direct[DIR_NUM];
- 	int size;
+ 	struct directory dirs[DIR_NUM]; //目录
+ 	int size;                        //目录的个数
 };
 
 /*
@@ -136,7 +140,7 @@ struct dir
  */
 struct hinode
 {
- 	strut inode *iforw;
+ 	struct inode *iforw;
 };
 
 /*
@@ -158,7 +162,7 @@ struct user_ofile
 	unsigned short u_default_mode;
 	unsigned short u_uid; 			/*用户标志*/
 	unsigned short u_gid; 			/*用户组标志*/
-	unsigned short u_ofile[NOFILE]; /*用户打开表*/
+	unsigned short u_ofile[USR_OFILE_NUM]; /*用户打开表*/
 };
 
 #endif
