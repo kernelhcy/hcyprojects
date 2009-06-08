@@ -70,7 +70,7 @@ int chdir(char *path);
  *
  * 创建成功返回0，否则返回其他错误码。
  */
-int create_f(char *name, int mode);
+int create_f(char *name, unsigned short mode);
 
 /*
  * 删除文件。
