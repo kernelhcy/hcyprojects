@@ -3,30 +3,42 @@
 
 /*
  * 定义文件系统所用到的数据结构及常量
- *
+ * 各个常量定义的过大会导致段错误！！
  */
 
-#define BLOCK_SIZE 256  	//物理块的大小
-#define NADDR 256     		//每个文件最大使用的物理块数
+/*
+ * 文件目录标记。
+ * 用于在i节点中标记此节点表示的是文件还是目录。
+ */
+#define FILE_T 111				//表示文件
+#define DIR_T  222 				//表示目录
 
-#define DIR_NAME_SIZE 512   //目录名的最大长度
-#define DIR_NUM 512     	//目录的最大个数
-#define DIR_FILE 512        //目录中最大的文件或目录个数
+#define BLOCK_SIZE 32	  		//物理块的大小
+#define B_ADDR_NUM BLOCK_SIZE/4	//每个物理块所能存放的物理块地址的个数
+#define D_ADDR_NUM 10     		//每个文件直接索引块的个数
 
-#define NICFREE 65536     	//空闲物理块栈的大小
-#define NICINOD 256     	//空闲i节点数组大小
+#define DIR_NAME_SIZE 64   		//目录名的最大长度
+#define FILE_NAME_SIZE 64		//文件名的最大长度
+#define DIR_NUM 64	     		//文件系统支持目录总的最大个数
+#define DIR_INCLUDE_NUM 64	    //每个目录中能包含的最大的文件或目录个数
 
-#define USR_NAME_SIZE 20    //用户名的长度
-#define PWD_SIZE 20     	//用户密码长度
-#define USR_OFILE_NUM 100   //允许用户打开的文件最大个数
+#define NICFREE 1024     		//空闲物理块栈的大小
+#define NICINOD 256     		//空闲i节点数组大小
 
-#define INODE_SIZE 256    	//i节点的最大个数
-#define BNODE_SIZE 65536 	//物理节点的最大个数
+#define USR_NAME_SIZE 20    	//用户名的长度
+#define PWD_SIZE 20     		//用户密码长度
+#define USR_OFILE_NUM 100   	//允许用户打开的文件最大个数
 
-#define IMAP_SIZE 4       	//i节点位图的长度，INODE_SIZE/64
-#define BMAP_SIZE 1024    	//物理块位图的长度，BNODE_SIZE/64
+#define INODE_SIZE 256    		//i节点的最大个数
+#define BNODE_SIZE 1024 		//物理节点的最大个数
 
-#define MAX_LOGIN_USR 100 	//允许同时登录的最大用户个数
+#define IMAP_SIZE INODE_SIZE/64	//i节点位图的长度
+#define BMAP_SIZE BNODE_SIZE/64 //物理块位图的长度
+
+#define MAX_LOGIN_USR 100 		//允许同时登录的最大用户个数
+
+#define BUFFER_SIZE	10			//内存中的缓冲区大小
+
 /*
  * 内存i节点
  */
@@ -34,7 +46,8 @@ struct inode{
 	struct inode  *i_forw;
 	struct inode  *i_back;
 	
-	char i_flag;
+	int dir_or_file;			/*标记是文件还是目录*/
+	
 	unsigned int i_into;      	/*磁盘i节点标号*/
 	unsigned int i_count;     	/*引用计数*/
 	unsigned short di_number; 	/*关联文件数，当为0时，则删除该文件*/
@@ -43,7 +56,14 @@ struct inode{
 	unsigned short di_uid;    	/*磁盘i节点用户*/
 	unsigned short di_gid;    	/*磁盘i节点组*/
 
-	unsigned int di_addr[NADDR];     	/*物理块号*/
+	/*
+	 * 直接物理块索引。
+	 * 若此节点表示的是目录。则第一个元素(direct_addr[0])表示的是此目录的目录id。
+	 */
+	unsigned int direct_addr[D_ADDR_NUM];  	
+	unsigned int addr;						/*一级块索引*/
+	unsigned int sen_addr;					/*二级块索引*/
+	unsigned int tru_addr;					/*三级块索引*/
 };
 
 /*
@@ -51,24 +71,34 @@ struct inode{
  */
 struct dinode
 {
-
+	int dir_or_file;					/*标记是文件还是目录*/
  	unsigned short di_number;        	/*关联文件数*/
  	unsigned short di_mode;          	/*存取权限*/
 
  	unsigned short di_uid;
  	unsigned short di_gid;
 
-	unsigned long di_size;            	/*文件大小*/
-	unsigned int di_addr[NADDR];      	/*物理块号*/
+	unsigned long di_size;            		/*文件大小*/
+	
+	/*
+	 * 直接物理块索引。
+	 * 若此节点表示的是目录。则第一个元素(direct_addr[0])表示的是此目录的目录id。
+	 */
+	unsigned int direct_addr[D_ADDR_NUM];  	
+	
+	unsigned int addr;						/*一级块索引*/
+	unsigned int sen_addr;					/*二级块索引*/
+	unsigned int tru_addr;					/*三级块索引*/
 };
 
 /*
  * 模拟物理块。
+ * 使用联合体，同时可以存放数据和物理块的地址。方便操作。
  */
-struct block
+union block
 {
-	//int b_id;
 	char enrty[BLOCK_SIZE];
+	unsigned int b_addr[B_ADDR_NUM]; 
 };
 
 /*
@@ -95,6 +125,8 @@ struct supernode
  	unsigned int s_isize;            	/*i节点块块数*/
  	unsigned long s_bsize;             	/*数据块块数*/
 
+	
+
  	unsigned int s_nfree;             	/*空闲块块数*/
  	unsigned short s_pfree;           	/*空闲块指针*/
  	unsigned int s_free[NICFREE];     	/*空闲块堆栈*/
@@ -119,24 +151,29 @@ struct user
 };
 
 /*
- * 目录
- */
-struct dir
-{
- 	struct directory dirs[DIR_NUM]; 	//目录
- 	int size;                        	//目录的个数
- 	int max_d_ino;						//当前最大的目录号
-};
-/*
- * 目录结构
+ * 单个目录结构
  */
 struct directory
 {
- 	char d_name[DIR_NAME_SIZE];         /*目录名*/
- 	unsigned int d_ino;               	/*目录号*/
-	char *file_name[DIR_FILE];          /*目录中的文件的文件名*/
-	int file_inode[DIR_FILE];           /*目录中文件的inode号*/
+ 	char d_name[DIR_NAME_SIZE];         		/*目录名*/
+ 	unsigned int d_id;							/*目录的id号。即目录数组中的索引号*/
+ 	unsigned int inode_id;						/*inode号*/
+ 	unsigned int parent_id;						/*父目录的id好。*/
+ 	
+	char file_name[DIR_INCLUDE_NUM][FILE_NAME_SIZE];        /*目录中的文件或子目录的名子*/
+	unsigned int file_inode[DIR_INCLUDE_NUM];           	/*对应的inode号*/
 };
+
+/*
+ * 目录表
+ */
+struct dir_table
+{
+ 	struct directory dirs[DIR_NUM]; 	//目录数组。包含所有目录信息。
+ 	unsigned int root_id;				//根目录的id。通常是0.
+ 	unsigned int size;                  //目录的个数
+};
+
 /*
  * 查找i内存节点的hash表
  */

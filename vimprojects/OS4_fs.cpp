@@ -4,40 +4,47 @@
 
 //函数声明
 static int init();
+
 static int read_fs();
-static int create_fs();
+
+static int format_fs();
+
 static int find_usr(char *username, struct user *usr);
+
 static int create_user(char *username, char *passwd);
 
 //全局变量定义
-static struct supernode g_sn;	//超级块
+static struct supernode g_sn;			//超级块
+static struct dir_table g_dir_table;	//目录表
+static struct imap g_imap;				//inode位图
+static struct bmap g_bmap;				//物理块位图
 
-static struct imap g_imap;		//inode位图
-static struct bmap g_bmap;		//物理块位图
+static struct inode *head = NULL;		//i内存节点链表头
 
-static struct inode *head = NULL;	//i内存节点链表头
-
-static long inode_bpos = -1;	//i节点在文件中的开始位置
-static long block_bpos = -1;	//物理块在文件中的开始位置
-static long inode_pre = -1;		//指向i节点的指针
-static long block_pre = -1;		//指向物理块的指针
+static long inode_bpos = -1;			//i节点在文件中的开始位置
+static long block_bpos = -1;			//物理块在文件中的开始位置
+static long inode_pre = -1;				//指向i节	点的指针
+static long block_pre = -1;				//指向物理块的指针
 
 static struct user login_users[MAX_LOGIN_USR];				//登录的用户列表
 static struct user_ofile user_ofile_table[MAX_LOGIN_USR]; 	//用户打开文件列表
-static int usr_num = 0;			//登陆的用户个数
+static int usr_num = 0;										//登陆的用户个数
 
-static struct system_ofile system_ofile_table;	//系统打开的文件列表
+static struct system_ofile system_ofile_table;				//系统打开的文件列表
 
-static struct dir g_dir;		//文件系统的根目录
+static char tip[50];										//命令提示
+static int curr_usr_id;										//当前登录用户在用户列表中的位置。
 
-static char tip[50];			//命令提示
-static int curr_usr_id;			//当前登录用户在用户列表中的位置。
+static union block buffer[BUFFER_SIZE];						//内存中的缓冲区
 /*
  * 程序入口
  */
 void run(bool show_details)
 {
 	system("clear");//清屏
+	
+	
+	//printf("int: %d char: %d\n",sizeof(int),sizeof(char));
 
 	printf("HCY's Fils System.\n");
 	printf("Version 0.001. \n");
@@ -190,13 +197,15 @@ static int init()
 	
 	//打开文件
 	FILE *fd = NULL;
+	
 	fd = fopen("./fsdata","r");
+	
 	
 	int state;
 	if(NULL == fd)
 	{
 		//创建文件系统。
-		state = create_fs();
+		state = format_fs();
 	}
 	else
 	{
@@ -211,11 +220,103 @@ static int init()
 		return -1;
 	}
 	
+	return 0;
+}
+
+/*
+ * 创建文件系统。
+ * 用于第一次使用文件系统，类似于格式化硬盘。
+ */
+static int format_fs()
+{
+	FILE *fd = NULL;
+	//printf("fd :%d \n",fd);
+	
+	printf("创建文件系统...\n");
+	
+	fd = fopen("./fsdata","w+");
+    
+    if(NULL == fd)
+    {
+    	printf("文件系统创建失败！！\n");
+    	return -1;
+    }
+    
+	//创建超级块并写入文件系统。
+	struct supernode sn;
+
+	//初始化超级块
+	sn.s_isize = INODE_SIZE;
+	sn.s_bsize = BNODE_SIZE;
+	sn.s_nfree = BNODE_SIZE;
+	sn.s_pfree = 0;
+	sn.s_ninode = INODE_SIZE;
+	sn.s_pinode = 0;
+	sn.s_rinode = 0;
+	sn.s_fmod = 's';
+
+	fwrite(&sn, sizeof(struct supernode), 1, fd);
+	
+	//创建目录表，写入文件
+	struct dir_table d_table;
+	d_table.root_id = 0;
+	d_table.size = 1;//根目录存在
+	//设置根目录的目录名为root
+	strcpy(d_table.dirs[0].d_name, "root");
+	d_table.dirs[0].d_id = 0;
+	//设置根目录的父目录为自己
+	d_table.dirs[0].parent_id = 0;
+	d_table.dirs[0].inode_id = 0;//inode为第一个。
+	
+	fwrite(&d_table, sizeof(struct dir_table), 1, fd);
+	
+	//创建inode节点位图，并写入文件
+	struct imap i_map;
+	for(int i = 0; i < IMAP_SIZE; ++i)
+	{
+		i_map.bits[i] = 0xffffffffffffffffLL;
+	}
+	//第一个inode被根目录占用。
+	i_map.bits[0] = 0x7fffffffffffffffLL;
 	
 	
+	fwrite(&i_map, sizeof(struct imap), 1, fd);
+
+	//创建物理块位图，并写入文件。
+	struct bmap b_map;
+	for(int i = 0; i < BMAP_SIZE; ++i)
+	{
+		b_map.bits[i] = 0xffffffffffffffffLL;
+	}
+	fwrite(&b_map, sizeof(struct bmap), 1, fd);
+
+	//创建inode并写入文件
+	struct dinode node;
+	node.di_number = 0;
+	node.di_mode = 0;
+
+	node.di_uid = -1;
+	node.di_gid = -1;
+
+	node.di_size = -1;
+	
+	for(int i = 0; i < INODE_SIZE; ++i)
+	{
+		fwrite(&node, sizeof(struct dinode), 1, fd);
+	}
+
+	//创建物理块，写入文件。
+	union block blo;
+	for(int i = 0; i < BNODE_SIZE; ++i)
+	{
+		fwrite(&blo, sizeof(union block), 1, fd);
+	}
+
+	fclose(fd);
 	
 	return 0;
 }
+
 
 /*
  * 从硬盘中读去文件系统的信息。
@@ -225,7 +326,7 @@ static int read_fs()
 {
 	printf("文件系统加载中...\n");
 	FILE *fd = NULL;
-	fd = fopen("./fsdata","a+");
+	fd = fopen("./fsdata","r");
 	
 	if(NULL == fd)
 	{
@@ -242,6 +343,15 @@ static int read_fs()
 	if(read_size <= 0)
 	{
 		printf("读取超级块出错！！\n");
+		return -1;
+	}
+	pos += read_size;
+	
+	//读取目录表
+	read_size = fread(&g_dir_table, sizeof(struct dir_table), 1, fd);
+	if(read_size <= 0)
+	{
+		printf("读取目录表错误！！\n");
 		return -1;
 	}
 	pos += read_size;
@@ -282,83 +392,7 @@ static int read_fs()
 	
 }
 
-/*
- * 创建文件系统。
- * 用于第一次使用文件系统，类似于格式化硬盘。
- */
-static int create_fs()
-{
-	printf("创建文件系统...\n");
-	FILE *fd = NULL;
-	fd = fopen("./fsdata","w+");
-    
-    if(NULL == fd)
-    {
-    	printf("文件系统创建失败！！\n");
-    	return -1;
-    }
-    
-	//创建超级块并写入文件系统。
-	struct supernode sn;
 
-	//初始化超级块
-	sn.s_isize = INODE_SIZE;
-	sn.s_bsize = BNODE_SIZE;
-	sn.s_nfree = BNODE_SIZE;
-	sn.s_pfree = 0;
-	sn.s_ninode = INODE_SIZE;
-	sn.s_pinode = 0;
-	sn.s_rinode = 0;
-	sn.s_fmod = 's';
-
-	fwrite(&sn, sizeof(struct supernode), 1, fd);
-	
-	//创建inode节点位图，并写入文件
-	struct imap i_map;
-	for(int i = 0; i < IMAP_SIZE; ++i)
-	{
-		i_map.bits[i] = 0xffffffff;
-	}
-	fwrite(&i_map, sizeof(struct imap), 1, fd);
-
-	//创建物理块位图，并写入文件。
-	struct bmap b_map;
-	for(int i = 0; i < BMAP_SIZE; ++i)
-	{
-		b_map.bits[i] = 0xffffffff;
-	}
-	fwrite(&b_map, sizeof(struct bmap), 1, fd);
-
-	//创建inode并写入文件
-	struct dinode node;
-	node.di_number = 0;
-	node.di_mode = 0;
-
-	node.di_uid = -1;
-	node.di_gid = -1;
-
-	node.di_size = -1;
-	for(int i = 0; i < NADDR; ++i)
-	{
-		node.di_addr[i] = -1;
-	}
-	
-	for(int i = 0; i < INODE_SIZE; ++i)
-	{
-		fwrite(&node, sizeof(struct dinode), 1, fd);
-	}
-
-	//创建物理块，写入文件。
-	struct block blo;
-	for(int i = 0; i < BNODE_SIZE; ++i)
-	{
-		fwrite(&blo, sizeof(struct block), 1, fd);
-	}
-
-	fclose(fd);
-	
-	return 0;
-}
 
 /*
  * 查找用户是否存在。
@@ -407,7 +441,7 @@ static int find_usr(char *username, struct user *usr)
 static int create_user(char *username, char *passwd)
 {
 	FILE *fd = NULL;
-	fd = fopen("./users", "w+");
+	fd = fopen("./users", "a+");
 	
 	if(NULL == fd)//打开文件错误
 	{
@@ -435,57 +469,57 @@ static int create_user(char *username, char *passwd)
 
 char * ls(char *path)
 {
-	std::cout << "ls\n";
+	printf("ls\n");
 	return 0;
 }
 int mkdir(char *path)
 {
-	std::cout << "mkdir\n";
+	printf("mkdir\n");
 	return 0;
 }
 int rmdir(char *path)
 {
-	std::cout << "rmdir\n";
+	printf("rmdir\n");
 	return 0;
 }
 int chdir(char *path)
 {
-	std::cout << "chdir\n";
+	printf("chdir\n");
 	return 0;
 }
 int create_f(char *name, int mode)
 {
-	std::cout << "create\n";
+	printf("create\n");
 	return 0;
 }
 int delete_f(char *name)
 {
-	std::cout << "delete\n";
+	printf("delete\n");
 	return 0;
 }
 int open_f(char *name, const char* mode)
 {
-	std::cout << "open\n";
+	printf("open\n");
 	return 0;
 }
 int close_f(char *name)
 {
-	std::cout << "close\n";
+	printf("close\n");
 	return 0;
 }
 int write_f(char *name, char *buffer, int length)
 {
-	std::cout << "write\n";
+	printf("write\n");
 	return 0;
 }
 int read_f(char *name, char *buffer, int length)
 {
-	std::cout << "read\n";
+	printf("read\n");
 	return 0;
 }
 char* pwd()
 {
-	std::cout << "pwd\n";
+	printf("pwd\n");
 	return NULL;
 }
 
@@ -527,7 +561,7 @@ int logout(char *user_name)
 }
 char* cat(char *file_name)
 {
-	std::cout <<"cat\n";
+	printf("cat\n");
 	return NULL;
 }
 
@@ -546,7 +580,10 @@ int halt()
 	
 	//写回超级块
 	pos = fwrite(&g_sn, sizeof(struct supernode), 1, fd);
-	
+
+	//写回目录表
+	fwrite(&g_dir_table, sizeof(struct dir_table), 1, fd);
+		
 	//写回i节点位图
 	fwrite(&g_imap, sizeof(struct imap), 1, fd);
 	
