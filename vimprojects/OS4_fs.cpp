@@ -1,9 +1,37 @@
 #include "headers.h"
 #include "fs.h"
 #include "fs_structs.h"
-int init();
-int read_fs();
-int create_fs();
+
+//函数声明
+static int init();
+static int read_fs();
+static int create_fs();
+static int find_usr(char *username, struct user *usr);
+static int create_user(char *username, char *passwd);
+
+//全局变量定义
+static struct supernode g_sn;	//超级块
+
+static struct imap g_imap;		//inode位图
+static struct bmap g_bmap;		//物理块位图
+
+static struct inode *head = NULL;	//i内存节点链表头
+
+static long inode_bpos = -1;	//i节点在文件中的开始位置
+static long block_bpos = -1;	//物理块在文件中的开始位置
+static long inode_pre = -1;		//指向i节点的指针
+static long block_pre = -1;		//指向物理块的指针
+
+static struct user login_users[MAX_LOGIN_USR];				//登录的用户列表
+static struct user_ofile user_ofile_table[MAX_LOGIN_USR]; 	//用户打开文件列表
+static int usr_num = 0;			//登陆的用户个数
+
+static struct system_ofile system_ofile_table;	//系统打开的文件列表
+
+static struct dir g_dir;		//文件系统的根目录
+
+static char tip[50];			//命令提示
+static int curr_usr_id;			//当前登录用户在用户列表中的位置。
 /*
  * 程序入口
  */
@@ -25,10 +53,13 @@ void run(bool show_details)
 	printf("Input \"help or h\" for help infromation.\n");
 	
 	char cmd[10];
+	
+	//设置命令提示。
+	strcpy(tip, "cmd:");
 
 	while(true)
 	{
-		printf("cmd:");
+		printf("%s",tip);
 		scanf("%s",cmd);
 		
 		if(strcmp("quit",cmd) == 0|| strcmp("q", cmd) == 0)
@@ -85,11 +116,48 @@ void run(bool show_details)
 		}
 		else if(strcmp("login", cmd) == 0)
 		{
-			printf("登录。\n");
+			char username[USR_NAME_SIZE];
+			char passwd[PWD_SIZE];
+			struct user user_info;
+			
+			printf("用户名：");
+			scanf("%s",username);
+			if(find_usr(username, &user_info) < 0)
+			{
+				printf("用户不存在！！创建用户?y/n");
+				char s[5];
+				scanf("%s",s);
+				if(s[0] == 'y')
+				{
+					printf("用户名：");
+					scanf("%s",username);
+					printf("口令：");
+					scanf("%s",passwd);
+					
+					int state = create_user(username, passwd);
+					
+					if(state == 0)
+					{
+						printf("创建成功！\n登录系统...\n");
+					}
+					else
+					{
+						printf("创建失败...\n");
+						break ;
+					}
+				}
+			}
+			else
+			{
+				printf("口令：");
+				scanf("%s",passwd);
+				login(username,passwd);
+			}
+			
 		}
 		else if(strcmp("logout", cmd) == 0)
 		{
-			printf("登出。\n");
+			logout(login_users[curr_usr_id].username);
 		}
 		else if(strcmp("cat", cmd) == 0)
 		{
@@ -108,12 +176,15 @@ void run(bool show_details)
 	{
 		printf( "Show details.\n");
 	}
+	
+	//退出文件系统，写回数据。
+	halt();
 }
 
 /*
  * 初始化文件系统
  */
-int init()
+static int init()
 {
 	printf("初始化文件系统...\n");
 	
@@ -140,6 +211,9 @@ int init()
 		return -1;
 	}
 	
+	
+	
+	
 	return 0;
 }
 
@@ -147,9 +221,62 @@ int init()
  * 从硬盘中读去文件系统的信息。
  * 
  */
-int read_fs()
+static int read_fs()
 {
 	printf("文件系统加载中...\n");
+	FILE *fd = NULL;
+	fd = fopen("./fsdata","a+");
+	
+	if(NULL == fd)
+	{
+		printf("文件系统加载错误！！\n");
+		return -1;
+	}
+	
+	int pos = 0;//当前文件位置指针
+	
+	int read_size = -1;
+	
+	//读取超级块 
+	read_size = fread(&g_sn, sizeof(struct supernode), 1, fd);
+	if(read_size <= 0)
+	{
+		printf("读取超级块出错！！\n");
+		return -1;
+	}
+	pos += read_size;
+	
+	//读取i节点位图
+	read_size = fread(&g_imap, sizeof(struct imap), 1, fd);
+	if(read_size <= 0)
+	{
+		printf("读取i节点位图错误！！\n");
+		return -1;
+	}
+	pos += read_size;
+	
+	//读取物理块位图
+	read_size = fread(&g_bmap, sizeof(struct bmap), 1, fd);
+	if(read_size <= 0)
+	{
+		printf("读取i节点位图错误！！\n");
+		return -1;
+	}
+	pos += read_size;
+	
+	//i节点的开始位置。
+	inode_bpos = pos;
+	inode_pre = inode_bpos;
+	//计算物理块的开始位置。
+	block_bpos = pos + (sizeof(struct dinode)*g_sn.s_isize);
+	block_pre = block_bpos;
+	
+	printf("Inode_Begin_pos: %d\n",inode_bpos);
+	printf("Inode_pre: %d\n",inode_pre);
+	printf("Block_Begin_pos: %d\n",block_bpos);
+	printf("Block_pre: %d\n",block_pre);
+	
+	fclose(fd);//关闭文件
 	
 	return 0;
 	
@@ -159,11 +286,11 @@ int read_fs()
  * 创建文件系统。
  * 用于第一次使用文件系统，类似于格式化硬盘。
  */
-int create_fs()
+static int create_fs()
 {
 	printf("创建文件系统...\n");
 	FILE *fd = NULL;
-	fd = fopen("./fsdata","a+");
+	fd = fopen("./fsdata","w+");
     
     if(NULL == fd)
     {
@@ -232,7 +359,79 @@ int create_fs()
 	
 	return 0;
 }
-/************************************/
+
+/*
+ * 查找用户是否存在。
+ * 如存在，则返回0并填充用户信息到参数usr中，否则返回-1.
+ */
+static int find_usr(char *username, struct user *usr)
+{
+	FILE *fd = NULL;
+	fd = fopen("./users", "r");
+	
+	if(NULL == fd)//用户信息文件不存在
+	{
+		return -1;
+	}
+	
+	//printf("find_usr:打开文件。\n");
+	int tmp_s;
+	
+	tmp_s = fread(usr, sizeof(struct user), 1, fd);
+	
+	//printf("find_usr: %s\n",usr->username);
+	
+	if(strcmp(usr -> username, username) == 0)
+	{
+		return 0;
+	}
+	//搜寻文件中的所有用户
+	while(tmp_s > 0)
+	{
+		tmp_s = fread(usr, sizeof(struct user), 1, fd);
+		
+		//printf("find_usr: %s\n",usr->username);
+		
+		if(strcmp(usr -> username, username) == 0)
+		{
+			return 0;
+		}
+	}
+	
+	return NULL;
+}
+
+/*
+ * 创建用户。
+ */
+static int create_user(char *username, char *passwd)
+{
+	FILE *fd = NULL;
+	fd = fopen("./users", "w+");
+	
+	if(NULL == fd)//打开文件错误
+	{
+		return -1;
+	}
+	
+	printf("创建用户信息。\n");
+	//创建用户
+	struct user usr;
+	usr.p_uid = 123;
+	usr.p_gid = 123;
+	
+	strcpy(usr.username, username);
+	strcpy(usr.passwd,passwd);
+	
+	printf("写入文件。\n");
+	//写入文件。
+	fwrite(&usr, sizeof(struct user), 1, fd);
+	
+	fclose(fd);
+	
+	//用户登录。
+	login(username, passwd);
+}
 
 char * ls(char *path)
 {
@@ -289,14 +488,41 @@ char* pwd()
 	std::cout << "pwd\n";
 	return NULL;
 }
-int login(char *user_name, char *passwd)
+
+int login(char *username, char *passwd)
 {
-	std::cout << "login\n";
+
+	struct user user_info;
+	
+	if(find_usr(username, &user_info) < 0)
+	{
+		printf("用户不存在！！\n");
+		return -1;
+	}
+	
+	if(strcmp(user_info.passwd, passwd) != 0)
+	{
+		printf("密码错误。\n");
+		return -1;
+	}
+	
+	//将用户信息拷贝到登录用户列表中。
+	memcpy(&login_users[usr_num], &user_info, sizeof(struct user));
+	curr_usr_id = usr_num;
+	++usr_num;//更新登录用户个数
+	strcpy(tip, user_info.username);
+	strcat(tip, "@cmd:");
+	
+	printf("登录成功！\n");
+	
 	return 0;
 }
+
+
 int logout(char *user_name)
 {
-	std::cout <<"logout\n";
+	--usr_num;
+	strcpy(tip, "cmd:");
 	return 0;
 }
 char* cat(char *file_name)
@@ -304,6 +530,35 @@ char* cat(char *file_name)
 	std::cout <<"cat\n";
 	return NULL;
 }
+
+int halt()
+{
+	FILE * fd = NULL;
+	fd = fopen("./fsdata", "w+");
+	
+	if(NULL == fd)
+	{
+		printf("对文件系统的修改未能写回文件中！\n");
+		return -1;
+	}
+	
+	int pos = 0;
+	
+	//写回超级块
+	pos = fwrite(&g_sn, sizeof(struct supernode), 1, fd);
+	
+	//写回i节点位图
+	fwrite(&g_imap, sizeof(struct imap), 1, fd);
+	
+	//写回物理块位图
+	fwrite(&g_bmap, sizeof(struct bmap), 1, fd);
+	
+	
+	fclose(fd);
+	return 0;
+}
+
+
 void show_help_info()
 {
 	printf("\n  帮助信息。\n");

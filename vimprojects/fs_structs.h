@@ -13,20 +13,22 @@
 #define DIR_NUM 512     	//目录的最大个数
 #define DIR_FILE 512        //目录中最大的文件或目录个数
 
-#define NICFREE 512     	//空闲物理块栈的大小
-#define NICINOD 512     	//空闲i节点数组大小
+#define NICFREE 65536     	//空闲物理块栈的大小
+#define NICINOD 256     	//空闲i节点数组大小
 
 #define USR_NAME_SIZE 20    //用户名的长度
 #define PWD_SIZE 20     	//用户密码长度
-#define USR_OFILE_NUM 100   //用户打开的文件最大个数
+#define USR_OFILE_NUM 100   //允许用户打开的文件最大个数
 
 #define INODE_SIZE 256    	//i节点的最大个数
 #define BNODE_SIZE 65536 	//物理节点的最大个数
 
 #define IMAP_SIZE 4       	//i节点位图的长度，INODE_SIZE/64
 #define BMAP_SIZE 1024    	//物理块位图的长度，BNODE_SIZE/64
+
+#define MAX_LOGIN_USR 100 	//允许同时登录的最大用户个数
 /*
- * i节点
+ * 内存i节点
  */
 struct inode{
 	struct inode  *i_forw;
@@ -49,6 +51,7 @@ struct inode{
  */
 struct dinode
 {
+
  	unsigned short di_number;        	/*关联文件数*/
  	unsigned short di_mode;          	/*存取权限*/
 
@@ -85,22 +88,11 @@ struct bmap
 };
 
 /*
- * 目录结构
- */
-struct directory
-{
- 	char d_name[DIR_NAME_SIZE];         /*目录名*/
- 	unsigned int d_ino;               	/*目录号*/
-	char *file_name[DIR_FILE];          /*目录中的文件的文件名*/
-	int file_inode[DIR_FILE];           /*目录中文件的inode号*/
-};
-
-/*
  * 超级块
  */
 struct supernode
 {
- 	unsigned short s_isize;            	/*i节点块块数*/
+ 	unsigned int s_isize;            	/*i节点块块数*/
  	unsigned long s_bsize;             	/*数据块块数*/
 
  	unsigned int s_nfree;             	/*空闲块块数*/
@@ -123,7 +115,7 @@ struct user
  	unsigned short p_uid;
 	unsigned short p_gid;
 	char username[USR_NAME_SIZE];
-	char passward[PWD_SIZE];
+	char passwd[PWD_SIZE];
 };
 
 /*
@@ -131,10 +123,20 @@ struct user
  */
 struct dir
 {
- 	struct directory dirs[DIR_NUM]; //目录
- 	int size;                        //目录的个数
+ 	struct directory dirs[DIR_NUM]; 	//目录
+ 	int size;                        	//目录的个数
+ 	int max_d_ino;						//当前最大的目录号
 };
-
+/*
+ * 目录结构
+ */
+struct directory
+{
+ 	char d_name[DIR_NAME_SIZE];         /*目录名*/
+ 	unsigned int d_ino;               	/*目录号*/
+	char *file_name[DIR_FILE];          /*目录中的文件的文件名*/
+	int file_inode[DIR_FILE];           /*目录中文件的inode号*/
+};
 /*
  * 查找i内存节点的hash表
  */
@@ -152,6 +154,8 @@ struct system_ofile
 	unsigned int f_count; 	/*引用计数*/
 	struct inode *f_inode; 	/*指向内存节点*/
 	unsigned long f_off; 	/*读/写指针*/
+	
+	
 };
 
 /*
@@ -164,5 +168,6 @@ struct user_ofile
 	unsigned short u_gid; 			/*用户组标志*/
 	unsigned short u_ofile[USR_OFILE_NUM]; /*用户打开表*/
 };
+
 
 #endif

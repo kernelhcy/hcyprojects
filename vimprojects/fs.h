@@ -154,7 +154,7 @@ char* pwd();
  * 登录或创建成功，返回0,否则返回其他错误码。
  *
  */
-int login(char *user_name, char *passwd);
+int login(char *username, char *passwd);
 /*
  * 用户登出。
  *
@@ -162,7 +162,7 @@ int login(char *user_name, char *passwd);
  *
  * 退出成功，放回0,否则返回其他错误码。
  */
-int logout(char *user_name);
+int logout(char *username);
 /*
  * 显示文件内容。
  * 
@@ -171,7 +171,12 @@ int logout(char *user_name);
  * 返回文件的内容。
  *
  */
-char * cat(char * file_name);
+char * cat(char * filename);
 
+/*
+ * 退出文件系统。
+ * 将数据写回文件。
+ */
+int halt();
 
 #endif
