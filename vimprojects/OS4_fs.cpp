@@ -13,6 +13,11 @@ static int diralloc();
 static int dirfree(int id);
 static int ialloc();
 static int ifree(int id);
+static int balloc();
+static int bfree(int id);
+static int access(int inode_id);
+static int find(const char *name);
+
 //全局变量定义
 static struct supernode g_sn;			//超级块
 static struct dir_info g_dir_info;		//目录信息
@@ -155,7 +160,7 @@ void run(bool show_details)
 					
 					if(state == 0)
 					{
-						printf("创建成功！\n登录系统...\n");
+						//printf("创建成功！\n登录系统...\n");
 					}
 					else
 					{
@@ -439,11 +444,11 @@ static int find_usr(char *username, struct user *usr)
 		
 		if(strcmp(usr -> username, username) == 0)
 		{
-			return 0;
+			return 0;//找到！
 		}
 	}
 	
-	return NULL;
+	return -1;
 }
 
 /*
@@ -459,25 +464,31 @@ static int create_user(char *username, char *passwd)
 		return -1;
 	}
 	
-	printf("创建用户信息。\n");
+	//printf("创建用户信息。\n");
 	//创建用户
 	struct user usr;
-	usr.p_uid = 123;
-	usr.p_gid = 123;
+	usr.p_uid = (int)time(0);
+	usr.p_gid = 1001 ;
 	
 	strcpy(usr.username, username);
 	strcpy(usr.passwd,passwd);
 	
-	printf("写入文件。\n");
+	//printf("写入文件。\n");
 	//写入文件。
 	fwrite(&usr, sizeof(struct user), 1, fd);
 	
 	fclose(fd);
 	
+	printf("用户名：%s 密码：%s UID：%d GID：%d \n",username, passwd, usr.p_uid, usr.p_gid);
+	
 	//用户登录。
 	login(username, passwd);
 }
 
+/*
+ * 显示当前系统中的文件和目录。
+ * id为要显示的目录的id。black为格式化显示计数器。
+ */
 static int show_names(int id,int black)
 {
 	
@@ -503,7 +514,7 @@ static int show_names(int id,int black)
 
 char * ls(char *path)
 {
-	
+	//显示当前系统中的所有文件加和目录。
 	show_names(0,0);
 	
 	return NULL;
@@ -524,25 +535,60 @@ int mkdir(char *name)
 	s_id = dir_id;
 	p_id = curr_dir_id;
 	
+	//设置父目录里面关于子目录的信息。
+	//子目录名字
 	strcpy(dir_table[p_id].file_name[dir_table[p_id].sub_cnt], name);
+	//子目录id
 	dir_table[p_id].sub_dir_ids[dir_table[p_id].sub_cnt] = s_id;	
+	//子目录个数增加
 	++dir_table[p_id].sub_cnt;
 	
+	//设置子目录的信息。
+	//目录名
 	strcpy(dir_table[s_id].d_name, name);
+	//id
 	dir_table[s_id].d_id = s_id;
+	//父目录id
 	dir_table[s_id].parent_id = p_id;
-	dir_table[s_id].inode_id = ialloc();
+	
+	//给目录分分配inode节点
+	int i_id = ialloc();
+	if(i_id <= 0)
+	{
+		printf("i节点分配失败！\n");
+		dirfree(s_id);//释放分配的目录项
+		return -1;
+	}
+	dir_table[s_id].inode_id = i_id;
+	//初始化i节点信息。
+	dinodes[i_id].dir_or_file = DIR_T;
+	dinodes[i_id].di_number = 0;
+	//设置默认权限。
+	dinodes[i_id].di_mode = 75;//rwxr-x：所有者具有所有权限，其他人只有查看的权限。
+	//设置所有者的用户id和组id。
+	dinodes[i_id].di_uid = login_users[usr_num].p_uid;
+	dinodes[i_id].di_gid = login_users[usr_num].p_gid;
+	
+	/*
+	 * 直接索引的第一个存放其目录表中的位置！下标。
+	 */
+	dinodes[i_id].direct_addr[0] = s_id;
+	
+	//清空子目录的子目录的信息。
 	dir_table[s_id].sub_cnt = 0;
 	memset(dir_table[s_id].file_inode, 0, DIR_INCLUDE_NUM);
 	memset(dir_table[s_id].sub_dir_ids, 0, DIR_INCLUDE_NUM);
 	
 	return 0;
 }
-int rmdir(char *path)
+
+int rmdir(char *name)
 {
-	printf("rmdir\n");
+	
+	
 	return 0;
 }
+
 int chdir(char *path)
 {
 	
@@ -617,7 +663,7 @@ int login(char *username, char *passwd)
 	strcpy(tip, user_info.username);
 	strcat(tip, "@cmd:");
 	
-	printf("登录成功！\n");
+	//printf("登录成功！\n");
 	
 	return 0;
 }
@@ -635,51 +681,6 @@ char* cat(char *file_name)
 	return NULL;
 }
 
-int halt()
-{
-	FILE * fd = NULL;
-	fd = fopen("./fsdata", "w+");
-	
-	if(NULL == fd)
-	{
-		printf("对文件系统的修改未能写回文件中！\n");
-		return -1;
-	}
-	
-	//写回超级块
-	fwrite(&g_sn, sizeof(struct supernode), 1, fd);
-	
-	//写回i节点位图
-	fwrite(&g_imap, sizeof(struct imap), 1, fd);
-	
-	//写回物理块节点位图
-	fwrite(&g_bmap, sizeof(struct bmap), 1, fd);
-
-	//写回目录信息块
-	fwrite(&g_dir_info, sizeof(struct dir_info), 1, fd);
-
-	//写回目录表
-	fwrite(dir_table, sizeof(struct directory), DIR_NUM, fd);
-	
-	//写回i节点
-	fwrite(dinodes, sizeof(struct dinode), INODE_SIZE, fd);
-
-	//写回物理块
-	fwrite(blocks, sizeof(union block), BNODE_SIZE, fd);
-	
-	fflush(fd);
-	fclose(fd);
-	return 0;
-}
-
-
-void show_help_info()
-{
-	printf("\n  帮助信息。\n");
-
-	printf("\tls\t显示当前目录的内容。\n\tmkdir\t创建目录。\n\trmdir\t删除目录。\n\tchdir\t更改当前工作目录。\n\tcreate\t创建文件。\n\tdelete\t删除文件。\n\topen\t打开文件。\n\tclose\t关闭文件。\n\twrite\t向文件中写数据。\n\tread\t读文件中的数据。\n\tquit\t退出。\n\tlogin\t用户登录。\n\tlogout\t用户登出。\n\tpwd\t显示当前工作目录。\n\tcat\t显示文件内容。\n");
-	return ;
-}
 
 /*
  * 拷贝字符串。
@@ -762,6 +763,16 @@ static int parse_dir_path(const char * path)
 }
 
 /*
+ * 在当前目录及子目录中搜索指定文件名的目录或文件。
+ * 返回其i节点号。
+ */
+static int find(const char *name)
+{
+	
+}
+
+
+/*
  * 分配目录表
  * 返回分配的目录表项的索引。
  */
@@ -787,7 +798,7 @@ static int diralloc()
 	 
 	 //分配
 	 g_dir_info.bitmap[index] = g_dir_info.bitmap[index] ^ (test_b << shift);
-	 ++g_dir_info.size;
+	 ++g_dir_info.size;//目录个数加一
 	 
 	 return index * 64 + (64 - shift) - 1;
 	 
@@ -798,6 +809,15 @@ static int diralloc()
  */
 static int dirfree(int id)
 {
+	int index = id / 64;
+	int shift = id % 64;
+	
+	unsigned long long test_b = 1 << shift;
+	g_dir_info.bitmap[index] = g_dir_info.bitmap[index] ^ test_b;
+	
+	//目录个数减一
+	--g_dir_info.size;
+	
 	return 0;	
 }
 
@@ -806,7 +826,29 @@ static int dirfree(int id)
  */
 static int ialloc()
 {
-	return -1;
+	int index = -1;
+	 
+	 
+	 while(index < IMAP_SIZE && g_imap.bits[++index] == 0);
+	 
+	 //没有空闲的空间
+	 if(index >= IMAP_SIZE)
+	 {
+	 	return -1;
+	 }
+	 
+	 unsigned long long test_b = 1;
+	 int shift = 63;
+	 while((g_imap.bits[index] & (test_b << shift)) == 0)
+	 {
+	 	--shift;
+	 }
+	 
+	 //分配
+	 g_imap.bits[index] = g_imap.bits[index] ^ (test_b << shift);
+	 --g_sn.s_ninode;
+	 
+	 return index * 64 + (64 - shift) - 1;
 }
 
 /*
@@ -814,5 +856,125 @@ static int ialloc()
  */
 static int ifree(int id)
 {
+	int index = id / 64;
+	int shift = id % 64;
+	
+	unsigned long long test_b = 1 << shift;
+	g_imap.bits[index] = g_imap.bits[index] ^ test_b;
+	
+	++g_sn.s_ninode;
+	
 	return 0;
+	
+}
+
+/*
+ * 分配物理块
+ */
+static int balloc()
+{
+	int index = -1;
+	 
+	 
+	 while(index < BMAP_SIZE && g_bmap.bits[++index] == 0);
+	 
+	 //没有空闲的空间
+	 if(index >= BMAP_SIZE)
+	 {
+	 	return -1;
+	 }
+	 
+	 unsigned long long test_b = 1;
+	 int shift = 63;
+	 while((g_bmap.bits[index] & (test_b << shift)) == 0)
+	 {
+	 	--shift;
+	 }
+	 
+	 //分配
+	 g_bmap.bits[index] = g_bmap.bits[index] ^ (test_b << shift);
+	 --g_sn.s_nfree;
+	 
+	 return index * 64 + (64 - shift) - 1;
+}
+
+/*
+ * 释放物理块
+ */
+static int bfree(int id)
+{
+	int index = id / 64;
+	int shift = id % 64;
+	
+	unsigned long long test_b = 1 << shift;
+	g_bmap.bits[index] = g_bmap.bits[index] ^ test_b;
+	
+	++g_sn.s_nfree;
+	
+	return 0;
+	
+}
+
+/*
+ * 访问控制函数。
+ * 参数f_id为要访问的文件或目录的i节点号。
+ *
+ * 返回值： 
+ *		R_R:1,读权限
+ *		W_R:2,写权限
+ *		E_R:4,运行权限
+ *		或这三个值的任意组合
+ */
+static int access(int inode_id)
+{
+	int right = 0;
+	
+	return 0;
+}
+
+
+int halt()
+{
+	FILE * fd = NULL;
+	fd = fopen("./fsdata", "w+");
+	
+	if(NULL == fd)
+	{
+		printf("对文件系统的修改未能写回文件中！\n");
+		return -1;
+	}
+	
+	//写回超级块
+	fwrite(&g_sn, sizeof(struct supernode), 1, fd);
+	
+	//写回i节点位图
+	fwrite(&g_imap, sizeof(struct imap), 1, fd);
+	
+	//写回物理块节点位图
+	fwrite(&g_bmap, sizeof(struct bmap), 1, fd);
+
+	//写回目录信息块
+	fwrite(&g_dir_info, sizeof(struct dir_info), 1, fd);
+
+	//写回目录表
+	fwrite(dir_table, sizeof(struct directory), DIR_NUM, fd);
+	
+	//写回i节点
+	fwrite(dinodes, sizeof(struct dinode), INODE_SIZE, fd);
+
+	//写回物理块
+	fwrite(blocks, sizeof(union block), BNODE_SIZE, fd);
+	
+	fflush(fd);
+	fclose(fd);
+	return 0;
+}
+
+
+void show_help_info()
+{
+	printf("\n  帮助信息。\n");
+
+	printf("\tls\t显示当前目录的内容。\n\tmkdir\t创建目录。\n\trmdir\t删除目录。\n\tchdir\t更改当前工作目录。\n\tcreate\t创建文件。\n\tdelete\t删除文件。\n\topen\t打开文件。\n\tclose\t关闭文件。\n\twrite\t向文件中写数据。\n\tread\t读文件中的数据。\n\tquit\t退出。\n\tlogin\t用户登录。\n\tlogout\t用户登出。\n\tpwd\t显示当前工作目录。\n\tcat\t显示文件内容。\n");
+	return ;
 }

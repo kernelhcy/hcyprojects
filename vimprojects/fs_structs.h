@@ -12,22 +12,25 @@
  */
 #define FILE_T 111				//表示文件
 #define DIR_T  222 				//表示目录
+#define R_R 1					//读权限
+#define W_R 2					//写权限
+#define E_R 4					//运行权限
 
 #define BLOCK_SIZE 32	  		//物理块的大小
 #define B_ADDR_NUM BLOCK_SIZE/4	//每个物理块所能存放的物理块地址的个数
 #define D_ADDR_NUM 5     		//每个文件直接索引块的个数
 
-#define DIR_NAME_SIZE 64   		//目录名的最大长度
-#define FILE_NAME_SIZE 64		//文件名的最大长度
-#define DIR_NUM 1024	     	//文件系统支持目录总的最大个数
+#define DIR_NAME_SIZE 128   	//目录名的最大长度
+#define FILE_NAME_SIZE 128		//文件名的最大长度
+#define DIR_NUM 2048	     	//文件系统支持目录总的最大个数
 #define DIR_BMAP_SIZE DIR_NUM/64//目录表位图的长度
 #define DIR_INCLUDE_NUM 128	    //每个目录中能包含的最大的文件或目录个数
 
-#define USR_NAME_SIZE 20    	//用户名的长度
+#define USR_NAME_SIZE 64    	//用户名的长度
 #define PWD_SIZE 20     		//用户密码长度
 #define USR_OFILE_NUM 100   	//允许用户打开的文件最大个数
 
-#define INODE_SIZE 512    		//i节点的最大个数
+#define INODE_SIZE 1024    		//i节点的最大个数
 #define BNODE_SIZE 65536 		//物理节点的最大个数
 
 #define NICFREE BNODE_SIZE     	//空闲物理块栈的大小
@@ -38,7 +41,6 @@
 
 #define MAX_LOGIN_USR 100 		//允许同时登录的最大用户个数
 
-#define BUFFER_SIZE	10			//内存中的缓冲区大小
 
 /*
  * 内存i节点
@@ -65,6 +67,7 @@ struct inode{
 	 *  每个物理块的大小为32byte。
 	 *  文件的最大长度为18848byte=18.4kb。
 	 *
+	 *       直接索引的第一个存放其目录表中的位置！下标。
 	 */
 	unsigned int direct_addr[D_ADDR_NUM];  	
 	unsigned int addr;						/*一级块索引*/
@@ -81,10 +84,10 @@ struct dinode
  	unsigned short di_number;        	/*关联文件数*/
  	unsigned short di_mode;          	/*存取权限*/
 
- 	unsigned short di_uid;
+ 	unsigned short di_uid;				/*所有者的id*/
  	unsigned short di_gid;
 
-	unsigned long di_size;            		/*文件大小*/
+	unsigned long di_size;            	/*文件大小*/
 	
 	/*
 	 * 直接物理块索引。
@@ -93,7 +96,8 @@ struct dinode
 	 *  直接索引为5个。一级索引为8个，二级为64个，三级为512个。总索引为589个。
 	 *  每个物理块的大小为32byte。
 	 *  文件的最大长度为18848byte=18.4kb。
-	 *
+	 *  
+	 *     直接索引的第一个存放其目录表中的位置！下标。
 	 */
 	unsigned int direct_addr[D_ADDR_NUM];  	
 	
