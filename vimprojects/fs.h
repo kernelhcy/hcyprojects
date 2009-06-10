@@ -26,10 +26,10 @@ char * ls(char *path);
 
 /*
  * 创建目录
- * 参数path为目录路径
+ * 参数path为目录名
  * 创建成功返回0,否则返回错误码。
  */
-int mkdir(char *path);
+int mkdir(char *name);
 
 /*
  * 删除目录

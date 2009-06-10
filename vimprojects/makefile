@@ -12,4 +12,4 @@ OS4_fs.o : OS4_fs.cpp headers.h fs.h
 main.o : main.cpp headers.h
 	g++ -g -c  main.cpp  -o main.o
 clean :
-	rm *.o main
+	rm *.o main fsdata
