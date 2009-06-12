@@ -17,6 +17,7 @@ static int balloc();
 static int bfree(int id);
 static int access(int inode_id);
 static int find(const char *name);
+static int update_curr_paht_name();
 
 //全局变量定义
 static struct supernode g_sn;			//超级块
@@ -41,7 +42,7 @@ static struct directory dir_table[DIR_NUM];					//模拟目录表
 static struct dinode dinodes[INODE_SIZE];					//模拟硬盘i节点
 static struct inode inodes[INODE_SIZE];						//内存i节点
 
-static char* curr_path;										//当前工作目录
+static char curr_path[500];										//当前工作目录
 static unsigned int curr_dir_id = 0;						//当前工作目录的id号
 
 
@@ -134,7 +135,7 @@ void run(bool show_details)
 		}
 		else if(strcmp("pwd", cmd) == 0)
 		{
-			printf("显示当前工作目录。\n");
+			pwd();
 		}
 		else if(strcmp("login", cmd) == 0)
 		{
@@ -221,8 +222,8 @@ static int init()
 	{
 		//创建文件系统。
 		state = format_fs();
-		printf("请重新启动。\n");
-		exit(0);
+		//printf("请重新启动。\n");
+		//exit(0);
 	}
 	else
 	{
@@ -230,6 +231,10 @@ static int init()
 		state = read_fs();
 	}
 	
+	//设置当前工作目录
+	curr_dir_id = 0;
+	strcpy(curr_path, "/");
+
 	//文件系统运行失败。。。
 	if(state == -1)
 	{
@@ -589,10 +594,65 @@ int rmdir(char *name)
 	return 0;
 }
 
-int chdir(char *path)
+
+/*
+ * 下面的update_curr_path_name方法的辅助方法。
+ * 拷贝目录名curr_path.
+ */
+static int cpy_name_update(int id)
+{
+
+	//根目录目录名为“/”
+	if(id == 0)
+	{
+		strcat(curr_path, "/");
+		return 0;
+	}
+
+	//到达根目录的子目录，不再回溯根目录
+	if(dir_table[id].parent_id == 0)
+	{
+		strcat(curr_path, "/");
+		strcat(curr_path, dir_table[id].d_name);
+		return 0;
+	}
+	
+	cpy_name_update(dir_table[id].parent_id);
+	
+
+	strcat(curr_path, "/");
+	strcat(curr_path, dir_table[id].d_name);
+
+	return 0;
+}
+/*
+ * 更新当前工作目录的目录路径名
+ * 也就是更新变量curr_path
+ */
+static int update_curr_path_name()
 {
 	
+	memset(curr_path, '\0', sizeof(curr_path));
+	//curr_path[0] = '/';
+
+	cpy_name_update(curr_dir_id);
+
+	return 0;	
+}
+
+
+int chdir(char *path)
+{
+	//切换到根目录
+	if(strlen(path) == 1 && path[0] == '/')
+	{
+		curr_dir_id = 0;
+		update_curr_path_name();
+		return 0;
+	}
+
 	int dir_id = parse_dir_path(path);
+
 	if(dir_id < 0)
 	{
 		printf("路径有错误！！\n");
@@ -601,6 +661,9 @@ int chdir(char *path)
 	
 	printf("目录更改为：%s  id:%d\n",path, dir_id);
 	curr_dir_id = dir_id;
+
+	update_curr_path_name();
+
 	return 0;
 }
 int create_f(char *name, int mode)
@@ -635,7 +698,8 @@ int read_f(char *name, char *buffer, int length)
 }
 char* pwd()
 {
-	printf("pwd\n");
+	//printf("当前目录号：%d 目录名称：%s\n", curr_dir_id, curr_path);
+	printf("%s\n", curr_path);
 	return NULL;
 }
 
