@@ -17,6 +17,9 @@ static int bfree(int id);
 static int access(int inode_id);
 static int find(const char *name);
 static int update_curr_paht_name();
+static int read_indirect_block(union block *addr_block, int len, char* buffer);
+static int write_block(int b_id, char *buffer, int size);
+static void str_cpy(char * des, const char * src, int begin, int size);
 
 //全局变量定义
 static struct supernode g_sn;			//超级块
@@ -98,7 +101,7 @@ void run(bool show_details)
 		}
 		else if(strcmp("rmdir", cmd) == 0)
 		{
-			printf("完整的目录路径：");
+			printf("目录名称：");
 			scanf("%s",path);
 			rmdir(path);
 		}
@@ -108,13 +111,14 @@ void run(bool show_details)
 			scanf("%s",path);
 			chdir(path);
 		}
-		else if(strcmp("create", cmd) ==0 )
+		else if(strcmp("create", cmd) ==0 || strcmp("crt", cmd) == 0)
 		{
 			printf("文件名： ");
 			scanf("%s",path);
 			create_f(path,75);
 		}
-		else if(strcmp("delete", cmd) == 0)
+		else if(strcmp("delete", cmd) == 0 
+					|| strcmp("del", cmd) == 0 || strcmp("rm", cmd) == 0)
 		{
 			printf("完整的路径和文件名： ");
 			scanf("%s",path);
@@ -128,11 +132,17 @@ void run(bool show_details)
 		{
 			printf("关闭文件。\n");
 		}
-		else if(strcmp("write", cmd) == 0)
+		else if(strcmp("write", cmd) == 0 || strcmp("wr", cmd) == 0)
 		{
-			printf("向文件中写入数据。\n");
+			char buffer[10000];
+			memset(buffer, '\0', 10000);
+			printf("完整的路径和文件名： ");
+			scanf("%s", path);
+			printf("内容:");
+			scanf("%s", buffer);
+			write_f(path, buffer, strlen(buffer));
 		}
-		else if(strcmp("read", cmd) == 0)
+		else if(strcmp("read", cmd) == 0 || strcmp("rd", cmd) == 0)
 		{
 			printf("读文件中的数据。\n");
 		}
@@ -187,7 +197,9 @@ void run(bool show_details)
 		}
 		else if(strcmp("cat", cmd) == 0)
 		{
-			printf("显示文件内容。\n");
+			printf("完整的路径和文件名： ");
+			scanf("%s",path);
+		 	char *content = cat(path);
 		}
 		else
 		{
@@ -535,7 +547,7 @@ static int show_names(int id,int black)
 char * ls(char *path)
 {
 
-	printf("名称（文件(f)或目录(d), 目录ID或文件inode的id） 文件长度或目录容量\n");
+	printf("\n名称（文件(f)或目录(d), 目录ID或文件inode的id） 文件长度或目录容量\n\n");
 
 	//显示当前系统中的所有文件加和目录。
 	show_names(0,0);
@@ -581,9 +593,12 @@ int mkdir(char *name)
 	//设置子目录的信息。
 	//目录名
 	strcpy(dir_table[s_id].d_name, name);
-	//id
+	//子目录自己的目录号
 	dir_table[s_id].d_id = s_id;
+	//设置子目录的i节点号
 	dir_table[s_id].inode_id = i_id;
+	//设置子目录的父目录id
+	dir_table[s_id].parent_id = p_id;
 
 	//初始化i节点信息。
 	dinodes[i_id].dir_or_file = DIR_T;
@@ -680,14 +695,17 @@ static int cpy_name_update(int id)
 	{
 		strcat(curr_path, "/");
 		strcat(curr_path, dir_table[id].d_name);
+		//printf("cpy_name_update: %s\n",dir_table[id].d_name);
 		return 0;
 	}
-	
-	cpy_name_update(dir_table[id].parent_id);
-	
 
+	//递归的复制父目录的父目录
+	cpy_name_update(dir_table[id].parent_id);
+
+	//复制当前目录
 	strcat(curr_path, "/");
 	strcat(curr_path, dir_table[id].d_name);
+	//printf("cpy_name_update: %s\n",dir_table[id].d_name);
 
 	return 0;
 }
@@ -718,7 +736,7 @@ int chdir(char *path)
 	}
 
 	int i_id = find(path);
-	printf("chdir: i_id: %d\n",i_id);
+	//printf("chdir: i_id: %d path: %s\n",i_id, path);
 	if(i_id < 0)
 	{
 		printf("路径有错误！！\n");
@@ -729,7 +747,7 @@ int chdir(char *path)
 
 	printf("目录更改为：%s  id:%d\n",path, dir_id);
 	curr_dir_id = dir_id;
-
+	//strcpy(curr_path, path);
 	update_curr_path_name();
 
 	return 0;
@@ -776,7 +794,7 @@ int delete_f(char *name)
 {
 	
 	int i_id = find(name);	
-	printf("delete id: %d\n",i_id);
+	//printf("delete id: %d\n",i_id);
 		
 	if(i_id <= 0 )
 	{
@@ -787,11 +805,11 @@ int delete_f(char *name)
 	//删除父目录中有关该子目录的信息。
 	int p_id = dinodes[i_id].parent_id;	
 
-	printf("Pid: %d\n",p_id);
+	//printf("Pid: %d\n",p_id);
 
 	for(int i = 0; i < dir_table[p_id].sub_cnt; ++i)
 	{
-		printf("%d ",dir_table[p_id].file_inode[i]);
+		//printf("%d ",dir_table[p_id].file_inode[i]);
 		if(dir_table[p_id].file_inode[i] == i_id)
 		{
 			//收缩。
@@ -828,9 +846,184 @@ int close_f(char *name)
 	printf("close\n");
 	return 0;
 }
+
+/*
+ * 将数据写到指定的块中。
+ * b_id物理块的块号。
+ * buffer数据缓冲区，存放要写入的数据
+ * size写入的数据的长度。要小于等于buffer中的数据长度！！
+ * 返回写入的数据长度。
+ *
+ */
+static int write_block(int b_id, char *buffer, int size)
+{
+	if(b_id < 0 || buffer == NULL || size < 0)
+	{
+		return 0;
+	}
+
+	int index = 0;//位置
+	while(index < BLOCK_SIZE && index < size)
+	{
+		blocks[b_id].entry[index] = buffer[index];
+		++index;
+	}
+
+	return index;
+}
+
 int write_f(char *name, char *buffer, int length)
 {
-	printf("write\n");
+	printf("buffer: %d  %s\n",length ,buffer);
+	
+	int i_id = find(name);	//文件的i节点号
+	int len = 0;			//已经写入文件的数据的长度。
+	int b_id = -1;
+	int buffer_index = 0;	//即将写入文件的数据的开始位置。
+	
+	char tmp_buffer[BLOCK_SIZE];//缓冲区。
+
+	//直接地址
+	for(int i = 0; i < D_ADDR_NUM && len < length; ++i)
+	{
+		b_id = balloc();	//分配物理块
+		printf("block id %d\n", b_id);
+
+		if(b_id < 0)
+		{
+			printf("无法分配物理块！！\n");
+			return -1;
+		}
+		dinodes[i_id].direct_addr[i] = b_id;
+
+		if(length - len > BLOCK_SIZE)
+		{
+			//static void str_cpy(char * des, const char * src, int begin, int end)
+			str_cpy(tmp_buffer, buffer, buffer_index,  BLOCK_SIZE);
+			buffer_index += BLOCK_SIZE;
+		}
+		else
+		{
+			str_cpy(tmp_buffer, buffer, buffer_index, length - len);
+			buffer_index = length - 1;
+		}
+		printf("write %d %s\n", buffer_index, tmp_buffer);
+		len += write_block(b_id, tmp_buffer, BLOCK_SIZE);
+		printf("len: %d\n", len);
+	}
+	
+	//一级间接索引
+	b_id = balloc();	//分配一级索引地址物理块
+	printf("block id %d\n", b_id);
+
+	if(b_id < 0)
+	{
+		printf("无法分配物理块！！\n");
+		return -1;
+	}
+
+	dinodes[i_id].addr = b_id;
+	for(int i = 0; i < B_ADDR_NUM; ++i)
+	{
+		
+		b_id = balloc();	//分配物理块
+		printf("block id %d\n", b_id);
+
+		if(b_id < 0)
+		{
+			printf("无法分配物理块！！\n");
+			return -1;
+		}
+
+		blocks[dinodes[i_id].addr].b_addr[i] = b_id;
+
+		if(length - len > BLOCK_SIZE)
+		{
+			str_cpy(tmp_buffer, buffer, buffer_index,  BLOCK_SIZE);
+			buffer_index += BLOCK_SIZE;
+		}
+		else
+		{
+			str_cpy(tmp_buffer, buffer, buffer_index, length - len);
+			buffer_index = length - 1;
+		}
+		printf("write %d %s\n", buffer_index, tmp_buffer);
+		len += write_block(b_id, tmp_buffer, BLOCK_SIZE);
+		printf("len: %d\n", len);
+	}
+	
+	//二级间接索引
+	b_id = balloc();	//分配二级索引地址物理块
+	printf("block id %d\n", b_id);
+
+	if(b_id < 0)
+	{
+		printf("无法分配物理块！！\n");
+		return -1;
+	}
+
+	dinodes[i_id].sen_addr = b_id;
+	for(int i = 0; i < B_ADDR_NUM && len < length; ++i)
+	{
+		
+		b_id = balloc();	//分配一级索引地址物理块
+		printf("block id %d\n", b_id);
+
+		if(b_id < 0)
+		{
+			printf("无法分配物理块！！\n");
+			return -1;
+		}
+		
+		blocks[dinodes[i_id].sen_addr].b_addr[i] = b_id;
+		
+		for(int j = 0; j < B_ADDR_NUM && len < length ; ++j)
+		{
+			
+			b_id = balloc();	//分配物理块
+			printf("block id %d\n", b_id);
+	
+			if(b_id < 0)
+			{
+				printf("无法分配物理块！！\n");
+				return -1;
+			}
+		
+			blocks
+				[
+					blocks
+					[
+						dinodes[i_id].sen_addr
+					].b_addr[i]
+				].b_addr[j] = b_id;
+			
+			if(length - len > BLOCK_SIZE)
+			{
+				str_cpy(tmp_buffer, buffer, buffer_index,  BLOCK_SIZE);
+				buffer_index += BLOCK_SIZE;
+			}
+			else
+			{
+				str_cpy(tmp_buffer, buffer, buffer_index, length - len);
+				buffer_index = length - 1;
+			}
+			printf("write %d %s\n", buffer_index, tmp_buffer);
+			len += write_block(b_id, tmp_buffer, BLOCK_SIZE);
+		}
+	}
+	//三级间接索引
+	b_id = balloc();	//分配物理块
+	printf("block id %d\n", b_id);
+
+	if(b_id < 0)
+	{
+		printf("无法分配物理块！！\n");
+		return -1;
+	}
+
+	//设定文件程度
+	dinodes[i_id].di_size += length; 
+
 	return 0;
 }
 int read_f(char *name, char *buffer, int length)
@@ -881,22 +1074,138 @@ int logout(char *user_name)
 	strcpy(tip, "cmd:");
 	return 0;
 }
+
 char* cat(char *file_name)
 {
-	printf("cat\n");
+	int i_id = find(file_name);
+	int file_len = dinodes[i_id].di_size;//文件的总长度
+	int len = 0; //读取的数据长度
+
+	//使用一级间接索引时，所等存储的最大数据量。
+	int max_size = BLOCK_SIZE * B_ADDR_NUM;
+	
+	printf("文件长度：%d inode: %d\n", file_len, i_id);
+
+	//读直接索引
+	printf("直接索引块\n");
+	for(int i = 0; i < D_ADDR_NUM && len < file_len; ++i)
+	{
+		for(int j = 0; j < BLOCK_SIZE && len < file_len; ++j)
+		{
+			printf("%c",blocks[dinodes[i_id].direct_addr[i]].entry[j]);
+			++len;
+		}
+		printf("\n");
+	}
+	//读间接索引
+	
+	if(len >= file_len)
+	{
+		return NULL;
+	}
+
+	char buffer[max_size];//缓冲区
+	int addr = -1;//物理块地址
+
+	//一级间接索引
+	memset(buffer, '\0', max_size);
+	len += read_indirect_block(&blocks[dinodes[i_id].addr], max_size, buffer);
+	printf("一级间接索引\n%s\n",buffer);
+
+	//二级间接索引
+	if(len >= file_len)
+	{
+		return NULL;
+	}
+	printf("二级间接索引\n");
+	for(int i = 0; i < B_ADDR_NUM && len < file_len; ++i)
+	{
+		memset(buffer, '\0', max_size);
+		len += read_indirect_block(&blocks
+									[
+										blocks
+										[
+											dinodes[i_id].sen_addr	//二级索引地址
+										].b_addr[i]					//直接地址
+									],
+								max_size, buffer);
+		printf("%s\n",buffer);
+	}
+		
+	//三级间接索引
+	if(len >= file_len)
+	{
+		return NULL;
+	}
+	printf("三级间接索引\n");
+	union block *tmp_block;
+	for(int i = 0; i < B_ADDR_NUM && len < file_len; ++i)
+	{
+		tmp_block = &blocks[
+							    blocks
+								[
+									dinodes[i_id].tru_addr	//三级索引地址
+								].b_addr[i]					//二级间接地址
+						   ];
+		for(int j = 0; j < B_ADDR_NUM && len < file_len; ++j)
+		{
+			memset(buffer, '\0', max_size);
+			len += read_indirect_block(&blocks[tmp_block -> b_addr[j]],
+								max_size, buffer);
+			printf("%s\n",buffer);
+		}
+	}
+	
 	return NULL;
 }
 
+/*
+ * 读间接索引块
+ * addr_block是存有间接索引地址的物理块的指针。
+ * len是要读取的数据的长度。
+ * buffer为存放内容的缓冲区。
+ *  注：
+ *  	缓冲区的大小必须小于等于len！！
+ * 返回读取的数据长度，也即buffer中存放的读取的数据的长度。
+ *
+ */
+static int read_indirect_block(union block *addr_block, int len, char* buffer)
+{
+	int addr = -1; //物理块地址。
+	int length = 0;//读取的数据长度。
 
+	if(addr_block == NULL || buffer == NULL)
+	{
+		return 0;
+	}
+	
+	//读取数据
+	for(int i = 0; i < B_ADDR_NUM; ++i)
+	{
+		addr = addr_block -> b_addr[i]; //获取地址
+		
+		//讲数据拷贝到buffer中。
+		for(int j = 0; j < BLOCK_SIZE; ++j)
+		{
+			buffer[length] = blocks[addr].entry[j];
+			++length;
+			if(len == length)//读取了所需的长度
+			{	
+				return len;
+			}
+		}
+	}
+	return length;
+}
 /*
  * 拷贝字符串。
- * 从串src的begin开始，到end结束。拷贝到des中。des从0开始。
+ * 从串src的begin开始，拷贝size个字到des中。des从0开始。
  * 不包括end出的字符！！
  */
-static void str_cpy(char * des, const char * src, int begin, int end)
+static void str_cpy(char * des, const char * src, int begin, int size)
 {
 	int j = 0;
-	for(int i = begin; i < end; ++i, ++j)
+	for(int i = begin; j < size ; ++i, ++j)
 	{
 		des[j] = src[i];
 	}
@@ -911,9 +1220,10 @@ static void str_cpy(char * des, const char * src, int begin, int end)
 static int find(const char * path)
 {
 	char tmp_name[DIR_NAME_SIZE];	//当前正在解析的文件名
-	int i_id = 0;					//当前正在解析的inode号
-	int tmp_dir_id = 0;                //若当前解析的名称是目录的名称，记录其目录号。	
-	
+	int i_id = 0;					//当前正在解析的文件inode号
+	int tmp_dir_id = 0;             //若当前解析的名称是目录的名称，记录其目录号。	
+	int result = -1;				//最终的结果
+
 	int index = 0;
 	int begin,end;
 	
@@ -938,14 +1248,15 @@ static int find(const char * path)
 		end = index;
 		
 		memset(tmp_name,'\0',DIR_NAME_SIZE);
-		str_cpy(tmp_name, path, begin, end);
-	//	printf("pares: %s\n",tmp_name);	
+		str_cpy(tmp_name, path, begin, end - begin);
+		//printf("pares: %s\n",tmp_name);	
 		int tmp = -1;
 		
 		//查看子目录中是否有此文件。
 		//从根目录开始搜索。
 		for(int i = 0; i < dir_table[tmp_dir_id].sub_cnt; ++i)
 		{
+			//printf("%s\n",dir_table[tmp_dir_id].file_name[i]);
 			if(strcmp(tmp_name, dir_table[tmp_dir_id].file_name[i]) == 0)
 			{
 				tmp = i;
@@ -961,10 +1272,12 @@ static int find(const char * path)
 		if(dir_table[tmp_dir_id].file_inode[tmp] != 0)
 		{
 			i_id = dir_table[tmp_dir_id].file_inode[tmp];
+			tmp_dir_id = dir_table[tmp_dir_id].sub_dir_ids[tmp];
 		}
+		result = i_id;
 	}
 	
-	return i_id;
+	return result;
 }
 
 
@@ -1176,6 +1489,6 @@ void show_help_info()
 {
 	printf("\n  帮助信息。\n");
 
-	printf("\tls\t显示当前目录的内容。\n\tmkdir\t创建目录。\n\trmdir\t删除目录。\n\tchdir\t更改当前工作目录。\n\tcreate\t创建文件。\n\tdelete\t删除文件。\n\topen\t打开文件。\n\tclose\t关闭文件。\n\twrite\t向文件中写数据。\n\tread\t读文件中的数据。\n\tquit\t退出。\n\tlogin\t用户登录。\n\tlogout\t用户登出。\n\tpwd\t显示当前工作目录。\n\tcat\t显示文件内容。\n");
+	printf("\tls\t\t显示当前目录的内容。\n\tmkdir\t\t创建目录。\n\trmdir\t\t删除目录。\n\tchdir or cd\t更改当前工作目录。\n\tcreate or crt\t创建文件。\n\tdelete or del or rm\t删除文件。\n\topen\t\t打开文件。\n\tclose\t\t关闭文件。\n\twrite or wr\t向文件中写数据。\n\tread or rd\t读文件中的数据。\n\tquit\t\t退出。\n\tlogin\t\t用户登录。\n\tlogout\t\t用户登出。\n\tpwd\t\t显示当前工作目录。\n\tcat\t\t显示文件内容。\n");
 	return ;
 }

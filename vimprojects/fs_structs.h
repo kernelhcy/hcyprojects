@@ -16,7 +16,7 @@
 #define W_R 2					//写权限
 #define E_R 4					//运行权限
 
-#define BLOCK_SIZE 32	  		//物理块的大小
+#define BLOCK_SIZE 8	  		//物理块的大小
 #define B_ADDR_NUM BLOCK_SIZE/4	//每个物理块所能存放的物理块地址的个数
 #define D_ADDR_NUM 5     		//每个文件直接索引块的个数
 
@@ -59,6 +59,8 @@ struct inode{
 	unsigned short di_uid;    	/*磁盘i节点用户*/
 	unsigned short di_gid;    	/*磁盘i节点组*/
 	unsigned int parent_id;             /*父目录的目录号。*/
+
+	unsigned long di_size;            	/*文件大小*/
 
 	/*
 	 * 直接物理块索引。
@@ -117,7 +119,7 @@ struct dinode
  */
 union block
 {
-	char enrty[BLOCK_SIZE];
+	char entry[BLOCK_SIZE];
 	unsigned int b_addr[B_ADDR_NUM]; 
 };
 
