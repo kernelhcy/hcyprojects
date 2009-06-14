@@ -58,6 +58,7 @@ struct inode{
 
 	unsigned short di_uid;    	/*磁盘i节点用户*/
 	unsigned short di_gid;    	/*磁盘i节点组*/
+	unsigned int parent_id;             /*父目录的目录号。*/
 
 	/*
 	 * 直接物理块索引。
@@ -67,6 +68,7 @@ struct inode{
 	 *  每个物理块的大小为32byte。
 	 *  文件的最大长度为18848byte=18.4kb。
 	 *
+	 * 		若i节点为目录的i节点，
 	 *       直接索引的第一个存放其目录表中的位置！下标。
 	 */
 	unsigned int direct_addr[D_ADDR_NUM];  	
@@ -86,6 +88,8 @@ struct dinode
 
  	unsigned short di_uid;				/*所有者的id*/
  	unsigned short di_gid;
+	
+	unsigned int parent_id;             /*父目录的目录号。*/
 
 	unsigned long di_size;            	/*文件大小*/
 	
@@ -97,6 +101,7 @@ struct dinode
 	 *  每个物理块的大小为32byte。
 	 *  文件的最大长度为18848byte=18.4kb。
 	 *  
+	 * 		若i节点为目录的i节点，
 	 *     直接索引的第一个存放其目录表中的位置！下标。
 	 */
 	unsigned int direct_addr[D_ADDR_NUM];  	
@@ -175,7 +180,7 @@ struct directory
  	char d_name[DIR_NAME_SIZE];         		/*目录名*/
  	unsigned int d_id;							/*目录的id号。即目录数组中的索引号*/
  	unsigned int inode_id;						/*inode号*/
- 	unsigned int parent_id;						/*父目录的id好。*/
+ 	unsigned int parent_id;						/*父目录的id。*/
  	
  	unsigned int sub_cnt;									/*子目录和文件的数目*/
 	char file_name[DIR_INCLUDE_NUM][FILE_NAME_SIZE];        /*目录中的文件或子目录的名子*/
@@ -190,6 +195,10 @@ struct dir_info
 {
  	unsigned int root_id;						//根目录的id。通常是0.
  	unsigned int size;                  		//目录的个数
+	/*
+	 * 用于记录当前可用的位置。
+	 */
+	int index;                                  //目录表中可用的位置。
  	unsigned long long bitmap[DIR_BMAP_SIZE];	//位图
 };
 

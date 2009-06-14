@@ -8,7 +8,6 @@ static int read_fs();
 static int format_fs();
 static int find_usr(char *username, struct user *usr);
 static int create_user(char *username, char *passwd);
-static int parse_dir_path(const char * path);
 static int diralloc();
 static int dirfree(int id);
 static int ialloc();
@@ -70,7 +69,7 @@ void run(bool show_details)
 	printf("Input \"help or h\" for help infromation.\n");
 	
 	char cmd[10];
-	
+	char path[500];//存放临时的目录或文件名	
 	//设置命令提示。
 	strcpy(tip, "cmd:");
 
@@ -94,28 +93,32 @@ void run(bool show_details)
 		else if(strcmp("mkdir", cmd) == 0)
 		{
 			printf("目录名：");
-			char name[DIR_NAME_SIZE];
-			scanf("%s",name);
-			mkdir(name);
+			scanf("%s",path);
+			mkdir(path);
 		}
 		else if(strcmp("rmdir", cmd) == 0)
 		{
-			printf("删除目录。\n");
+			printf("完整的目录路径：");
+			scanf("%s",path);
+			rmdir(path);
 		}
 		else if(strcmp("chdir", cmd) == 0 || strcmp("cd", cmd) == 0)
 		{
-			char path[300];
-			printf("目录路径： ");
+			printf("完整的目录路径： ");
 			scanf("%s",path);
 			chdir(path);
 		}
 		else if(strcmp("create", cmd) ==0 )
 		{
-			printf("创建文件。\n");
+			printf("文件名： ");
+			scanf("%s",path);
+			create_f(path,75);
 		}
 		else if(strcmp("delete", cmd) == 0)
 		{
-			printf("删除文件。\n");
+			printf("完整的路径和文件名： ");
+			scanf("%s",path);
+			delete_f(path);
 		}
 		else if(strcmp("open", cmd) == 0)
 		{
@@ -502,7 +505,7 @@ static int show_names(int id,int black)
 	{
 		printf("    ");
 	}
-	printf("%c%c%c%s(%d) %d\n",3,6,6,dir_table[id].d_name, id, dir_table[id].sub_cnt);
+	printf("%c%c%c%s(d,%d) %d\n",3,6,6,dir_table[id].d_name, id, dir_table[id].sub_cnt);
 	
 	for(int i = 0; i < dir_table[id].sub_cnt ; ++i)
 	{
@@ -511,6 +514,18 @@ static int show_names(int id,int black)
 			
 			show_names(dir_table[id].sub_dir_ids[i], black+1);
 		}
+		
+		dinode *fi = NULL;
+		fi = &dinodes[dir_table[id].file_inode[i]]; 
+		if(fi -> dir_or_file == FILE_T)
+		{
+			for(int j = 0; j < black + 1; ++j)
+			{
+				printf("    ");
+			}
+			printf("%c%c%c%s(f,%d) %d\n",3,6,6,dir_table[id].file_name[i], dir_table[id].file_inode[i], fi -> di_size);
+		}
+
 	}
 	
 	return 0;
@@ -519,6 +534,9 @@ static int show_names(int id,int black)
 
 char * ls(char *path)
 {
+
+	printf("名称（文件(f)或目录(d), 目录ID或文件inode的id） 文件长度或目录容量\n");
+
 	//显示当前系统中的所有文件加和目录。
 	show_names(0,0);
 	
@@ -537,25 +555,6 @@ int mkdir(char *name)
 		return -1;
 	}
 	
-	s_id = dir_id;
-	p_id = curr_dir_id;
-	
-	//设置父目录里面关于子目录的信息。
-	//子目录名字
-	strcpy(dir_table[p_id].file_name[dir_table[p_id].sub_cnt], name);
-	//子目录id
-	dir_table[p_id].sub_dir_ids[dir_table[p_id].sub_cnt] = s_id;	
-	//子目录个数增加
-	++dir_table[p_id].sub_cnt;
-	
-	//设置子目录的信息。
-	//目录名
-	strcpy(dir_table[s_id].d_name, name);
-	//id
-	dir_table[s_id].d_id = s_id;
-	//父目录id
-	dir_table[s_id].parent_id = p_id;
-	
 	//给目录分分配inode节点
 	int i_id = ialloc();
 	if(i_id <= 0)
@@ -564,9 +563,31 @@ int mkdir(char *name)
 		dirfree(s_id);//释放分配的目录项
 		return -1;
 	}
+
+	s_id = dir_id;
+	p_id = curr_dir_id;
+	
+	//设置父目录里面关于子目录的信息。
+	//子目录名字
+	strcpy(dir_table[p_id].file_name[dir_table[p_id].sub_cnt], name);
+	//子目录id
+	dir_table[p_id].sub_dir_ids[dir_table[p_id].sub_cnt] = s_id;	
+	//增加父目录中此子目录的i节点号
+	dir_table[p_id].file_inode[dir_table[p_id].sub_cnt] = i_id;	
+	//父目录中子目录个数增加
+	++dir_table[p_id].sub_cnt;
+	//printf("sub_cnt: %d\n",dir_table[p_id].sub_cnt);
+
+	//设置子目录的信息。
+	//目录名
+	strcpy(dir_table[s_id].d_name, name);
+	//id
+	dir_table[s_id].d_id = s_id;
 	dir_table[s_id].inode_id = i_id;
+
 	//初始化i节点信息。
 	dinodes[i_id].dir_or_file = DIR_T;
+	//关联个数
 	dinodes[i_id].di_number = 0;
 	//设置默认权限。
 	dinodes[i_id].di_mode = 75;//rwxr-x：所有者具有所有权限，其他人只有查看的权限。
@@ -590,7 +611,52 @@ int mkdir(char *name)
 int rmdir(char *name)
 {
 	
+	int i_id = find(name);	
+
+	//printf("id: %d\n",dir_id);
 	
+	if(i_id == 0)
+	{
+		printf("不能删除根目录！！\n");
+		return -1;
+	}
+	
+	if(i_id < 0 )
+	{
+		printf("目录不存在。");
+		return -1;
+	}
+
+	int dir_id = dinodes[i_id].direct_addr[0];//获取目录id;
+
+	//删除父目录中有关该子目录的信息。
+	int p_id = dir_table[dir_id].parent_id;	
+
+	//printf("Pid: %d\n",p_id);
+
+	for(int i = 0; i < dir_table[p_id].sub_cnt; ++i)
+	{
+		printf("%d ",dir_table[p_id].sub_dir_ids[i]);
+		if(dir_table[p_id].sub_dir_ids[i] == dir_id)
+		{
+			//收缩。
+			//printf("收缩。%d\n",i);
+			for(int j = i+1; j < dir_table[p_id].sub_cnt; ++j)
+			{
+				dir_table[p_id].sub_dir_ids[j-1] = dir_table[p_id].sub_dir_ids[j];
+				dir_table[p_id].file_inode[j-1] = dir_table[p_id].file_inode[j];
+				strcpy(dir_table[p_id].file_name[j-1], dir_table[p_id].file_name[j]);
+			}
+
+			break;
+		}
+	}
+	//子目录个数和索引减一。
+	--dir_table[p_id].sub_cnt;
+
+	//删除目录表中该目录的信息;
+	//dir_table[dir_id].parent_id = 0;
+
 	return 0;
 }
 
@@ -651,14 +717,16 @@ int chdir(char *path)
 		return 0;
 	}
 
-	int dir_id = parse_dir_path(path);
-
-	if(dir_id < 0)
+	int i_id = find(path);
+	printf("chdir: i_id: %d\n",i_id);
+	if(i_id < 0)
 	{
 		printf("路径有错误！！\n");
 		return -1;
 	}
 	
+	int dir_id = dinodes[i_id].direct_addr[0];
+
 	printf("目录更改为：%s  id:%d\n",path, dir_id);
 	curr_dir_id = dir_id;
 
@@ -666,14 +734,88 @@ int chdir(char *path)
 
 	return 0;
 }
-int create_f(char *name, int mode)
+
+int create_f(char *name, unsigned short  mode)
 {
-	printf("create\n");
+	
+	int p_id;//父目录在目录表中的位置
+	
+	int i_id = ialloc();
+	if(i_id < 0)
+	{
+		printf("没有空间!!\n");
+		return -1;
+	}
+	
+	p_id = curr_dir_id;
+	
+	//设置父目录里面关于子文件的信息。
+	//文件名字
+	strcpy(dir_table[p_id].file_name[dir_table[p_id].sub_cnt], name);
+	//文件inode的id
+	dir_table[p_id].file_inode[dir_table[p_id].sub_cnt] = i_id;	
+	//子文件和目录个数增加
+	++dir_table[p_id].sub_cnt;
+
+	//printf("sub_cnt: %d\n",dir_table[p_id].sub_cnt);
+	//初始化i节点信息。
+	dinodes[i_id].dir_or_file = FILE_T;
+	dinodes[i_id].di_number = 0;
+	//设置默认权限。
+	dinodes[i_id].di_mode = 75;//rwxr-x：所有者具有所有权限，其他人只有查看的权限。
+	//设置所有者的用户id和组id。
+	dinodes[i_id].di_uid = login_users[usr_num].p_uid;
+	dinodes[i_id].di_gid = login_users[usr_num].p_gid;
+	//父目录的目录号
+	dinodes[i_id].parent_id = curr_dir_id;
+
 	return 0;
 }
+
 int delete_f(char *name)
 {
-	printf("delete\n");
+	
+	int i_id = find(name);	
+	printf("delete id: %d\n",i_id);
+		
+	if(i_id <= 0 )
+	{
+		printf("文件不存在。");
+		return -1;
+	}
+
+	//删除父目录中有关该子目录的信息。
+	int p_id = dinodes[i_id].parent_id;	
+
+	printf("Pid: %d\n",p_id);
+
+	for(int i = 0; i < dir_table[p_id].sub_cnt; ++i)
+	{
+		printf("%d ",dir_table[p_id].file_inode[i]);
+		if(dir_table[p_id].file_inode[i] == i_id)
+		{
+			//收缩。
+			//printf("收缩。%d\n",i);
+			for(int j = i+1; j < dir_table[p_id].sub_cnt; ++j)
+			{
+				dir_table[p_id].sub_dir_ids[j-1] = dir_table[p_id].sub_dir_ids[j];
+				dir_table[p_id].file_inode[j-1] = dir_table[p_id].file_inode[j];
+				strcpy(dir_table[p_id].file_name[j-1], dir_table[p_id].file_name[j]);
+			}
+
+			break;
+		}
+	}
+	//子目录个数和索引减一。
+	--dir_table[p_id].sub_cnt;
+
+
+	//释放物理块空间。
+
+	//释放i节点。
+	ifree(i_id);
+
+	return 0;
 	return 0;
 }
 int open_f(char *name, const char* mode)
@@ -762,14 +904,15 @@ static void str_cpy(char * des, const char * src, int begin, int end)
 	return;
 }
 /*
- * 解析目录路径。
- * 获得其目录id。 
+ * 解析目录路径，查找文件和目录。
+ * 获得其inode号。 
+ * 当路径有错误时，返回-1，否则返回inode号。
  */
-static int parse_dir_path(const char * path)
+static int find(const char * path)
 {
-	char tmp_name[DIR_NAME_SIZE];	//当前正在解析的目录名
-	int tmp_dir_id = 0;				//当前正在解析的目录号
-	
+	char tmp_name[DIR_NAME_SIZE];	//当前正在解析的文件名
+	int i_id = 0;					//当前正在解析的inode号
+	int tmp_dir_id = 0;                //若当前解析的名称是目录的名称，记录其目录号。	
 	
 	int index = 0;
 	int begin,end;
@@ -783,9 +926,10 @@ static int parse_dir_path(const char * path)
 	
 	while(path[index] != '\0')
 	{
+
 		++index;
 	
-		//获得目录名的开始和结束位置。
+		//获得文件名的开始和结束位置。
 		begin = index ;
 		while(path[index] != '\0' && path[index] != '/')
 		{
@@ -795,20 +939,17 @@ static int parse_dir_path(const char * path)
 		
 		memset(tmp_name,'\0',DIR_NAME_SIZE);
 		str_cpy(tmp_name, path, begin, end);
-		
+	//	printf("pares: %s\n",tmp_name);	
 		int tmp = -1;
 		
-		//查看子目录中是否有此目录。
+		//查看子目录中是否有此文件。
+		//从根目录开始搜索。
 		for(int i = 0; i < dir_table[tmp_dir_id].sub_cnt; ++i)
 		{
 			if(strcmp(tmp_name, dir_table[tmp_dir_id].file_name[i]) == 0)
 			{
-				if(dir_table[tmp_dir_id].sub_dir_ids[i] != 0)//是目录（任何目录的子目录都不可能是根目录！）
-				{
-					tmp = i;
-					break;
-				}
-				
+				tmp = i;
+				break;
 			}
 		}
 		
@@ -817,23 +958,15 @@ static int parse_dir_path(const char * path)
 			return -1;
 		}
 		
-		if(dir_table[tmp_dir_id].sub_dir_ids[tmp] != 0)
+		if(dir_table[tmp_dir_id].file_inode[tmp] != 0)
 		{
-			tmp_dir_id = dir_table[tmp_dir_id].sub_dir_ids[tmp];
+			i_id = dir_table[tmp_dir_id].file_inode[tmp];
 		}
 	}
 	
-	return tmp_dir_id;
+	return i_id;
 }
 
-/*
- * 在当前目录及子目录中搜索指定文件名的目录或文件。
- * 返回其i节点号。
- */
-static int find(const char *name)
-{
-	
-}
 
 
 /*
@@ -863,7 +996,7 @@ static int diralloc()
 	 //分配
 	 g_dir_info.bitmap[index] = g_dir_info.bitmap[index] ^ (test_b << shift);
 	 ++g_dir_info.size;//目录个数加一
-	 
+	 ++g_dir_info.index;//索引个数加一。可以使用的目录项的开始位置。
 	 return index * 64 + (64 - shift) - 1;
 	 
 }
@@ -879,6 +1012,10 @@ static int dirfree(int id)
 	unsigned long long test_b = 1 << shift;
 	g_dir_info.bitmap[index] = g_dir_info.bitmap[index] ^ test_b;
 	
+	/*
+	 * 并没有真正的释放目录项的内容！
+	 * 目录表中可用的位置没有增加。
+	 */
 	//目录个数减一
 	--g_dir_info.size;
 	
