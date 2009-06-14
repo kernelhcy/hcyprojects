@@ -1011,14 +1011,63 @@ int write_f(char *name, char *buffer, int length)
 			len += write_block(b_id, tmp_buffer, BLOCK_SIZE);
 		}
 	}
+
 	//三级间接索引
-	b_id = balloc();	//分配物理块
+	b_id = balloc();	//分配三级索引地址物理块
 	printf("block id %d\n", b_id);
 
 	if(b_id < 0)
 	{
 		printf("无法分配物理块！！\n");
 		return -1;
+	}
+
+	dinodes[i_id].sen_addr = b_id;
+	for(int i = 0; i < B_ADDR_NUM && len < length; ++i)
+	{
+		
+		b_id = balloc();	//分配二级索引地址物理块
+		printf("block id %d\n", b_id);
+
+		if(b_id < 0)
+		{
+			printf("无法分配物理块！！\n");
+			return -1;
+		}
+		
+		blocks[dinodes[i_id].sen_addr].b_addr[i] = b_id;
+		
+		for(int j = 0; j < B_ADDR_NUM && len < length ; ++j)
+		{
+			
+			int tmp_id = balloc();	//分配一级索引地址物理块
+			printf("block id %d\n", b_id);
+	
+			if(b_id < 0)
+			{
+				printf("无法分配物理块！！\n");
+				return -1;
+			}
+		
+			blocks[b_id].b_addr[j] = tmp_id;
+			for(int k = 0; k < B_ADDR_NUM && len < length; ++k)
+			{
+				int tmp_tmp_id = balloc();//分配物理块
+				blocks[tmp_id].b_addr[k] = tmp_tmp_id;
+				if(length - len > BLOCK_SIZE)
+				{
+					str_cpy(tmp_buffer, buffer, buffer_index,  BLOCK_SIZE);
+					buffer_index += BLOCK_SIZE;
+				}
+				else
+				{
+					str_cpy(tmp_buffer, buffer, buffer_index, length - len);
+					buffer_index = length - 1;
+				}
+				printf("write %d %s\n", buffer_index, tmp_buffer);
+				len += write_block(tmp_tmp_id, tmp_buffer, BLOCK_SIZE);
+			}
+		}
 	}
 
 	//设定文件程度
@@ -1129,7 +1178,7 @@ char* cat(char *file_name)
 										].b_addr[i]					//直接地址
 									],
 								max_size, buffer);
-		printf("%s\n",buffer);
+		printf("%s",buffer);
 	}
 		
 	//三级间接索引
@@ -1152,7 +1201,7 @@ char* cat(char *file_name)
 			memset(buffer, '\0', max_size);
 			len += read_indirect_block(&blocks[tmp_block -> b_addr[j]],
 								max_size, buffer);
-			printf("%s\n",buffer);
+			printf("%s",buffer);
 		}
 	}
 	
