@@ -1,6 +1,7 @@
 #ifndef _FS_H
 #define _FS_H
 
+#include "fs_structs.h"
 /*
  * 定义文件系统支持的基本操作。
  * 并提供有常用的一些其他文件目录操作。
@@ -70,9 +71,9 @@ int chdir(char *path);
  *             rwxrw-为76，
  *             r--r--为44。
  *
- * 创建成功返回0，否则返回其他错误码。
+ * 创建成功返回文件指针，否则返回NULL。
  */
-int create_f(char *name, unsigned short mode);
+FILE_P* create_f(char *name, int right);
 
 /*
  * 删除文件。
@@ -89,36 +90,36 @@ int delete_f(char *name);
  * mode：打开方式。
  *
  * 		打开方式说明：
- * 			有三种打开方式：r（读），w（写），a（追加）。
- * 				r（读）：以只读的方式打开文件。不能对文件进行修改操作。
- * 				w（写）：以只写的方式打开文件。文件不存在时，将创建文件。若文件已经存在，
+ * 			有三种打开方式：R（读），W（写），A（追加）。
+ * 				R（1,读）：以只读的方式打开文件。不能对文件进行修改操作。
+ * 				W（2,写）：以只写的方式打开文件。文件不存在时，将创建文件。若文件已经存在，
  * 						 则文件中原先的内容将被覆盖！
- * 				a（追加）：以追加的方式打开文件。文件不存在时报错！！数据追加到文件的尾部，
+ * 				A（4,追加）：以追加的方式打开文件。文件不存在时报错！！数据追加到文件的尾部，
  * 				         对以前的内容没有影响。
  * 		    
- * 		    	文件的打开方式可以组合使用。如：rw表示一读写的方式打开，ra表示一读追加的方式打开。
+ * 		    	文件的打开方式可以通过或的方式组合使用。如：R|W表示一读写的方式打开，R|A表示一读追加的方式打开。
  * 		    	注：
  * 		    		三种模式都使用则忽略第三个！
- * 		    		如：rwa则相当于rw。raw相当于ra。
+ * 		    		如：R|W|A则相当于R|W。R|A|W相当于R|A。
  * 
  * 返回值：
- * 		0：成功。
- * 		其他值失败。
+ * 		文件指针。
+ * 		返回NULL，则打开失败。
  */
-int open_f(char *name, const char * mode);
+FILE_P* open_f(char *name, int mode);
 
 /*
  * 关闭文件。
- * name：文件名。
+ * fp：文件指针。
  *
  * 返回值：
  * 		0：成功。
  * 		其他值失败。
  */
-int close_f(char *name);
+int close_f(FILE_P* fp);
 /*
  * 向文件中写数据。
- * name：文件名。
+ * fp：文件指针。
  * buffer：数据缓冲区。
  * length：缓冲区buffer中需要写入文件的数据长度。
  *
@@ -126,10 +127,10 @@ int close_f(char *name);
  * 		-1：写入失败。
  * 		写入成功则返回写入的数据长度。
  */
-int write_f(char *name, char *buffer, int length);
+int write_f(FILE_P* fp, char *buffer, int length);
 /*
  * 读文件中的数据。
- * name：文件名。
+ * fp：文件指针。
  * buffer：缓冲区。存放读入的数据。
  * length：要读入的数据的长度。
  *
@@ -137,7 +138,7 @@ int write_f(char *name, char *buffer, int length);
  * 		-1：读取失败。
  * 		否则返回读取的数据的长度。
  */
-int read_f(char *name, char *buffer, int length1);
+int read_f(FILE_P* fp, char *buffer, int length1);
 /*
  * 显示当前工作目录。
  * 
@@ -168,12 +169,12 @@ int logout(char *username);
 /*
  * 显示文件内容。
  * 
- * file_name：文件名。
+ * fp：文件指针。
  *
  * 返回文件的内容。
  *
  */
-char * cat(char * filename);
+char * cat(FILE_P* fp);
 
 /*
  * 退出文件系统。

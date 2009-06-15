@@ -44,10 +44,10 @@ static struct directory dir_table[DIR_NUM];					//模拟目录表
 static struct dinode dinodes[INODE_SIZE];					//模拟硬盘i节点
 static struct inode inodes[INODE_SIZE];						//内存i节点
 
-static char curr_path[500];										//当前工作目录
+static char curr_path[500];									//当前工作目录
 static unsigned int curr_dir_id = 0;						//当前工作目录的id号
 
-
+static FILE_P *t_fp = NULL;//调试使用
 /*
  * 程序入口
  */
@@ -115,7 +115,7 @@ void run(bool show_details)
 		{
 			printf("文件名： ");
 			scanf("%s",path);
-			create_f(path,75);
+			t_fp = create_f(path,75);
 		}
 		else if(strcmp("delete", cmd) == 0 
 					|| strcmp("del", cmd) == 0 || strcmp("rm", cmd) == 0)
@@ -126,21 +126,21 @@ void run(bool show_details)
 		}
 		else if(strcmp("open", cmd) == 0)
 		{
-			printf("打开文件。\n");
+			printf("完整的路径和文件名： ");
+			scanf("%s", path);
+			t_fp = open_f(path,R|W);
 		}
 		else if(strcmp("close", cmd) == 0)
 		{
-			printf("关闭文件。\n");
+			close_f(t_fp);
 		}
 		else if(strcmp("write", cmd) == 0 || strcmp("wr", cmd) == 0)
 		{
 			char buffer[10000];
 			memset(buffer, '\0', 10000);
-			printf("完整的路径和文件名： ");
-			scanf("%s", path);
 			printf("内容:");
 			scanf("%s", buffer);
-			write_f(path, buffer, strlen(buffer));
+			write_f(t_fp, buffer, strlen(buffer));
 		}
 		else if(strcmp("read", cmd) == 0 || strcmp("rd", cmd) == 0)
 		{
@@ -197,9 +197,7 @@ void run(bool show_details)
 		}
 		else if(strcmp("cat", cmd) == 0)
 		{
-			printf("完整的路径和文件名： ");
-			scanf("%s",path);
-		 	char *content = cat(path);
+		 	char *content = cat(t_fp);
 		}
 		else
 		{
@@ -310,7 +308,7 @@ static int format_fs()
 		g_imap.bits[i] = 0xffffffffffffffffLL;
 	}
 	//第一个inode被根目录占用。
-	g_imap.bits[0] = 0x7fffffffffffffffLL;
+	g_imap.bits[IMAP_SIZE - 1] = 0x7fffffffffffffffLL;
 	
 	fwrite(&g_imap, sizeof(struct imap), 1, fd);
 	
@@ -326,11 +324,11 @@ static int format_fs()
 	g_dir_info.size = 1;//根目录存在
 	
 	//初始化位图
-	for(int i = 0; i < DIR_BMAP_SIZE; ++i)
+	for(int i = 0; i < DMAP_SIZE; ++i)
 	{
-		g_dir_info.bitmap[i] = 0xffffffffffffffffLL;
+		g_dir_info.dmap[i] = 0xffffffffffffffffLL;
 	}
-	g_dir_info.bitmap[0] = 0x7fffffffffffffffLL;
+	g_dir_info.dmap[DMAP_SIZE-1] = 0x7fffffffffffffffLL;
 	
 	fwrite(&g_dir_info, sizeof(struct dir_info), 1, fd);
 
@@ -561,6 +559,7 @@ int mkdir(char *name)
 	int s_id;//子目录在目录表中的位置
 	
 	int dir_id = diralloc();
+	printf("mkdir dir_id:%d\n", dir_id);
 	if(dir_id < 0)
 	{
 		printf("没有空间!!\n");
@@ -605,7 +604,7 @@ int mkdir(char *name)
 	//关联个数
 	dinodes[i_id].di_number = 0;
 	//设置默认权限。
-	dinodes[i_id].di_mode = 75;//rwxr-x：所有者具有所有权限，其他人只有查看的权限。
+	dinodes[i_id].di_right = 75;//rwxr-x：所有者具有所有权限，其他人只有查看的权限。
 	//设置所有者的用户id和组id。
 	dinodes[i_id].di_uid = login_users[usr_num].p_uid;
 	dinodes[i_id].di_gid = login_users[usr_num].p_gid;
@@ -651,7 +650,7 @@ int rmdir(char *name)
 
 	for(int i = 0; i < dir_table[p_id].sub_cnt; ++i)
 	{
-		printf("%d ",dir_table[p_id].sub_dir_ids[i]);
+		//printf("%d ",dir_table[p_id].sub_dir_ids[i]);
 		if(dir_table[p_id].sub_dir_ids[i] == dir_id)
 		{
 			//收缩。
@@ -670,7 +669,7 @@ int rmdir(char *name)
 	--dir_table[p_id].sub_cnt;
 
 	//删除目录表中该目录的信息;
-	//dir_table[dir_id].parent_id = 0;
+	dirfree(dir_id);
 
 	return 0;
 }
@@ -753,16 +752,18 @@ int chdir(char *path)
 	return 0;
 }
 
-int create_f(char *name, unsigned short  mode)
+FILE_P* create_f(char *name, int right)
 {
 	
 	int p_id;//父目录在目录表中的位置
+	FILE_P *fp = NULL;
 	
+	//分配硬盘i节点
 	int i_id = ialloc();
 	if(i_id < 0)
 	{
 		printf("没有空间!!\n");
-		return -1;
+		return fp;
 	}
 	
 	p_id = curr_dir_id;
@@ -777,17 +778,27 @@ int create_f(char *name, unsigned short  mode)
 
 	//printf("sub_cnt: %d\n",dir_table[p_id].sub_cnt);
 	//初始化i节点信息。
-	dinodes[i_id].dir_or_file = FILE_T;
-	dinodes[i_id].di_number = 0;
+	fp = (FILE_P*)malloc(sizeof(struct inode));
+	fp -> dir_or_file = FILE_T;
+	fp -> di_number = 0;
 	//设置默认权限。
-	dinodes[i_id].di_mode = 75;//rwxr-x：所有者具有所有权限，其他人只有查看的权限。
+	fp -> di_right = 75;
 	//设置所有者的用户id和组id。
-	dinodes[i_id].di_uid = login_users[usr_num].p_uid;
-	dinodes[i_id].di_gid = login_users[usr_num].p_gid;
+	fp -> di_uid = login_users[usr_num].p_uid;
+	fp -> di_gid = login_users[usr_num].p_gid;
 	//父目录的目录号
-	dinodes[i_id].parent_id = curr_dir_id;
-
-	return 0;
+	fp -> parent_id = curr_dir_id;
+	
+	//设置硬盘i节点号。
+	fp -> i_into = i_id;
+	
+	//引用个数
+	fp -> i_count = 1;
+	
+	//管理个数
+	fp -> di_number = 1;
+	
+	return fp;
 }
 
 int delete_f(char *name)
@@ -836,14 +847,71 @@ int delete_f(char *name)
 	return 0;
 	return 0;
 }
-int open_f(char *name, const char* mode)
+
+FILE_P* open_f(char *name, int mode)
 {
-	printf("open\n");
-	return 0;
+	int i_id = find(name);
+	FILE_P *fp = NULL;
+	
+	if(i_id <= 0)
+	{
+		printf("文件不存在!!\n");
+		return NULL;
+	}
+	
+	//分配内存i节点
+	fp = (FILE_P*)malloc(sizeof(struct inode));
+	
+	//复制硬盘i节点的信息到内存i节点
+	fp -> dir_or_file = dinodes[i_id].dir_or_file;
+	fp -> di_number = dinodes[i_id].di_number;
+	fp -> di_right = dinodes[i_id].di_right;
+	fp -> di_uid = dinodes[i_id].di_uid;
+	fp -> di_gid = dinodes[i_id].di_gid;
+	fp -> parent_id = dinodes[i_id].parent_id;
+	fp -> di_size = dinodes[i_id].di_size;
+	memcpy(fp -> direct_addr,dinodes[i_id].direct_addr,sizeof(dinodes[i_id].direct_addr));
+	fp -> addr = dinodes[i_id].addr;
+	fp -> sen_addr = dinodes[i_id].sen_addr;
+	fp -> tru_addr = dinodes[i_id].tru_addr;
+	
+	//设置内存i节点的额外信息。
+	//物理i节点号
+	fp -> i_into = i_id;
+	//引用个数
+	fp -> i_count = 1;
+	//打开方式
+	fp -> mode = mode;
+	
+	return fp;
 }
-int close_f(char *name)
+
+int close_f(FILE_P *fp)
 {
-	printf("close\n");
+
+	int i_id = fp -> i_into;
+	
+	//复制内存i节点的信息到硬盘i节点
+	dinodes[i_id].dir_or_file = fp -> dir_or_file;
+	dinodes[i_id].di_number = fp -> di_number;
+	dinodes[i_id].di_right = fp -> di_right;
+	dinodes[i_id].di_uid = fp -> di_uid;
+	dinodes[i_id].di_gid = fp -> di_gid;
+	dinodes[i_id].parent_id = fp -> parent_id;
+	dinodes[i_id].di_size = fp -> di_size;
+	memcpy(dinodes[i_id].direct_addr,fp -> direct_addr,sizeof(dinodes[i_id].direct_addr));
+	dinodes[i_id].addr = fp -> addr;
+	dinodes[i_id].sen_addr = fp -> sen_addr;
+	dinodes[i_id].tru_addr = fp -> tru_addr;
+	--fp -> i_count;
+
+	//没有用户引用此文件，释放内存i节点
+	if(fp -> i_count <= 0 )
+	{
+		free(fp);
+		t_fp = NULL;
+	}
+	
 	return 0;
 }
 
@@ -872,11 +940,10 @@ static int write_block(int b_id, char *buffer, int size)
 	return index;
 }
 
-int write_f(char *name, char *buffer, int length)
+int write_f(FILE_P *fp, char *buffer, int length)
 {
 	printf("buffer: %d  %s\n",length ,buffer);
 	
-	int i_id = find(name);	//文件的i节点号
 	int len = 0;			//已经写入文件的数据的长度。
 	int b_id = -1;
 	int buffer_index = 0;	//即将写入文件的数据的开始位置。
@@ -884,17 +951,18 @@ int write_f(char *name, char *buffer, int length)
 	char tmp_buffer[BLOCK_SIZE];//缓冲区。
 
 	//直接地址
+	printf("直接：\n");
 	for(int i = 0; i < D_ADDR_NUM && len < length; ++i)
 	{
 		b_id = balloc();	//分配物理块
-		printf("block id %d\n", b_id);
+		printf("\tblock id %d\t", b_id);
 
 		if(b_id < 0)
 		{
 			printf("无法分配物理块！！\n");
 			return -1;
 		}
-		dinodes[i_id].direct_addr[i] = b_id;
+		fp -> direct_addr[i] = b_id;
 
 		if(length - len > BLOCK_SIZE)
 		{
@@ -907,14 +975,16 @@ int write_f(char *name, char *buffer, int length)
 			str_cpy(tmp_buffer, buffer, buffer_index, length - len);
 			buffer_index = length - 1;
 		}
-		printf("write %d %s\n", buffer_index, tmp_buffer);
+		printf("write %d %s\t", buffer_index, tmp_buffer);
 		len += write_block(b_id, tmp_buffer, BLOCK_SIZE);
 		printf("len: %d\n", len);
 	}
 	
+	printf("\n");
 	//一级间接索引
+	printf("一级：\n");
 	b_id = balloc();	//分配一级索引地址物理块
-	printf("block id %d\n", b_id);
+	printf("\tblock id %d\n", b_id);
 
 	if(b_id < 0)
 	{
@@ -922,12 +992,12 @@ int write_f(char *name, char *buffer, int length)
 		return -1;
 	}
 
-	dinodes[i_id].addr = b_id;
+	fp -> addr = b_id;
 	for(int i = 0; i < B_ADDR_NUM; ++i)
 	{
 		
 		b_id = balloc();	//分配物理块
-		printf("block id %d\n", b_id);
+		printf("\t\tblock id %d\t", b_id);
 
 		if(b_id < 0)
 		{
@@ -935,7 +1005,7 @@ int write_f(char *name, char *buffer, int length)
 			return -1;
 		}
 
-		blocks[dinodes[i_id].addr].b_addr[i] = b_id;
+		blocks[fp -> addr].b_addr[i] = b_id;
 
 		if(length - len > BLOCK_SIZE)
 		{
@@ -947,14 +1017,17 @@ int write_f(char *name, char *buffer, int length)
 			str_cpy(tmp_buffer, buffer, buffer_index, length - len);
 			buffer_index = length - 1;
 		}
-		printf("write %d %s\n", buffer_index, tmp_buffer);
+		printf("write %d %s\t", buffer_index, tmp_buffer);
 		len += write_block(b_id, tmp_buffer, BLOCK_SIZE);
 		printf("len: %d\n", len);
 	}
 	
+	printf("\n");
+
 	//二级间接索引
+	printf("二级：\n");
 	b_id = balloc();	//分配二级索引地址物理块
-	printf("block id %d\n", b_id);
+	printf("\tblock id %d\n", b_id);
 
 	if(b_id < 0)
 	{
@@ -962,12 +1035,12 @@ int write_f(char *name, char *buffer, int length)
 		return -1;
 	}
 
-	dinodes[i_id].sen_addr = b_id;
+	fp -> sen_addr = b_id;
 	for(int i = 0; i < B_ADDR_NUM && len < length; ++i)
 	{
 		
 		b_id = balloc();	//分配一级索引地址物理块
-		printf("block id %d\n", b_id);
+		printf("\t\tblock id %d\n", b_id);
 
 		if(b_id < 0)
 		{
@@ -975,13 +1048,13 @@ int write_f(char *name, char *buffer, int length)
 			return -1;
 		}
 		
-		blocks[dinodes[i_id].sen_addr].b_addr[i] = b_id;
+		blocks[fp -> sen_addr].b_addr[i] = b_id;
 		
 		for(int j = 0; j < B_ADDR_NUM && len < length ; ++j)
 		{
 			
 			b_id = balloc();	//分配物理块
-			printf("block id %d\n", b_id);
+			printf("\t\t\tblock id %d\t", b_id);
 	
 			if(b_id < 0)
 			{
@@ -993,7 +1066,7 @@ int write_f(char *name, char *buffer, int length)
 				[
 					blocks
 					[
-						dinodes[i_id].sen_addr
+						fp -> sen_addr
 					].b_addr[i]
 				].b_addr[j] = b_id;
 			
@@ -1007,14 +1080,18 @@ int write_f(char *name, char *buffer, int length)
 				str_cpy(tmp_buffer, buffer, buffer_index, length - len);
 				buffer_index = length - 1;
 			}
-			printf("write %d %s\n", buffer_index, tmp_buffer);
+			printf("write %d %s\t", buffer_index, tmp_buffer);
 			len += write_block(b_id, tmp_buffer, BLOCK_SIZE);
+			printf("len: %d\n", len);
 		}
 	}
 
+	printf("\n");
+
 	//三级间接索引
+	printf("三级：\n");
 	b_id = balloc();	//分配三级索引地址物理块
-	printf("block id %d\n", b_id);
+	printf("\tblock id %d\n", b_id);
 
 	if(b_id < 0)
 	{
@@ -1022,12 +1099,12 @@ int write_f(char *name, char *buffer, int length)
 		return -1;
 	}
 
-	dinodes[i_id].sen_addr = b_id;
+	fp -> tru_addr = b_id;
 	for(int i = 0; i < B_ADDR_NUM && len < length; ++i)
 	{
 		
 		b_id = balloc();	//分配二级索引地址物理块
-		printf("block id %d\n", b_id);
+		printf("\t\tblock id %d\n", b_id);
 
 		if(b_id < 0)
 		{
@@ -1035,13 +1112,13 @@ int write_f(char *name, char *buffer, int length)
 			return -1;
 		}
 		
-		blocks[dinodes[i_id].sen_addr].b_addr[i] = b_id;
+		blocks[fp -> tru_addr].b_addr[i] = b_id;
 		
 		for(int j = 0; j < B_ADDR_NUM && len < length ; ++j)
 		{
 			
 			int tmp_id = balloc();	//分配一级索引地址物理块
-			printf("block id %d\n", b_id);
+			printf("\t\t\tblock id %d\n", b_id);
 	
 			if(b_id < 0)
 			{
@@ -1053,6 +1130,14 @@ int write_f(char *name, char *buffer, int length)
 			for(int k = 0; k < B_ADDR_NUM && len < length; ++k)
 			{
 				int tmp_tmp_id = balloc();//分配物理块
+				printf("\t\t\t\tblock id %d\t", b_id);
+	
+				if(b_id < 0)
+				{
+					printf("无法分配物理块！！\n");
+					return -1;
+				}
+
 				blocks[tmp_id].b_addr[k] = tmp_tmp_id;
 				if(length - len > BLOCK_SIZE)
 				{
@@ -1064,14 +1149,15 @@ int write_f(char *name, char *buffer, int length)
 					str_cpy(tmp_buffer, buffer, buffer_index, length - len);
 					buffer_index = length - 1;
 				}
-				printf("write %d %s\n", buffer_index, tmp_buffer);
+				printf("write %d %s\t", buffer_index, tmp_buffer);
 				len += write_block(tmp_tmp_id, tmp_buffer, BLOCK_SIZE);
+				printf("len: %d\n", len);
 			}
 		}
 	}
 
 	//设定文件程度
-	dinodes[i_id].di_size += length; 
+	fp -> di_size += length; 
 
 	return 0;
 }
@@ -1124,16 +1210,21 @@ int logout(char *user_name)
 	return 0;
 }
 
-char* cat(char *file_name)
+char* cat(FILE_P *fp)
 {
-	int i_id = find(file_name);
-	int file_len = dinodes[i_id].di_size;//文件的总长度
+	if(NULL == fp)
+	{
+		printf("没有打开的文件!\n");
+		return NULL;
+	}
+
+	int file_len = fp -> di_size;//文件的总长度
 	int len = 0; //读取的数据长度
 
 	//使用一级间接索引时，所等存储的最大数据量。
 	int max_size = BLOCK_SIZE * B_ADDR_NUM;
 	
-	printf("文件长度：%d inode: %d\n", file_len, i_id);
+	printf("文件长度：%d inode: %d\n", file_len, fp -> i_into);
 
 	//读直接索引
 	printf("直接索引块\n");
@@ -1141,7 +1232,7 @@ char* cat(char *file_name)
 	{
 		for(int j = 0; j < BLOCK_SIZE && len < file_len; ++j)
 		{
-			printf("%c",blocks[dinodes[i_id].direct_addr[i]].entry[j]);
+			printf("%c",blocks[fp -> direct_addr[i]].entry[j]);
 			++len;
 		}
 		printf("\n");
@@ -1158,7 +1249,7 @@ char* cat(char *file_name)
 
 	//一级间接索引
 	memset(buffer, '\0', max_size);
-	len += read_indirect_block(&blocks[dinodes[i_id].addr], max_size, buffer);
+	len += read_indirect_block(&blocks[fp -> addr], max_size, buffer);
 	printf("一级间接索引\n%s\n",buffer);
 
 	//二级间接索引
@@ -1166,15 +1257,16 @@ char* cat(char *file_name)
 	{
 		return NULL;
 	}
-	printf("二级间接索引\n");
+	printf("二级间接索引 id: %d\n",fp -> sen_addr);
 	for(int i = 0; i < B_ADDR_NUM && len < file_len; ++i)
 	{
 		memset(buffer, '\0', max_size);
+		//printf("%d\n",blocks[dinodes[i_id].sen_addr].b_addr[i]);
 		len += read_indirect_block(&blocks
 									[
 										blocks
 										[
-											dinodes[i_id].sen_addr	//二级索引地址
+											fp -> sen_addr			//二级索引地址
 										].b_addr[i]					//直接地址
 									],
 								max_size, buffer);
@@ -1193,7 +1285,7 @@ char* cat(char *file_name)
 		tmp_block = &blocks[
 							    blocks
 								[
-									dinodes[i_id].tru_addr	//三级索引地址
+									fp -> tru_addr			//三级索引地址
 								].b_addr[i]					//二级间接地址
 						   ];
 		for(int j = 0; j < B_ADDR_NUM && len < file_len; ++j)
@@ -1203,6 +1295,7 @@ char* cat(char *file_name)
 								max_size, buffer);
 			printf("%s",buffer);
 		}
+		printf("len %d filelen %d\n", len, file_len);
 	}
 	
 	return NULL;
@@ -1232,7 +1325,7 @@ static int read_indirect_block(union block *addr_block, int len, char* buffer)
 	for(int i = 0; i < B_ADDR_NUM; ++i)
 	{
 		addr = addr_block -> b_addr[i]; //获取地址
-		
+		//printf("r_i_b: addr: %d\n", addr);	
 		//讲数据拷贝到buffer中。
 		for(int j = 0; j < BLOCK_SIZE; ++j)
 		{
@@ -1337,28 +1430,33 @@ static int find(const char * path)
  */
 static int diralloc()
 {
-	 int index = -1;
+	 int index = DMAP_SIZE;
 	 
 	 
-	 while(index < DIR_BMAP_SIZE && g_dir_info.bitmap[++index] == 0);
+	 while(index >= 0 && g_dir_info.dmap[--index] == 0);
 	 
 	 //没有空闲的空间
-	 if(index >= DIR_BMAP_SIZE)
+	 if(index < 0)
 	 {
 	 	return -1;
 	 }
 	 
 	 unsigned long long test_b = 1;
 	 int shift = 63;
-	 while((g_dir_info.bitmap[index] & (test_b << shift)) == 0)
+	 while((g_dir_info.dmap[index] & (test_b << shift)) == 0)
 	 {
 	 	--shift;
 	 }
 	 
+	 printf("diralloc %llx\n", g_dir_info.dmap[index]);
+	 
 	 //分配
-	 g_dir_info.bitmap[index] = g_dir_info.bitmap[index] ^ (test_b << shift);
+	 g_dir_info.dmap[index] = g_dir_info.dmap[index] ^ (test_b << shift);
 	 ++g_dir_info.size;//目录个数加一
-	 ++g_dir_info.index;//索引个数加一。可以使用的目录项的开始位置。
+	 
+	 printf("diralloc index %d shift %d\n",index, shift);
+	 printf("diralloc %llx\n", g_dir_info.dmap[index]);
+	 
 	 return index * 64 + (64 - shift) - 1;
 	 
 }
@@ -1369,15 +1467,18 @@ static int diralloc()
 static int dirfree(int id)
 {
 	int index = id / 64;
-	int shift = id % 64;
+	int shift = 63 - id % 64;
 	
-	unsigned long long test_b = 1 << shift;
-	g_dir_info.bitmap[index] = g_dir_info.bitmap[index] ^ test_b;
+	printf("dirfree index %d shift %d\n",index, shift);
 	
-	/*
-	 * 并没有真正的释放目录项的内容！
-	 * 目录表中可用的位置没有增加。
-	 */
+	unsigned long long test_b = 1LL << shift;
+	
+	printf("dirfree %llx test_b %llx\n", g_dir_info.dmap[index], test_b);
+	
+	g_dir_info.dmap[index] = g_dir_info.dmap[index] ^ test_b;
+	
+	
+	printf("dirfree %llx\n", g_dir_info.dmap[index]);
 	//目录个数减一
 	--g_dir_info.size;
 	
@@ -1389,13 +1490,13 @@ static int dirfree(int id)
  */
 static int ialloc()
 {
-	int index = -1;
+	int index = IMAP_SIZE;
 	 
 	 
-	 while(index < IMAP_SIZE && g_imap.bits[++index] == 0);
+	 while(index >= 0 && g_imap.bits[--index] == 0);
 	 
 	 //没有空闲的空间
-	 if(index >= IMAP_SIZE)
+	 if(index < 0)
 	 {
 	 	return -1;
 	 }
@@ -1420,9 +1521,9 @@ static int ialloc()
 static int ifree(int id)
 {
 	int index = id / 64;
-	int shift = id % 64;
+	int shift = 63 - id % 64;
 	
-	unsigned long long test_b = 1 << shift;
+	unsigned long long test_b = 1LL << shift;
 	g_imap.bits[index] = g_imap.bits[index] ^ test_b;
 	
 	++g_sn.s_ninode;
@@ -1436,13 +1537,13 @@ static int ifree(int id)
  */
 static int balloc()
 {
-	int index = -1;
+	int index = BMAP_SIZE;
 	 
 	 
-	 while(index < BMAP_SIZE && g_bmap.bits[++index] == 0);
+	 while(index >= 0  && g_bmap.bits[--index] == 0);
 	 
 	 //没有空闲的空间
-	 if(index >= BMAP_SIZE)
+	 if(index < 0)
 	 {
 	 	return -1;
 	 }
@@ -1467,9 +1568,9 @@ static int balloc()
 static int bfree(int id)
 {
 	int index = id / 64;
-	int shift = id % 64;
+	int shift = 63 - id % 64;
 	
-	unsigned long long test_b = 1 << shift;
+	unsigned long long test_b = 1LL << shift;
 	g_bmap.bits[index] = g_bmap.bits[index] ^ test_b;
 	
 	++g_sn.s_nfree;
@@ -1477,6 +1578,7 @@ static int bfree(int id)
 	return 0;
 	
 }
+
 
 /*
  * 访问控制函数。

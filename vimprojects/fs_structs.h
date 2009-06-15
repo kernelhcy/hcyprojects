@@ -12,18 +12,18 @@
  */
 #define FILE_T 111				//表示文件
 #define DIR_T  222 				//表示目录
-#define R_R 1					//读权限
-#define W_R 2					//写权限
-#define E_R 4					//运行权限
+#define R 1						//只读方式
+#define W 2						//写方式
+#define A 4						//追加方式
 
-#define BLOCK_SIZE 8	  		//物理块的大小
+#define BLOCK_SIZE 16	  		//物理块的大小
 #define B_ADDR_NUM BLOCK_SIZE/4	//每个物理块所能存放的物理块地址的个数
 #define D_ADDR_NUM 5     		//每个文件直接索引块的个数
 
 #define DIR_NAME_SIZE 128   	//目录名的最大长度
 #define FILE_NAME_SIZE 128		//文件名的最大长度
 #define DIR_NUM 2048	     	//文件系统支持目录总的最大个数
-#define DIR_BMAP_SIZE DIR_NUM/64//目录表位图的长度
+#define DMAP_SIZE DIR_NUM/64	//目录表位图的长度
 #define DIR_INCLUDE_NUM 128	    //每个目录中能包含的最大的文件或目录个数
 
 #define USR_NAME_SIZE 64    	//用户名的长度
@@ -45,19 +45,20 @@
 /*
  * 内存i节点
  */
-struct inode{
+typedef struct inode{
 	struct inode  *i_forw;
 	struct inode  *i_back;
 	
-	int dir_or_file;			/*标记是文件还是目录*/
+	int dir_or_file;					/*标记是文件还是目录*/
 	
-	unsigned int i_into;      	/*磁盘i节点标号*/
-	unsigned int i_count;     	/*引用计数*/
-	unsigned short di_number; 	/*关联文件数，当为0时，则删除该文件*/
-	unsigned short di_mode;   	/*存取权限*/
-
-	unsigned short di_uid;    	/*磁盘i节点用户*/
-	unsigned short di_gid;    	/*磁盘i节点组*/
+	unsigned int i_into;      			/*磁盘i节点标号*/
+	unsigned int i_count;     			/*用户引用计数*/
+	unsigned short di_number; 			/*关联文件数，当为0时，则删除该文件*/
+	unsigned int di_right;   			/*存取权限*/
+	unsigned int mode;					/*打开方式*/
+	
+	unsigned short di_uid;    			/*磁盘i节点用户*/
+	unsigned short di_gid;    			/*磁盘i节点组*/
 	unsigned int parent_id;             /*父目录的目录号。*/
 
 	unsigned long di_size;            	/*文件大小*/
@@ -77,7 +78,8 @@ struct inode{
 	unsigned int addr;						/*一级块索引*/
 	unsigned int sen_addr;					/*二级块索引*/
 	unsigned int tru_addr;					/*三级块索引*/
-};
+}FILE_P;
+
 
 /*
  * 磁盘i节点
@@ -86,10 +88,10 @@ struct dinode
 {
 	int dir_or_file;					/*标记是文件还是目录*/
  	unsigned short di_number;        	/*关联文件数*/
- 	unsigned short di_mode;          	/*存取权限*/
+ 	unsigned int di_right;          	/*存取权限*/
 
- 	unsigned short di_uid;				/*所有者的id*/
- 	unsigned short di_gid;
+ 	unsigned int di_uid;				/*所有者的id*/
+ 	unsigned int di_gid;
 	
 	unsigned int parent_id;             /*父目录的目录号。*/
 
@@ -188,6 +190,7 @@ struct directory
 	char file_name[DIR_INCLUDE_NUM][FILE_NAME_SIZE];        /*目录中的文件或子目录的名子*/
 	unsigned int file_inode[DIR_INCLUDE_NUM];           	/*对应的inode号*/
 	unsigned int sub_dir_ids[DIR_INCLUDE_NUM];				/*若对应项是目录，存放其id。*/
+	
 };
 
 /*
@@ -201,7 +204,7 @@ struct dir_info
 	 * 用于记录当前可用的位置。
 	 */
 	int index;                                  //目录表中可用的位置。
- 	unsigned long long bitmap[DIR_BMAP_SIZE];	//位图
+ 	unsigned long long dmap[DMAP_SIZE];	//位图
 };
 
 /*
