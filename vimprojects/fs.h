@@ -25,14 +25,14 @@ void show_help_info();
  * 执行失败返回NULL。
  *
  */
-char * ls(const char *path);
+char * ls_t(const char *path);
 
 /*
  * 创建目录
  * 参数path为目录名
  * 创建成功返回0,否则返回错误码。
  */
-int mkdir(const char *name);
+int mkdir_t(const char *name);
 
 /*
  * 删除目录
@@ -41,8 +41,10 @@ int mkdir(const char *name);
  * 
  * 删除成功返回0,否则返回其他错误码。
  *
+ * 只有对目录具有运行权限（X_R），才可以删除目录！！
+ *
  */
-int rmdir(char *name);
+int rmdir_t(const char *name);
 
 /*
  * 更换当前工作目录。
@@ -51,7 +53,7 @@ int rmdir(char *name);
  * 更改成功放回0,否则返回其他错误码。
  *
  */
-int chdir(char *path);
+int chdir_t(const char *path);
 
 /*
  * 创建文件。

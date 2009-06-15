@@ -13,13 +13,12 @@ static int ialloc();
 static int ifree(int id);
 static int balloc();
 static int bfree(int id);
-static int access(int inode_id);
 static int find(const char *name);
 static int update_curr_paht_name();
 static int read_indirect_block(union block *addr_block, int len, char* buffer);
 static int write_block(int b_id, char *buffer, int size);
 static void str_cpy(char * des, const char * src, int begin, int size);
-static int access(FILE_P *fp, int mode);
+static int access_f(const char * name, int mode);
 //全局变量定义
 static struct supernode g_sn;			//超级块
 static struct dir_info g_dir_info;		//目录信息
@@ -90,25 +89,25 @@ void run(bool show_details)
 		}
 		else if(strcmp("ls", cmd) == 0)
 		{
-			ls(NULL);
+			ls_t(NULL);
 		}
 		else if(strcmp("mkdir", cmd) == 0)
 		{
 			printf("目录名：");
 			scanf("%s",path);
-			mkdir(path);
+			mkdir_t(path);
 		}
 		else if(strcmp("rmdir", cmd) == 0)
 		{
 			printf("目录名称：");
 			scanf("%s",path);
-			rmdir(path);
+			rmdir_t(path);
 		}
 		else if(strcmp("chdir", cmd) == 0 || strcmp("cd", cmd) == 0)
 		{
 			printf("完整的目录路径： ");
 			scanf("%s",path);
-			chdir(path);
+			chdir_t(path);
 		}
 		else if(strcmp("create", cmd) ==0 || strcmp("crt", cmd) == 0)
 		{
@@ -326,7 +325,7 @@ static int format_fs()
 	g_dir_info.root_id = 0;
 	g_dir_info.size = 1;//根目录存在
 	
-	//初始化位图
+	//初始化目录表位图
 	for(int i = 0; i < DMAP_SIZE; ++i)
 	{
 		g_dir_info.dmap[i] = 0xffffffffffffffffLL;
@@ -344,6 +343,15 @@ static int format_fs()
 	dir_table[0].parent_id = 0;
 	dir_table[0].inode_id = 0;//inode为第一个。	
 	dir_table[0].sub_cnt = 0;//子目录和文件的个数。
+	//设置根目录i节点信息
+	dinodes[0].dir_or_file = DIR_T;
+	dinodes[0].di_number = 1;
+	dinodes[0].di_right = 66;//rw-rw-
+	dinodes[0].di_uid = 0;//拥有者为超级用户
+	dinodes[0].di_gid = 0;
+	dinodes[0].parent_id = -1;//父目录
+	dinodes[0].di_size = 0;
+	dinodes[0].direct_addr[0] = 0;//目录项在目录表中的位置。
 	
 	memset(dir_table[0].file_inode, 0, DIR_INCLUDE_NUM);
 	memset(dir_table[0].sub_dir_ids, 0, DIR_INCLUDE_NUM);
@@ -545,7 +553,7 @@ static int show_names(int id,int black)
 	
 }
 
-char * ls(const char *path)
+char * ls_t(const char *path)
 {
 
 	printf("\n名称（文件(f)或目录(d), 目录ID或文件inode的id） 文件长度或目录容量\n\n");
@@ -555,7 +563,7 @@ char * ls(const char *path)
 	
 	return NULL;
 }
-int mkdir(const char *name)
+int mkdir_t(const char *name)
 {
 	
 	int p_id;//父目录在目录表中的位置
@@ -625,11 +633,20 @@ int mkdir(const char *name)
 	return 0;
 }
 
-int rmdir(char *name)
+int rmdir_t(const char *name)
 {
+	//判断是否有权删除。
+	//
+	//只有对目录有运行的权限才可以删除目录！！
+	//
+	if(access_f(name, X_R) == 0)
+	{
 	
-	int i_id = find(name);	
+		printf("无权删除该目录！！\n");
+		return -1;
+	}
 
+	int i_id = find(name);	
 	//printf("id: %d\n",dir_id);
 	
 	if(i_id == 0)
@@ -638,7 +655,7 @@ int rmdir(char *name)
 		return -1;
 	}
 	
-	if(i_id < 0 )
+	if(i_id < 0)
 	{
 		printf("目录不存在。");
 		return -1;
@@ -727,7 +744,7 @@ static int update_curr_path_name()
 }
 
 
-int chdir(char *path)
+int chdir_t(const char *path)
 {
 	//切换到根目录
 	if(strlen(path) == 1 && path[0] == '/')
@@ -785,7 +802,7 @@ FILE_P* create_f(const char *name, int right)
 	fp -> dir_or_file = FILE_T;
 	fp -> di_number = 0;
 	//设置默认权限。
-	fp -> di_right = 75;
+	fp -> di_right = 75;//rwxr-x
 	//设置所有者的用户id和组id。
 	fp -> di_uid = login_users[usr_num].p_uid;
 	fp -> di_gid = login_users[usr_num].p_gid;
@@ -807,6 +824,13 @@ FILE_P* create_f(const char *name, int right)
 int delete_f(const char *name)
 {
 	
+	//判断权限
+	if(access_f(name, W_R|R_R) == 0)
+	{
+		printf("没有权限！！\n");
+		return -1;
+	}
+
 	int i_id = find(name);	
 	//printf("delete id: %d\n",i_id);
 		
@@ -853,6 +877,13 @@ int delete_f(const char *name)
 
 FILE_P* open_f(const char *name, int mode)
 {
+	//判断权限
+	if(access_f(name, mode) == 0)
+	{
+		printf("没有权限！！\n");
+		return NULL;
+	}
+
 	int i_id = find(name);
 	FILE_P *fp = NULL;
 	
@@ -946,6 +977,11 @@ static int write_block(int b_id, char *buffer, int size)
 
 int write_f(FILE_P *fp, char *buffer, int length)
 {
+
+	if(fp == NULL || buffer == NULL || length == 0)
+	{
+		return 0;
+	}
 	printf("buffer: %d  %s\n",length ,buffer);
 	
 	int len = 0;			//已经写入文件的数据的长度。
@@ -1168,6 +1204,7 @@ int write_f(FILE_P *fp, char *buffer, int length)
 
 int read_f(FILE_P *fp, char *buffer, int length)
 {
+
 	if(fp == NULL || buffer == NULL || length == 0)
 	{
 		return 0;
@@ -1288,6 +1325,7 @@ int login(const char *username, const char *passwd)
 	//将用户信息拷贝到登录用户列表中。
 	memcpy(&login_users[usr_num], &user_info, sizeof(struct user));
 	curr_usr_id = usr_num;
+	
 	++usr_num;//更新登录用户个数
 	strcpy(tip, user_info.username);
 	strcat(tip, "@cmd:");
@@ -1683,21 +1721,34 @@ static int bfree(int id)
  * 	0: 		有权限。
  * 	其他值:	没有权限。
  */
-static int access(FILE_P *fp, int mode)
+static int access_f(const char* name, int mode)
 {
-	if(fp == NULL)
+	if(name == NULL)
 	{
 		return -1;	
 	}
 	
+	int i_id = find(name);
+	if(i_id < 0)
+	{	
+		printf("文件不存在！！\n");
+		return -1;
+	}
+
 	//所有者的权限
-	int own_r = fp -> di_right/10;
+	int own_r = dinodes[i_id].di_right/10;
 	//其他用户的权限
-	int othr_r = fp -> di_right%10;
+	int othr_r = dinodes[i_id].di_right%10;
 
-	return 0;
+	if(dinodes[i_id].di_uid == login_users[curr_usr_id].p_uid)
+	{
+		return (mode & own_r);
+	}
+	else
+	{
+		return (mode & othr_r);
+	}
 }
-
 
 int halt()
 {

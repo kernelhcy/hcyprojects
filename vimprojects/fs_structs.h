@@ -16,9 +16,9 @@
 #define W 2						//写方式
 #define A 4						//追加方式
 
-#define R_R 1						//读权限
-#define W_R 2						//写全信
-#define X_R 4						//运行权限
+#define R_R 1					//读权限
+#define W_R 2					//写全信
+#define X_R 4					//运行权限
 
 #define BLOCK_SIZE 16	  		//物理块的大小
 #define B_ADDR_NUM BLOCK_SIZE/4	//每个物理块所能存放的物理块地址的个数

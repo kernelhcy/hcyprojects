@@ -28,7 +28,7 @@ int main(int argc, char** argv)
     //exit(0);
 	init();
 	login("hcy","123456");
-	ls(NULL);
+	ls_t(NULL);
 	logout("hcy");
     return (EXIT_SUCCESS);
 }
