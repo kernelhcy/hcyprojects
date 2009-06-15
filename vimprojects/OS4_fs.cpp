@@ -556,10 +556,12 @@ static int show_names(int id,int black)
 char * ls_t(const char *path)
 {
 
-	printf("\n名称（文件(f)或目录(d), 目录ID或文件inode的id） 文件长度或目录容量\n\n");
+	printf("\n名称（文件(f)或目录(d), 目录ID或文件inode的id） 文件长度或目录容量\n");
 
 	//显示当前系统中的所有文件加和目录。
 	show_names(0,0);
+
+	printf("\n");	
 	
 	return NULL;
 }
@@ -984,7 +986,6 @@ int write_f(FILE_P *fp, char *buffer, int length)
 	}
 	printf("buffer: %d  %s\n",length ,buffer);
 	
-	int len = 0;			//已经写入文件的数据的长度。
 	int b_id = -1;
 	int buffer_index = 0;	//即将写入文件的数据的开始位置。
 	
@@ -992,8 +993,9 @@ int write_f(FILE_P *fp, char *buffer, int length)
 
 	//直接地址
 	printf("直接：\n");
-	for(int i = 0; i < D_ADDR_NUM && len < length; ++i)
+	for(int i = 0; i < D_ADDR_NUM && buffer_index < length; ++i)
 	{
+		
 		b_id = balloc();	//分配物理块
 		printf("\tblock id %d\t", b_id);
 
@@ -1004,7 +1006,7 @@ int write_f(FILE_P *fp, char *buffer, int length)
 		}
 		fp -> direct_addr[i] = b_id;
 
-		if(length - len > BLOCK_SIZE)
+		if(length - buffer_index > BLOCK_SIZE)
 		{
 			//static void str_cpy(char * des, const char * src, int begin, int end)
 			str_cpy(tmp_buffer, buffer, buffer_index,  BLOCK_SIZE);
@@ -1012,12 +1014,15 @@ int write_f(FILE_P *fp, char *buffer, int length)
 		}
 		else
 		{
-			str_cpy(tmp_buffer, buffer, buffer_index, length - len);
+			str_cpy(tmp_buffer, buffer, buffer_index, length - buffer_index);
 			buffer_index = length - 1;
 		}
-		printf("write %d %s\t", buffer_index, tmp_buffer);
-		len += write_block(b_id, tmp_buffer, BLOCK_SIZE);
-		printf("len: %d\n", len);
+		printf("write %d %s\n", buffer_index, tmp_buffer);
+		write_block(b_id, tmp_buffer, BLOCK_SIZE);
+		if(buffer_index >= length - 1)
+		{
+			return length;
+		}
 	}
 	
 	printf("\n");
@@ -1028,12 +1033,14 @@ int write_f(FILE_P *fp, char *buffer, int length)
 
 	if(b_id < 0)
 	{
+		//设定文件程度
+		fp -> di_size += length; 
 		printf("无法分配物理块！！\n");
 		return -1;
 	}
 
 	fp -> addr = b_id;
-	for(int i = 0; i < B_ADDR_NUM; ++i)
+	for(int i = 0; i < B_ADDR_NUM && buffer_index < length; ++i)
 	{
 		
 		b_id = balloc();	//分配物理块
@@ -1047,19 +1054,25 @@ int write_f(FILE_P *fp, char *buffer, int length)
 
 		blocks[fp -> addr].b_addr[i] = b_id;
 
-		if(length - len > BLOCK_SIZE)
+		if(length - buffer_index > BLOCK_SIZE)
 		{
 			str_cpy(tmp_buffer, buffer, buffer_index,  BLOCK_SIZE);
 			buffer_index += BLOCK_SIZE;
 		}
 		else
 		{
-			str_cpy(tmp_buffer, buffer, buffer_index, length - len);
+			str_cpy(tmp_buffer, buffer, buffer_index, length - buffer_index);
 			buffer_index = length - 1;
 		}
-		printf("write %d %s\t", buffer_index, tmp_buffer);
-		len += write_block(b_id, tmp_buffer, BLOCK_SIZE);
-		printf("len: %d\n", len);
+		printf("write %d %s\n", buffer_index, tmp_buffer);
+		write_block(b_id, tmp_buffer, BLOCK_SIZE);
+
+		if(buffer_index >= length - 1)
+		{
+			//设定文件程度
+			fp -> di_size += length; 
+			return length;
+		}
 	}
 	
 	printf("\n");
@@ -1076,7 +1089,7 @@ int write_f(FILE_P *fp, char *buffer, int length)
 	}
 
 	fp -> sen_addr = b_id;
-	for(int i = 0; i < B_ADDR_NUM && len < length; ++i)
+	for(int i = 0; i < B_ADDR_NUM && buffer_index < length; ++i)
 	{
 		
 		b_id = balloc();	//分配一级索引地址物理块
@@ -1090,7 +1103,7 @@ int write_f(FILE_P *fp, char *buffer, int length)
 		
 		blocks[fp -> sen_addr].b_addr[i] = b_id;
 		
-		for(int j = 0; j < B_ADDR_NUM && len < length ; ++j)
+		for(int j = 0; j < B_ADDR_NUM && buffer_index < length ; ++j)
 		{
 			
 			b_id = balloc();	//分配物理块
@@ -1110,19 +1123,25 @@ int write_f(FILE_P *fp, char *buffer, int length)
 					].b_addr[i]
 				].b_addr[j] = b_id;
 			
-			if(length - len > BLOCK_SIZE)
+			if(length - buffer_index > BLOCK_SIZE)
 			{
 				str_cpy(tmp_buffer, buffer, buffer_index,  BLOCK_SIZE);
 				buffer_index += BLOCK_SIZE;
 			}
 			else
 			{
-				str_cpy(tmp_buffer, buffer, buffer_index, length - len);
+				str_cpy(tmp_buffer, buffer, buffer_index, length - buffer_index);
 				buffer_index = length - 1;
 			}
-			printf("write %d %s\t", buffer_index, tmp_buffer);
-			len += write_block(b_id, tmp_buffer, BLOCK_SIZE);
-			printf("len: %d\n", len);
+			printf("write %d %s\n", buffer_index, tmp_buffer);
+			write_block(b_id, tmp_buffer, BLOCK_SIZE);
+
+			if(buffer_index >= length - 1)
+			{
+				//设定文件程度
+				fp -> di_size += length; 
+				return length;
+			}
 		}
 	}
 
@@ -1140,7 +1159,7 @@ int write_f(FILE_P *fp, char *buffer, int length)
 	}
 
 	fp -> tru_addr = b_id;
-	for(int i = 0; i < B_ADDR_NUM && len < length; ++i)
+	for(int i = 0; i < B_ADDR_NUM && buffer_index < length; ++i)
 	{
 		
 		b_id = balloc();	//分配二级索引地址物理块
@@ -1154,7 +1173,7 @@ int write_f(FILE_P *fp, char *buffer, int length)
 		
 		blocks[fp -> tru_addr].b_addr[i] = b_id;
 		
-		for(int j = 0; j < B_ADDR_NUM && len < length ; ++j)
+		for(int j = 0; j < B_ADDR_NUM && buffer_index < length ; ++j)
 		{
 			
 			int tmp_id = balloc();	//分配一级索引地址物理块
@@ -1167,7 +1186,7 @@ int write_f(FILE_P *fp, char *buffer, int length)
 			}
 		
 			blocks[b_id].b_addr[j] = tmp_id;
-			for(int k = 0; k < B_ADDR_NUM && len < length; ++k)
+			for(int k = 0; k < B_ADDR_NUM && buffer_index < length; ++k)
 			{
 				int tmp_tmp_id = balloc();//分配物理块
 				printf("\t\t\t\tblock id %d\t", b_id);
@@ -1179,27 +1198,31 @@ int write_f(FILE_P *fp, char *buffer, int length)
 				}
 
 				blocks[tmp_id].b_addr[k] = tmp_tmp_id;
-				if(length - len > BLOCK_SIZE)
+				if(length - buffer_index > BLOCK_SIZE)
 				{
 					str_cpy(tmp_buffer, buffer, buffer_index,  BLOCK_SIZE);
 					buffer_index += BLOCK_SIZE;
 				}
 				else
 				{
-					str_cpy(tmp_buffer, buffer, buffer_index, length - len);
+					str_cpy(tmp_buffer, buffer, buffer_index, length - buffer_index);
 					buffer_index = length - 1;
 				}
-				printf("write %d %s\t", buffer_index, tmp_buffer);
-				len += write_block(tmp_tmp_id, tmp_buffer, BLOCK_SIZE);
-				printf("len: %d\n", len);
+				printf("write %d %s\n", buffer_index, tmp_buffer);
+				write_block(tmp_tmp_id, tmp_buffer, BLOCK_SIZE);
+
+				if(buffer_index >= length - 1)
+				{
+					//设定文件程度
+					fp -> di_size += length; 
+					return length;
+				}
 			}
 		}
 	}
 
-	//设定文件程度
-	fp -> di_size += length; 
 
-	return len;
+	return length;
 }
 
 int read_f(FILE_P *fp, char *buffer, int length)
@@ -1581,14 +1604,14 @@ static int diralloc()
 	 	--shift;
 	 }
 	 
-	 printf("diralloc %llx\n", g_dir_info.dmap[index]);
+	 //printf("diralloc %llx\n", g_dir_info.dmap[index]);
 	 
 	 //分配
 	 g_dir_info.dmap[index] = g_dir_info.dmap[index] ^ (test_b << shift);
 	 ++g_dir_info.size;//目录个数加一
 	 
-	 printf("diralloc index %d shift %d\n",index, shift);
-	 printf("diralloc %llx\n", g_dir_info.dmap[index]);
+	 //printf("diralloc index %d shift %d\n",index, shift);
+	 //printf("diralloc %llx\n", g_dir_info.dmap[index]);
 	 
 	 return index * 64 + (64 - shift) - 1;
 	 
@@ -1602,16 +1625,16 @@ static int dirfree(int id)
 	int index = id / 64;
 	int shift = 63 - id % 64;
 	
-	printf("dirfree index %d shift %d\n",index, shift);
+	//printf("dirfree index %d shift %d\n",index, shift);
 	
 	unsigned long long test_b = 1LL << shift;
 	
-	printf("dirfree %llx test_b %llx\n", g_dir_info.dmap[index], test_b);
+	//printf("dirfree %llx test_b %llx\n", g_dir_info.dmap[index], test_b);
 	
 	g_dir_info.dmap[index] = g_dir_info.dmap[index] ^ test_b;
 	
 	
-	printf("dirfree %llx\n", g_dir_info.dmap[index]);
+	//printf("dirfree %llx\n", g_dir_info.dmap[index]);
 	//目录个数减一
 	--g_dir_info.size;
 	
