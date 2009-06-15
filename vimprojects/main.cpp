@@ -5,7 +5,7 @@
  */
 
 #include "headers.h"
-
+#include "fs.h"
 
 /*
  * 
@@ -24,8 +24,12 @@ int main(int argc, char** argv)
 		}
 	}
 
-    run(show_details);
+   	// run(show_details);
     //exit(0);
+	init();
+	login("hcy","123456");
+	ls(NULL);
+	logout("hcy");
     return (EXIT_SUCCESS);
 }
 

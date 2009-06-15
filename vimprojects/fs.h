@@ -8,8 +8,10 @@
  *
  */
 
-
-
+/*
+ * 初始化文件系统。
+ */
+int init();
 
 /*
  * 显示帮助信息
@@ -23,14 +25,14 @@ void show_help_info();
  * 执行失败返回NULL。
  *
  */
-char * ls(char *path);
+char * ls(const char *path);
 
 /*
  * 创建目录
  * 参数path为目录名
  * 创建成功返回0,否则返回错误码。
  */
-int mkdir(char *name);
+int mkdir(const char *name);
 
 /*
  * 删除目录
@@ -73,7 +75,7 @@ int chdir(char *path);
  *
  * 创建成功返回文件指针，否则返回NULL。
  */
-FILE_P* create_f(char *name, int right);
+FILE_P* create_f(const char *name, int right);
 
 /*
  * 删除文件。
@@ -82,7 +84,7 @@ FILE_P* create_f(char *name, int right);
  * 删除成功返回0,否则返回其他错误码。
  *
  */
-int delete_f(char *name);
+int delete_f(const char *name);
 
 /*
  * 打开文件。
@@ -106,7 +108,7 @@ int delete_f(char *name);
  * 		文件指针。
  * 		返回NULL，则打开失败。
  */
-FILE_P* open_f(char *name, int mode);
+FILE_P* open_f(const char *name, int mode);
 
 /*
  * 关闭文件。
@@ -157,7 +159,7 @@ char* pwd();
  * 登录或创建成功，返回0,否则返回其他错误码。
  *
  */
-int login(char *username, char *passwd);
+int login(const char *username, const char *passwd);
 /*
  * 用户登出。
  *
@@ -165,7 +167,7 @@ int login(char *username, char *passwd);
  *
  * 退出成功，放回0,否则返回其他错误码。
  */
-int logout(char *username);
+int logout(const char *username);
 /*
  * 显示文件内容。
  * 

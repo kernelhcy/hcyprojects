@@ -3,11 +3,10 @@
 #include "fs_structs.h"
 
 //函数声明
-static int init();
 static int read_fs();
 static int format_fs();
-static int find_usr(char *username, struct user *usr);
-static int create_user(char *username, char *passwd);
+static int find_usr(const char *username, struct user *usr);
+static int create_user(const char *username, const char *passwd);
 static int diralloc();
 static int dirfree(int id);
 static int ialloc();
@@ -33,7 +32,7 @@ static struct inode *head = NULL;		//i内存节点链表头
 static struct user login_users[MAX_LOGIN_USR];				//登录的用户列表
 static struct user_ofile user_ofile_table[MAX_LOGIN_USR]; 	//用户打开文件列表
 static int usr_num = 0;										//登陆的用户个数
-static struct * curr_user = NULL;							//当前登录用户
+static struct user *curr_user = NULL;							//当前登录用户
 static struct system_ofile system_ofile_table;				//系统打开的文件列表
 
 static char tip[50];										//命令提示
@@ -224,7 +223,7 @@ void run(bool show_details)
 /*
  * 初始化文件系统
  */
-static int init()
+int init()
 {
 	printf("初始化文件系统...\n");
 	
@@ -436,7 +435,7 @@ static int read_fs()
  * 查找用户是否存在。
  * 如存在，则返回0并填充用户信息到参数usr中，否则返回-1.
  */
-static int find_usr(char *username, struct user *usr)
+static int find_usr(const char *username, struct user *usr)
 {
 	FILE *fd = NULL;
 	fd = fopen("./users", "r");
@@ -476,7 +475,7 @@ static int find_usr(char *username, struct user *usr)
 /*
  * 创建用户。
  */
-static int create_user(char *username, char *passwd)
+static int create_user(const char *username, const char *passwd)
 {
 	FILE *fd = NULL;
 	fd = fopen("./users", "a+");
@@ -546,7 +545,7 @@ static int show_names(int id,int black)
 	
 }
 
-char * ls(char *path)
+char * ls(const char *path)
 {
 
 	printf("\n名称（文件(f)或目录(d), 目录ID或文件inode的id） 文件长度或目录容量\n\n");
@@ -556,7 +555,7 @@ char * ls(char *path)
 	
 	return NULL;
 }
-int mkdir(char *name)
+int mkdir(const char *name)
 {
 	
 	int p_id;//父目录在目录表中的位置
@@ -756,7 +755,7 @@ int chdir(char *path)
 	return 0;
 }
 
-FILE_P* create_f(char *name, int right)
+FILE_P* create_f(const char *name, int right)
 {
 	
 	int p_id;//父目录在目录表中的位置
@@ -805,7 +804,7 @@ FILE_P* create_f(char *name, int right)
 	return fp;
 }
 
-int delete_f(char *name)
+int delete_f(const char *name)
 {
 	
 	int i_id = find(name);	
@@ -852,7 +851,7 @@ int delete_f(char *name)
 	return 0;
 }
 
-FILE_P* open_f(char *name, int mode)
+FILE_P* open_f(const char *name, int mode)
 {
 	int i_id = find(name);
 	FILE_P *fp = NULL;
@@ -1269,7 +1268,7 @@ char* pwd()
 	return NULL;
 }
 
-int login(char *username, char *passwd)
+int login(const char *username, const char *passwd)
 {
 
 	struct user user_info;
@@ -1299,7 +1298,7 @@ int login(char *username, char *passwd)
 }
 
 
-int logout(char *user_name)
+int logout(const char *user_name)
 {
 	--usr_num;
 	strcpy(tip, "cmd:");
@@ -1684,7 +1683,7 @@ static int bfree(int id)
  * 	0: 		有权限。
  * 	其他值:	没有权限。
  */
-static int access(FILE_P *fp, int mode);
+static int access(FILE_P *fp, int mode)
 {
 	if(fp == NULL)
 	{
