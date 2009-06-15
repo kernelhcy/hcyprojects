@@ -16,6 +16,10 @@
 #define W 2						//写方式
 #define A 4						//追加方式
 
+#define R_R 1						//读权限
+#define W_R 2						//写全信
+#define X_R 4						//运行权限
+
 #define BLOCK_SIZE 16	  		//物理块的大小
 #define B_ADDR_NUM BLOCK_SIZE/4	//每个物理块所能存放的物理块地址的个数
 #define D_ADDR_NUM 5     		//每个文件直接索引块的个数
@@ -62,7 +66,7 @@ typedef struct inode{
 	unsigned int parent_id;             /*父目录的目录号。*/
 
 	unsigned long di_size;            	/*文件大小*/
-
+	unsigned long curr_pos;				/*文件读取的当前位置。*/
 	/*
 	 * 直接物理块索引。
 	 *

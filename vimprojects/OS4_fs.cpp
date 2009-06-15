@@ -20,7 +20,7 @@ static int update_curr_paht_name();
 static int read_indirect_block(union block *addr_block, int len, char* buffer);
 static int write_block(int b_id, char *buffer, int size);
 static void str_cpy(char * des, const char * src, int begin, int size);
-
+static int access(FILE_P *fp, int mode);
 //全局变量定义
 static struct supernode g_sn;			//超级块
 static struct dir_info g_dir_info;		//目录信息
@@ -33,7 +33,7 @@ static struct inode *head = NULL;		//i内存节点链表头
 static struct user login_users[MAX_LOGIN_USR];				//登录的用户列表
 static struct user_ofile user_ofile_table[MAX_LOGIN_USR]; 	//用户打开文件列表
 static int usr_num = 0;										//登陆的用户个数
-
+static struct * curr_user = NULL;							//当前登录用户
 static struct system_ofile system_ofile_table;				//系统打开的文件列表
 
 static char tip[50];										//命令提示
@@ -144,7 +144,11 @@ void run(bool show_details)
 		}
 		else if(strcmp("read", cmd) == 0 || strcmp("rd", cmd) == 0)
 		{
-			printf("读文件中的数据。\n");
+			char buffer[105];
+			memset(buffer, '\0', 105);
+
+			int len = read_f(t_fp, buffer, 100);
+			printf("reslut: len %d\n %s\n", len, buffer);
 		}
 		else if(strcmp("pwd", cmd) == 0)
 		{
@@ -882,7 +886,8 @@ FILE_P* open_f(char *name, int mode)
 	fp -> i_count = 1;
 	//打开方式
 	fp -> mode = mode;
-	
+	//设置文件当前读取位置。
+	fp -> curr_pos = 0;
 	return fp;
 }
 
@@ -1159,13 +1164,104 @@ int write_f(FILE_P *fp, char *buffer, int length)
 	//设定文件程度
 	fp -> di_size += length; 
 
-	return 0;
+	return len;
 }
-int read_f(char *name, char *buffer, int length)
+
+int read_f(FILE_P *fp, char *buffer, int length)
 {
-	printf("read\n");
-	return 0;
+	if(fp == NULL || buffer == NULL || length == 0)
+	{
+		return 0;
+	}
+
+	int len = 0;			//读取的数据长度。
+	int b_id = -1;
+	int buffer_index = 0;	//缓冲区空闲位置的开始位置。
+	
+
+	//直接地址
+	for(int i = 0; i < D_ADDR_NUM && len < length; ++i)
+	{
+
+		b_id = fp -> direct_addr[i];
+		for(int j = 0; j < BLOCK_SIZE && len < length; ++j)
+		{
+			buffer[buffer_index] = blocks[b_id].entry[j];
+			++buffer_index;
+			++fp -> curr_pos;
+			++len;
+		}
+
+	}
+	
+	//一级间接索引
+	b_id = fp -> addr;
+	for(int i = 0; i < B_ADDR_NUM; ++i)
+	{
+		int tmp_id;		
+		tmp_id = blocks[b_id].b_addr[i];
+
+		for(int j = 0; j < BLOCK_SIZE && len < length; ++j)
+		{
+			buffer[buffer_index] = blocks[tmp_id].entry[j];
+			++buffer_index;
+			++fp -> curr_pos;
+			++len;
+		}
+	}
+	
+	//二级间接索引
+	b_id = fp -> sen_addr;
+	for(int i = 0; i < B_ADDR_NUM && len < length; ++i)
+	{
+		int tmp_id = blocks[b_id].b_addr[i];
+		
+		for(int j = 0; j < B_ADDR_NUM && len < length ; ++j)
+		{
+			
+			int tmp_tmp_id = blocks[b_id].b_addr[i];
+
+			for(int j = 0; j < BLOCK_SIZE && len < length; ++j)
+			{
+				buffer[buffer_index] = blocks[tmp_tmp_id].entry[j];
+				++buffer_index;
+				++fp -> curr_pos;
+				++len;
+			}
+		}
+	}
+
+	//三级间接索引
+	b_id = fp -> tru_addr;
+	for(int i = 0; i < B_ADDR_NUM && len < length; ++i)
+	{
+		
+		int tmp_id = blocks[b_id].b_addr[i];
+		
+		for(int j = 0; j < B_ADDR_NUM && len < length ; ++j)
+		{
+			
+			int tmp_tmp_id = blocks[tmp_id].b_addr[j];
+
+			for(int k = 0; k < B_ADDR_NUM && len < length; ++k)
+			{
+				int tmp_tmp_tmp_id = blocks[tmp_tmp_id].b_addr[k];
+
+				for(int j = 0; j < BLOCK_SIZE && len < length; ++j)
+				{
+					buffer[buffer_index] = blocks[tmp_tmp_tmp_id].entry[j];
+					++buffer_index;
+					++fp -> curr_pos;
+					++len;
+				}
+			}
+
+		}
+	}
+
+	return len;
 }
+
 char* pwd()
 {
 	//printf("当前目录号：%d 目录名称：%s\n", curr_dir_id, curr_path);
@@ -1582,18 +1678,24 @@ static int bfree(int id)
 
 /*
  * 访问控制函数。
- * 参数f_id为要访问的文件或目录的i节点号。
+ * 判断当前用户是否对文件和目录用权限进行相应的操作。
  *
  * 返回值： 
- *		R_R:1,读权限
- *		W_R:2,写权限
- *		E_R:4,运行权限
- *		或这三个值的任意组合
+ * 	0: 		有权限。
+ * 	其他值:	没有权限。
  */
-static int access(int inode_id)
+static int access(FILE_P *fp, int mode);
 {
-	int right = 0;
+	if(fp == NULL)
+	{
+		return -1;	
+	}
 	
+	//所有者的权限
+	int own_r = fp -> di_right/10;
+	//其他用户的权限
+	int othr_r = fp -> di_right%10;
+
 	return 0;
 }
 

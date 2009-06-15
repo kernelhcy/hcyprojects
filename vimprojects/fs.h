@@ -54,7 +54,7 @@ int chdir(char *path);
 /*
  * 创建文件。
  * name：文件名。在当前目录中创建文件，只需要文件名。在其他目录中创建文件，需要完整的路径。
- * mode：设置文件的权限。由两位十进制数表示。每个数小于8.
+ * right：设置文件的权限。由两位十进制数表示。每个数小于8.
  * 		
  * 		文件权限说明：
  * 			每个文件的权限分为两部分：拥有者权限和其他用户权限。
@@ -138,7 +138,7 @@ int write_f(FILE_P* fp, char *buffer, int length);
  * 		-1：读取失败。
  * 		否则返回读取的数据的长度。
  */
-int read_f(FILE_P* fp, char *buffer, int length1);
+int read_f(FILE_P* fp, char *buffer, int length);
 /*
  * 显示当前工作目录。
  * 

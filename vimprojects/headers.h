@@ -8,7 +8,7 @@
 #define	_HEADERS_H
 
 #include <stdlib.h>
-#include <stdio.h>
+#include <iostream>
 #include <string.h>
 #include <time.h>
 
