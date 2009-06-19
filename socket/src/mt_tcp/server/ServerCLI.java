@@ -8,13 +8,15 @@ package mt_tcp.server;
  *
  * @author hcy
  */
-public class CLIServer
+public class ServerCLI
 {
 
+    /**
+     * @param args the command line arguments
+     */
     public static void main(String[] args)
     {
-        MainAcceptThread mat =new MainAcceptThread(1234);
+        MainAcceptThread mat = new MainAcceptThread(1234);
         mat.acceptConnection();
-        
     }
 }
