@@ -84,11 +84,11 @@ void init()
 	
 	//初始化页面序列
 	srand((int)time(0));
-	//std::cout << "instructions: ";
+	std::cout << "instructions: ";
 	for(int i = 0; i < total_instruction; ++i)
 	{
 		main_t[i] = rand()%PP;
-	//	std::cout << main_t2 Queue: 5 [i] << " ";
+		std::cout << main_t[i] << " ";
 	}
 	std::cout << std::endl;
 }
