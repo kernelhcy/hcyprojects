@@ -6,6 +6,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.logging.Logger;
+import logconfig.LoggerFactory;
 
 /**
  * 用于返回客户端其请求的文件的长度。
@@ -15,6 +17,13 @@ import java.net.SocketException;
  */
 public class SendBackFileList implements Runnable
 {
+    //初始化日志
+
+    static
+    {
+        logger =
+                LoggerFactory.getInstance(SendBackFileList.class.getName());
+    }
 	/**
 	 *
 	 * @param conn
@@ -43,7 +52,8 @@ public class SendBackFileList implements Runnable
 			inFromClient = new BufferedInputStream(connetcionSocket.getInputStream());
 			outToClient = new BufferedOutputStream(connetcionSocket.getOutputStream());
 
-            System.out.println("SendBack File list : receive dir");
+            logger.info("SendBack File list : receive dir");
+            
 			int len = -1;//
             len  = inFromClient.read(buffer);
 			dirName = new String(buffer,0,len);
@@ -55,7 +65,8 @@ public class SendBackFileList implements Runnable
                 
             }
 
-            System.out.println("get the file names");
+            logger.info("get the file names");
+            
             fileAndDirNames = dir.list();
 
             StringBuilder sb = new StringBuilder();
@@ -66,7 +77,7 @@ public class SendBackFileList implements Runnable
             }
 
             names = sb.toString();
-            System.out.println(names);
+            logger.info(names);
             
             outToClient.write(names.getBytes());
             outToClient.flush();
@@ -76,11 +87,13 @@ public class SendBackFileList implements Runnable
 		{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+            logger.severe(e.getMessage());
 		}
 		catch (IOException e)
 		{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+            logger.severe(e.getMessage());
 		}
 		finally
 		{
@@ -95,6 +108,7 @@ public class SendBackFileList implements Runnable
 			{
 				// TODO Auto-generated catch block
 				e.printStackTrace();
+                logger.severe(e.getMessage());
 			}
 		}
 
@@ -107,7 +121,8 @@ public class SendBackFileList implements Runnable
 	 * *******************************
 	 */
 
-
+    //
+    private static Logger logger = null;
 
 	// 缓存大小
 	private static final int BUFFERSIZE = 1024;
