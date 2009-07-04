@@ -12,6 +12,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.JOptionPane;
 
 /**
  *
@@ -121,11 +122,24 @@ public class GetFilelist implements Runnable
             String input = fromServer.readLine();
             System.out.println(input);
             System.out.println();
+
+            
+            StringBuilder filelists = new StringBuilder();
+
             names = input.split(",");
             for (String s : names)
             {
                 System.out.println(s);
+                if(s.charAt(0) != '.')
+                {
+                    filelists.append(s);
+                    filelists.append('\n');
+                }
             }
+
+            JOptionPane.showMessageDialog(null, filelists.toString(), "FileLists",
+                    JOptionPane.WARNING_MESSAGE, null);
+
         }
         catch (IOException ex)
         {

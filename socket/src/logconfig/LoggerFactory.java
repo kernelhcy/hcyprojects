@@ -6,6 +6,7 @@ package logconfig;
 
 import java.io.IOException;
 import java.util.Calendar;
+import java.util.logging.ConsoleHandler;
 import java.util.logging.FileHandler;
 import java.util.logging.Formatter;
 import java.util.logging.Level;
@@ -44,21 +45,19 @@ public class LoggerFactory
             logger = Logger.getLogger(className);
 
             //%g为自动编号
-            FileHandler fh = new FileHandler("log.log", true);
-            fh.setFormatter(new MyFormatter());
-            fh.setLevel(Level.ALL);
-            logger.addHandler(fh);
+            //FileHandler fh = new FileHandler("log.log", true);
+           // fh.setFormatter(new MyFormatter());
+            //fh.setLevel(Level.ALL);
+            //logger.addHandler(fh);
 
-            //ConsoleHandler ch = new ConsoleHandler();
-            //logger.addHandler(ch);
+            ConsoleHandler ch = new ConsoleHandler();
+            logger.addHandler(ch);
 
             logger.setLevel(Level.ALL);
 
             
-        } catch (IOException ex)
-        {
-            System.out.println(ex.getMessage());
-        } catch (SecurityException ex)
+        }
+        catch (SecurityException ex)
         {
             System.out.println(ex.getMessage());
         }
