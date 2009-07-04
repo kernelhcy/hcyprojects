@@ -6,7 +6,6 @@ package logconfig;
 
 import java.io.IOException;
 import java.util.Calendar;
-import java.util.logging.ConsoleHandler;
 import java.util.logging.FileHandler;
 import java.util.logging.Formatter;
 import java.util.logging.Level;
@@ -74,15 +73,13 @@ public class LoggerFactory
 
         public String format(LogRecord logRecord)
         {
-            StringBuilder sb = new StringBuilder("LogRecord info: ");
-            sb.append(logRecord.getSourceClassName()); //就是哪个类里面用的了你
-            sb.append("\n");
-            sb.append(Calendar.getInstance().toString());
-            sb.append("\t\t");
+            StringBuilder sb = new StringBuilder();
             sb.append(logRecord.getLevel()); //是SEVERE还是WARNING还是别的
-            sb.append("\t\t");
-            sb.append(logRecord.getLoggerName());//这个logger发布者
-            sb.append("\t\t");
+            sb.append("\t");
+            sb.append(Calendar.getInstance().getTime().toString());
+            sb.append("\t");
+            sb.append(logRecord.getSourceClassName()); //就是哪个类里面用的了你
+            sb.append("\t");
             sb.append(logRecord.getMessage());//消息内容
             sb.append("\t\n\n");
 

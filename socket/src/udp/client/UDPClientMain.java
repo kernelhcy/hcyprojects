@@ -48,7 +48,7 @@ public class UDPClientMain
 	 */
 	public UDPClientMain()
 	{
-		this("192.168.0.76",1234);
+		this("localhost",1234);
 	}
 	
 	/**
@@ -119,7 +119,7 @@ public class UDPClientMain
 		System.out.println("接收数据.");
 		receivePacket = new DatagramPacket(receiveData,receiveData.length);
 		
-		File file = new File("2.jpg");
+		File file = new File("/home/hcy/2.jpg");
 		
 		try
 		{
@@ -153,7 +153,7 @@ public class UDPClientMain
 				
 				length += receivePacket.getLength();
 				//将数据写入文件
-				//dos.write(receiveData,0,receivePacket.getLength());
+				dos.write(receiveData,0,receivePacket.getLength());
 				//System.out.println(receiveData);
 			}
 		

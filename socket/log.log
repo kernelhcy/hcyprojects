@@ -1,3 +1,0 @@
-LogRecord info: mt_tcp.server.MainAcceptThread
-java.util.GregorianCalendar[time=1245386081450,areFieldsSet=true,areAllFieldsSet=true,lenient=true,zone=sun.util.calendar.ZoneInfo[id="Asia/Shanghai",offset=28800000,dstSavings=0,useDaylight=false,transitions=19,lastRule=null],firstDayOfWeek=1,minimalDaysInFirstWeek=1,ERA=1,YEAR=2009,MONTH=5,WEEK_OF_YEAR=25,WEEK_OF_MONTH=3,DAY_OF_MONTH=19,DAY_OF_YEAR=170,DAY_OF_WEEK=6,DAY_OF_WEEK_IN_MONTH=3,AM_PM=1,HOUR=0,HOUR_OF_DAY=12,MINUTE=34,SECOND=41,MILLISECOND=450,ZONE_OFFSET=28800000,DST_OFFSET=0]		INFO		mt_tcp.server.MainAcceptThread		Begin accept...	
-

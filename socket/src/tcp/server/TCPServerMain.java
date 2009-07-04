@@ -109,7 +109,7 @@ public class TCPServerMain
 				input = inFromClient.readLine();
 				System.out.println("请求数据：" + input);
 				
-				//从文件1.jpg中读取数据
+				//从文件中读取数据
 				File file = new File("/home/hcy/test.jpg");
 				dis = new BufferedInputStream(new FileInputStream(file));
 				result = new byte[BUFFERSIZE];
@@ -160,7 +160,7 @@ public class TCPServerMain
 			}
 			
 			//接收1次请求
-			if (cnt >= 1000)
+			if (cnt >= 1)
 			{
 				break;
 			}
