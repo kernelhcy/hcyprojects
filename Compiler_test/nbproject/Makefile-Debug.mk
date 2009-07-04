@@ -29,6 +29,7 @@ OBJECTDIR=build/Debug/${PLATFORM}
 # Object Files
 OBJECTFILES= \
 	${OBJECTDIR}/LexicalAnalysis_imp.o \
+	${OBJECTDIR}/SyntaxAnalysis_Imp.o \
 	${OBJECTDIR}/FileAction_imp.o \
 	${OBJECTDIR}/main.o
 
@@ -57,6 +58,11 @@ ${OBJECTDIR}/LexicalAnalysis_imp.o: LexicalAnalysis_imp.cpp
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} $@.d
 	$(COMPILE.cc) -g -MMD -MP -MF $@.d -o ${OBJECTDIR}/LexicalAnalysis_imp.o LexicalAnalysis_imp.cpp
+
+${OBJECTDIR}/SyntaxAnalysis_Imp.o: SyntaxAnalysis_Imp.cpp 
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} $@.d
+	$(COMPILE.cc) -g -MMD -MP -MF $@.d -o ${OBJECTDIR}/SyntaxAnalysis_Imp.o SyntaxAnalysis_Imp.cpp
 
 ${OBJECTDIR}/FileAction_imp.o: FileAction_imp.cpp 
 	${MKDIR} -p ${OBJECTDIR}
