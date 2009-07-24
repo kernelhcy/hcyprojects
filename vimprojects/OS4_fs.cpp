@@ -526,7 +526,7 @@ static int show_names(int id,int black)
 	{
 		printf("    ");
 	}
-	printf("%c%c%c%s(d,%d) %d\n",3,6,6,dir_table[id].d_name, id, dir_table[id].sub_cnt);
+	printf("+--%s(d,%d) %d\n",dir_table[id].d_name, id, dir_table[id].sub_cnt);
 	
 	for(int i = 0; i < dir_table[id].sub_cnt ; ++i)
 	{
@@ -544,7 +544,7 @@ static int show_names(int id,int black)
 			{
 				printf("    ");
 			}
-			printf("%c%c%c%s(f,%d) %d\n",3,6,6,dir_table[id].file_name[i], dir_table[id].file_inode[i], fi -> di_size);
+			printf("+--%s(f,%d) %d\n",dir_table[id].file_name[i], dir_table[id].file_inode[i], fi -> di_size);
 		}
 
 	}
@@ -790,6 +790,8 @@ FILE_P* create_f(const char *name, int right)
 	
 	p_id = curr_dir_id;
 	
+	printf("p_id: %d name : %s  right : %d\n", p_id, name, right);
+
 	//设置父目录里面关于子文件的信息。
 	//文件名字
 	strcpy(dir_table[p_id].file_name[dir_table[p_id].sub_cnt], name);
