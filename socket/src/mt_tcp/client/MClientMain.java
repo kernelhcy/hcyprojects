@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import mt_tcp.server.MyLogger;
+import mt_tcp.server.TransferLengthInfo;
 
 /**
  * 多线程接收端
@@ -36,6 +38,11 @@ public class MClientMain
         this.port = port;
         //默认一个线程
         this.numberOfThreads = 1;
+
+        logger = MyLogger.getInstance();
+
+        //创建传送长度信息类
+        transferLengthInfo = new TransferLengthInfo();
         
     }
 
@@ -43,14 +50,14 @@ public class MClientMain
     {
 
 
-        System.out.println("Creating socket,input stream and output stream.");
+        logger.info("[MClientMain] TSF: Creating socket,input stream and output stream.");
         // 创建socket,输入流和输出流
         createSocket();
 
         // 开辟缓存
         buffer = new byte[BUFFERSIZE];
 
-        System.out.println("Requesting file length.");
+        logger.info("[MClientMain] Requesting file length.");
         // 读取文件的长度
         getFileLengthFromServer();
         if(fileLength == -1)//文件不存在
@@ -59,14 +66,16 @@ public class MClientMain
         }
 
 
-        System.out.println("Receiving data...");
+        logger.info("[MClientMain] Receiving data...");
         // 接收数据
         long beginTime = System.currentTimeMillis();
+
         receiveDataFromServer();
+
         if (done)
         {
             long endTime = System.currentTimeMillis();
-            System.out.println("Total time：" + (endTime - beginTime) / 1000 + "s.");
+            logger.info("[MClientMain] Total time：" + (endTime - beginTime) / 1000 + "s.");
         }
 
         return RECEIVE_SUCCESS;
@@ -99,7 +108,7 @@ public class MClientMain
         }
         catch (IOException e)
         {
-            System.out.println("Close error..");
+            logger.info("[MClientMain] Close error..");
             e.printStackTrace();
         }
     }
@@ -136,21 +145,45 @@ public class MClientMain
             int i = 0;
             while (i < numberOfThreads && remainLen > perLength)
             {
-                System.out.println("Create Thread:" + (i + 1));
-                threads[i] = new Thread(new TransferThreadClient(hostname, port, requiredFileName,
-                    tempstart,
-                    perLength, writeToFileName));
+                logger.info("[MClientMain] Create Thread:" + (i + 1));
+                logger.info("[MClientMain] Begin: " + tempstart + "   Length: " + perLength  );
+
+                threads[i] = new Thread
+                (
+                        new TransferThreadClient.Builder()
+                                .setHostname(hostname)
+                                .setPort(port)
+                                .setRequiredFileName(requiredFileName)
+                                .setStartPos(tempstart)
+                                .setTransferLength(perLength)
+                                .setWriteToFileName(writeToFileName)
+                                .setTransferLengthInfo(transferLengthInfo)
+                                .build()
+                );
+                
                 threads[i].start();
+
                 tempstart += perLength;
                 remainLen -= perLength;
                 ++i;
             }
             if (remainLen > 0)
             {
-                System.out.println("Create Thread:" + (i + 1));
-                threads[i] = new Thread(new TransferThreadClient(hostname, port, requiredFileName,
-                    tempstart,
-                    remainLen, writeToFileName));
+                logger.info("[MClientMain] Create Thread:" + (i + 1));
+                logger.info("[MClientMain] Begin: " + tempstart + "   Length: " + remainLen  );
+                threads[i] = new Thread
+                        (
+                            new TransferThreadClient.Builder()
+                                .setHostname(hostname)
+                                .setPort(port)
+                                .setRequiredFileName(requiredFileName)
+                                .setStartPos(tempstart)
+                                .setTransferLength(remainLen)
+                                .setWriteToFileName(writeToFileName)
+                                .setTransferLengthInfo(transferLengthInfo)
+                                .build()
+                        );
+
                 threads[i].start();
             }
 
@@ -158,8 +191,18 @@ public class MClientMain
         else
         // 当传送的文件长度小于10k时，只用一个线程传送
         {
-            new Thread(new TransferThreadClient(hostname, port, requiredFileName, 0, fileLength,
-                writeToFileName)).start();
+            new Thread
+                    (
+                        new TransferThreadClient.Builder()
+                                .setHostname(hostname)
+                                .setPort(port)
+                                .setRequiredFileName(requiredFileName)
+                                .setStartPos(0)
+                                .setTransferLength(fileLength)
+                                .setWriteToFileName(writeToFileName)
+                                .setTransferLengthInfo(transferLengthInfo)
+                                .build()
+                    ).start();
         }
 
         //检查是否已经传送完毕
@@ -186,10 +229,10 @@ public class MClientMain
      */
     private void createSocket() throws UnknownHostException, IOException, SocketException
     {
-        System.out.println("Creating socket connecion.");
+        logger.info("[MClientMain] Creating socket connecion.");
         // 建立socket
         clientSocket = new Socket(hostname, port);
-        System.out.println("Success create.");
+        logger.info("[MClientMain] Success create.");
         // socket连接不限时
         clientSocket.setSoTimeout(0);
 
@@ -221,47 +264,49 @@ public class MClientMain
     }
 
     /**
-     * 从服务器读取文件的长度
-     * 当读取的文件长度为-1时，表示文件不存在
-     * @throws IOException
-     */
+      * 从服务器读取文件的长度
+      * 当读取的文件长度为-1时，表示文件不存在
+      * @throws IOException
+      */
     private void getFileLengthFromServer() throws IOException
     {
         String info = "GetFileLength";
         /*
-         * 请求服务器发送文件长度
-         */
+           * 请求服务器发送文件长度
+           */
         outToServer.write(info.getBytes(), 0, info.getBytes().length);
         outToServer.flush();
         // 确认服务器收到请求
         inFromServer.read(buffer);
 
         /*
-         * 向服务器发送请求传送的文件的文件名
-         */
+           * 向服务器发送请求传送的文件的文件名
+           */
         outToServer.write(requiredFileName.getBytes(), 0, requiredFileName.getBytes().length);
         outToServer.flush();
 
         /*
-         * 获取文件的长度
-         */
+           * 获取文件的长度
+           */
         int lenLen = -1;// 从服务器读取的数据的长度
         lenLen = inFromServer.read(buffer);
         fileLength = Long.parseLong(new String(buffer, 0, lenLen));
-        System.out.printf("The length of the file：%d bytes\n", fileLength);
+        System.out.printf("[MClientMain] The length of the file：%d bytes\n", fileLength);
 
         /*
-         * 向服务器发送确认收到文件长度。 防止服务器过早的发送文件数据。
-         */
+           * 向服务器发送确认收到文件长度。 防止服务器过早的发送文件数据。
+           */
         outToServer.write("Got length".getBytes());
         outToServer.flush();
+
+        logger.info("[MClientMain] Get length over.");
     }
 
     /**
-     * 轮询所有传送线程，检查是否都已经传送完毕
-     * @author hcy
-     *
-     */
+      * 轮询所有传送线程，检查是否都已经传送完毕
+      * @author hcy
+      *
+      */
     private class Acks implements Runnable
     {
 
@@ -284,7 +329,7 @@ public class MClientMain
 
                 try
                 {
-                    Thread.sleep(1000);
+                    Thread.sleep(10);
                 }
                 catch (InterruptedException e)
                 {
@@ -299,91 +344,100 @@ public class MClientMain
     }
 
     /**
-     * 返回所连接的服务器的主机名
-     *
-     * @return
-     */
+      * 返回所连接的服务器的主机名
+      *
+      * @return
+      */
     public String getHostname()
     {
         return hostname;
     }
 
     /**
-     * 设置所连接的服务器主机名
-     *
-     * @param hostname
-     */
+      * 设置所连接的服务器主机名
+      *
+      * @param hostname
+      */
     public void setHostname(String hostname)
     {
         this.hostname = hostname;
     }
 
     /**
-     * 返回所连接的服务器端口号
-     *
-     * @return
-     */
+      * 返回所连接的服务器端口号
+      *
+      * @return
+      */
     public int getPort()
     {
         return port;
     }
 
     /**
-     * 设置所连接的服务器端口号
-     *
-     * @param port
-     */
+      * 设置所连接的服务器端口号
+      *
+      * @param port
+      */
     public void setPort(int port)
     {
         this.port = port;
     }
 
     /**
-     * @return the numberOfThreads
-     */
+      * @return the numberOfThreads
+      */
     public int getNumberOfThreads()
     {
         return numberOfThreads;
     }
 
     /**
-     * @param numberOfThreads
-     *            the numberOfThreads to set
-     */
+      * @param numberOfThreads
+      *            the numberOfThreads to set
+      */
     public void setNumberOfThreads(int numberOfThreads)
     {
         this.numberOfThreads = numberOfThreads;
     }
 
     /**
-     * 获得传送的文件的长度。
-     * @return
-     */
+      * 获得传送的文件的长度。
+      * @return
+      */
     public long getFileLength()
     {
         return fileLength;
     }
 
     /**
-     * 
-     * @return
-     */
+      *
+      * @return
+      */
     public String getWriteToFileName()
     {
         return this.writeToFileName;
     }
 
     /**
-     *
-     * @param name
-     */
+      *
+      * @param name
+      */
     public void setWriteToFileName(String name)
     {
         this.writeToFileName = name;
     }
+
+    /**
+      * 返回当前传送长度信息类
+      * @return
+      */
+    public TransferLengthInfo getTransferLengthInfo()
+    {
+        return transferLengthInfo;
+    }
     /*
-     * ***************************** 声明成员变量 *****************************
-     */
+      * ***************************** 声明成员变量 *****************************
+      */
     private static final int BUFFERSIZE = 1024;
     // 主机名
     private String hostname = null;
@@ -421,6 +475,12 @@ public class MClientMain
     public static final int TRANSFER_ERROR = -3;
     //传送成功
     public static final int TRANSFER_SUCCESS = 1;
+
+    private MyLogger logger = null;
+
+    private TransferLengthInfo transferLengthInfo = null;
+
+
     /**
      * @param args
      */

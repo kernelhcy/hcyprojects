@@ -7,16 +7,12 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketException;
-import java.util.logging.Logger;
-import logconfig.LoggerFactory;
+
 
 public class TransferThreadServer implements Runnable
 {
 
-    static
-    {
-        logger = LoggerFactory.getInstance(TransferThreadServer.class.getName());
-    }
+    
 
     /**
      *
@@ -31,9 +27,10 @@ public class TransferThreadServer implements Runnable
         this.fileName = fileName;
         this.startPos = startPos;
         this.transferLength = len;
-        
-        logger.info("开始位置：" + startPos + "\t输出长度：" + transferLength);
 
+        logger = MyLogger.getInstance();
+        logger.info("[TransferThreadServer] StartPos: " + startPos + "  Length: " + len );
+        
     }
 
     /**
@@ -59,12 +56,13 @@ public class TransferThreadServer implements Runnable
 
             dis = new BufferedInputStream(new FileInputStream(file));
             //从指定开始输出数据
+            
             dis.skip(startPos);
 
-            logger.info("输出数据...");
+            
             /*
-             * 向客户端发送文件数据
-             */
+                * 向客户端发送文件数据
+                */
             int len = 0;// 读取到缓冲区中的字节数
             len = dis.read(buffer);
             long totalLen = 0;
@@ -79,51 +77,52 @@ public class TransferThreadServer implements Runnable
             totalLen += len;
             while (len != -1 && totalLen <= transferLength)
             {
-                /**
-                 * 必须按照缓冲区中实际的数据量写入流中，不可用outTOClient.write(result);简单地
-                 * 将缓冲区统统写到流中，否则会报connection reset异常！！！
-                 */
+
                 outToClient.write(buffer, 0, len);
                 len = dis.read(buffer);
                 if (len < 0)
                 {
                     break;
                 }
-                totalLen += len;
-                Thread.sleep(10);
+                totalLen += len; 
             }
+
+            //
+            if(totalLen > transferLength)
+            {
+                totalLen -= len;
+            }
+
             /*
-             *	最后一次可能的传送，传送的数据小于BUFFERSIZE
-             */
+                *	最后一次可能的传送，传送的数据小于BUFFERSIZE
+                */
             if (totalLen < transferLength)
             {
-                len = dis.read(buffer, 0, (int) (transferLength - totalLen));
-                if (len > 0)
-                {
-                    outToClient.write(buffer, 0, len);
-                }
+                /*
+                     * 在上面的while的循环中已经读取数据到buffer中，
+                     * 此处再都就多余了！！！必然出错！
+                     */
+                //len = dis.read(buffer);
+                logger.info("[TransferThreadServer] Last: " + len );
+
+                outToClient.write(buffer, 0, (int) (transferLength - totalLen));
+                totalLen += transferLength - totalLen;
 
             }
             outToClient.flush();
-            logger.info("输出文件长度：" + totalLen);
-        }
-        catch (InterruptedException ex)
-        {
-            logger.severe(ex.getMessage());
+            logger.info("[TransferThreadServer] Total length: " + totalLen );
         }
         catch (SocketException e)
         {
             // TODO Auto-generated catch block
             e.printStackTrace();
-            logger.severe(e.getMessage());
-        }
-        catch (IOException e)
+            
+        } catch (IOException e)
         {
             // TODO Auto-generated catch block
             e.printStackTrace();
-            logger.severe(e.getMessage());
-        }
-        finally
+            
+        } finally
         {
             try
             {
@@ -132,12 +131,11 @@ public class TransferThreadServer implements Runnable
                 inFromClient.close();
                 outToClient.close();
                 connetcionSocket.close();
-            }
-            catch (IOException e)
+            } catch (IOException e)
             {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
-                logger.severe(e.getMessage());
+               
             }
         }
 
@@ -155,7 +153,6 @@ public class TransferThreadServer implements Runnable
     private long startPos = -1;
     //传送长度
     private long transferLength = -1;
-
     // 返回给客户端的数据
     private byte[] buffer = null;
     // 连接socket
@@ -166,5 +163,6 @@ public class TransferThreadServer implements Runnable
     private BufferedOutputStream outToClient = null;
     //
     private BufferedInputStream dis = null;
-    private static Logger logger = null;
+
+    private MyLogger logger = null;
 }

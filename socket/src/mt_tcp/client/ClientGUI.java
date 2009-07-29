@@ -8,7 +8,6 @@ import java.awt.GridLayout;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import javax.swing.BorderFactory;
@@ -19,6 +18,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JTextField;
+import mt_tcp.server.TransferLengthInfo;
 
 public class ClientGUI
 {
@@ -33,9 +33,9 @@ public class ClientGUI
         label1.setFont(new Font("Courier New", Font.PLAIN, 16));
         label2 = new JLabel("Save As:");
         label2.setFont(new Font("Courier New", Font.PLAIN, 16));
-        transferFileNameField = new JTextField("/home/hcy");
+        transferFileNameField = new JTextField("/home/hcy/1.png");
         transferFileNameField.setFont(new Font("Courier New", Font.PLAIN, 16));
-        savedFileNameField = new JTextField("/home/hcy/2.jpg");
+        savedFileNameField = new JTextField("/home/hcy/2.png");
         savedFileNameField.setFont(new Font("Courier New", Font.PLAIN, 16));
 
         label3 = new JLabel("Host Name:");
@@ -76,7 +76,7 @@ public class ClientGUI
 
         label5 = new JLabel("Thread Number:");
         label5.setFont(new Font("Courier New", Font.PLAIN, 16));
-        numberThreadsFiled = new JTextField("1");
+        numberThreadsFiled = new JTextField("5");
         numberThreadsFiled.setColumns(2);
         numberThreadsFiled.setToolTipText("At most 100 threads.");
         numberThreadsFiled.setFont(new Font("Courier New", Font.PLAIN, 16));
@@ -100,7 +100,7 @@ public class ClientGUI
 
                     public void run()
                     {
-                        jpb.setValue(jpb.getMaximum());
+                        jpb.setValue(jpb.getMinimum());
 
                         //恢复所有输入框的背景色
                         transferFileNameField.setBackground(Color.WHITE);
@@ -150,6 +150,8 @@ public class ClientGUI
                         transfer = new MClientMain(hostName, port);
                         transfer.setFileName(transferFileNameField.getText());
                         transfer.setWriteToFileName(savedFileNameField.getText());
+                        transfer.setNumberOfThreads(threadNumber);
+
                         try
                         {
                             //用于测试线程，测试是否刻是传送
@@ -162,6 +164,9 @@ public class ClientGUI
                                 transfer.close();
                                 return;
                             }
+
+                            //文件传送完毕
+                            JOptionPane.showMessageDialog(mainFrame, "File transfer over!");
 
                         }
                         catch (UnknownHostException ex)
@@ -194,15 +199,20 @@ public class ClientGUI
                         {
                             return;
                         }
+
+                        
+
                         int value = jpb.getMinimum();
+
+                        TransferLengthInfo tli = transfer.getTransferLengthInfo();
 
                         while (value < jpb.getMaximum())
                         {
                             try
                             {
-                                File file = new File(savedFileNameField.getText());
+                                
                                 long length = transfer.getFileLength() + 1;
-                                value = (int) (((float) file.length() / length) * 100);
+                                value = (int) (((float) tli.getLength() / length) * 100);
                                 //System.out.println(file.length());
                                 jpb.setValue(++value);
                                 Thread.sleep(10);
@@ -214,8 +224,7 @@ public class ClientGUI
                         }
                         jpb.setValue(jpb.getMaximum());
 
-                        //文件传送完毕
-                        JOptionPane.showMessageDialog(mainFrame, "File transfer over!");
+                        
                         isTransferring = false;
                     }
                 });
@@ -245,7 +254,8 @@ public class ClientGUI
             public void actionPerformed(ActionEvent e)
             {
                 System.out.println("Get file list");
-                Thread getList = new Thread(new GetFilelist(hostNameField.getText()
+                Thread getList = new Thread(new GetFilelist(
+                        hostNameField.getText()
                         , Integer.parseInt(portField.getText())
                         , transferFileNameField.getText()));
 

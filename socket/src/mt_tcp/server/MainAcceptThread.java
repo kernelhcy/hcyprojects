@@ -6,19 +6,9 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Calendar;
-import java.util.logging.Logger;
-import logconfig.LoggerFactory;
 
 public class MainAcceptThread
 {
-    //初始化日志
-
-    static
-    {
-        System.out.println("创建日志");
-        logger =
-                LoggerFactory.getInstance(MainAcceptThread.class.getName());
-    }
 
     /**
      * 设置监听的端口号
@@ -41,11 +31,8 @@ public class MainAcceptThread
              */
             serverSocket.setSoTimeout(0);
 
-        }
-        catch (IOException e)
+        } catch (IOException e)
         {
-            // TODO Auto-generated catch block
-            logger.severe("Create ServerSocket error...");
         }
     }
 
@@ -53,12 +40,9 @@ public class MainAcceptThread
     {
         if (serverSocket == null)
         {
-            logger.severe("Start server failed...");
             return;
         }
         //System.out.println("aaa"+logger);
-        
-        logger.info("Begin accept...");
 
         if (serverGui != null)
         {
@@ -77,13 +61,10 @@ public class MainAcceptThread
                 inFromClient = new BufferedInputStream(tempconn.getInputStream());
                 outToClient = new BufferedOutputStream(tempconn.getOutputStream());
 
-                logger.info("Get input");
 
                 buffer = new byte[BUFFERSIZE];
                 int len = inFromClient.read(buffer);
                 input = new String(buffer, 0, len);
-
-                System.out.println(input);
 
                 if ("GetFileLength".equals(input))
                 {
@@ -107,8 +88,7 @@ public class MainAcceptThread
                     //设置为守护线程
                     //newThread.setDaemon(true);
                     newThread.start();
-                }
-                else if ("Transfer".equals(input))
+                } else if ("Transfer".equals(input))
                 {
                     if (serverGui != null)
                     {
@@ -153,8 +133,7 @@ public class MainAcceptThread
                     //设置为守护线程
                     //newThread.setDaemon(true);
                     newThread.start();
-                }
-                else if ("Filelist".equals(input))
+                } else if ("Filelist".equals(input))
                 {
                     System.out.println("Action: Get Filelist ");
 
@@ -166,8 +145,8 @@ public class MainAcceptThread
                         serverGui.writeInfo(" Port:" + tempconn.getPort());
                         serverGui.writeInfo("\n");
                     }
-                    
-                    
+
+
                     //返回客户端确认信息
                     //outToClient.write("done".getBytes());
                     //outToClient.flush();
@@ -180,10 +159,8 @@ public class MainAcceptThread
                     newThread.start();
                 }
 
-            }
-            catch (IOException e)
+            } catch (IOException e)
             {
-                logger.severe("Create socket error or socket has been closed.");
             }
 
             if (isshutdown)
@@ -191,15 +168,14 @@ public class MainAcceptThread
                 try
                 {
                     serverSocket.close();
-                    
-                    logger.info("Closing serversocket...");
-                    
+
+
+
                     if (serverGui != null)
                     {
                         serverGui.writeInfo("\nClosing serversocket.\n");
                     }
-                }
-                catch (IOException e)
+                } catch (IOException e)
                 {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
@@ -213,9 +189,8 @@ public class MainAcceptThread
             try
             {
                 serverSocket.close();
-                logger.info("Closing serversocket...");
-            }
-            catch (IOException e)
+
+            } catch (IOException e)
             {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
@@ -235,10 +210,9 @@ public class MainAcceptThread
             try
             {
                 serverSocket.close();
-                logger.info("Closing serversocket...");
 
-            }
-            catch (IOException e)
+
+            } catch (IOException e)
             {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
@@ -279,7 +253,4 @@ public class MainAcceptThread
     private BufferedInputStream inFromClient = null;
     // 输出数据流
     private BufferedOutputStream outToClient = null;
-
-    //日志
-    private static Logger logger;
 }

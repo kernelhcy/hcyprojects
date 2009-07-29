@@ -6,8 +6,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketException;
-import java.util.logging.Logger;
-import logconfig.LoggerFactory;
 
 /**
  * 用于返回客户端其请求的文件的长度。
@@ -17,13 +15,6 @@ import logconfig.LoggerFactory;
  */
 public class SendBackFileList implements Runnable
 {
-    //初始化日志
-
-    static
-    {
-        logger =
-                LoggerFactory.getInstance(SendBackFileList.class.getName());
-    }
 
     /**
      *
@@ -32,6 +23,7 @@ public class SendBackFileList implements Runnable
     public SendBackFileList(Socket conn)
     {
         this.connetcionSocket = conn;
+        logger = MyLogger.getInstance();
     }
 
     /**
@@ -53,49 +45,56 @@ public class SendBackFileList implements Runnable
             inFromClient = new BufferedInputStream(connetcionSocket.getInputStream());
             outToClient = new BufferedOutputStream(connetcionSocket.getOutputStream());
 
-            //logger.info("SendBack File list : receive dir");
+            logger.info("SendBack File list : receive dir");
 
             int len = -1;//
             len = inFromClient.read(buffer);
             dirName = new String(buffer, 0, len);
 
+            logger.info("Dir: " + dirName);
+
             File dir = new File(dirName);
 
-            if (!dir.isDirectory())
+            if (dir.isDirectory())
             {
+                logger.info("get the file names");
+
+                fileAndDirNames = dir.list();
+
+                StringBuilder sb = new StringBuilder();
+                for (String s : fileAndDirNames)
+                {
+                    sb.append(s);
+                    sb.append(',');
+                }
+
+                names = sb.toString();
+            }
+            else // not directory
+            {
+                names = "Not a directory!";
             }
 
-            //logger.info("get the file names");
 
-            fileAndDirNames = dir.list();
 
-            StringBuilder sb = new StringBuilder();
-            for (String s : fileAndDirNames)
-            {
-                sb.append(s);
-                sb.append(',');
-            }
-
-            names = sb.toString();
-            //logger.info(names);
+            logger.info("Send file list back.");
 
             outToClient.write(names.getBytes());
             outToClient.flush();
 
-        }
-        catch (SocketException e)
+            logger.info("Send file list Over!");
+
+        } catch (SocketException e)
         {
             // TODO Auto-generated catch block
             e.printStackTrace();
-            logger.severe(e.getMessage());
-        }
-        catch (IOException e)
+
+        } catch (IOException e)
         {
             // TODO Auto-generated catch block
             e.printStackTrace();
-            logger.severe(e.getMessage());
-        }
-        finally
+
+        } finally
         {
             try
             {
@@ -103,8 +102,8 @@ public class SendBackFileList implements Runnable
                 inFromClient.close();
                 outToClient.close();
                 connetcionSocket.close();
-            }
-            catch (IOException e)
+                logger.info("SendBackFileList : Close connection.");
+            } catch (IOException e)
             {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
@@ -119,7 +118,6 @@ public class SendBackFileList implements Runnable
      * *******************************
      */
     //
-    private static Logger logger = null;
     // 缓存大小
     private static final int BUFFERSIZE = 1024;
     //
@@ -135,4 +133,6 @@ public class SendBackFileList implements Runnable
     private BufferedInputStream inFromClient = null;
     // 输出数据流
     private BufferedOutputStream outToClient = null;
+    //日志
+    private MyLogger logger = null;
 }

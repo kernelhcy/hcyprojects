@@ -1,13 +1,11 @@
 package mt_tcp.server;
 
-import java.util.logging.Logger;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketException;
-import logconfig.LoggerFactory;
 
 /**
  * 用于返回客户端其请求的文件的长度。
@@ -17,12 +15,6 @@ import logconfig.LoggerFactory;
  */
 public class FileLengthFeedBackThread implements Runnable
 {
-    //初始化日志
-    static
-    {
-        logger =
-                LoggerFactory.getInstance(FileLengthFeedBackThread.class.getName());
-    }
 
     /**
      *
@@ -59,15 +51,18 @@ public class FileLengthFeedBackThread implements Runnable
              * 注：
              * 		此处假设文件名长度不超过1024bytes!!!
              */
+            System.out.println("Get file name.");
+
             int fileNameLength = inFromClient.read(buffer);
             if (fileNameLength != -1)
             {
                 input = new String(buffer, 0, fileNameLength);
-                
-                logger.info("Requested file name： " + input);
+
+
+                System.out.println("Requested file name: " + input);
 
                 File file = new File(input);
-                if (file.exists())
+                if (file.exists() && !file.isDirectory())
                 {
                     length = file.length();
                 } else
@@ -109,6 +104,7 @@ public class FileLengthFeedBackThread implements Runnable
                 inFromClient.close();
                 outToClient.close();
                 connetcionSocket.close();
+                
             } catch (IOException e)
             {
                 // TODO Auto-generated catch block
@@ -122,9 +118,6 @@ public class FileLengthFeedBackThread implements Runnable
      *        声明成员变量
      * *******************************
      */
-    //日志
-    private static Logger logger = null;
-
     // 缓存大小
     private static final int BUFFERSIZE = 1024;
     // 客户端发送的数据

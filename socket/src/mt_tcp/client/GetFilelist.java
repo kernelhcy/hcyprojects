@@ -10,9 +10,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.JOptionPane;
+import mt_tcp.server.MyLogger;
 
 /**
  *
@@ -26,14 +25,14 @@ public class GetFilelist implements Runnable
         if (null == dir)
         {
             this.dir = "/";
-        }
-        else
+        } else
         {
             this.dir = dir;
         }
         this.hostName = host;
         this.port = port;
 
+        logger = MyLogger.getInstance();
 
     }
 
@@ -44,21 +43,18 @@ public class GetFilelist implements Runnable
     public void run()
     {
         int state = createConnecion();
-        if(state == NOSUCHDIRECTORY)
+        if (state == NOSUCHDIRECTORY)
         {
-            System.out.println("No such directory");
-        }
-        else if(state == CONNECIONFAILED)
+            logger.info("No such directory");
+        } else if (state == CONNECIONFAILED)
         {
-            System.out.println("Connecion failed");
-        }
-        else if(state == UNKOWNHOST)
+            logger.info("Connecion failed");
+        } else if (state == UNKOWNHOST)
         {
-            System.out.println("Unkown host");
-        }
-        else if(state == BADPORTNUMBER)
+            logger.info("Unkown host");
+        } else if (state == BADPORTNUMBER)
         {
-            System.out.println("Bad port number");
+            logger.info("Bad port number");
         }
 
         state = getFilelist();
@@ -74,22 +70,20 @@ public class GetFilelist implements Runnable
         {
             //create socket connection
             connection = new Socket(this.hostName, this.port);
-            
-            System.out.println("Create conneciont success");
+
+            logger.info("Create conneciont success");
 
             //get input and output stream
             fromServer = new BufferedReader(new InputStreamReader(connection.getInputStream()));
             toServer = new BufferedOutputStream(connection.getOutputStream());
 
-        }
-        catch (UnknownHostException ex)
+        } catch (UnknownHostException ex)
         {
-            System.out.println(ex.getMessage());
+            logger.info(ex.getMessage());
             return UNKOWNHOST;
-        }
-        catch (IOException ex)
+        } catch (IOException ex)
         {
-            System.out.println(ex.getMessage());
+            logger.info(ex.getMessage());
             return CONNECIONFAILED;
         }
 
@@ -104,59 +98,65 @@ public class GetFilelist implements Runnable
     {
         try
         {
-            System.out.println("I want file list");
+            logger.info("I want file list");
             //tell the server that I want the file list
             toServer.write("Filelist".getBytes());
             toServer.flush();
             //get the ack.
             //make sure that the server has received the required and is going to send back the file list
             //fromServer.readLine();
-            
-            System.out.println("Dir:"+dir);
+
+            logger.info("Dir:" + dir);
             //send the directory
+            logger.info("Send dir to server.");
             toServer.write(this.dir.getBytes());
             toServer.flush();
 
-            System.out.println();
+            logger.info("Read file list from server.");
             //receive the file list
             String input = fromServer.readLine();
-            System.out.println(input);
-            System.out.println();
+            //logger.info(input);
+            logger.info("Read over.");
 
-            
+
             StringBuilder filelists = new StringBuilder();
 
-            names = input.split(",");
-            for (String s : names)
+            if ( input != null)
             {
-                System.out.println(s);
-                if(s.charAt(0) != '.')
+                names = input.split(",");
+                for (String s : names)
                 {
-                    filelists.append(s);
-                    filelists.append('\n');
+                    //System.out.println(s);
+                    if (s.charAt(0) != '.')
+                    {
+                        //System.out.println(s);
+                        filelists.append(s);
+                        filelists.append('\n');
+                    }
                 }
+            }
+            else
+            {
+                filelists.append("No Files!");
             }
 
             JOptionPane.showMessageDialog(null, filelists.toString(), "FileLists",
                     JOptionPane.WARNING_MESSAGE, null);
 
-        }
-        catch (IOException ex)
+        } catch (IOException ex)
         {
-            System.out.println(ex.getMessage());
+            logger.info(ex.getMessage());
             return NOSUCHDIRECTORY;
-        }
-        finally
+        } finally
         {
             try
             {
                 connection.close();
                 fromServer.close();
                 toServer.close();
-            }
-            catch (IOException ex)
+                logger.info("GetFilelist: Close connection.");
+            } catch (IOException ex)
             {
-                
             }
         }
 
@@ -179,4 +179,5 @@ public class GetFilelist implements Runnable
     public static final int NOSUCHDIRECTORY = -2;
     public static final int BADPORTNUMBER = -3;
     public static final int CONNECIONFAILED = -4;
+    private MyLogger logger = null;
 }
