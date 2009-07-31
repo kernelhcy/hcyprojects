@@ -7,7 +7,7 @@
 #ifndef _LEXICALANALYSIS_H
 #define	_LEXICALANALYSIS_H
 
-#include "FileActions.h"
+#include "FileAction.h"
 #include <stdlib.h>
 #include <iostream>
 #include <list>

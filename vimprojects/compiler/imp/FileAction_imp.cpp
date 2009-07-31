@@ -1,4 +1,4 @@
-#include "../headers/FileActions.h"
+#include "../headers/FileAction.h"
 
 FileAction::FileAction(std::ifstream& ifs_p, std::ofstream& ofs_p) : ifs(ifs_p), ofs(ofs_p)
 {
