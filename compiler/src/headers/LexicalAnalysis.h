@@ -22,18 +22,18 @@
  *         +-------------+----------+
  *         | Item        |    Id    |
  *         +-------------+----------+
- *         | program     |    1     |
- *         | begin       |    2     |
- *         | end         |    3     |
- *         | var         |    4     |
- *         | integer     |    5     |
+ *         | main        |    1     |
+ *         | {           |    2     |
+ *         | }           |    3     |
+ *         | bool        |    4     |
+ *         | int         |    5     |
  *         | if          |    6     |
- *         | then        |    7     |
+ *         | then*       |    7     |
  *         | else        |    8     |
- *         | do          |    9     |
+ *         | do*         |    9     |
  *         | while       |    10    |
- *         | constant    |    11    |
- *         | labels      |    12    |
+ *         | false       |    11    |
+ *         | true        |    12    |
  *         |    +        |    13    |
  *         |    -        |    14    |
  *         |    *        |    15    |
@@ -44,9 +44,16 @@
  *         |    >        |    20    |
  *         |    <        |    21    |
  *         |    ;        |    22    |
- *         |    :        |    23    |
- *         |    :=       |    24    |
+ *         |    ==       |    23    |
+ *         |     =       |    24    |
  *         |    ,        |    25    |
+ *         |    &&       |    26    |
+ *         |    ||       |    27    |
+ *         |    //       |    28    |
+ *         |    / *      |    29    |
+ *         |    * /      |    30    |
+ *         | constants   |    31    |
+ *         |  labels     |    32    |
  *         +-------------+----------+
  *
  *  The index of the key word add one in the vector is the id of this key word;
@@ -55,69 +62,30 @@ class LexicalAnalysis
 {
 public:
 
-    LexicalAnalysis(FileAction& fa_p);
-    ~LexicalAnalysis();
+    static LexicalAnalysis* get_instance(const std::string& in_path, const std::string& out_path);
+    ~LexicalAnalysis(void);
     /*
      *  Do lexical analysis on the string in the buffer
      *
      */
-    void analysis();
+    void analysis(void);
 
     /*
      * Get the next word of the sentence.
      * Used by the syntax analysis program.
      *
      */
-    int get_next_word();
-
-   
-    /*
-     *  Get the size of the buffer.
-     */
-    int get_buffer_size();
-
-    /*
-     *  Set the buffer size.
-     *  This function will reallocate memory for the buffer.
-     *  If reallocating memory faild,this funcion will report an error
-     *      and the size of the buffer will not be changed and the buffer
-     *      will also not be changed.
-     *  Return value:
-     *      1 : fail
-     *      0 : success
-     */
-    int set_buffer_size(int size);
-
-
-    /*
-     *  Get the buffer.
-     *  Used to fill the buffer with characters.
-     *  If there is no character to get , return '\0'
-     */
-    char* get_buffer();
+    int get_next_word(void);
 
     /*
      *  Get the table of the words;
      */
-    std::list<std::string>& get_label_table();
+    std::list<std::string>& get_label_table(void);
 
     /*
      *  Get the table of the constant.
      */
-    std::list<std::string>& get_const_table();
-
-    /*
-     *  Fill the buffer.
-     *  Return value:
-     *      the number of the characters fill into the buffer.
-     *  If return 0, the end of the file has been accessed.
-     */
-    int fill_buffer();
-
-    /*
-     * Print the left content in tht buffer
-     */
-    void print_buffer();
+    std::list<std::string>& get_const_table(void);
     
 private:
     //store the character readed from the buffer
@@ -132,29 +100,13 @@ private:
     //the table of constants
     std::list<std::string> const_table;
 
-    //buffer
-    char* buffer;
-
-    //the size of the buffer
-    int buffer_size;
-
-    //the current position of the buffer.
-    int index;
-
-    //the length of the string in the buffer now.
-    int len;
-
     //store the key words of this language
     std::vector<std::string> keywords;
-
-    
 
     /*
      *  Read from the source file
      */
-    FileAction& fa;
-
-    
+    FileAction* fa;
 
     /*
      *  Out put the result to the output file
@@ -164,11 +116,9 @@ private:
     /*
      *  Get a character from the buffer and put the character into ch.
      *  The index of the buffer goes ahead.
-     *  Return value:
-     *      1 : success to get a character
-     *      0 : faild to get a character,maybe the buffer is empty
+     *  Return value: the character
      */
-    int get_char(char &ch);
+    char get_char(char &ch);
 
     /*
      *  Check if the character in ch is black.
@@ -182,7 +132,7 @@ private:
     /*
      *  Append ch to the end of str_token.
      */
-    void concat();
+    void concat(void);
 
     /*
      *  Check if the character in ch is a letter.
@@ -198,23 +148,41 @@ private:
      *  Check the string in str_token is a keyword of this language.
      *  If is a keyword,return the id of the keyword,else return 0.
      */
-    int reserve();
+    int reserve(void);
 
     /*
      *  Put the character in ch back into the buffer,and set ' ' into ch.
      */
-    void retract();
+    void retract(void);
 
     /*
      *  Insert the sting in str_token into the label_table and return the pointer.
      */
-    int insert_id();
+    int insert_id(void);
 
     /*
      *  Insert the constant in str_token into the const_table and return the pointer.
      */
-    int insert_const();
+    int insert_const(void);
 
+    /*
+     * show the syntax error
+     * info : the information of the error
+     */
+    void error(const std::string &info);
+
+    /*
+     * singleton
+     */
+    static LexicalAnalysis * _instance ;
+    LexicalAnalysis(const std::string& in_path, const std::string& out_path);
+
+    /*
+     * print the information
+     * mode :	0  standard output
+     * 			1  error output
+     */
+    void print_info(const std::string &s, int mode);
 
 };
 

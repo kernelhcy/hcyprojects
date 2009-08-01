@@ -2,13 +2,25 @@
 
 #include "../headers/LexicalAnalysis.h"
 
-LexicalAnalysis::LexicalAnalysis(FileAction& fa_p) :
-	ch(' '), buffer_size(15), index(0), fa(fa_p), len(0)
+LexicalAnalysis* LexicalAnalysis::_instance = NULL;
+
+LexicalAnalysis* LexicalAnalysis::get_instance(const std::string& in_path,
+		const std::string& out_path)
+{
+	if (_instance == NULL)
+	{
+		_instance = new LexicalAnalysis(in_path, out_path);
+	}
+
+	return _instance;
+}
+
+LexicalAnalysis::LexicalAnalysis(const std::string& in_path, const std::string& out_path)
 {
 	//std::cout << "The Lexical Analysis" << std::endl;
-
-	//allocate a buffer
-	buffer = new char[buffer_size];
+	ch = ' ';
+	//get the instance of the FileAction
+	fa = FileAction::get_instance(in_path, out_path);
 
 	str_token.clear();
 
@@ -19,27 +31,23 @@ LexicalAnalysis::LexicalAnalysis(FileAction& fa_p) :
 	 *                //key word    //Id
 	 */
 	keywords.push_back("program"); //1
-	keywords.push_back("begin"); //2
-	keywords.push_back("end"); //3
-	keywords.push_back("var"); //4
-	keywords.push_back("integer"); //5
+	keywords.push_back("{"); //2
+	keywords.push_back("}"); //3
+	keywords.push_back("bool"); //4
+	keywords.push_back("int"); //5
 	keywords.push_back("if"); //6
-	keywords.push_back("then"); //7
+	keywords.push_back("then"); //7 no use!
 	keywords.push_back("else"); //8
-	keywords.push_back("do"); //9
+	keywords.push_back("do"); //9 no use!
 	keywords.push_back("while"); //10
+	keywords.push_back("false"); //11
+	keywords.push_back("true"); //12
 
-	//open the source file
-	fa.open_file();
-
-	//fill the buffer
-	len = fill_buffer();
 }
 
 LexicalAnalysis::~LexicalAnalysis()
 {
-	fa.~FileAction();
-	delete[] buffer;
+	fa->~FileAction();
 	str_token.~basic_string();
 
 }
@@ -56,13 +64,13 @@ int LexicalAnalysis::get_next_word()
 
 	if (get_char(ch) == 0)
 	{
-		fa.close_file();
+		fa->~FileAction();
 		return -1;
 	};
 
 	if (get_bc(ch) == 0)
 	{
-		fa.close_file();
+		fa->~FileAction();
 		return -1;
 	};
 
@@ -74,7 +82,7 @@ int LexicalAnalysis::get_next_word()
 			concat();
 			con = get_char(ch);
 
-			if (con == 0)
+			if (con == '\0')
 			{
 				break;
 			}
@@ -89,8 +97,8 @@ int LexicalAnalysis::get_next_word()
 		{
 			//Get a label!
 			value = insert_id();
-			output(12, str_token.data());
-			code = 12;
+			output(32, str_token.data());
+			code = 32;
 		}
 		else
 		{
@@ -102,9 +110,9 @@ int LexicalAnalysis::get_next_word()
 		 *  Job is done!
 		 *  Exit.
 		 */
-		if (con == 0)
+		if (con == '\0')
 		{
-			fa.close_file();
+			fa->~FileAction();
 			return -1;
 		}
 
@@ -117,26 +125,21 @@ int LexicalAnalysis::get_next_word()
 			concat();
 			con = get_char(ch);
 
-			if (con == 0)
+			if (con == '\0')
 			{
 				break;
 			}
 		}
 		retract();
 		value = insert_const();
-		output(11, str_token.data());
-		code = 11;
+		output(31, str_token.data());
+		code = 31;
 		//Done
-		if (con == 0)
+		if (con == '\0')
 		{
-			fa.close_file();
+			fa->~FileAction();
 			exit(0);
 		}
-	}
-	else if (ch == '=')
-	{
-		output(19, "=");
-		code = 19;
 	}
 	else if (ch == '+')
 	{
@@ -152,11 +155,6 @@ int LexicalAnalysis::get_next_word()
 	{
 		output(15, "*");
 		code = 15;
-	}
-	else if (ch == '/')
-	{
-		output(16, "/");
-		code = 16;
 	}
 	else if (ch == '(')
 	{
@@ -188,35 +186,129 @@ int LexicalAnalysis::get_next_word()
 		output(25, ",");
 		code = 25;
 	}
-	else if (ch == ':')
+	else if (ch == '=')
 	{
-		con == get_char(ch);
+		con = get_char(ch);
 
 		if (ch == '=')
 		{
-			output(24, ":=");
+			output(24, "==");
 			code = 24;
 		}
 		else
 		{
 			retract();
-			output(23, ":");
+			output(23, "=");
 			code = 23;
 		}
+	}
+	else if (ch == '{')
+	{
+		output(2, "{");
+		code = 2;
+	}
+	else if (ch == '}')
+	{
+		output(3, "}");
+		code = 3;
+	}
+	else if (ch == '&')
+	{
+		con = get_char(ch);
 
-		//Done
-		if (con == 0)
+		if (ch == '&')
 		{
-			fa.close_file();
+			output(26, "&&");
+			code = 26;
+		}
+		else
+		{
+			error("need &&.");
+			retract();
+
+		}
+		//Done
+		if (con == '\0')
+		{
+			fa->~FileAction();
 			return -1;
+		}
+	}
+	else if (ch == '|')
+	{
+		con = get_char(ch);
+
+		if (ch == '|')
+		{
+			output(27, "||");
+			code = 27;
+		}
+		else
+		{
+			retract();
+
+		}
+		//Done
+		if (con == '\0')
+		{
+			fa->~FileAction();
+			return -1;
+		}
+	}
+	else if (ch == '/')
+	{
+		con = get_char(ch);
+
+		if (ch == '/')
+		{
+			output(28, "//");
+			code = 28;
+			//next line.delete the comments
+			fa->next_line();
+		}
+		else if (ch == '*')
+		{
+			output(29, "/*");
+			code = 29;
+
+			/*
+			 * delete the comments
+			 */
+			char c1 = get_char(ch), c2 = get_char(ch);
+			while (true)
+			{
+				c1 = c2;
+				c2 = get_char(ch);
+				if (c2 == '\0')
+				{
+					error("comments error");
+					break;
+				}
+
+				if (c1 == '*' && c2 == '/')
+				{
+					output(30, "*/");
+					code = 30;
+					break;
+				}
+			}
+
+		}
+		else if (con == '\0')
+		{
+			fa->~FileAction();
+			return -1;
+		}
+		else
+		{
+			output(16, "/");
+			code = 16;
+			retract();
 		}
 	}
 	else
 	{
-		std::cerr << "Sytax Error!!\n";
-
-		fa.close_file();
-		return -1;
+		error("Syntax Error!!");
 	}
 	return code;
 
@@ -225,6 +317,10 @@ int LexicalAnalysis::get_next_word()
 void LexicalAnalysis::analysis()
 {
 	int id = get_next_word();
+	if (id < 0)
+	{
+		return;
+	}
 
 	while (id > 0)
 	{
@@ -236,8 +332,17 @@ void LexicalAnalysis::analysis()
 
 void LexicalAnalysis::output(int id, const char* entry)
 {
-	//fa.get_ofstrem() << "(  " << id << " ,   " << entry << "  )" << std::endl;
-	//std::cout << "(  " << id << " ,   " << entry << "  )" << std::endl;
+	std::string info;
+	char temp[10];
+
+	info.append("(  ");
+	sprintf(temp, "%d", id);
+	info.append(temp);
+	info.append(" ,   ");
+	info.append(entry);
+	info.append("  )\n");
+
+	print_info(info, 0);
 
 }
 
@@ -260,47 +365,14 @@ int LexicalAnalysis::get_bc(char &ch)
 	return con;
 }
 
-char* LexicalAnalysis::get_buffer()
+char LexicalAnalysis::get_char(char &ch)
 {
-	return buffer;
-}
-
-int LexicalAnalysis::get_buffer_size()
-{
-	return buffer_size;
-}
-
-int LexicalAnalysis::get_char(char &ch)
-{
-	//The buffer is empty
-	if (index >= len)
+	ch = fa->get_char();
+	while (ch == '\t' || ch == '\n')
 	{
-		//Fill the buffer
-		len = fill_buffer();
-
-		//NO char!
-		//The job has done!!
-		//Bye!!~
-		if (len == 0)
-		{
-			return 0;
-		}
-
-		index = 0;
-		ch = buffer[0];
+		ch = fa->get_char();//delete the newline
 	}
-	else
-	{
-		ch = buffer[index];
-	}
-
-	++index;
-	return 1;
-}
-
-int LexicalAnalysis::fill_buffer()
-{
-	return fa.fill_buffer(buffer, buffer_size);
+	return ch;
 }
 
 std::list<std::string>& LexicalAnalysis::get_const_table()
@@ -348,7 +420,7 @@ bool LexicalAnalysis::is_letter(char ch)
 
 int LexicalAnalysis::reserve()
 {
-	for (int i = 0; i < keywords.size(); ++i)
+	for (unsigned int i = 0; i < keywords.size(); ++i)
 	{
 		if (keywords[i] == str_token)
 		{
@@ -361,44 +433,47 @@ int LexicalAnalysis::reserve()
 
 void LexicalAnalysis::retract()
 {
-	--index;
-	if (index < 0)
-	{
-		index = 0;
 
-	}
-
+	fa->retract();
 	ch = ' ';
 
 }
 
-int LexicalAnalysis::set_buffer_size(int size)
+void LexicalAnalysis::error(const std::string &info)
 {
-	char *temp = NULL;
-	temp = new char[size];
-	if (temp != NULL)
-	{
-		delete[] buffer;
-		buffer = temp;
-		temp = NULL;
-	}
-	else
-	{
-		std::cerr << "Can not resize the buffer!\n";
-		exit(1);
-	}
+
+	std::string s;
+	char temp[20];
+	s.append("line: ");
+	memset(temp, '\0', sizeof(temp));
+	sprintf(temp, "%d", fa->get_line());
+	s.append(temp);
+	s.append(" column: ");
+	memset(temp, '\0', sizeof(temp));
+	sprintf(temp, "%d", fa->get_colume());
+	s.append(temp);
+	s.append(" ");
+	s.append(info);
+	s.append("\n");
+
+	print_info(s, 1);
+
 }
 
-void LexicalAnalysis::print_buffer()
+void LexicalAnalysis::print_info(const std::string &s, int mode)
 {
-	while (index < buffer_size)
+	switch(mode)
 	{
-		std::cout << buffer[index];
-		++index;
-	}
-	//more
-	fill_buffer();
-	std::cout << buffer;
-	std::cout << "\n";
-}
+		case 0:
+			std::cout << s;
+			break;
+		case 1:
+			std::cerr << s;
+			break;
+		default:
+			std::cerr << "LexicalAnalysis::print_info : unknown mode!!\n";
+			break;
 
+	}
+
+}

@@ -1,152 +1,185 @@
 #include "../headers/FileActions.h"
 
-FileAction::FileAction(std::ifstream& ifs_p, std::ofstream& ofs_p) :
-	ifs(ifs_p), ofs(ofs_p)
+FileAction * FileAction::_instance = NULL;
+
+FileAction::FileAction()
 {
 	in_path = "in";
 	out_path = "out";
 
+	init();
+
 }
 
-FileAction::FileAction(const std::string& f_in_path, const std::string& f_out_path,
-		std::ifstream& ifs_p, std::ofstream& ofs_p) :
-	in_path(f_in_path), out_path(f_out_path), ifs(ifs_p), ofs(ofs_p)
+FileAction::FileAction(const std::string& f_in_path, const std::string& f_out_path) :
+	in_path(f_in_path), out_path(f_out_path)
 {
 	//set_path(f_path);
 
+	init();
 }
 
-FileAction::~FileAction()
+void FileAction::init(void)
 {
-	//delete[] path;
+	std::cout << "init..." << std::endl;
+	open_file();
+	this -> line = 0;
+	this -> index = 0;
+	this -> buffer_size = 500;
+	this -> buffer_len = -1; //set to -1, convenience to the first time to fill the buffer.
+	buffer = new char[buffer_size];
+
+}
+
+FileAction::~FileAction(void)
+{
+	delete[] buffer;
 	this->close_file();
 
 }
 
-const std::string& FileAction::get_in_path()
+FileAction* FileAction::get_instance()
+{
+	if (_instance == NULL)
+	{
+		_instance = new FileAction();
+	}
+
+	return _instance;
+}
+
+FileAction* FileAction::get_instance(const std::string& in_path, const std::string& out_path)
+{
+	if (_instance == NULL)
+	{
+		_instance = new FileAction(in_path, out_path);
+	}
+
+	return _instance;
+}
+
+const std::string& FileAction::get_in_path(void)
 {
 	return in_path;
 }
 
-void FileAction::set_in_path(const std::string& path)
-{
-	this->in_path = path;
-}
-
-const std::string& FileAction::get_out_path()
+const std::string& FileAction::get_out_path(void)
 {
 	return out_path;
 }
 
-void FileAction::set_out_path(const std::string& path)
+int FileAction::open_file(void)
 {
-	this->out_path = path;
-}
-
-int FileAction::open_file()
-{
+	std::cout << "Open File." << in_path.data() << std::endl;
 	//open the input source file
-	ifs.open(in_path.data(), std::ios::in | std::ios::out);
 
-	//openning input file failed.
-	if (ifs == NULL)
-	{
-		std::cerr << "Open Source File Error!" << std::endl;
-		return 0;
-	}
-
+	ifs.open(in_path.c_str(), std::ios::in | std::ios::out);
+	std::cout << "Open input file.\n";
 	//open the output file
 
-	ofs.open(out_path.data(), std::ios::out);
-
-	if (ofs == NULL)
-	{
-		std::cerr << "Open Output File Error!" << std::endl;
-		return 0;
-	}
-
+	ofs.open(out_path.c_str(), std::ios::out);
+	std::cout << "Open out put file.\n";
 	return 1;
 }
 
-int FileAction::close_file()
+int FileAction::close_file(void)
 {
+	if (ifs.is_open())
+	{
+		ifs.close();
+	}
+	std::cout << "closing input source file...\n";
 
-	ifs.close();
-	//std::cout<<"closing input source file...\n";
-	ofs.close();
-	//std::cout<<"closing output file...\n";
+	if (ofs.is_open())
+	{
+		ofs.close();
+	}
+	std::cout << "closing output file...\n";
 	return 0;
 }
 
-int FileAction::fill_buffer(char* buffer, int size)
+int FileAction::fill_buffer(void)
 {
-	//std::cout<<"fill buffer \n";
 
-	//clear up the buffer
-	memset(buffer, '\0', size);
+	memset(buffer, '\0', buffer_size);
 
-	char temp = ' ';
-	int index = 0;
-	if (ifs == NULL)
+	if (!ifs.eof())
 	{
-		return 0;
+		/*
+		 * 回车换行符放在下一行的开始位置！！！
+		 */
+		ifs.getline(buffer, 500);
+		//std::cout << buffer << std::endl;
+	}
+	else
+	{
+		return -1;
 	}
 
-	while (!ifs.eof() && size > 0)
-	{
-		//get a character
-		ifs.get(temp);
-
-		//delete the enter charater
-		if (temp == '\n')
-		{
-			continue;
-		}
-
-		if (ifs.eof())//end of the file
-		{
-			break;
-		}
-
-		buffer[index] = temp;
-		++index;
-
-		//delete the noused black space
-		if (temp == ' ' || temp == '\n')
-		{
-			while (temp == ' ' || temp == '\n')
-			{
-				ifs.get(temp);
-			}
-
-			//put the first character while is not ' ' into the buffer
-			buffer[index] = temp;
-			++index;
-
-			//the capacity of the buffer
-			--size;
-			if (size <= 0)
-			{
-				break;
-			}
-		}
-
-		--size;
-	}
-
-	//std::cout<<buffer<<std::endl;
-
-	return index;
+	return strlen(buffer);
 }
 
-char FileAction::get_char()
+int FileAction::next_line(void)
+{
+
+	//read next line which is not bank line
+	do
+	{
+		buffer_len = fill_buffer();
+		if (buffer_len == -1)//The end of the file
+		{
+			return -1;
+		}
+		++line;
+		index = 0;
+	}while (buffer_len <= 1 && (buffer[0] == '\0' || buffer[0] == '\t' || buffer[0] == '\n'));
+	return 0;
+}
+
+char FileAction::get_char(void)
 {
 	char temp = ' ';
-	ifs.get(temp);
+
+	if (index >= buffer_size)//the buffer is overflowed!
+	{
+		std::cerr << "FileAction ERROR : Buffer overflow!!" << std::endl;
+		close_file();
+		exit(1);
+	}
+
+	int state = 0;
+	if(index > buffer_len || buffer[index] == '\0')
+	{
+		state = next_line();
+	}
+
+	//end of file
+	if(state == -1)
+	{
+		return '\0';
+	}
+
+	temp = buffer[index];
+	++index;
+
 	return temp;
 }
 
-std::ofstream& FileAction::get_ofstrem()
+int FileAction::get_colume(void)
 {
-	return this->ofs;
+	return this->index;
+}
+
+int FileAction::get_line(void)
+{
+	return this->line;
+}
+
+void FileAction::retract(void)
+{
+	--index;
+	if (index < 0)
+	{
+		std::cout << "FileAction::retract  index < 0\n";
+	}
 }

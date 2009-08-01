@@ -351,6 +351,5 @@ void SyntaxAnalysis::print_error_position()
 	//        }
 	//    }
 	//std::cout <<buffer<< "\n";
-	la.print_buffer();
 }
 

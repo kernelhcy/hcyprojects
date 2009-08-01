@@ -1,0 +1,42 @@
+int main()
+{
+	
+	int j, m, n, i;
+	bool con = false;
+/*
+	j = 1;
+	m = 3;
+	n = j + m;
+*/
+	if (con)
+	{
+		j = (m + 2) * j;
+	}
+
+	while (con)
+	{
+		j = (j - 1) / n;
+		//con = true;
+	}
+
+	if (n)
+	{
+		j = m + (j - 3 * 5) / 2 * i;
+	}
+	else
+	{
+		while (j < 10 &a k > m && con)
+		{
+			if (j > 3 && m < 10 && (k < 10 || i - 10 > 10))
+			{
+				j = m + k;
+			}
+			else
+			{
+				j = m - k;
+			}
+
+		}
+	}
+	return 0;
+}
