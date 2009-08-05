@@ -1,54 +1,99 @@
 #include "../headers/SyntaxAnalysis.h"
 #include <string>
 
-SyntaxAnalysis::SyntaxAnalysis(LexicalAnalysis & _la) :
-	la(_la)
+//initialize the only instance
+SyntaxAnalysis* SyntaxAnalysis::_instance = NULL;
+
+SyntaxAnalysis* SyntaxAnalysis::get_instance(const std::string& in_path,
+		const std::string& out_path)
+{
+	if (_instance == NULL)
+	{
+		_instance = new SyntaxAnalysis(in_path, out_path);
+	}
+
+	return _instance;
+}
+
+SyntaxAnalysis::SyntaxAnalysis(const std::string& in_path, const std::string& out_path)
 {
 	//initialize
-	info = 0;
 
-	string_id[0] = "p";
-	string_id[1] = "b";
-	string_id[2] = "n";
-	string_id[3] = "v";
-	string_id[4] = "g";
-	string_id[5] = "f";
-	string_id[6] = "t";
-	string_id[7] = "e";
-	string_id[8] = "d";
-	string_id[9] = "w";
-	string_id[10] = "c";
-	string_id[11] = "i";
-	string_id[12] = "+";
-	string_id[13] = "-";
-	string_id[14] = "*";
-	string_id[15] = "/";
-	string_id[16] = "(";
-	string_id[17] = ")";
-	string_id[18] = "+";
-	string_id[19] = ">";
-	string_id[20] = "<";
-	string_id[21] = ";";
-	string_id[22] = ":";
-	string_id[23] = ":=";
-	string_id[24] = ",";
+	//get the only instance of LexicalAnalysis class
+	la = LexicalAnalysis::get_instance(in_path, out_path);
+	//get the only instance of FileAction class
+	fa = FileAction::get_instance(in_path, out_path);
+
+	string_id[0] = "";//no use
+	string_id[1] = "m";//main
+	string_id[2] = "{";
+	string_id[3] = "}";
+	string_id[4] = "b";//bool
+	string_id[5] = "n";//int
+	string_id[6] = "f";//if
+	string_id[7] = "r";//return
+	string_id[8] = "e";//else
+	string_id[9] = "d";//do : no use
+	string_id[10] = "w";//while
+	string_id[11] = "s";//false
+	string_id[12] = "t";//true
+	string_id[13] = "+";
+	string_id[14] = "-";
+	string_id[15] = "*";
+	string_id[16] = "/";
+	string_id[17] = "(";
+	string_id[18] = ")";
+	string_id[19] = "=";
+	string_id[20] = ">";
+	string_id[21] = "<";
+	string_id[22] = ";";
+	string_id[23] = "==";
+	string_id[24] = "!=";
+	string_id[25] = ",";
+	string_id[26] = "&";
+	string_id[27] = "|";
+	string_id[28] = "!";
+	string_id[29] = "/*";
+	string_id[30] = "*/";
+	string_id[31] = "//";
+	string_id[32] = "c";//constant
+	string_id[33] = "i";//label
 
 	//
-	table1[0] = "B";
-	table1[1] = "A";
-	table1[2] = "fitAI";
-	table1[3] = "widA";
-	table1[4] = "i:=E;";
-	table1[5] = "TG";
-	table1[6] = "FH";
-	table1[7] = "+TG";
-	table1[8] = "-TG";
-	table1[9] = "i";
-	table1[10] = "(E)";
-	table1[11] = "*FH";
-	table1[12] = "/FH";
-	table1[13] = "eA";
-	table1[14] = "";
+	table1[0] = "nm(){ArF;}";//int main(){A return i;}
+	table1[1] = "BA";
+	table1[2] = "CA";
+	table1[3] = "i=E;";
+	table1[4] = "GI";
+	table1[5] = "J";
+	table1[6] = "TO";
+	table1[7] = "+TO";
+	table1[8] = "-TO";
+	table1[9] = "FH";
+	table1[10] = "*FH";
+	table1[11] = "/FH";
+	table1[12] = "(E)";
+	table1[13] = "i";
+	table1[14] = "f(E){A}K";//if(K){A}I
+	table1[15] = "w(E){A}";//while(K){A}
+	table1[16] = "e{A}";//else A
+	table1[17] = "niN";//int i N
+	table1[18] = "biN";//bool i N
+	table1[19] = ",iN";
+	table1[20] = "!GI";
+	table1[21] = "(I)J";//no use
+	table1[22] = "iJ";// no use
+	table1[23] = "t";//true
+	table1[24] = "s";//false
+	table1[25] = "&GI";
+	table1[26] = "|GI";
+	table1[27] = "";//nothing
+	table1[28] = "LA";
+	table1[29] = "M;";
+	table1[30] = "N";
+	table1[31] = "FJ";
+	table1[32] = "O";
+	table1[33] = "c";//constants
 
 	for (int i = 0; i < SIZE; ++i)
 	{
@@ -58,55 +103,106 @@ SyntaxAnalysis::SyntaxAnalysis(LexicalAnalysis & _la) :
 		}
 	}
 	//initialize the predicrion analysis table
-	table2['S' - 'A'][6] = 0;
-	table2['S' - 'A'][10] = 0;
-	table2['S' - 'A'][12] = 1;
+	table2['S' - 'A'][5] = 0;
 
-	table2['A' - 'A'][12] = 4;
+	table2['A' - 'A'][4] = 28;
+	table2['A' - 'A'][5] = 28;
+	table2['A' - 'A'][6] = 2;
+	table2['A' - 'A'][7] = 27;
+	table2['A' - 'A'][10] = 2;
+	table2['A' - 'A'][33] = 1;
+	table2['A' - 'A'][3] = 27;
 
-	table2['B' - 'A'][6] = 2;
-	table2['B' - 'A'][10] = 3;
+	table2['B' - 'A'][33] = 3;
 
-	table2['E' - 'A'][12] = 5;
-	table2['E' - 'A'][17] = 5;
+	table2['C' - 'A'][6] = 14;
+	table2['C' - 'A'][10] = 15;
 
-	table2['T' - 'A'][12] = 6;
-	table2['T' - 'A'][17] = 6;
+	table2['E' - 'A'][33] = 4;
+	table2['E' - 'A'][32] = 4;
+	table2['E' - 'A'][17] = 4;
+	table2['E' - 'A'][11] = 4;
+	table2['E' - 'A'][12] = 4;
 
-	table2['G' - 'A'][13] = 7;
-	table2['G' - 'A'][14] = 8;
-	table2['G' - 'A'][18] = 14;
-	table2['G' - 'A'][24] = 14;
-	table2['G' - 'A'][12] = 14;
-	table2['G' - 'A'][22] = 14;
-	table2['G' - 'A'][15] = 14;
-	table2['G' - 'A'][16] = 14;
+	table2['F' - 'A'][33] = 13;
+	table2['F' - 'A'][32] = 33;
+	table2['F' - 'A'][17] = 12;
+	table2['F' - 'A'][11] = 24;
+	table2['F' - 'A'][12] = 23;
 
-	table2['F' - 'A'][12] = 9;
-	table2['F' - 'A'][17] = 10;
+	table2['T' - 'A'][33] = 9;
+	table2['T' - 'A'][32] = 9;
+	table2['T' - 'A'][17] = 9;
+	table2['T' - 'A'][11] = 9;
+	table2['T' - 'A'][12] = 9;
 
-	table2['H' - 'A'][12] = 14;
-	table2['H' - 'A'][13] = 14;
-	table2['H' - 'A'][14] = 14;
-	table2['H' - 'A'][15] = 11;
-	table2['H' - 'A'][16] = 12;
-	table2['H' - 'A'][18] = 14;
-	table2['H' - 'A'][22] = 14;
+	table2['G' - 'A'][33] = 6;
+	table2['G' - 'A'][32] = 6;
+	table2['G' - 'A'][17] = 6;
+	table2['G' - 'A'][11] = 6;
+	table2['G' - 'A'][12] = 6;
+	table2['G' - 'A'][28] = 27;
 
-	table2['I' - 'A'][8] = 13;
+	table2['H' - 'A'][13] = 27;
+	table2['H' - 'A'][14] = 27;
+	table2['H' - 'A'][15] = 10;
+	table2['H' - 'A'][16] = 11;
+	table2['H' - 'A'][18] = 27;
+	table2['H' - 'A'][22] = 27;
+	table2['H' - 'A'][26] = 27;
+	table2['H' - 'A'][27] = 27;
 
+	table2['I' - 'A'][26] = 25;
+	table2['I' - 'A'][27] = 26;
+	table2['I' - 'A'][28] = 20;
+	table2['I' - 'A'][18] = 27;
+	table2['I' - 'A'][19] = 27;
+	table2['I' - 'A'][22] = 27;
+	table2['I' - 'A'][33] = 27;
+
+	table2['J' - 'A'][22] = 27;
+	table2['J' - 'A'][18] = 27;
+	table2['J' - 'A'][26] = 25;
+	table2['J' - 'A'][27] = 26;
+
+	table2['K' - 'A'][8] = 16;
+	table2['K' - 'A'][22] = 27;
+	table2['K' - 'A'][26] = 26;
+	table2['K' - 'A'][27] = 25;
+	table2['K' - 'A'][4] = 27;
+	table2['K' - 'A'][5] = 27;
+	table2['K' - 'A'][6] = 27;
+	table2['K' - 'A'][10] = 27;
+
+	table2['L' - 'A'][5] = 29;
+	table2['L' - 'A'][4] = 29;
+
+	table2['M' - 'A'][5] = 17;
+	table2['M' - 'A'][4] = 18;
+
+	table2['N' - 'A'][25] = 19;
+	table2['N' - 'A'][22] = 27;
+
+	table2['O' - 'A'][33] = 27;
+	table2['O' - 'A'][13] = 7;
+	table2['O' - 'A'][14] = 8;
+	table2['O' - 'A'][18] = 27;
+	table2['O' - 'A'][19] = 27;
+	table2['O' - 'A'][22] = 27;
+	table2['O' - 'A'][26] = 27;
+	table2['O' - 'A'][27] = 27;
 }
 
 SyntaxAnalysis::~SyntaxAnalysis()
 {
 
-	la.~LexicalAnalysis();
+	la->~LexicalAnalysis();
 }
 
 int SyntaxAnalysis::analysis()
 {
 	//get the next word's id
-	int word_id = la.get_next_word();
+	int word_id = la->get_next_word();
 
 	//put the begin label into the stack
 	s.push('S');
@@ -117,8 +213,7 @@ int SyntaxAnalysis::analysis()
 	while (word_id > 0)//loop until over or error
 	{
 		//print the content of the stack
-		//print_stack();
-
+		print_stack();
 
 		//get the char on the top of the stack
 		temp_ch = s.top();
@@ -129,15 +224,6 @@ int SyntaxAnalysis::analysis()
 		temp += temp_ch;
 
 		//std::cout << temp << std::endl;
-
-		//The := has two characters.
-		if (temp_ch == ':' && s.top() == '=')
-		{
-			s.pop();
-
-			temp += "=";
-		}
-
 		//This char is not a final label
 		if (temp_ch >= 'A' && temp_ch <= 'Z')//not final label
 		{
@@ -146,12 +232,6 @@ int SyntaxAnalysis::analysis()
 			//the if then else bug
 			if (temp_id < 0 && temp_ch == 'I' && s.empty())
 			{
-				//print the information.
-				print_info();
-
-				//clear everything
-				info = 0;
-
 				//word_id = la.get_next_word();
 				//begin the next sentence
 				s.push('S');
@@ -161,21 +241,18 @@ int SyntaxAnalysis::analysis()
 			//Got an ERROR!!
 			if (temp_id < 0)
 			{
-				std::cout << "语法错误！！位置：";
-				print_error_position();
-				return 1;
+				if (word_id == 33 || word_id == 32)
+				{
+					print_error("多余的变量或常量。");
+				}
+				else
+				{
+					print_error("缺少运算符。");
+				}
+
 			}
 
-			//Just print the infomation of the sentence.
-			//Nothing to do with the analysis...
-			if (temp_ch == 'S')
-			{
-				push_all(table1[temp_id], true);
-			}
-			else
-			{
-				push_all(table1[temp_id], false);
-			}
+			push_all(table1[temp_id]);
 
 		}
 		else// is final label
@@ -184,44 +261,42 @@ int SyntaxAnalysis::analysis()
 
 			if (word_id == id)//
 			{
-				if (s.empty())//get a sentence.
+				if (s.size() == 5 && s.top() == 'A')//get a sentence.
 				{
-					//print the information.
-					print_info();
+					/*
+					 * create the middle code
+					 */
 
-					//clear everything
-					info = 0;
-					while (s.size() > 0)
-					{
-						s.pop();
-					}
-					//begin the next sentence
-					word_id = la.get_next_word();
-					s.push('S');
+					std::cout << "Get a sentence;\n";
 
 				}
 				else
 				{
-					word_id = la.get_next_word();
 
-					//Over.
-					if (word_id <= 0)
+					if (word_id == 32)//constant is dealed with label
 					{
-						break;
-					}
-
-					if (word_id == 11)//constant is dealed with label
-					{
-						word_id = 12;
+						word_id = 33;
 					}
 				}
 
+				word_id = la->get_next_word();
+				//Over.
+				if (word_id <= 0)
+				{
+					break;
+				}
 			}
 			else
 			{
-				std::cout << "语法错误！！位置: ";
-				print_error_position();
-				return 1;
+				if (word_id == 33 || word_id == 32)
+				{
+					print_error("多余的变量或常量。");
+				}
+				else
+				{
+					print_error("缺少运算符。");
+				}
+
 			}
 		}
 
@@ -239,36 +314,10 @@ bool SyntaxAnalysis::is_finalword(int id)
 	return false;
 }
 
-void SyntaxAnalysis::push_all(const std::string& str, bool flag)
+void SyntaxAnalysis::push_all(const std::string& str)
 {
 
 	int len = str.length();
-
-	//rember the information about this sentence
-	if (len > 0 && str[1] == ':')
-	{
-		if (info > 0)
-		{
-			info += 8;
-		}
-		else
-		{
-			info = 8;
-		}
-
-	}
-	if (len > 0 && str[0] == 'f')
-	{
-		info = 1;
-	}
-	if (len > 0 && str[0] == 'w')
-	{
-		info = 4;
-	}
-	if (len > 0 && str[0] == 'e')
-	{
-		info = 2;
-	}
 
 	//push them
 	for (int i = len - 1; i >= 0; --i)
@@ -285,7 +334,7 @@ int SyntaxAnalysis::get_id(const std::string &str)
 		//std::cout<<string_id[i]<<str;
 		if (string_id[i] == str)
 		{
-			return i + 1;
+			return i;
 		}
 	}
 	return -1;
@@ -304,52 +353,37 @@ void SyntaxAnalysis::print_stack()
 	std::cout << "\n";
 }
 
-void SyntaxAnalysis::print_info()
+void SyntaxAnalysis::print_error(const std::string &info)
 {
-	if (info == 1)
-	{
-		std::cout << "if-then分支语句。\n";
-	}
-	else if (info == 2)
-	{
-		std::cout << "if-then-else分支语句。\n";
-	}
-	else if (info == 4)
-	{
-		std::cout << "while-do循环语句。\n";
-	}
-	else if (info == 8)
-	{
-		std::cout << "赋值语句。\n";
-	}
-	else if (info == 9)
-	{
-		std::cout << "if-then分支语句，嵌套赋值语句。\n";
-	}
-	else if (info == 10)
-	{
-		std::cout << "if-then-else分支语句，嵌套赋值语句。\n";
-	}
-	else if (info == 12)
-	{
-		std::cout << "while-do循环语句，嵌套赋值语句。\n";
-	}
+	std::string s;
+	char tmp[10];
+
+	s.append("Syntax Error : ( line ");
+	sprintf(tmp, "%d", fa->get_line());
+	s.append(tmp);
+
+	s.append(" column ");
+	sprintf(tmp, "%d", fa->get_colume());
+	s.append(tmp);
+	s.append(" ) ");
+	s.append(info);
+
+	print_info(s, 0);//error information
 }
 
-void SyntaxAnalysis::print_error_position()
+void SyntaxAnalysis::print_info(const std::string &s, int mode)
 {
-	//char * buffer = la.get_buffer();
-	//    int len = la.get_buffer_size();
-	//    int begin = 0;
-	//    while (buffer[begin] != ';')
-	//    {
-	//        std::cout << buffer[begin];
-	//        ++begin;
-	//        if (begin >= len)
-	//        {
-	//            la.fill_buffer();
-	//        }
-	//    }
-	//std::cout <<buffer<< "\n";
+	switch (mode)
+	{
+		case 0:
+			std::cerr << s << std::endl;
+			break;
+		case 1:
+			std::cout << s << std::endl;
+			break;
+		default:
+			std::cerr << "print_info : Bad mode!!\n";
+			break;
+	}
 }
 

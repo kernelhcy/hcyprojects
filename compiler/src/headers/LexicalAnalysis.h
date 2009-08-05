@@ -14,7 +14,6 @@
 #include <string>
 #include <vector>
 
-
 /*
  *  The class LexicalAnalysis is to analysis the accidence of the source file.
  *
@@ -28,7 +27,7 @@
  *         | bool        |    4     |
  *         | int         |    5     |
  *         | if          |    6     |
- *         | then*       |    7     |
+ *         | return      |    7     |
  *         | else        |    8     |
  *         | do*         |    9     |
  *         | while       |    10    |
@@ -45,144 +44,147 @@
  *         |    <        |    21    |
  *         |    ;        |    22    |
  *         |    ==       |    23    |
- *         |     =       |    24    |
+ *         |    !=       |    24    |
  *         |    ,        |    25    |
  *         |    &&       |    26    |
  *         |    ||       |    27    |
- *         |    //       |    28    |
+ *         |    !        |    28    |
  *         |    / *      |    29    |
  *         |    * /      |    30    |
- *         | constants   |    31    |
- *         |  labels     |    32    |
+ *         |    //       |    31    |
+ *         | constants   |    32    |
+ *         |  labels     |    33    |
  *         +-------------+----------+
  *
  *  The index of the key word add one in the vector is the id of this key word;
  */
 class LexicalAnalysis
 {
-public:
+	public:
 
-    static LexicalAnalysis* get_instance(const std::string& in_path, const std::string& out_path);
-    ~LexicalAnalysis(void);
-    /*
-     *  Do lexical analysis on the string in the buffer
-     *
-     */
-    void analysis(void);
+		static LexicalAnalysis* get_instance(const std::string& in_path,
+				const std::string& out_path);
+		~LexicalAnalysis(void);
+		/*
+		 *  Do lexical analysis on the string in the buffer
+		 *
+		 */
+		void analysis(void);
 
-    /*
-     * Get the next word of the sentence.
-     * Used by the syntax analysis program.
-     *
-     */
-    int get_next_word(void);
+		/*
+		 * Get the next word of the sentence.
+		 * Used by the syntax analysis program.
+		 *
+		 */
+		int get_next_word(void);
 
-    /*
-     *  Get the table of the words;
-     */
-    std::list<std::string>& get_label_table(void);
+		/*
+		 *  Get the table of the words;
+		 */
+		std::list<std::string>& get_label_table(void);
 
-    /*
-     *  Get the table of the constant.
-     */
-    std::list<std::string>& get_const_table(void);
-    
-private:
-    //store the character readed from the buffer
-    char ch;
+		/*
+		 *  Get the table of the constant.
+		 */
+		std::list<std::string>& get_const_table(void);
 
-    //store the sting which makes up a word
-    std::string str_token;
+	private:
+		//store the character readed from the buffer
+		char ch;
 
-    //the table of labels
-    std::list<std::string> label_table;
+		//store the sting which makes up a word
+		std::string str_token;
 
-    //the table of constants
-    std::list<std::string> const_table;
+		//the table of labels
+		std::list<std::string> label_table;
 
-    //store the key words of this language
-    std::vector<std::string> keywords;
+		//the table of constants
+		std::list<std::string> const_table;
 
-    /*
-     *  Read from the source file
-     */
-    FileAction* fa;
+		//store the key words of this language
+		std::vector<std::string> keywords;
 
-    /*
-     *  Out put the result to the output file
-     */
-    void output(int id,const char *entry);
+		/*
+		 *  Read from the source file
+		 */
+		FileAction* fa;
 
-    /*
-     *  Get a character from the buffer and put the character into ch.
-     *  The index of the buffer goes ahead.
-     *  Return value: the character
-     */
-    char get_char(char &ch);
+		/*
+		 * singleton
+		 */
+		static LexicalAnalysis * _instance;
 
-    /*
-     *  Check if the character in ch is black.
-     *  If is,invoke get_char()until the character in ch is not black.
-     *  Return value:
-     *      1 : success to get a character
-     *      0 : faild to get a character,maybe the buffer is empty
-     */
-    int get_bc(char &ch);
+		/*
+		 *  Out put the result to the output file
+		 */
+		void output(int id, const char *entry);
 
-    /*
-     *  Append ch to the end of str_token.
-     */
-    void concat(void);
+		/*
+		 *  Get a character from the buffer and put the character into ch.
+		 *  The index of the buffer goes ahead.
+		 *  Return value: the character
+		 */
+		char get_char(char &ch);
 
-    /*
-     *  Check if the character in ch is a letter.
-     */
-    bool is_letter(char ch);
+		/*
+		 *  Check if the character in ch is black.
+		 *  If is,invoke get_char()until the character in ch is not black.
+		 *  Return value:
+		 *      1 : success to get a character
+		 *      0 : faild to get a character,maybe the buffer is empty
+		 */
+		int get_bc(char &ch);
 
-    /*
-     *  Check if the character in ch is a number.
-     */
-    bool is_digit(char ch);
+		/*
+		 *  Append ch to the end of str_token.
+		 */
+		void concat(void);
 
-    /*
-     *  Check the string in str_token is a keyword of this language.
-     *  If is a keyword,return the id of the keyword,else return 0.
-     */
-    int reserve(void);
+		/*
+		 *  Check if the character in ch is a letter.
+		 */
+		bool is_letter(char ch);
 
-    /*
-     *  Put the character in ch back into the buffer,and set ' ' into ch.
-     */
-    void retract(void);
+		/*
+		 *  Check if the character in ch is a number.
+		 */
+		bool is_digit(char ch);
 
-    /*
-     *  Insert the sting in str_token into the label_table and return the pointer.
-     */
-    int insert_id(void);
+		/*
+		 *  Check the string in str_token is a keyword of this language.
+		 *  If is a keyword,return the id of the keyword,else return 0.
+		 */
+		int reserve(void);
 
-    /*
-     *  Insert the constant in str_token into the const_table and return the pointer.
-     */
-    int insert_const(void);
+		/*
+		 *  Put the character in ch back into the buffer,and set ' ' into ch.
+		 */
+		void retract(void);
 
-    /*
-     * show the syntax error
-     * info : the information of the error
-     */
-    void error(const std::string &info);
+		/*
+		 *  Insert the sting in str_token into the label_table and return the pointer.
+		 */
+		int insert_id(void);
 
-    /*
-     * singleton
-     */
-    static LexicalAnalysis * _instance ;
-    LexicalAnalysis(const std::string& in_path, const std::string& out_path);
+		/*
+		 *  Insert the constant in str_token into the const_table and return the pointer.
+		 */
+		int insert_const(void);
 
-    /*
-     * print the information
-     * mode :	0  standard output
-     * 			1  error output
-     */
-    void print_info(const std::string &s, int mode);
+		/*
+		 * show the syntax error
+		 * info : the information of the error
+		 */
+		void error(const std::string &info);
+
+		LexicalAnalysis(const std::string& in_path, const std::string& out_path);
+
+		/*
+		 * print the information
+		 * mode :	0  standard output
+		 * 			1  error output
+		 */
+		void print_info(const std::string &s, int mode);
 
 };
 

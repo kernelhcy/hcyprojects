@@ -1,14 +1,14 @@
 int main()
-{
-	
-	int j, m, n, i;
-	bool con = false;
-/*
+{	
+	int j, m;
+	bool con;
+	con = false;
+
 	j = 1;
 	m = 3;
 	n = j + m;
-*/
-	if (con)
+	
+	if (j && (k || !m) || !con)
 	{
 		j = (m + 2) * j;
 	}
@@ -25,9 +25,9 @@ int main()
 	}
 	else
 	{
-		while (j < 10 &a k > m && con)
+		while (j &&(k || !m) && con)
 		{
-			if (j > 3 && m < 10 && (k < 10 || i - 10 > 10))
+			if ( m || i && ( con && ! ( k || j)))
 			{
 				j = m + k;
 			}

@@ -17,10 +17,9 @@
 class SyntaxAnalysis
 {
 public:
-    /*
-     * The parameter is the lexical analysis class.
-     */
-    SyntaxAnalysis(LexicalAnalysis &la);
+
+	static SyntaxAnalysis * get_instance(const std::string& in_path,
+			const std::string& out_path);
     ~SyntaxAnalysis();
     /*
      *  Analysising
@@ -29,16 +28,23 @@ public:
     int analysis();
     
 private:
-    //The lexical analysis class
-    LexicalAnalysis& la;
+    //The only instance of lexical analysis class
+    LexicalAnalysis* la;
+
+    //The only instance of file action class
+    FileAction *fa;
+    /*
+     * the only instance
+     */
+    static SyntaxAnalysis * _instance;
     /*
      * Store the constant strings that used by
      *  the program.
      */
-    std::string table1[16];
+    std::string table1[50];
 
     //The size of some tables
-    const static int SIZE = 26;
+    const static int SIZE = 50;
 
     //The predicrion analysis table
     int table2[SIZE][SIZE];
@@ -49,8 +55,6 @@ private:
     //
     std::string string_id[SIZE];
     
-    //The information of the sentences
-    int info;
 
     /*
      * Judge the word of the id is key word or not.
@@ -60,7 +64,7 @@ private:
     /*
      * Push the string into the char stack reverse.
      */
-    void push_all(const std::string &str , bool flag);
+    void push_all(const std::string &str);
 
     /*
      * Get the id of the word.
@@ -73,14 +77,20 @@ private:
     void print_stack();
 
     /*
-     * Print the information of the sentence.
-     */
-    void print_info();
-
-    /*
      * Print the position of the error.
      */
-    void print_error_position();
+    void print_error(const std::string &info);
+    /*
+     * singleton
+     */
+    SyntaxAnalysis(const std::string& in_path,const std::string& out_path);
+
+    /*
+     * print the information
+     * mode:	1 normal information
+     * 			0 error information
+     */
+    void print_info(const std::string &s, int mode);
 };
 
 #endif	/* _SYNTAXANALYSIS_H */

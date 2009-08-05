@@ -6,7 +6,7 @@
 
 #include "headers/FileActions.h"
 #include "headers/LexicalAnalysis.h"
-//#include "headers/SyntaxAnalysis.h"
+#include "headers/SyntaxAnalysis.h"
 
 //using namespace std;
 
@@ -25,8 +25,8 @@ int main(int argc, char** argv)
 
 	std::string in_file(argv[1]);
 	std::string out_file(argv[2]);
-	LexicalAnalysis *la = LexicalAnalysis::get_instance(in_file, out_file);
-	la->analysis();
+	SyntaxAnalysis *sa = SyntaxAnalysis::get_instance(in_file, out_file);
+	sa->analysis();
 
 
 //	char buffer[500];

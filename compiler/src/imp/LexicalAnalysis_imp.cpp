@@ -30,13 +30,13 @@ LexicalAnalysis::LexicalAnalysis(const std::string& in_path, const std::string& 
 	 *  For example, 'program''s id is 1.The id of 'then' is 7.
 	 *                //key word    //Id
 	 */
-	keywords.push_back("program"); //1
+	keywords.push_back("main"); //1
 	keywords.push_back("{"); //2
 	keywords.push_back("}"); //3
 	keywords.push_back("bool"); //4
 	keywords.push_back("int"); //5
 	keywords.push_back("if"); //6
-	keywords.push_back("then"); //7 no use!
+	keywords.push_back("return"); //7
 	keywords.push_back("else"); //8
 	keywords.push_back("do"); //9 no use!
 	keywords.push_back("while"); //10
@@ -97,8 +97,8 @@ int LexicalAnalysis::get_next_word()
 		{
 			//Get a label!
 			value = insert_id();
-			output(32, str_token.data());
-			code = 32;
+			output(33, str_token.data());
+			code = 33;
 		}
 		else
 		{
@@ -132,8 +132,8 @@ int LexicalAnalysis::get_next_word()
 		}
 		retract();
 		value = insert_const();
-		output(31, str_token.data());
-		code = 31;
+		output(32, str_token.data());
+		code = 32;
 		//Done
 		if (con == '\0')
 		{
@@ -192,14 +192,14 @@ int LexicalAnalysis::get_next_word()
 
 		if (ch == '=')
 		{
-			output(24, "==");
-			code = 24;
+			output(23, "==");
+			code = 23;
 		}
 		else
 		{
 			retract();
-			output(23, "=");
-			code = 23;
+			output(19, "=");
+			code = 19;
 		}
 	}
 	else if (ch == '{')
@@ -224,6 +224,29 @@ int LexicalAnalysis::get_next_word()
 		else
 		{
 			error("need &&.");
+			retract();
+
+		}
+		//Done
+		if (con == '\0')
+		{
+			fa->~FileAction();
+			return -1;
+		}
+	}
+	else if (ch == '!')
+	{
+		con = get_char(ch);
+
+		if (ch == '=')
+		{
+			output(24, "!=");
+			code = 24;
+		}
+		else
+		{
+			output(28, "!");
+			code = 28;
 			retract();
 
 		}
@@ -261,10 +284,15 @@ int LexicalAnalysis::get_next_word()
 
 		if (ch == '/')
 		{
-			output(28, "//");
-			code = 28;
-			//next line.delete the comments
+			output(31, "//");
+			code = 31;
+			//next line.delete the  comments
 			fa->next_line();
+			/*
+			 * 递归调用。
+			 * 读取下一个非注释字符。
+			 */
+			return get_next_word();
 		}
 		else if (ch == '*')
 		{
@@ -289,7 +317,11 @@ int LexicalAnalysis::get_next_word()
 				{
 					output(30, "*/");
 					code = 30;
-					break;
+					/*
+					 * 递归调用。
+					 * 获得下一个非注释字符。
+					 */
+					return get_next_word();
 				}
 			}
 
@@ -342,7 +374,7 @@ void LexicalAnalysis::output(int id, const char* entry)
 	info.append(entry);
 	info.append("  )\n");
 
-	print_info(info, 0);
+	//print_info(info, 0);
 
 }
 
@@ -462,7 +494,7 @@ void LexicalAnalysis::error(const std::string &info)
 
 void LexicalAnalysis::print_info(const std::string &s, int mode)
 {
-	switch(mode)
+	switch (mode)
 	{
 		case 0:
 			std::cout << s;
