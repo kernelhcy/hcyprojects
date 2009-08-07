@@ -15,6 +15,11 @@ LexicalAnalysis* LexicalAnalysis::get_instance(const std::string& in_path,
 	return _instance;
 }
 
+LexicalAnalysis* LexicalAnalysis::get_instance(void)
+{
+	return _instance;
+}
+
 LexicalAnalysis::LexicalAnalysis(const std::string& in_path, const std::string& out_path)
 {
 	//std::cout << "The Lexical Analysis" << std::endl;
@@ -43,20 +48,62 @@ LexicalAnalysis::LexicalAnalysis(const std::string& in_path, const std::string& 
 	keywords.push_back("false"); //11
 	keywords.push_back("true"); //12
 
+	//the map of the string and the id of the string
+	id_string.push_back(" ");//begin from 1
+	id_string.push_back("m");//main
+	id_string.push_back("{");
+	id_string.push_back("}");
+	id_string.push_back("b");//bool
+	id_string.push_back("n");//int
+	id_string.push_back("f");//if
+	id_string.push_back("r");//return
+	id_string.push_back("e");//else
+	id_string.push_back("d");//do no use
+	id_string.push_back("w");//while
+	id_string.push_back("s");//false
+	id_string.push_back("t");//true
+	id_string.push_back("+");
+	id_string.push_back("-");
+	id_string.push_back("*");
+	id_string.push_back("/");
+	id_string.push_back("(");
+	id_string.push_back(")");
+	id_string.push_back("=");
+	id_string.push_back(">");
+	id_string.push_back("<");
+	id_string.push_back(";");
+	id_string.push_back("==");
+	id_string.push_back("!=");
+	id_string.push_back(",");
+	id_string.push_back("&");//&&
+	id_string.push_back("|");//||
+	id_string.push_back("!");
+	id_string.push_back("/*");
+	id_string.push_back("*/");
+	id_string.push_back("//");
+	id_string.push_back("C");//contant
+	id_string.push_back("L");//label
+
 }
 
 LexicalAnalysis::~LexicalAnalysis()
 {
-	fa->~FileAction();
-	str_token.~basic_string();
+	delete fa;
+	fa = NULL;
+	/*
+	 * This sentence will report a error!
+	 *		double free or corruption!!
+	 *
+	 * The string str_token will be destroyed by the LexicalAnalysis class automatically!
+	 * so, this will cause the double-free error!
+	 */
+	//str_token.~basic_string();
 
 }
 
 int LexicalAnalysis::get_next_word()
 {
 	int code;
-	int value;
-
 	int con;
 
 	ch = ' ';
@@ -64,13 +111,11 @@ int LexicalAnalysis::get_next_word()
 
 	if (get_char(ch) == 0)
 	{
-		fa->~FileAction();
 		return -1;
 	};
 
 	if (get_bc(ch) == 0)
 	{
-		fa->~FileAction();
 		return -1;
 	};
 
@@ -96,7 +141,7 @@ int LexicalAnalysis::get_next_word()
 		if (code == 0)
 		{
 			//Get a label!
-			value = insert_id();
+			pos = insert_id();
 			output(33, str_token.data());
 			code = 33;
 		}
@@ -112,7 +157,6 @@ int LexicalAnalysis::get_next_word()
 		 */
 		if (con == '\0')
 		{
-			fa->~FileAction();
 			return -1;
 		}
 
@@ -131,13 +175,12 @@ int LexicalAnalysis::get_next_word()
 			}
 		}
 		retract();
-		value = insert_const();
+		pos = insert_const();
 		output(32, str_token.data());
 		code = 32;
 		//Done
 		if (con == '\0')
 		{
-			fa->~FileAction();
 			exit(0);
 		}
 	}
@@ -230,7 +273,6 @@ int LexicalAnalysis::get_next_word()
 		//Done
 		if (con == '\0')
 		{
-			fa->~FileAction();
 			return -1;
 		}
 	}
@@ -253,7 +295,6 @@ int LexicalAnalysis::get_next_word()
 		//Done
 		if (con == '\0')
 		{
-			fa->~FileAction();
 			return -1;
 		}
 	}
@@ -274,7 +315,6 @@ int LexicalAnalysis::get_next_word()
 		//Done
 		if (con == '\0')
 		{
-			fa->~FileAction();
 			return -1;
 		}
 	}
@@ -328,7 +368,6 @@ int LexicalAnalysis::get_next_word()
 		}
 		else if (con == '\0')
 		{
-			fa->~FileAction();
 			return -1;
 		}
 		else
@@ -385,7 +424,7 @@ void LexicalAnalysis::concat()
 
 int LexicalAnalysis::get_bc(char &ch)
 {
-	int con;
+	int con = 1;
 	while (ch == ' ')
 	{
 		con = get_char(ch);
@@ -407,20 +446,23 @@ char LexicalAnalysis::get_char(char &ch)
 	return ch;
 }
 
-std::list<std::string>& LexicalAnalysis::get_const_table()
+std::vector<int>* LexicalAnalysis::get_const_table()
 {
-	return const_table;
+	return &const_table;
 }
 
-std::list<std::string>& LexicalAnalysis::get_label_table()
+std::vector<std::string>* LexicalAnalysis::get_label_table()
 {
-	return label_table;
+	return &label_table;
 
 }
 
 int LexicalAnalysis::insert_const()
 {
-	const_table.push_back(str_token);
+
+	int value = atoi(str_token.c_str());
+
+	const_table.push_back(value);
 	return const_table.size() - 1;
 }
 
@@ -509,3 +551,15 @@ void LexicalAnalysis::print_info(const std::string &s, int mode)
 	}
 
 }
+
+std::string& LexicalAnalysis::get_string(int id)
+{
+	return id_string[id];
+
+}
+
+int LexicalAnalysis::get_pos(void)
+{
+	return pos;
+}
+

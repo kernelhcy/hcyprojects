@@ -21,7 +21,7 @@ FileAction::FileAction(const std::string& f_in_path, const std::string& f_out_pa
 
 void FileAction::init(void)
 {
-	std::cout << "init..." << std::endl;
+	//std::cout << "init..." << std::endl;
 	open_file();
 	this -> line = 0;
 	this -> index = 0;
@@ -70,15 +70,12 @@ const std::string& FileAction::get_out_path(void)
 
 int FileAction::open_file(void)
 {
-	std::cout << "Open File." << in_path.data() << std::endl;
 	//open the input source file
-
 	ifs.open(in_path.c_str(), std::ios::in | std::ios::out);
-	std::cout << "Open input file.\n";
-	//open the output file
 
+	//open the output file
 	ofs.open(out_path.c_str(), std::ios::out);
-	std::cout << "Open out put file.\n";
+
 	return 1;
 }
 
@@ -88,13 +85,13 @@ int FileAction::close_file(void)
 	{
 		ifs.close();
 	}
-	std::cout << "closing input source file...\n";
+	//std::cout << "closing input source file...\n";
 
 	if (ofs.is_open())
 	{
 		ofs.close();
 	}
-	std::cout << "closing output file...\n";
+	//std::cout << "closing output file...\n";
 	return 0;
 }
 

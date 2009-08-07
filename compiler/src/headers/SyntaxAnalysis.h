@@ -8,7 +8,9 @@
 #define	_SYNTAXANALYSIS_H
 
 #include "LexicalAnalysis.h"
-#include <stack>
+#include "CreateMidcode.h"
+#include "headers.h"
+
 /*
  * The syntax analysis class
  *
@@ -18,21 +20,31 @@ class SyntaxAnalysis
 {
 public:
 
+
 	static SyntaxAnalysis * get_instance(const std::string& in_path,
 			const std::string& out_path);
-    ~SyntaxAnalysis();
+	/*
+	 * only use to get the already existed instance.
+	 * if there is no instance of this class,
+	 * this will return NULL.
+	 */
+	static SyntaxAnalysis * get_instance();
+    ~SyntaxAnalysis(void);
     /*
      *  Analysising
      *  The return value: 0 :success; 1:there are some syntax errors.
      */
-    int analysis();
-    
+    int analysis(void);
 private:
     //The only instance of lexical analysis class
     LexicalAnalysis* la;
 
     //The only instance of file action class
     FileAction *fa;
+
+    //The only instance of create middle code class
+    CreateMidcode *cm;
+
     /*
      * the only instance
      */
@@ -54,7 +66,9 @@ private:
 
     //
     std::string string_id[SIZE];
-    
+
+    //the scope of the current position
+    int scope;
 
     /*
      * Judge the word of the id is key word or not.

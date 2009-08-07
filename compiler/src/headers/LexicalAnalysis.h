@@ -8,11 +8,7 @@
 #define	_LEXICALANALYSIS_H
 
 #include "FileActions.h"
-#include <stdlib.h>
-#include <iostream>
-#include <list>
-#include <string>
-#include <vector>
+#include "headers.h"
 
 /*
  *  The class LexicalAnalysis is to analysis the accidence of the source file.
@@ -64,6 +60,11 @@ class LexicalAnalysis
 
 		static LexicalAnalysis* get_instance(const std::string& in_path,
 				const std::string& out_path);
+		/*
+		 * get the already existed instance.
+		 * it will return NULL, if there is no instance!
+		 */
+		static LexicalAnalysis* get_instance(void);
 		~LexicalAnalysis(void);
 		/*
 		 *  Do lexical analysis on the string in the buffer
@@ -79,30 +80,48 @@ class LexicalAnalysis
 		int get_next_word(void);
 
 		/*
+		 * get the position of the labels or constants in
+		 * 	label table or constant table.
+		 */
+		int get_pos(void);
+
+		/*
+		 * get the word from the id
+		 */
+		std::string& get_string(int id);
+		/*
 		 *  Get the table of the words;
 		 */
-		std::list<std::string>& get_label_table(void);
+		std::vector<std::string>* get_label_table(void);
 
 		/*
 		 *  Get the table of the constant.
 		 */
-		std::list<std::string>& get_const_table(void);
+		std::vector<int>* get_const_table(void);
+		/*
+		 * show the syntax error
+		 * info : the information of the error
+		 */
+		void error(const std::string &info);
 
 	private:
 		//store the character readed from the buffer
 		char ch;
-
+		//the position of the lable or constant in label table or constant table
+		int pos;
 		//store the sting which makes up a word
 		std::string str_token;
 
 		//the table of labels
-		std::list<std::string> label_table;
+		std::vector<std::string> label_table;
 
 		//the table of constants
-		std::list<std::string> const_table;
+		std::vector<int> const_table;
 
 		//store the key words of this language
 		std::vector<std::string> keywords;
+
+		std::vector<std::string> id_string;
 
 		/*
 		 *  Read from the source file
@@ -170,12 +189,6 @@ class LexicalAnalysis
 		 *  Insert the constant in str_token into the const_table and return the pointer.
 		 */
 		int insert_const(void);
-
-		/*
-		 * show the syntax error
-		 * info : the information of the error
-		 */
-		void error(const std::string &info);
 
 		LexicalAnalysis(const std::string& in_path, const std::string& out_path);
 

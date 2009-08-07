@@ -14,15 +14,21 @@ SyntaxAnalysis* SyntaxAnalysis::get_instance(const std::string& in_path,
 
 	return _instance;
 }
-
+SyntaxAnalysis* SyntaxAnalysis::get_instance()
+{
+	return _instance;
+}
 SyntaxAnalysis::SyntaxAnalysis(const std::string& in_path, const std::string& out_path)
 {
 	//initialize
 
+	scope = 0;
 	//get the only instance of LexicalAnalysis class
 	la = LexicalAnalysis::get_instance(in_path, out_path);
 	//get the only instance of FileAction class
 	fa = FileAction::get_instance(in_path, out_path);
+
+	cm = CreateMidcode::get_instance();
 
 	string_id[0] = "";//no use
 	string_id[1] = "m";//main
@@ -59,8 +65,8 @@ SyntaxAnalysis::SyntaxAnalysis(const std::string& in_path, const std::string& ou
 	string_id[32] = "c";//constant
 	string_id[33] = "i";//label
 
-	//
-	table1[0] = "nm(){ArF;}";//int main(){A return i;}
+	//all strings that are in the generation formula
+	table1[0] = "nm(){XSArF;}";//int main(){A return i;}
 	table1[1] = "BA";
 	table1[2] = "CA";
 	table1[3] = "i=E;";
@@ -69,17 +75,17 @@ SyntaxAnalysis::SyntaxAnalysis(const std::string& in_path, const std::string& ou
 	table1[6] = "TO";
 	table1[7] = "+TO";
 	table1[8] = "-TO";
-	table1[9] = "FH";
-	table1[10] = "*FH";
-	table1[11] = "/FH";
+	table1[9] = "PH";
+	table1[10] = "*PH";
+	table1[11] = "/FQ";
 	table1[12] = "(E)";
 	table1[13] = "i";
 	table1[14] = "f(E){A}K";//if(K){A}I
 	table1[15] = "w(E){A}";//while(K){A}
 	table1[16] = "e{A}";//else A
-	table1[17] = "niN";//int i N
-	table1[18] = "biN";//bool i N
-	table1[19] = ",iN";
+	table1[17] = "niXMN";//int i N
+	table1[18] = "biXMN";//bool i N
+	table1[19] = ",iXNN";
 	table1[20] = "!GI";
 	table1[21] = "(I)J";//no use
 	table1[22] = "iJ";// no use
@@ -94,6 +100,13 @@ SyntaxAnalysis::SyntaxAnalysis(const std::string& in_path, const std::string& ou
 	table1[31] = "FJ";
 	table1[32] = "O";
 	table1[33] = "c";//constants
+	table1[34] = "FQ";
+	table1[35] = "P";
+	table1[36] = "Q";
+	// no use
+	table1[37] = "c";
+	table1[38] = "c";
+	table1[39] = "c";
 
 	for (int i = 0; i < SIZE; ++i)
 	{
@@ -136,6 +149,12 @@ SyntaxAnalysis::SyntaxAnalysis(const std::string& in_path, const std::string& ou
 	table2['T' - 'A'][11] = 9;
 	table2['T' - 'A'][12] = 9;
 
+	table2['P' - 'A'][33] = 34;
+	table2['P' - 'A'][32] = 34;
+	table2['P' - 'A'][17] = 34;
+	table2['P' - 'A'][11] = 34;
+	table2['P' - 'A'][12] = 34;
+
 	table2['G' - 'A'][33] = 6;
 	table2['G' - 'A'][32] = 6;
 	table2['G' - 'A'][17] = 6;
@@ -146,11 +165,19 @@ SyntaxAnalysis::SyntaxAnalysis(const std::string& in_path, const std::string& ou
 	table2['H' - 'A'][13] = 27;
 	table2['H' - 'A'][14] = 27;
 	table2['H' - 'A'][15] = 10;
-	table2['H' - 'A'][16] = 11;
 	table2['H' - 'A'][18] = 27;
 	table2['H' - 'A'][22] = 27;
 	table2['H' - 'A'][26] = 27;
 	table2['H' - 'A'][27] = 27;
+
+	table2['Q' - 'A'][13] = 27;
+	table2['Q' - 'A'][14] = 27;
+	table2['Q' - 'A'][16] = 11;
+	table2['Q' - 'A'][18] = 27;
+	table2['Q' - 'A'][22] = 27;
+	table2['Q' - 'A'][26] = 27;
+	table2['Q' - 'A'][27] = 27;
+	table2['Q' - 'A'][15] = 27;
 
 	table2['I' - 'A'][26] = 25;
 	table2['I' - 'A'][27] = 26;
@@ -169,10 +196,6 @@ SyntaxAnalysis::SyntaxAnalysis(const std::string& in_path, const std::string& ou
 	table2['K' - 'A'][22] = 27;
 	table2['K' - 'A'][26] = 26;
 	table2['K' - 'A'][27] = 25;
-	table2['K' - 'A'][4] = 27;
-	table2['K' - 'A'][5] = 27;
-	table2['K' - 'A'][6] = 27;
-	table2['K' - 'A'][10] = 27;
 
 	table2['L' - 'A'][5] = 29;
 	table2['L' - 'A'][4] = 29;
@@ -196,24 +219,29 @@ SyntaxAnalysis::SyntaxAnalysis(const std::string& in_path, const std::string& ou
 SyntaxAnalysis::~SyntaxAnalysis()
 {
 
-	la->~LexicalAnalysis();
+	delete la;
+	la = NULL;
 }
 
 int SyntaxAnalysis::analysis()
 {
-	//get the next word's id
-	int word_id = la->get_next_word();
-
 	//put the begin label into the stack
 	s.push('S');
 
 	std::string temp;
-	int id;
-	char temp_ch;
+	int id, temp_id;
+	//store the left part id of the generation
+	std::stack<int> left_part_id;
+
+	char temp_ch = 'S';
+
+	//get the next word's id
+	int word_id = la->get_next_word();
+
 	while (word_id > 0)//loop until over or error
 	{
 		//print the content of the stack
-		print_stack();
+		//print_stack();
 
 		//get the char on the top of the stack
 		temp_ch = s.top();
@@ -223,18 +251,25 @@ int SyntaxAnalysis::analysis()
 		temp.clear();
 		temp += temp_ch;
 
-		//std::cout << temp << std::endl;
-		//This char is not a final label
-		if (temp_ch >= 'A' && temp_ch <= 'Z')//not final label
+		if (temp_ch == 'X')//create the four tuple
 		{
-			int temp_id = table2[temp_ch - 'A'][word_id];
+			//std::cout << table1[left_part_id.top()] << " ";
+			if (cm -> create(s.top(), left_part_id.top(), scope) > 0)
+			{
+			}
+			//sen.append(la->get_string(word_id));
+			s.pop();
+			left_part_id.pop();
+
+		}
+		else if (temp_ch >= 'A' && temp_ch <= 'Z')//not final label
+		{
+
+			temp_id = table2[temp_ch - 'A'][word_id];
 
 			//the if then else bug
-			if (temp_id < 0 && temp_ch == 'I' && s.empty())
+			if (temp_id < 0 && temp_ch == 'K')
 			{
-				//word_id = la.get_next_word();
-				//begin the next sentence
-				s.push('S');
 				continue;
 			}
 
@@ -252,38 +287,73 @@ int SyntaxAnalysis::analysis()
 
 			}
 
+			/*
+			 * 向栈中压入产生式的左部，用于确定所要调用的产生四元式的函数。
+			 * 同时向栈中压入X，以标记产生四元式的时间点，以防产生混淆。
+			 *
+			 * 对于说明定义表达式。由于和其他语句的翻译方式不同，给予特殊处理。
+			 */
+			if (temp_ch != 'M' && temp_ch != 'N' && table1[temp_id] != "")
+			{
+				s.push(temp_ch);
+				s.push('X');
+			}
+			/*
+			 * 如果候选式为空，则不须生成四元式
+			 */
+			if (table1[temp_id] != "")
+			{
+				left_part_id.push(temp_id);
+
+				if (temp_ch == 'G')//当前语句为算术语句
+				{
+					cm->F_flag = cm -> ARITH;
+				}
+				else if (temp_ch == 'I')//当前语句为逻辑语句
+				{
+					cm->F_flag = cm -> LOGIC;
+				}
+			}
+
+			//将产生式的右部反向压栈。
 			push_all(table1[temp_id]);
 
 		}
 		else// is final label
 		{
+			if (temp_ch == '{')
+			{
+				++scope;
+			}
+			else if (temp_ch == '}')
+			{
+				--scope;
+			}
+
 			id = get_id(temp);
 
 			if (word_id == id)//
 			{
 				if (s.size() == 5 && s.top() == 'A')//get a sentence.
 				{
-					/*
-					 * create the middle code
-					 */
-
-					std::cout << "Get a sentence;\n";
-
-				}
-				else
-				{
-
-					if (word_id == 32)//constant is dealed with label
-					{
-						word_id = 33;
-					}
+					//cm -> create(sen);
 				}
 
 				word_id = la->get_next_word();
+				//std::cout << word_id << std::endl;
 				//Over.
 				if (word_id <= 0)
 				{
 					break;
+				}
+
+				if (word_id == 33)//a label
+				{
+					cm -> store_variables_ids(la -> get_pos());
+				}
+				else if (word_id == 32)//a constant
+				{
+					cm -> store_variables_ids(la -> get_pos() + cm -> VAR_CONS);
 				}
 			}
 			else
@@ -301,6 +371,9 @@ int SyntaxAnalysis::analysis()
 		}
 
 	}
+
+	//cm -> print_variable_table();
+	cm -> print_tuples();
 	return 0;
 }
 
@@ -386,4 +459,3 @@ void SyntaxAnalysis::print_info(const std::string &s, int mode)
 			break;
 	}
 }
-

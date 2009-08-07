@@ -7,7 +7,7 @@
 #include "headers/FileActions.h"
 #include "headers/LexicalAnalysis.h"
 #include "headers/SyntaxAnalysis.h"
-
+#include "headers/headers.h"
 //using namespace std;
 
 /*
@@ -27,6 +27,8 @@ int main(int argc, char** argv)
 	std::string out_file(argv[2]);
 	SyntaxAnalysis *sa = SyntaxAnalysis::get_instance(in_file, out_file);
 	sa->analysis();
+	delete sa;
+	sa = NULL;
 
 
 //	char buffer[500];

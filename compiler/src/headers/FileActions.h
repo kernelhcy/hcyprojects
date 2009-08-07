@@ -8,8 +8,7 @@
 #define	_FILEACTIONS_H
 
 #include "FileActions.h"
-#include <stdlib.h>
-#include <iostream>
+#include "headers.h"
 
 /*
  * This header file must be contained in this file!
