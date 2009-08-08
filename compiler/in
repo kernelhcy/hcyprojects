@@ -2,16 +2,17 @@ int main()
 {	
 	
 	int j, m, i, n;
+	bool a, b, c, d;
 	
-	//bool con;
+	bool con;
 	//con = false;
 
-	j = m + (j - 3 * 5) / 2 * i;
-	m = 3;
-	n = j + m;
+	//j = m + (j - 3 * 5) / 2 * i;
+	//m = 3;
+	//n = j + m;
 	
-	/*
-	if (j && (k || !m) || !con)
+	
+	if (a && (b || !c) || !con && ( j < 3 ))
 	{
 		j = (m + 2) * j;
 	}
@@ -21,16 +22,16 @@ int main()
 		j = (j - 1) / n;
 		//con = true;
 	}
-	
-	if (n)
+	/*
+	if (c)
 	{
 		j = m + (j - 3 * 5) / 2 * i;
 	}
 	else
 	{
-		while (j &&(k || !m) && con)
+		while (a &&(c || !b) && con)
 		{
-			if ( m || i && ( con && ! ( k || j)))
+			if ( a || d && ( con && ! ( b || c)))
 			{
 				j = m + k;
 			}

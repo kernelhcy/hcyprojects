@@ -60,15 +60,7 @@ typedef struct _four_tuple
 class CreateMidcode
 {
 	public:
-		/*
-		 * 用于标记函数F所要执行的语句。
-		 * 也即标记当前翻译的是算术运算还是逻辑运算。
-		 * 算术运算 ： ARITH 0
-		 * 逻辑运算 ： LOGIC 1
-		 */
-		const static int ARITH = 0;
-		const static int LOGIC = 1;
-		int F_flag;
+
 		/*
 		 * the boundary of the id of the variable and constant
 		 * id >= VAR_CONS , constant
@@ -110,11 +102,11 @@ class CreateMidcode
 	private:
 
 		//true list
-		std::vector<int> tc;
+		std::stack<int> tc;
 		//false list
-		std::vector<int> fc;
+		std::stack<int> fc;
 		//quad
-		std::vector<int> m_quad;
+		std::stack<int> m_quad;
 		//下一条将要生成的语句的序号
 		int next_quad;
 
@@ -184,6 +176,22 @@ class CreateMidcode
 		 * 		1 : failed
 		 */
 		int I(int right_part_id);
+
+		/*
+		 * R -> ""
+		 * return
+		 * 		0 : success
+		 * 		1 : failed
+		 */
+		int R(int right_part_id);
+
+		/*
+		 * S -> ""
+		 * return
+		 * 		0 : success
+		 * 		1 : failed
+		 */
+		int S(int right_part_id);
 
 		/*
 		 * O -> +TO | -TO | ""
@@ -259,6 +267,47 @@ class CreateMidcode
 		 * get the operand
 		 */
 		std::string get_operand(void);
+
+		/*
+		 * create a new true or false list which has only one four tuple
+		 * the tuple id id ft_id
+		 * return the list id of the new list
+		 *
+		 * NOTE:
+		 * 		just return ft_id!
+		 */
+		int make_list(int ft_id);
+
+		/*
+		 * merge the list p1 and list p2
+		 * return the id of the new list
+		 */
+		int merge(int p1, int p2);
+
+		/*
+		 * change all the forth field of  all the tuples of
+		 * 	the list list_id to ft_id
+		 */
+		int backpatch(int list_id, int ft_id);
+
+		/*
+		 * get the newest tc,fc or m.quad
+		 * append new tc,fc or m.quad
+		 */
+		int get_tc();
+		void append_tc(int id);
+		int get_fc();
+		void append_fc(int id);
+		int get_m_quad();
+		void append_m_quad(int m);
+
+		/*
+		 * test whether the type of the variable named name is type or not
+		 * return : yes 0
+		 *          no  1
+		 */
+		int test_var(const std::string name, int type);
+
 };
 
 #endif /* CREATEMIDCODE_H_ */

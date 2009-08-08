@@ -80,9 +80,9 @@ SyntaxAnalysis::SyntaxAnalysis(const std::string& in_path, const std::string& ou
 	table1[11] = "/FQ";
 	table1[12] = "(E)";
 	table1[13] = "i";
-	table1[14] = "f(E){A}K";//if(K){A}I
-	table1[15] = "w(E){A}";//while(K){A}
-	table1[16] = "e{A}";//else A
+	table1[14] = "f(E)R{A}K";//if(K){A}I
+	table1[15] = "wR(E)R{A}";//while(K){A}
+	table1[16] = "SeR{A}";//else A
 	table1[17] = "niXMN";//int i N
 	table1[18] = "biXMN";//bool i N
 	table1[19] = ",iXNN";
@@ -91,8 +91,8 @@ SyntaxAnalysis::SyntaxAnalysis(const std::string& in_path, const std::string& ou
 	table1[22] = "iJ";// no use
 	table1[23] = "t";//true
 	table1[24] = "s";//false
-	table1[25] = "&GI";
-	table1[26] = "|GI";
+	table1[25] = "&RGI";
+	table1[26] = "|RGI";
 	table1[27] = "";//nothing
 	table1[28] = "LA";
 	table1[29] = "M;";
@@ -103,9 +103,14 @@ SyntaxAnalysis::SyntaxAnalysis(const std::string& in_path, const std::string& ou
 	table1[34] = "FQ";
 	table1[35] = "P";
 	table1[36] = "Q";
-	// no use
-	table1[37] = "c";
-	table1[38] = "c";
+	table1[37] = "R";
+	table1[38] = "S";
+	table1[39] = ">GI";
+	table1[40] = "<GI";
+	table1[41] = "==GI";
+	table1[42] = "!=GI";
+
+	//no use
 	table1[39] = "c";
 
 	for (int i = 0; i < SIZE; ++i)
@@ -169,6 +174,10 @@ SyntaxAnalysis::SyntaxAnalysis(const std::string& in_path, const std::string& ou
 	table2['H' - 'A'][22] = 27;
 	table2['H' - 'A'][26] = 27;
 	table2['H' - 'A'][27] = 27;
+	table2['H' - 'A'][20] = 27;
+	table2['H' - 'A'][21] = 27;
+	table2['H' - 'A'][23] = 27;
+	table2['H' - 'A'][24] = 27;
 
 	table2['Q' - 'A'][13] = 27;
 	table2['Q' - 'A'][14] = 27;
@@ -177,6 +186,10 @@ SyntaxAnalysis::SyntaxAnalysis(const std::string& in_path, const std::string& ou
 	table2['Q' - 'A'][22] = 27;
 	table2['Q' - 'A'][26] = 27;
 	table2['Q' - 'A'][27] = 27;
+	table2['Q' - 'A'][20] = 27;
+	table2['Q' - 'A'][21] = 27;
+	table2['Q' - 'A'][23] = 27;
+	table2['Q' - 'A'][24] = 27;
 	table2['Q' - 'A'][15] = 27;
 
 	table2['I' - 'A'][26] = 25;
@@ -186,16 +199,28 @@ SyntaxAnalysis::SyntaxAnalysis(const std::string& in_path, const std::string& ou
 	table2['I' - 'A'][19] = 27;
 	table2['I' - 'A'][22] = 27;
 	table2['I' - 'A'][33] = 27;
+	table2['I' - 'A'][20] = 39;
+	table2['I' - 'A'][21] = 40;
+	table2['I' - 'A'][23] = 41;
+	table2['I' - 'A'][24] = 42;
 
 	table2['J' - 'A'][22] = 27;
 	table2['J' - 'A'][18] = 27;
 	table2['J' - 'A'][26] = 25;
 	table2['J' - 'A'][27] = 26;
+	table2['J' - 'A'][20] = 25;
+	table2['J' - 'A'][21] = 26;
+	table2['J' - 'A'][23] = 25;
+	table2['J' - 'A'][24] = 26;
 
 	table2['K' - 'A'][8] = 16;
 	table2['K' - 'A'][22] = 27;
 	table2['K' - 'A'][26] = 26;
 	table2['K' - 'A'][27] = 25;
+	table2['K' - 'A'][20] = 26;
+	table2['K' - 'A'][21] = 25;
+	table2['K' - 'A'][23] = 26;
+	table2['K' - 'A'][24] = 25;
 
 	table2['L' - 'A'][5] = 29;
 	table2['L' - 'A'][4] = 29;
@@ -214,6 +239,22 @@ SyntaxAnalysis::SyntaxAnalysis(const std::string& in_path, const std::string& ou
 	table2['O' - 'A'][22] = 27;
 	table2['O' - 'A'][26] = 27;
 	table2['O' - 'A'][27] = 27;
+	table2['O' - 'A'][20] = 27;
+	table2['O' - 'A'][21] = 27;
+	table2['O' - 'A'][23] = 27;
+	table2['O' - 'A'][24] = 27;
+
+	table2['S' - 'A'][8] = 27;
+
+	table2['R' - 'A'][17] = 27;
+	table2['R' - 'A'][2] = 27;
+	table2['R' - 'A'][11] = 27;
+	table2['R' - 'A'][12] = 27;
+	table2['R' - 'A'][17] = 27;
+	table2['R' - 'A'][32] = 27;
+	table2['R' - 'A'][33] = 27;
+	table2['R' - 'A'][28] = 27;
+
 }
 
 SyntaxAnalysis::~SyntaxAnalysis()
@@ -241,7 +282,7 @@ int SyntaxAnalysis::analysis()
 	while (word_id > 0)//loop until over or error
 	{
 		//print the content of the stack
-		//print_stack();
+		print_stack();
 
 		//get the char on the top of the stack
 		temp_ch = s.top();
@@ -253,7 +294,7 @@ int SyntaxAnalysis::analysis()
 
 		if (temp_ch == 'X')//create the four tuple
 		{
-			//std::cout << table1[left_part_id.top()] << " ";
+			std::cout << table1[left_part_id.top()] << " \n";
 			if (cm -> create(s.top(), left_part_id.top(), scope) > 0)
 			{
 			}
@@ -304,15 +345,6 @@ int SyntaxAnalysis::analysis()
 			if (table1[temp_id] != "")
 			{
 				left_part_id.push(temp_id);
-
-				if (temp_ch == 'G')//当前语句为算术语句
-				{
-					cm->F_flag = cm -> ARITH;
-				}
-				else if (temp_ch == 'I')//当前语句为逻辑语句
-				{
-					cm->F_flag = cm -> LOGIC;
-				}
 			}
 
 			//将产生式的右部反向压栈。
@@ -442,6 +474,9 @@ void SyntaxAnalysis::print_error(const std::string &info)
 	s.append(info);
 
 	print_info(s, 0);//error information
+
+	exit(1);
+
 }
 
 void SyntaxAnalysis::print_info(const std::string &s, int mode)
