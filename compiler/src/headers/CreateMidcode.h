@@ -35,6 +35,8 @@ typedef struct _variable_table_entry
 		 * the outest scope is 0
 		 */
 		int scope;
+		//是否是常量
+		bool is_const;
 
 } variable_table_entry;
 
@@ -99,6 +101,29 @@ class CreateMidcode
 		 * print the four tuples
 		 */
 		void print_tuples(void);
+		/*
+		 * fill the type information into the variable table
+		 * variable : the name of the variable
+		 * type		: the type of the variable
+		 * scope    : the scope of the variable
+		 * is_const : whether this variable is constant or not
+		 */
+		void fill(const std::string& variable, int type, int scope, bool is_const);
+		/*
+		 * R -> ""
+		 * return
+		 * 		0 : success
+		 * 		1 : failed
+		 */
+		int R(int right_part_id);
+
+		/*
+		 * U -> ""
+		 * return
+		 * 		0 : success
+		 * 		1 : failed
+		 */
+		int U(int right_part_id);
 	private:
 
 		//true list
@@ -107,6 +132,8 @@ class CreateMidcode
 		std::stack<int> fc;
 		//quad
 		std::stack<int> m_quad;
+		std::stack<int> n_nextlist;
+		std::stack<int> s_nextlist;
 		//下一条将要生成的语句的序号
 		int next_quad;
 
@@ -123,10 +150,14 @@ class CreateMidcode
 		//label table
 		std::vector<std::string>* label_table;
 		//constant table
-		std::vector<int>* constant_table;
+		std::vector<std::string>* constant_table;
 
 		//store the four tuples
-		std::vector<four_tuple> tuples;
+		/*
+		 * 尽量使用指针。
+		 * 直接存储four_tuple可能会出现内存错误！！
+		 */
+		std::vector<four_tuple *> tuples;
 
 		//the scope of the variable
 		int scope;
@@ -178,22 +209,6 @@ class CreateMidcode
 		int I(int right_part_id);
 
 		/*
-		 * R -> ""
-		 * return
-		 * 		0 : success
-		 * 		1 : failed
-		 */
-		int R(int right_part_id);
-
-		/*
-		 * S -> ""
-		 * return
-		 * 		0 : success
-		 * 		1 : failed
-		 */
-		int S(int right_part_id);
-
-		/*
 		 * O -> +TO | -TO | ""
 		 * return
 		 * 		0 : success
@@ -241,17 +256,33 @@ class CreateMidcode
 		int F(int right_part_id);
 
 		/*
+		 * C -> if(i){A}K | while(I){A}
+		 * return
+		 * 		0 : success
+		 * 		1 : failed
+		 */
+		int C(int right_part_id);
+
+		/*
+		 * K -> else{A} | ""
+		 * return
+		 * 		0 : success
+		 * 		1 : failed
+		 */
+		int K(int right_part_id);
+
+		/*
+		 * A -> BA | CA | LA | ""
+		 * return
+		 * 		0 : success
+		 * 		1 : failed
+		 */
+		int A(int right_part_id);
+
+		/*
 		 * get the variable name from the label table
 		 */
 		//int get_name_id_of_label_table(const std::string & sen, int start_pos);
-
-		/*
-		 * fill the type information into the variable table
-		 * variable : the name of the variable
-		 * type		: the type of the variable
-		 * scope    : the scope of the variable
-		 */
-		void fill(const std::string& variable, int type, int scope);
 
 		/*
 		 * create a temporaty variable
@@ -267,16 +298,6 @@ class CreateMidcode
 		 * get the operand
 		 */
 		std::string get_operand(void);
-
-		/*
-		 * create a new true or false list which has only one four tuple
-		 * the tuple id id ft_id
-		 * return the list id of the new list
-		 *
-		 * NOTE:
-		 * 		just return ft_id!
-		 */
-		int make_list(int ft_id);
 
 		/*
 		 * merge the list p1 and list p2
@@ -300,6 +321,10 @@ class CreateMidcode
 		void append_fc(int id);
 		int get_m_quad();
 		void append_m_quad(int m);
+		int get_n_nextlist();
+		void append_n_nextlist(int m);
+		int get_s_nextlist();
+		void append_s_nextlist(int m);
 
 		/*
 		 * test whether the type of the variable named name is type or not

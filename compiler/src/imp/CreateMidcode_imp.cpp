@@ -39,11 +39,11 @@ CreateMidcode::~CreateMidcode(void)
 
 int CreateMidcode::create(char left_part, int right_part_id, int scope)
 {
-	if (right_part_id == 27)//right part is ""
+	if (right_part_id == 27 && left_part != 'K')//right part is ""
 	{
 		return 1;
 	}
-	//	std::cout << left_part << "  " << right_part_id << std::endl;
+	//std::cout << left_part << "  " << right_part_id << std::endl;
 	int value = 0;
 
 	this -> scope = scope;
@@ -70,8 +70,8 @@ int CreateMidcode::create(char left_part, int right_part_id, int scope)
 			R(right_part_id);
 			value = 1;
 			break;
-		case 'S':
-			S(right_part_id);
+		case 'U':
+			U(right_part_id);
 			value = 1;
 			break;
 		case 'O':
@@ -94,6 +94,18 @@ int CreateMidcode::create(char left_part, int right_part_id, int scope)
 			L(right_part_id);
 			value = 1;
 			break;
+		case 'A':
+			A(right_part_id);
+			value = 1;
+			break;
+		case 'C':
+			C(right_part_id);
+			value = 1;
+			break;
+		case 'K':
+			K(right_part_id);
+			value = 1;
+			break;
 		default:
 			break;
 	}
@@ -101,6 +113,71 @@ int CreateMidcode::create(char left_part, int right_part_id, int scope)
 	return value;
 }
 
+int CreateMidcode::A(int right_part_id)
+{
+	if ( right_part_id ==1 || right_part_id == 2)
+	{
+		append_s_nextlist(next_quad);
+	}
+	return 0;
+}
+
+int CreateMidcode::U(int right_part_id)
+{
+	append_n_nextlist(next_quad);
+	create_four_tuple("j", "-", "-", "-1");
+	return 0;
+}
+
+int CreateMidcode::C(int right_part_id)
+{
+	int s_n_l;
+	int m1;
+	char tmp[10];
+	switch (right_part_id)
+	{
+		case 14://if(I){A}K
+			//推迟判断是否有else语句。
+			break;
+		case 15://while(E){A}
+			backpatch(get_tc(), get_m_quad());
+			m1 = get_m_quad();
+			sprintf(tmp, "%d", next_quad);
+			create_four_tuple("j", "-", "-", tmp);
+			backpatch(get_s_nextlist(),m1);
+			s_n_l = get_fc();
+			append_s_nextlist(s_n_l);
+			break;
+		default:
+			la -> error("if while error!!");
+			return -1;
+	}
+
+	return 0;
+}
+int CreateMidcode::K(int right_part_id)
+{
+	int s;
+	switch(right_part_id)
+	{
+		case 16://if(I){A} else {A}
+			backpatch(get_fc(), get_m_quad());
+			backpatch(get_tc(), get_m_quad());
+			s = merge(get_s_nextlist(), get_n_nextlist());
+			get_s_nextlist();
+			append_s_nextlist(s);
+			break;
+		case 27://if(I){A}
+			backpatch(get_tc(), get_m_quad());
+			s = merge(get_s_nextlist(), get_fc());
+			append_s_nextlist(s);
+			break;
+		default:
+			la -> error("if (else) error!!");
+			break;
+	}
+	return 0;
+}
 int CreateMidcode::M(int right_part_id)
 {
 
@@ -119,12 +196,12 @@ int CreateMidcode::M(int right_part_id)
 
 	if (right_part_id == 17)//int
 	{
-		fill(name, INT_T, scope);
+		fill(name, INT_T, scope, false);
 		return INT_T;
 	}
 	else if (right_part_id == 18)//bool
 	{
-		fill(name, BOOL_T, scope);
+		fill(name, BOOL_T, scope, false);
 		return BOOL_T;
 	}
 	else
@@ -139,17 +216,20 @@ int CreateMidcode::N(int right_part_id)
 	std::string name;
 	int id = var_cons_id_stack.top();
 	var_cons_id_stack.pop();
+	bool is_const;
 
 	if (id <= VAR_CONS)//a variable
 	{
 		name = label_table -> at(id);
+		is_const = false;
 	}
 	else//a constant. this can not access any more!
 	{
 		name = constant_table -> at(id - VAR_CONS);
+		is_const = true;
 	}
 
-	fill(name, var_type, scope);
+	fill(name, var_type, scope, is_const);
 	return var_type;
 }
 
@@ -162,49 +242,25 @@ int CreateMidcode::I(int right_part_id)
 	{
 		case 25://and
 			m_tmp = get_m_quad();
-			backpatch(get_tc(), m_tmp);
 			tc_id = get_tc();
+			backpatch(get_tc(), m_tmp);
 			fc_id = merge(get_fc(), get_fc());
 			break;
 		case 26://or
 			m_tmp = get_m_quad();
-			backpatch(get_fc(), m_tmp);
 			fc_id = get_fc();
+			backpatch(get_fc(), m_tmp);
 			tc_id = merge(get_tc(), get_tc());
 			break;
 		case 20://not
 			tc_id = get_fc();
 			fc_id = get_tc();
 			break;
-	}
-
-	std::string i1, i2;
-	i1 = get_operand();
-	i2 = get_operand();
-
-	tc_id = make_list(next_quad);
-	fc_id = make_list(next_quad + 1);
-
-	switch (right_part_id)
-	{
-		case 39://>
-			create_four_tuple("j>", i1, i2, "-1");
-			break;
-		case 40://<
-			create_four_tuple("j<", i1, i2, "-1");
-			break;
-		case 41://==
-			create_four_tuple("j==", i1, i2, "-1");
-			break;
-		case 42://!=
-			create_four_tuple("j!=", i1, i2, "-1");
-			break;
 		default:
-			la -> error("No such logic symbol.");
+			la -> error("No such logic symbol!!");
+			return -1;
 			break;
 	}
-
-	create_four_tuple("j", "-", "-", "-1");
 
 	append_tc(tc_id);
 	append_fc(fc_id);
@@ -215,12 +271,7 @@ int CreateMidcode::I(int right_part_id)
 int CreateMidcode::R(int right_part_id)
 {
 	append_m_quad(next_quad);
-	return 0;
-}
-
-int CreateMidcode::S(int right_part_id)
-{
-
+	//std::cout << "R : " << next_quad << std::endl;
 	return 0;
 }
 
@@ -244,6 +295,7 @@ int CreateMidcode::F(int right_part_id)
 			append_fc(next_quad + 1);
 			create_four_tuple("jnz", name, "-", "-1");
 			create_four_tuple("j", "-", "-", "-1");
+			var_cons_id_stack.pop();
 		}
 	}
 	else if (right_part_id == 23 || right_part_id == 24)
@@ -272,11 +324,19 @@ int CreateMidcode::O(int right_part_id)
 
 		//second operand
 		sen = get_operand();
+		var_cons_id_stack.pop();
 		test_var(sen, INT_T);
 
 		//first operand
 		first = get_operand();
+		var_cons_id_stack.pop();
 		test_var(first, INT_T);
+
+		//将常量转换成值，而不是id
+		first
+				= (variable_table[first] -> is_const ? la -> const_table[atoi(first.c_str())]
+						: first);
+		sen = (variable_table[sen] -> is_const ? la -> const_table[atoi(sen.c_str())] : sen);
 
 		//result
 		result = new_temp();
@@ -299,12 +359,16 @@ int CreateMidcode::H(int right_part_id)
 
 	//second operand
 	sen = get_operand();
+	var_cons_id_stack.pop();
 	test_var(sen, INT_T);
 
 	//first operand
 	first = get_operand();
+	var_cons_id_stack.pop();
 	test_var(first, INT_T);
 
+	first = (variable_table[first] -> is_const ? la -> const_table[atoi(first.c_str())] : first);
+	sen = (variable_table[sen] -> is_const ? la -> const_table[atoi(sen.c_str())] : sen);
 	//result
 	result = new_temp();
 
@@ -319,12 +383,16 @@ int CreateMidcode::Q(int right_part_id)
 
 	//second operand
 	sen = get_operand();
+	var_cons_id_stack.pop();
 	test_var(sen, INT_T);
 
 	//first operand
 	first = get_operand();
+	var_cons_id_stack.pop();
 	test_var(first, INT_T);
 
+	first = (variable_table[first] -> is_const ? la -> const_table[atoi(first.c_str())] : first);
+	sen = (variable_table[sen] -> is_const ? la -> const_table[atoi(sen.c_str())] : sen);
 	//result
 	result = new_temp();
 
@@ -338,14 +406,31 @@ int CreateMidcode::B(int right_part_id)
 	std::string tmp, op, first, sen, result;
 	op = "=";
 
+	int tmp_id = var_cons_id_stack.top();
+	var_cons_id_stack.pop();
+
 	//first operand
 	first = get_operand();
+	var_cons_id_stack.pop();
 	test_var(first, INT_T);
 
+	first = (variable_table[first] -> is_const ? la -> const_table[atoi(first.c_str())] : first);
 	//no use sencond operand
 	sen = "-";
 	//result
-	result = get_operand();
+
+	if (var_cons_id_stack.size() <= 0)
+	{
+		result = first;
+		var_cons_id_stack.push(tmp_id);
+		first = get_operand();
+	}
+	else
+	{
+		result = get_operand();
+		var_cons_id_stack.pop();
+		var_cons_id_stack.push(tmp_id);
+	}
 
 	create_four_tuple(op, first, sen, result);
 
@@ -357,7 +442,7 @@ int CreateMidcode::L(int right_part_id)
 	return 0;
 }
 
-void CreateMidcode::fill(const std::string& variable, int type, int scope)
+void CreateMidcode::fill(const std::string& variable, int type, int scope, bool is_const)
 {
 	//test whether the variable has already defined or not.
 	if (variable_table[variable] != NULL && variable_table[variable]->scope == scope)
@@ -370,12 +455,14 @@ void CreateMidcode::fill(const std::string& variable, int type, int scope)
 	tmp -> name = variable;
 	tmp -> type = type;
 	tmp -> scope = scope;
-
+	tmp -> is_const = is_const;
 	variable_table[variable] = tmp;
 }
 
 void CreateMidcode::store_variables_ids(int id)
 {
+	//std::cout << "store_variables_ids: " << id << std::endl;
+	//std::cout << "store_variables_ids: size " << var_cons_id_stack.size() << std::endl;
 	var_cons_id_stack.push(id);
 
 }
@@ -387,8 +474,9 @@ void CreateMidcode::print_variable_table(void)
 	for (pos = variable_table.begin(); pos != variable_table.end(); ++pos)
 	{
 		vte = pos -> second;
-		std::cout << pos -> first << " : " << vte -> type << std::endl;
+		std::cout << pos -> first << " : " << vte -> type << "  ";
 	}
+	std::cout << std::endl;
 }
 
 std::string CreateMidcode::new_temp(void)
@@ -404,19 +492,21 @@ std::string CreateMidcode::new_temp(void)
 
 	++temp_var_cnt;
 
+	fill(tmp, INT_T, -1, false);
+
 	return tmp;
 }
 
 void CreateMidcode::create_four_tuple(const std::string &op, const std::string &first,
 		const std::string &second, const std::string &result)
 {
-	four_tuple tuple;
-	tuple.op = op;
-	tuple.first = first;
-	tuple.sencond = second;
-	tuple.result = result;
+	four_tuple * tuple = new four_tuple;
+	tuple -> op = op;
+	tuple -> first = first;
+	tuple -> sencond = second;
+	tuple -> result = result;
 
-	tuple.next_sen = -1;
+	tuple -> next_sen = -1;
 
 	++next_quad;
 
@@ -430,21 +520,46 @@ void CreateMidcode::print_tuples(void)
 	{
 
 		std::cout << num << " : ( ";
-		std::cout << tuples[num].op << " , \t";
-		std::cout << tuples[num].first << " , \t";
-		std::cout << tuples[num].sencond << " , \t";
-		std::cout << tuples[num].result;
-		std::cout << " )  \t";
-		std::cout << tuples[num].next_sen << std::endl;
+		std::cout << tuples[num] -> op << " , \t";
+		std::cout << tuples[num] -> first << " , \t";
+		std::cout << tuples[num] -> sencond << " , \t";
+		if (tuples[num] -> op == "j" || tuples[num] -> op == "jnz")
+		{
+			std::cout << tuples[num] -> next_sen;
+		}
+		else
+		{
+			std::cout << tuples[num] -> result;
+		}
+		std::cout << " )  \t\n";
+
 	}
+	std::cout << std::endl;
 }
 
 std::string CreateMidcode::get_operand(void)
 {
+	if (var_cons_id_stack.size() <= 0)
+	{
+		std::cerr << "Get_operand: var_cons_id_stack 's size <=0!!\n";
+	}
+
 	std::string tmp("");
+
+	//	std::cout << "get_operand: " << var_cons_id_stack.top() << std::endl;
+	//	std::stack<int> ttt(var_cons_id_stack);
+	//	int sss = ttt.size();
+	//	for (int i = 0; i < sss; ++i)
+	//	{
+	//		std::cout << ttt.top() << "  ";
+	//		ttt.pop();
+	//	}
+	//	std::cout << std::endl;
+
 	if (var_cons_id_stack.top() < VAR_CONS)
 	{
 		std::string vname = label_table -> at(var_cons_id_stack.top());
+
 		variable_table_entry * vte = NULL;
 		vte = variable_table[vname];
 		if (vte == NULL)
@@ -457,7 +572,7 @@ std::string CreateMidcode::get_operand(void)
 	else if (var_cons_id_stack.top() < CONS_TMP)
 	{
 		std::stringstream ss;
-		ss << constant_table -> at(var_cons_id_stack.top() - VAR_CONS);
+		ss << var_cons_id_stack.top() - VAR_CONS;
 		tmp += ss.str();
 	}
 	else
@@ -467,32 +582,42 @@ std::string CreateMidcode::get_operand(void)
 		tmp = "T";
 		tmp += ss.str();
 	}
-	var_cons_id_stack.pop();
+	//	std::cout << "get operand: " << tmp << std::endl;
 
 	return tmp;
 
 }
 
-int CreateMidcode::make_list(int ft_id)
-{
-	return ft_id;
-}
-
 int CreateMidcode::merge(int p1, int p2)
 {
-	int index = p2;
-	while (tuples[index].next_sen != -1)
+	unsigned int index = p2;
+	if(index >= tuples.size())
 	{
-		index = tuples[index].next_sen;
+		return p2;
+	}
+	while (tuples[index] -> next_sen != -1)
+	{
+		index = tuples[index] -> next_sen;
 	}
 
-	tuples[index].next_sen = p1;
+	tuples[index] -> next_sen = p1;
 
 	return p2;
 }
 
 int CreateMidcode::backpatch(int list_id, int ft_id)
 {
+	int next = tuples[list_id] -> next_sen;
+	tuples[list_id] -> next_sen = ft_id;
+	int tmp;
+
+	while (next >= 0)
+	{
+		tmp = tuples[next] -> next_sen;
+		tuples[next] -> next_sen = ft_id;
+		next = tmp;
+	}
+
 	return 0;
 }
 
@@ -529,7 +654,33 @@ void CreateMidcode::append_m_quad(int m)
 {
 	m_quad.push(m);
 }
+int CreateMidcode::get_n_nextlist()
+{
+	int tmp = n_nextlist.top();
+	n_nextlist.pop();
+	return tmp;
 
+}
+void CreateMidcode::append_n_nextlist(int m)
+{
+	n_nextlist.push(m);
+}
+int CreateMidcode::get_s_nextlist()
+{
+	int tmp = s_nextlist.top();
+	s_nextlist.pop();
+	return tmp;
+
+}
+void CreateMidcode::append_s_nextlist(int m)
+{
+
+	//if(s_nextlist.top() != m)
+	{
+		std::cout << "append_s_nextlist: " << m << std::endl;
+		s_nextlist.push(m);
+	}
+}
 int CreateMidcode::test_var(const std::string name, int type)
 {
 	variable_table_entry *vte = NULL;
@@ -538,11 +689,11 @@ int CreateMidcode::test_var(const std::string name, int type)
 	{
 		if (type == INT_T)
 		{
-			la -> error("Need a integer variable.");
+			la -> error("Need a integer variable." + name);
 		}
 		else if (type == BOOL_T)
 		{
-			la -> error("Need a boolean variable.");
+			la -> error("Need a boolean variable." + name);
 		}
 		else
 		{

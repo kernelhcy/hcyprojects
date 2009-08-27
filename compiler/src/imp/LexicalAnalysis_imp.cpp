@@ -446,7 +446,7 @@ char LexicalAnalysis::get_char(char &ch)
 	return ch;
 }
 
-std::vector<int>* LexicalAnalysis::get_const_table()
+std::vector<std::string>* LexicalAnalysis::get_const_table()
 {
 	return &const_table;
 }
@@ -459,10 +459,7 @@ std::vector<std::string>* LexicalAnalysis::get_label_table()
 
 int LexicalAnalysis::insert_const()
 {
-
-	int value = atoi(str_token.c_str());
-
-	const_table.push_back(value);
+	const_table.push_back(str_token);
 	return const_table.size() - 1;
 }
 

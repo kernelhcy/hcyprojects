@@ -58,6 +58,11 @@ class LexicalAnalysis
 {
 	public:
 
+		//the table of labels
+		std::vector<std::string> label_table;
+
+		//the table of constants
+		std::vector<std::string> const_table;
 		static LexicalAnalysis* get_instance(const std::string& in_path,
 				const std::string& out_path);
 		/*
@@ -97,7 +102,7 @@ class LexicalAnalysis
 		/*
 		 *  Get the table of the constant.
 		 */
-		std::vector<int>* get_const_table(void);
+		std::vector<std::string>* get_const_table(void);
 		/*
 		 * show the syntax error
 		 * info : the information of the error
@@ -111,12 +116,6 @@ class LexicalAnalysis
 		int pos;
 		//store the sting which makes up a word
 		std::string str_token;
-
-		//the table of labels
-		std::vector<std::string> label_table;
-
-		//the table of constants
-		std::vector<int> const_table;
 
 		//store the key words of this language
 		std::vector<std::string> keywords;

@@ -82,7 +82,7 @@ SyntaxAnalysis::SyntaxAnalysis(const std::string& in_path, const std::string& ou
 	table1[13] = "i";
 	table1[14] = "f(E)R{A}K";//if(K){A}I
 	table1[15] = "wR(E)R{A}";//while(K){A}
-	table1[16] = "SeR{A}";//else A
+	table1[16] = "UeR{A}";//else A
 	table1[17] = "niXMN";//int i N
 	table1[18] = "biXMN";//bool i N
 	table1[19] = ",iXNN";
@@ -244,7 +244,7 @@ SyntaxAnalysis::SyntaxAnalysis(const std::string& in_path, const std::string& ou
 	table2['O' - 'A'][23] = 27;
 	table2['O' - 'A'][24] = 27;
 
-	table2['S' - 'A'][8] = 27;
+	table2['U' - 'A'][8] = 27;
 
 	table2['R' - 'A'][17] = 27;
 	table2['R' - 'A'][2] = 27;
@@ -294,7 +294,8 @@ int SyntaxAnalysis::analysis()
 
 		if (temp_ch == 'X')//create the four tuple
 		{
-			std::cout << table1[left_part_id.top()] << " \n";
+			//std::cout << table1[left_part_id.top()] << " \n";
+			//cm -> print_variable_table();
 			if (cm -> create(s.top(), left_part_id.top(), scope) > 0)
 			{
 			}
@@ -307,6 +308,16 @@ int SyntaxAnalysis::analysis()
 		{
 
 			temp_id = table2[temp_ch - 'A'][word_id];
+
+			/*
+			 * 对于if else 语句，进行特殊处理
+			 */
+			if (temp_ch == 'K' && table1[temp_id] == "")
+			{
+				s.push(temp_ch);
+				s.push('X');
+				left_part_id.push(27);
+			}
 
 			//the if then else bug
 			if (temp_id < 0 && temp_ch == 'K')
@@ -345,6 +356,21 @@ int SyntaxAnalysis::analysis()
 			if (table1[temp_id] != "")
 			{
 				left_part_id.push(temp_id);
+			}
+
+			/*
+			 * Mquad
+			 */
+			if (temp_ch == 'R')
+			{
+				cm -> R(0);
+			}
+			/*
+			 * Mquad
+			 */
+			if (temp_ch == 'U')
+			{
+				cm -> U(0);
 			}
 
 			//将产生式的右部反向压栈。
@@ -386,6 +412,9 @@ int SyntaxAnalysis::analysis()
 				else if (word_id == 32)//a constant
 				{
 					cm -> store_variables_ids(la -> get_pos() + cm -> VAR_CONS);
+					char tmp[10];
+					sprintf(tmp, "%d", la -> get_pos());
+					cm -> fill(tmp, INT_T, scope, true);
 				}
 			}
 			else
