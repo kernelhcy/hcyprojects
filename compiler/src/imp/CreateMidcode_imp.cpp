@@ -30,6 +30,9 @@ CreateMidcode::CreateMidcode(void)
 	this -> label_table = la -> get_label_table();
 	this -> constant_table = la -> get_const_table();
 
+	fill("true", BOOL_T, 999999, false);
+	fill("false", BOOL_T, 999999, false);
+
 }
 
 CreateMidcode::~CreateMidcode(void)
@@ -115,7 +118,7 @@ int CreateMidcode::create(char left_part, int right_part_id, int scope)
 
 int CreateMidcode::A(int right_part_id)
 {
-	if ( right_part_id ==1 || right_part_id == 2)
+	if (right_part_id == 1 || right_part_id == 2)
 	{
 		append_s_nextlist(next_quad);
 	}
@@ -142,10 +145,11 @@ int CreateMidcode::C(int right_part_id)
 		case 15://while(E){A}
 			backpatch(get_tc(), get_m_quad());
 			m1 = get_m_quad();
-			sprintf(tmp, "%d", next_quad);
+			sprintf(tmp, "%d", m1);
 			create_four_tuple("j", "-", "-", tmp);
-			backpatch(get_s_nextlist(),m1);
+			backpatch(get_s_nextlist(), m1);
 			s_n_l = get_fc();
+			backpatch(s_n_l, next_quad);
 			append_s_nextlist(s_n_l);
 			break;
 		default:
@@ -158,7 +162,7 @@ int CreateMidcode::C(int right_part_id)
 int CreateMidcode::K(int right_part_id)
 {
 	int s;
-	switch(right_part_id)
+	switch (right_part_id)
 	{
 		case 16://if(I){A} else {A}
 			backpatch(get_fc(), get_m_quad());
@@ -298,10 +302,7 @@ int CreateMidcode::F(int right_part_id)
 			var_cons_id_stack.pop();
 		}
 	}
-	else if (right_part_id == 23 || right_part_id == 24)
-	{
 
-	}
 	return 0;
 }
 
@@ -325,12 +326,18 @@ int CreateMidcode::O(int right_part_id)
 		//second operand
 		sen = get_operand();
 		var_cons_id_stack.pop();
-		test_var(sen, INT_T);
+		if (test_var(sen) != INT_T)
+		{
+			la -> error("Need a integer!");
+		}
 
 		//first operand
 		first = get_operand();
 		var_cons_id_stack.pop();
-		test_var(first, INT_T);
+		if (test_var(first) != INT_T)
+		{
+			la -> error("Need a integer!");
+		}
 
 		//将常量转换成值，而不是id
 		first
@@ -360,12 +367,18 @@ int CreateMidcode::H(int right_part_id)
 	//second operand
 	sen = get_operand();
 	var_cons_id_stack.pop();
-	test_var(sen, INT_T);
+	if (test_var(sen) != INT_T)
+	{
+		la -> error("Need a integer!");
+	}
 
 	//first operand
 	first = get_operand();
 	var_cons_id_stack.pop();
-	test_var(first, INT_T);
+	if (test_var(first) != INT_T)
+	{
+		la -> error("Need a integer!");
+	}
 
 	first = (variable_table[first] -> is_const ? la -> const_table[atoi(first.c_str())] : first);
 	sen = (variable_table[sen] -> is_const ? la -> const_table[atoi(sen.c_str())] : sen);
@@ -384,12 +397,18 @@ int CreateMidcode::Q(int right_part_id)
 	//second operand
 	sen = get_operand();
 	var_cons_id_stack.pop();
-	test_var(sen, INT_T);
+	if (test_var(sen) != INT_T)
+	{
+		la -> error("Need a integer!");
+	}
 
 	//first operand
 	first = get_operand();
 	var_cons_id_stack.pop();
-	test_var(first, INT_T);
+	if (test_var(first) != INT_T)
+	{
+		la -> error("Need a integer!");
+	}
 
 	first = (variable_table[first] -> is_const ? la -> const_table[atoi(first.c_str())] : first);
 	sen = (variable_table[sen] -> is_const ? la -> const_table[atoi(sen.c_str())] : sen);
@@ -412,13 +431,11 @@ int CreateMidcode::B(int right_part_id)
 	//first operand
 	first = get_operand();
 	var_cons_id_stack.pop();
-	test_var(first, INT_T);
 
 	first = (variable_table[first] -> is_const ? la -> const_table[atoi(first.c_str())] : first);
 	//no use sencond operand
 	sen = "-";
 	//result
-
 	if (var_cons_id_stack.size() <= 0)
 	{
 		result = first;
@@ -430,6 +447,20 @@ int CreateMidcode::B(int right_part_id)
 		result = get_operand();
 		var_cons_id_stack.pop();
 		var_cons_id_stack.push(tmp_id);
+	}
+
+	if (test_var(first) != test_var(result))
+	{
+		la->error("Assignment : WRONG type!");
+	}
+
+	if(first == "true")
+	{
+		first = "1";
+	}
+	else if (first == "false")
+	{
+		first = "0";
 	}
 
 	create_four_tuple(op, first, sen, result);
@@ -584,6 +615,15 @@ std::string CreateMidcode::get_operand(void)
 	}
 	//	std::cout << "get operand: " << tmp << std::endl;
 
+	if (var_cons_id_stack.top() == TRUE_ID)
+	{
+		tmp = "true";
+	}
+	else if (var_cons_id_stack.top() == FALSE_ID)
+	{
+		tmp = "false";
+	}
+
 	return tmp;
 
 }
@@ -591,7 +631,7 @@ std::string CreateMidcode::get_operand(void)
 int CreateMidcode::merge(int p1, int p2)
 {
 	unsigned int index = p2;
-	if(index >= tuples.size())
+	if (index >= tuples.size())
 	{
 		return p2;
 	}
@@ -675,31 +715,16 @@ int CreateMidcode::get_s_nextlist()
 void CreateMidcode::append_s_nextlist(int m)
 {
 
-	//if(s_nextlist.top() != m)
-	{
-		std::cout << "append_s_nextlist: " << m << std::endl;
-		s_nextlist.push(m);
-	}
+	s_nextlist.push(m);
 }
-int CreateMidcode::test_var(const std::string name, int type)
+int CreateMidcode::test_var(const std::string name)
 {
 	variable_table_entry *vte = NULL;
 	vte = variable_table[name];
-	if (vte == NULL || vte -> type != type)
+	if (vte == NULL)
 	{
-		if (type == INT_T)
-		{
-			la -> error("Need a integer variable." + name);
-		}
-		else if (type == BOOL_T)
-		{
-			la -> error("Need a boolean variable." + name);
-		}
-		else
-		{
-			std::cerr << "CreateMidcode::test_var : Bad TYPE!!\n";
-		}
-		return 1;
+		la -> error("Need a variable." + name);
+		return -1;
 	}
-	return 0;
+	return vte -> type;
 }

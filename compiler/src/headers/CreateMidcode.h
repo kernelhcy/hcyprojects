@@ -59,6 +59,10 @@ typedef struct _four_tuple
 		int next_sen;
 } four_tuple;
 
+//true and false ids
+#define TRUE_ID 500000000
+#define FALSE_ID 600000000
+
 class CreateMidcode
 {
 	public:
@@ -327,11 +331,11 @@ class CreateMidcode
 		void append_s_nextlist(int m);
 
 		/*
-		 * test whether the type of the variable named name is type or not
-		 * return : yes 0
-		 *          no  1
+		 * test whether the variable named name is existed
+		 * yes : return the type
+		 * no  : return -1
 		 */
-		int test_var(const std::string name, int type);
+		int test_var(const std::string name);
 
 };
 

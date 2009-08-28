@@ -5,11 +5,11 @@ int main()
 	bool a, b, c, d;
 	
 	bool con;
-	//con = false;
+	con = false;
 
-//	j = 5 + (j - 3 * 5) / m * i;
-//	m = 3 / j;
-//	n = j + m / ( m + 3 - 5 * ( j + n ));
+	j = 5 + (j - 3 * 5) / m * i;
+	m = 3 / j;
+	n = j + m / ( m + 3 - 5 * ( j + n ));
 	
 	if ( a )
 	{
@@ -24,7 +24,7 @@ int main()
 	{
 		j = m  / ( m + 3 - 5 * ( j + n ));
 	}
-	
+
 	while (con)
 	{
 		j = (j - 1) / n;

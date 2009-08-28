@@ -282,7 +282,7 @@ int SyntaxAnalysis::analysis()
 	while (word_id > 0)//loop until over or error
 	{
 		//print the content of the stack
-		print_stack();
+		//print_stack();
 
 		//get the char on the top of the stack
 		temp_ch = s.top();
@@ -415,6 +415,10 @@ int SyntaxAnalysis::analysis()
 					char tmp[10];
 					sprintf(tmp, "%d", la -> get_pos());
 					cm -> fill(tmp, INT_T, scope, true);
+				}
+				else if ( word_id == 12 || word_id == 11 )
+				{
+					cm -> store_variables_ids( (word_id == 12 ? TRUE_ID : FALSE_ID) );
 				}
 			}
 			else
