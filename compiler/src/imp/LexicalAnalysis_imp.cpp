@@ -2,12 +2,11 @@
 
 #include "../headers/LexicalAnalysis.h"
 
-LexicalAnalysis* LexicalAnalysis::_instance = NULL;
+LexicalAnalysis* LexicalAnalysis::_instance = 0;
 
-LexicalAnalysis* LexicalAnalysis::get_instance(const std::string& in_path,
-		const std::string& out_path)
+LexicalAnalysis* LexicalAnalysis::get_instance(const std::string& in_path, const std::string& out_path)
 {
-	if (_instance == NULL)
+	if (_instance == 0)
 	{
 		_instance = new LexicalAnalysis(in_path, out_path);
 	}
@@ -29,6 +28,7 @@ LexicalAnalysis::LexicalAnalysis(const std::string& in_path, const std::string& 
 
 	str_token.clear();
 
+	tables = DataTables::get_instance();
 	//prepare the key words table
 	/*
 	 *  The index of the key word add one in the vector is the id of this key word;
@@ -89,7 +89,7 @@ LexicalAnalysis::LexicalAnalysis(const std::string& in_path, const std::string& 
 LexicalAnalysis::~LexicalAnalysis()
 {
 	delete fa;
-	fa = NULL;
+	fa = 0;
 	/*
 	 * This sentence will report a error!
 	 *		double free or corruption!!
@@ -149,6 +149,7 @@ int LexicalAnalysis::get_next_word()
 		{
 			output(code, str_token.data());
 		}
+
 
 		/*
 		 *  The buffer is empty which means that the source file has no entry.
@@ -339,6 +340,7 @@ int LexicalAnalysis::get_next_word()
 			output(29, "/*");
 			code = 29;
 
+
 			/*
 			 * delete the comments
 			 */
@@ -413,6 +415,7 @@ void LexicalAnalysis::output(int id, const char* entry)
 	info.append(entry);
 	info.append("  )\n");
 
+
 	//print_info(info, 0);
 
 }
@@ -446,27 +449,16 @@ char LexicalAnalysis::get_char(char &ch)
 	return ch;
 }
 
-std::vector<std::string>* LexicalAnalysis::get_const_table()
-{
-	return &const_table;
-}
-
-std::vector<std::string>* LexicalAnalysis::get_label_table()
-{
-	return &label_table;
-
-}
-
 int LexicalAnalysis::insert_const()
 {
-	const_table.push_back(str_token);
-	return const_table.size() - 1;
+	tables -> const_table.push_back(str_token);
+	return tables -> const_table.size() - 1;
 }
 
 int LexicalAnalysis::insert_id()
 {
-	label_table.push_back(str_token);
-	return label_table.size() - 1;
+	tables -> label_table.push_back(str_token);
+	return tables -> label_table.size() - 1;
 }
 
 bool LexicalAnalysis::is_digit(char ch)

@@ -28,7 +28,7 @@ int main(int argc, char** argv)
 	SyntaxAnalysis *sa = SyntaxAnalysis::get_instance(in_file, out_file);
 	sa->analysis();
 	delete sa;
-	sa = NULL;
+	sa = 0;
 
 
 //	char buffer[500];

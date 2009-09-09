@@ -130,6 +130,7 @@ class CreateMidcode
 		int U(int right_part_id);
 	private:
 
+		DataTables *tables ;
 		//true list
 		std::stack<int> tc;
 		//false list
@@ -150,11 +151,6 @@ class CreateMidcode
 		 * store the information of all variables in the program
 		 */
 		std::map<std::string, variable_table_entry*> variable_table;
-
-		//label table
-		std::vector<std::string>* label_table;
-		//constant table
-		std::vector<std::string>* constant_table;
 
 		//store the four tuples
 		/*

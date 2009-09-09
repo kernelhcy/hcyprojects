@@ -9,7 +9,6 @@
 
 #include "FileActions.h"
 #include "headers.h"
-
 /*
  *  The class LexicalAnalysis is to analysis the accidence of the source file.
  *
@@ -58,11 +57,7 @@ class LexicalAnalysis
 {
 	public:
 
-		//the table of labels
-		std::vector<std::string> label_table;
 
-		//the table of constants
-		std::vector<std::string> const_table;
 		static LexicalAnalysis* get_instance(const std::string& in_path,
 				const std::string& out_path);
 		/*
@@ -95,21 +90,13 @@ class LexicalAnalysis
 		 */
 		std::string& get_string(int id);
 		/*
-		 *  Get the table of the words;
-		 */
-		std::vector<std::string>* get_label_table(void);
-
-		/*
-		 *  Get the table of the constant.
-		 */
-		std::vector<std::string>* get_const_table(void);
-		/*
 		 * show the syntax error
 		 * info : the information of the error
 		 */
 		void error(const std::string &info);
 
 	private:
+		DataTables *tables ;
 		//store the character readed from the buffer
 		char ch;
 		//the position of the lable or constant in label table or constant table

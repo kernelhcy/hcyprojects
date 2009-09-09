@@ -6,11 +6,11 @@
  */
 #include "../headers/CreateMidcode.h"
 
-CreateMidcode* CreateMidcode::_instance = NULL;
+CreateMidcode* CreateMidcode::_instance = 0;
 
 CreateMidcode* CreateMidcode::get_instance(void)
 {
-	if (_instance == NULL)
+	if (_instance == 0)
 	{
 		_instance = new CreateMidcode();
 	}
@@ -26,9 +26,7 @@ CreateMidcode::CreateMidcode(void)
 	var_type = 0;
 	temp_var_cnt = 0;
 	next_quad = 0;//语句序号从0开始
-	la = LexicalAnalysis::get_instance();
-	this -> label_table = la -> get_label_table();
-	this -> constant_table = la -> get_const_table();
+	tables = DataTables::get_instance();
 
 	fill("true", BOOL_T, 999999, false);
 	fill("false", BOOL_T, 999999, false);
@@ -191,11 +189,11 @@ int CreateMidcode::M(int right_part_id)
 
 	if (id <= VAR_CONS)//a variable
 	{
-		name = label_table -> at(id);
+		name = tables -> label_table.at(id);
 	}
 	else//a constant. this can not access any more!
 	{
-		name = constant_table -> at(id - VAR_CONS);
+		name = tables -> const_table.at(id - VAR_CONS);
 	}
 
 	if (right_part_id == 17)//int
@@ -224,12 +222,12 @@ int CreateMidcode::N(int right_part_id)
 
 	if (id <= VAR_CONS)//a variable
 	{
-		name = label_table -> at(id);
+		name = tables -> label_table.at(id);
 		is_const = false;
 	}
 	else//a constant. this can not access any more!
 	{
-		name = constant_table -> at(id - VAR_CONS);
+		name = tables -> const_table.at(id - VAR_CONS);
 		is_const = true;
 	}
 
@@ -287,7 +285,7 @@ int CreateMidcode::F(int right_part_id)
 		std::string name = get_operand();
 
 		variable_table_entry *vte = variable_table[name];
-		if (vte == NULL)
+		if (vte == 0)
 		{
 			la -> error("Need boolean variable.");
 			return -1;
@@ -341,9 +339,9 @@ int CreateMidcode::O(int right_part_id)
 
 		//将常量转换成值，而不是id
 		first
-				= (variable_table[first] -> is_const ? la -> const_table[atoi(first.c_str())]
+				= (variable_table[first] -> is_const ? tables -> const_table[atoi(first.c_str())]
 						: first);
-		sen = (variable_table[sen] -> is_const ? la -> const_table[atoi(sen.c_str())] : sen);
+		sen = (variable_table[sen] -> is_const ? tables -> const_table[atoi(sen.c_str())] : sen);
 
 		//result
 		result = new_temp();
@@ -380,8 +378,8 @@ int CreateMidcode::H(int right_part_id)
 		la -> error("Need a integer!");
 	}
 
-	first = (variable_table[first] -> is_const ? la -> const_table[atoi(first.c_str())] : first);
-	sen = (variable_table[sen] -> is_const ? la -> const_table[atoi(sen.c_str())] : sen);
+	first = (variable_table[first] -> is_const ? tables -> const_table[atoi(first.c_str())] : first);
+	sen = (variable_table[sen] -> is_const ? tables -> const_table[atoi(sen.c_str())] : sen);
 	//result
 	result = new_temp();
 
@@ -410,8 +408,8 @@ int CreateMidcode::Q(int right_part_id)
 		la -> error("Need a integer!");
 	}
 
-	first = (variable_table[first] -> is_const ? la -> const_table[atoi(first.c_str())] : first);
-	sen = (variable_table[sen] -> is_const ? la -> const_table[atoi(sen.c_str())] : sen);
+	first = (variable_table[first] -> is_const ? tables -> const_table[atoi(first.c_str())] : first);
+	sen = (variable_table[sen] -> is_const ? tables -> const_table[atoi(sen.c_str())] : sen);
 	//result
 	result = new_temp();
 
@@ -432,7 +430,7 @@ int CreateMidcode::B(int right_part_id)
 	first = get_operand();
 	var_cons_id_stack.pop();
 
-	first = (variable_table[first] -> is_const ? la -> const_table[atoi(first.c_str())] : first);
+	first = (variable_table[first] -> is_const ? tables -> const_table[atoi(first.c_str())] : first);
 	//no use sencond operand
 	sen = "-";
 	//result
@@ -476,7 +474,7 @@ int CreateMidcode::L(int right_part_id)
 void CreateMidcode::fill(const std::string& variable, int type, int scope, bool is_const)
 {
 	//test whether the variable has already defined or not.
-	if (variable_table[variable] != NULL && variable_table[variable]->scope == scope)
+	if (variable_table[variable] != 0 && variable_table[variable]->scope == scope)
 	{
 		std::cerr << "ERROR : variable " << variable << "has multiple definition.";
 	}
@@ -500,14 +498,20 @@ void CreateMidcode::store_variables_ids(int id)
 
 void CreateMidcode::print_variable_table(void)
 {
+	std::cout << "符号表：" <<std::endl;
 	std::map<std::string, variable_table_entry*>::iterator pos;
 	variable_table_entry * vte;
 	for (pos = variable_table.begin(); pos != variable_table.end(); ++pos)
 	{
 		vte = pos -> second;
-		std::cout << pos -> first << " : " << vte -> type << "  ";
+		std::cout << pos -> first << " : " << (vte -> type == BOOL_T ? "bool" : "int" ) ;
+		if( vte -> is_const )
+		{
+			std::cout << " (constant)" ;
+		}
+		std::cout << std::endl;
 	}
-	std::cout << std::endl;
+
 }
 
 std::string CreateMidcode::new_temp(void)
@@ -547,6 +551,7 @@ void CreateMidcode::create_four_tuple(const std::string &op, const std::string &
 
 void CreateMidcode::print_tuples(void)
 {
+	std::cout << "四元式：\n" ;
 	for (unsigned int num = 0; num < tuples.size(); ++num)
 	{
 
@@ -589,11 +594,11 @@ std::string CreateMidcode::get_operand(void)
 
 	if (var_cons_id_stack.top() < VAR_CONS)
 	{
-		std::string vname = label_table -> at(var_cons_id_stack.top());
+		std::string vname = tables -> label_table.at(var_cons_id_stack.top());
 
-		variable_table_entry * vte = NULL;
+		variable_table_entry * vte = 0;
 		vte = variable_table[vname];
-		if (vte == NULL)
+		if (vte == 0)
 		{
 			la -> error("Operand " + vname + " has not declared!!");
 			return tmp;
@@ -630,7 +635,7 @@ std::string CreateMidcode::get_operand(void)
 
 int CreateMidcode::merge(int p1, int p2)
 {
-	unsigned int index = p2;
+	size_t index = p2;
 	if (index >= tuples.size())
 	{
 		return p2;
@@ -719,9 +724,9 @@ void CreateMidcode::append_s_nextlist(int m)
 }
 int CreateMidcode::test_var(const std::string name)
 {
-	variable_table_entry *vte = NULL;
+	variable_table_entry *vte = 0;
 	vte = variable_table[name];
-	if (vte == NULL)
+	if (vte == 0)
 	{
 		la -> error("Need a variable." + name);
 		return -1;

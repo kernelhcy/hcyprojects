@@ -10,12 +10,13 @@
 #ifndef HEADERS_H_
 #define HEADERS_H_
 
-#include <stdlib.h>
+#include <cstdlib>
 #include <iostream>
 #include <string>
 #include <map>
 #include <vector>
 #include <queue>
 #include <stack>
+#include "DataTables.h"
 
 #endif /* HEADERS_H_ */

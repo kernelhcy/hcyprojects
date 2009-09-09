@@ -36,6 +36,7 @@ public:
      */
     int analysis(void);
 private:
+    DataTables *tables ;
     //The only instance of lexical analysis class
     LexicalAnalysis* la;
 

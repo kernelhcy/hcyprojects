@@ -2,12 +2,12 @@
 #include <string>
 
 //initialize the only instance
-SyntaxAnalysis* SyntaxAnalysis::_instance = NULL;
+SyntaxAnalysis* SyntaxAnalysis::_instance = 0;
 
 SyntaxAnalysis* SyntaxAnalysis::get_instance(const std::string& in_path,
 		const std::string& out_path)
 {
-	if (_instance == NULL)
+	if (_instance == 0)
 	{
 		_instance = new SyntaxAnalysis(in_path, out_path);
 	}
@@ -261,7 +261,7 @@ SyntaxAnalysis::~SyntaxAnalysis()
 {
 
 	delete la;
-	la = NULL;
+	la = 0;
 }
 
 int SyntaxAnalysis::analysis()
@@ -437,7 +437,7 @@ int SyntaxAnalysis::analysis()
 
 	}
 
-	//cm -> print_variable_table();
+	cm -> print_variable_table();
 	cm -> print_tuples();
 	return 0;
 }
