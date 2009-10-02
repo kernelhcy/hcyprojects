@@ -1,0 +1,24 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.7	//
+__del__	libbmy.py	/^    def __del__(self):$/;"	m	class:client	file:
+check	libbmy.py	/^        def check(article):$/;"	f	function:client.post
+client	libbmy.py	/^class client:$/;"	c
+do_request	libbmy.py	/^        def do_request():$/;"	f	function:client.http_post_get
+encode_file	libbmy.py	/^        def encode_file(file):$/;"	f	function:client.upload_one_file
+get_board_list	libbmy.py	/^    def get_board_list(self):$/;"	m	class:client
+get_content_type	libbmy.py	/^        def get_content_type(file):$/;"	f	function:client.upload_one_file
+get_page	libbmy.py	/^    def get_page(self, selector, data=None, headers=None):$/;"	m	class:client
+get_value	libbmy.py	/^        def get_value(pattern, str):$/;"	f	function:client.parse_item
+http_post_get	libbmy.py	/^    def http_post_get(self, selector, body=None, headers=None):$/;"	m	class:client
+is_login	libbmy.py	/^    def is_login(self):$/;"	m	class:client
+login	libbmy.py	/^    def login(self, user, pwd):$/;"	m	class:client
+logout	libbmy.py	/^    def logout(self):$/;"	m	class:client
+parse_item	libbmy.py	/^    def parse_item(self, selector, data=None, pattern=None, headers=None):$/;"	m	class:client
+post	libbmy.py	/^    def post(self, article=None):$/;"	m	class:client
+post_force	libbmy.py	/^    def post_force(self, article):$/;"	m	class:client
+send_mail_to	libbmy.py	/^    def send_mail_to(self, mail):$/;"	m	class:client
+upload_one_file	libbmy.py	/^    def upload_one_file(self, file):$/;"	m	class:client

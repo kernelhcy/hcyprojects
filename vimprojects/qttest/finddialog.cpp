@@ -16,7 +16,7 @@ FindDialog::FindDialog(QWidget * parent)
 	findButton -> setEnabled(false);
 	
 	closeButton = new QPushButton(tr("Close"));
-	connect(lineEdit, SIGNAL(testChanged(const QString &)),
+	connect(lineEdit, SIGNAL(textChanged(const QString &)),
 			this, SLOT(enableFindButton(const QString &)));
 	connect(findButton, SIGNAL(clicked()), 
 			this, SLOT(findClicked()));
@@ -70,4 +70,5 @@ void FindDialog::enableFindButton(const QString &text)
 
 	findButton->setEnabled(!text.isEmpty());
 }
+
 

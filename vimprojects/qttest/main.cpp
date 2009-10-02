@@ -22,14 +22,13 @@
 
 #include <QApplication> 
 #include "finddialog.h" 
-#include <QLabel>
-#include <QPushButton>
+#include "mainwindow.h"
 
 int main(int argc, char **argv) 
 { 
 
 	QApplication app(argc, argv); 
-
+/*
 	QLabel *label = new QLabel( "Hello, world!", 0 ); 
 
 	label->setAlignment(Qt::AlignVCenter | Qt::AlignHCenter ); 
@@ -37,18 +36,9 @@ int main(int argc, char **argv)
 	label->setGeometry(10, 10, 200, 80); 
 	
 	label->show(); 
-
-	QPushButton hello("Hello word!", 0);
-	hello.resize(100,30);
-	hello.show();
-
-	int result = app.exec(); 
-
-
-	FindDialog *dialog = new FindDialog();
-
-	dialog -> show();
-
-	return app.exec(); 
+*/
+	MainWindow *mainWin = new MainWindow;
+	mainWin -> show();
+	return app.exec();
 
 } 
