@@ -24,7 +24,7 @@ MainWindow::MainWindow()
 
 void MainWindow::createActions()
 {
-	newAction = new QAction(tr("&New"), this );
+	newAction = new QAction(tr("&新建"), this );
 	//newAction->setIcon(QIcon(":/images/new.png"));
 	newAction->setShortcut(tr("Ctrl+N"));
 	newAction->setStatusTip(tr("Create a new spreadsheet file"));

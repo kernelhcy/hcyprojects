@@ -23,10 +23,11 @@
 #include <QApplication> 
 #include "finddialog.h" 
 #include "mainwindow.h"
-
+#include <QTextCodec>
 int main(int argc, char **argv) 
 { 
 
+	QTextCodec::setCodecForTr(QTextCodec::codecForName("utf-8"));
 	QApplication app(argc, argv); 
 /*
 	QLabel *label = new QLabel( "Hello, world!", 0 ); 

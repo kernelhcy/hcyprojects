@@ -1,0 +1,86 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.7	//
+BUFFSIZE	ch1.c	50;"	d	file:
+BUFFSIZE	ch3.c	76;"	d	file:
+CMSG_LEN	apue.h	8;"	d
+DIR_MODE	apue.h	36;"	d
+FILE_MODE	apue.h	31;"	d
+MAXLINE	apue.h	26;"	d
+OPEN_MAX_GUESS	ch2.c	113;"	d	file:
+PATH_MAX_GUESS	ch2.c	35;"	d	file:
+SIG_ERR	apue.h	41;"	d
+SUSV3	ch2.c	30;"	d	file:
+Sigfunc	apue.h	/^typedef	void	Sigfunc(int);	\/* for signal handlers *\/$/;"	t
+_APUE_H	apue.h	4;"	d
+_CH10_H	ch10.h	2;"	d
+_CH1_h	ch1.h	2;"	d
+_CH2_h	ch2.h	2;"	d
+_CH3_h	ch3.h	2;"	d
+_XOPEN_SOURCE	apue.h	10;"	d
+_XOPEN_SOURCE	apue.h	7;"	d
+buf1	ch3.c	/^char	buf1[] = "abcdefghij";$/;"	v
+buf2	ch3.c	/^char	buf2[] = "ABCDEFGHIJ";$/;"	v
+err_doit	apue.c	/^static void err_doit(int errnoflag, int error, const char *fmt, va_list ap)$/;"	f	file:
+err_dump	apue.c	/^void err_dump(const char *fmt, ...)$/;"	f
+err_exit	apue.c	/^void err_exit(int error, const char *fmt, ...)$/;"	f
+err_msg	apue.c	/^void err_msg(const char *fmt, ...)$/;"	f
+err_quit	apue.c	/^void err_quit(const char *fmt, ...)$/;"	f
+err_ret	apue.c	/^void err_ret(const char * fmt, ...)$/;"	f
+err_sys	apue.c	/^void err_sys(const char *fmt, ...)$/;"	f
+is_read_lockable	apue.h	104;"	d
+is_write_lockable	apue.h	106;"	d
+log_doit	apue.c	/^static void log_doit(int errnoflag, int priority, const char *fmt, va_list ap)$/;"	f	file:
+log_msg	apue.c	/^void log_msg(const char *fmt, ...)$/;"	f
+log_open	apue.c	/^void log_open(const char *ident, int option, int facility)$/;"	f
+log_quit	apue.c	/^void log_quit(const char *fmt, ...)$/;"	f
+log_ret	apue.c	/^void log_ret(const char *fmt, ...)$/;"	f
+log_sys	apue.c	/^void log_sys(const char *fmt, ...)$/;"	f
+log_to_stderr	main.c	/^int log_to_stderr = 1;$/;"	v
+main	main.c	/^int main(int argc, char *argv[])$/;"	f
+max	apue.h	45;"	d
+min	apue.h	44;"	d
+my_alarm	ch10.c	/^static void my_alarm(int signo)$/;"	f	file:
+open_max	ch2.c	/^long open_max(void)$/;"	f
+openmax	ch2.c	/^static long openmax = 0;$/;"	v	file:
+openmax	ch2.c	/^static long openmax = OPEN_MAX;$/;"	v	file:
+p_10_1	ch10.c	/^void p_10_1()$/;"	f
+p_10_2	ch10.c	/^void p_10_2()$/;"	f
+p_10_3	ch10.c	/^void p_10_3()$/;"	f
+p_1_1	ch1.c	/^void p_1_1(int argc, char * argv[])$/;"	f
+p_1_2	ch1.c	/^void p_1_2()$/;"	f
+p_1_3	ch1.c	/^void p_1_3()$/;"	f
+p_1_4	ch1.c	/^void p_1_4()$/;"	f
+p_1_5	ch1.c	/^void p_1_5()$/;"	f
+p_1_6	ch1.c	/^void p_1_6(int argc, char * argv[])$/;"	f
+p_1_7	ch1.c	/^void p_1_7()$/;"	f
+p_1_8	ch1.c	/^void p_1_8()$/;"	f
+p_2_1	ch2.c	/^void p_2_1()$/;"	f
+p_2_2	ch2.c	/^void p_2_2()$/;"	f
+p_2_3	ch2.c	/^void p_2_3()$/;"	f
+p_2_4	ch2.c	/^void p_2_4()$/;"	f
+p_3_1	ch3.c	/^void p_3_1()$/;"	f
+p_3_2	ch3.c	/^void p_3_2()$/;"	f
+p_3_3	ch3.c	/^void p_3_3()$/;"	f
+p_3_4	ch3.c	/^void p_3_4(int argc, char *argv[])$/;"	f
+p_3_5	ch3.c	/^void p_3_5()$/;"	f
+path_alloc	ch2.c	/^char * path_alloc(int *sizep)$/;"	f
+pathmax	ch2.c	/^static int pathmax = 0;$/;"	v	file:
+pathmax	ch2.c	/^static int pathmax = PATH_MAX;$/;"	v	file:
+posix_version	ch2.c	/^static long posix_version = 0;$/;"	v	file:
+read_lock	apue.h	91;"	d
+readw_lock	apue.h	93;"	d
+runit	ch1.c	/^void runit(int argc, char * argv[])$/;"	f
+runit	ch10.c	/^void runit(int argc, char *argv[])$/;"	f
+runit	ch2.c	/^void runit(int argc, char * argv[])$/;"	f
+runit	ch3.c	/^void runit(int argc, char * argv[])$/;"	f
+set_fl	ch3.c	/^void set_fl(int fd, int flags)\/* flags are file status flags to trun on *\/$/;"	f
+sig_cld	ch10.c	/^static void sig_cld(int signo)$/;"	f	file:
+sig_int	ch1.c	/^static void sig_int(int signo)$/;"	f	file:
+sig_uer	ch10.c	/^static void sig_uer(int signo)$/;"	f	file:
+un_lock	apue.h	99;"	d
+write_lock	apue.h	95;"	d
+writew_lock	apue.h	97;"	d

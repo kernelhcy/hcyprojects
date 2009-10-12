@@ -181,7 +181,7 @@ void log_quit(const char *fmt, ...)
 	va_end(ap);
 	exit(2);	
 }
-
+ 
 /*
  * Print a message and return to caller.
  * Caller specifies "errnoflag" and "priority"
