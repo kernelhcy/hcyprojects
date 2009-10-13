@@ -17,6 +17,7 @@ SUSV3	ch2.c	30;"	d	file:
 Sigfunc	apue.h	/^typedef	void	Sigfunc(int);	\/* for signal handlers *\/$/;"	t
 _APUE_H	apue.h	4;"	d
 _CH10_H	ch10.h	2;"	d
+_CH11_H	ch11.h	2;"	d
 _CH1_h	ch1.h	2;"	d
 _CH2_h	ch2.h	2;"	d
 _CH3_h	ch3.h	2;"	d
@@ -44,12 +45,14 @@ main	main.c	/^int main(int argc, char *argv[])$/;"	f
 max	apue.h	45;"	d
 min	apue.h	44;"	d
 my_alarm	ch10.c	/^static void my_alarm(int signo)$/;"	f	file:
+ntid	ch11.c	/^pthread_t ntid;$/;"	v
 open_max	ch2.c	/^long open_max(void)$/;"	f
 openmax	ch2.c	/^static long openmax = 0;$/;"	v	file:
 openmax	ch2.c	/^static long openmax = OPEN_MAX;$/;"	v	file:
 p_10_1	ch10.c	/^void p_10_1()$/;"	f
 p_10_2	ch10.c	/^void p_10_2()$/;"	f
 p_10_3	ch10.c	/^void p_10_3()$/;"	f
+p_11_1	ch11.c	/^void p_11_1()$/;"	f
 p_1_1	ch1.c	/^void p_1_1(int argc, char * argv[])$/;"	f
 p_1_2	ch1.c	/^void p_1_2()$/;"	f
 p_1_3	ch1.c	/^void p_1_3()$/;"	f
@@ -71,8 +74,10 @@ path_alloc	ch2.c	/^char * path_alloc(int *sizep)$/;"	f
 pathmax	ch2.c	/^static int pathmax = 0;$/;"	v	file:
 pathmax	ch2.c	/^static int pathmax = PATH_MAX;$/;"	v	file:
 posix_version	ch2.c	/^static long posix_version = 0;$/;"	v	file:
+printids	ch11.c	/^void printids(const char *s)$/;"	f
 read_lock	apue.h	91;"	d
 readw_lock	apue.h	93;"	d
+run	ch11.c	/^void run(int argc, char *argv[])$/;"	f
 runit	ch1.c	/^void runit(int argc, char * argv[])$/;"	f
 runit	ch10.c	/^void runit(int argc, char *argv[])$/;"	f
 runit	ch2.c	/^void runit(int argc, char * argv[])$/;"	f
@@ -81,6 +86,7 @@ set_fl	ch3.c	/^void set_fl(int fd, int flags)\/* flags are file status flags to 
 sig_cld	ch10.c	/^static void sig_cld(int signo)$/;"	f	file:
 sig_int	ch1.c	/^static void sig_int(int signo)$/;"	f	file:
 sig_uer	ch10.c	/^static void sig_uer(int signo)$/;"	f	file:
+thr_fn	ch11.c	/^void *thr_fn(void *arg)$/;"	f
 un_lock	apue.h	99;"	d
 write_lock	apue.h	95;"	d
 writew_lock	apue.h	97;"	d

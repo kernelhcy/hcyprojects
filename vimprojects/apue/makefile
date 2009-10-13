@@ -1,5 +1,5 @@
-main : main.o apue.o ch10.o
-	gcc main.o apue.o ch10.o -o main
+main : main.o apue.o ch11.o
+	gcc main.o apue.o ch11.o -o main -lpthread
 
 main.o : main.c apue.h
 	gcc -c  main.c  -o main.o
@@ -19,5 +19,8 @@ ch3.o : ch3.c ch3.h
 ch10.o : ch10.c ch10.h
 	gcc -c  ch10.c -o ch10.o
 	
+ch11.o : ch11.c ch11.h
+	gcc -c  ch11.c -o ch11.o 
+
 clean:
 	rm *.o main
