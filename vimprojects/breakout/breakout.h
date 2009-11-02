@@ -8,6 +8,7 @@
 #include <QIcon>
 #include <QMenu>
 #include <QMenuBar>
+#include <QMessageBox>
 #include "core.h"
 #include "settingdialog.h"
 #include "paddle.h"

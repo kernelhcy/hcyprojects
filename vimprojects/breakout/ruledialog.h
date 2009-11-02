@@ -3,7 +3,12 @@
 
 #include <QDialog>
 #include <QSize>
+#include <QLabel>
+#include <QHBoxLayout>
 
+/**
+  可以使用QMessageBox代替。
+ */
 class RuleDialog : public QDialog
 {
 public:

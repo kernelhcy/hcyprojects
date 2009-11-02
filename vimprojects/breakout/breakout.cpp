@@ -175,8 +175,10 @@ void Breakout::rule()
 }
 void Breakout::aboutBreakout()
 {
-    //printf("About Breakout.\n");
-    new AboutDialog(this);
+    QMessageBox::about(this, tr("关于Breakout"),
+        tr("<h2>Breakout 0.9</h2>"
+        "<p>Copyright &copy; 2006 Software Inc."
+        "<p>Breakout是一个打砖块的小游戏。"));
 }
 
 void Breakout::paintEvent(QPaintEvent *event)

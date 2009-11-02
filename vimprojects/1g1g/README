@@ -9,4 +9,8 @@ Installation :
 5 copy the compiled executable file to /usr/bin/
 6 In order to use global shortcuts, you have to make sure Xbindkeys has already 
   been installed. Then run ./bindkeys.sh from the source package directory.
+  
+ChangeLog:
+1、增加了设置代理的功能。
+2、实现最小化到托盘，并在托盘提示当前播放歌曲。
 
