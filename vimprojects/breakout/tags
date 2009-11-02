@@ -1,0 +1,157 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.7	//
+AR	Makefile	/^AR            = ar cqs$/;"	m
+BALL_H	ball.h	2;"	d
+BREAKOUT_H	breakout.h	2;"	d
+BRICK_H	brick.h	2;"	d
+Ball	ball.cpp	/^Ball::Ball()$/;"	f	class:Ball
+Ball	ball.h	/^class Ball$/;"	c
+Breakout	breakout.cpp	/^Breakout::Breakout(QWidget *parent)$/;"	f	class:Breakout
+Breakout	breakout.h	/^class Breakout : public QWidget$/;"	c
+Brick	brick.cpp	/^Brick::Brick(int x, int y) $/;"	f	class:Brick
+Brick	brick.h	/^class Brick$/;"	c
+CC	Makefile	/^CC            = gcc$/;"	m
+CFLAGS	Makefile	/^CFLAGS        = -pipe -O2 -Wall -W -D_REENTRANT $(DEFINES)$/;"	m
+CHK_DIR_EXISTS	Makefile	/^CHK_DIR_EXISTS= test -d$/;"	m
+COMPRESS	Makefile	/^COMPRESS      = gzip -9f$/;"	m
+COPY	Makefile	/^COPY          = cp -f$/;"	m
+COPY_DIR	Makefile	/^COPY_DIR      = $(COPY) -r$/;"	m
+COPY_FILE	Makefile	/^COPY_FILE     = $(COPY)$/;"	m
+CXX	Makefile	/^CXX           = g++$/;"	m
+CXXFLAGS	Makefile	/^CXXFLAGS      = -pipe -O2 -Wall -W -D_REENTRANT $(DEFINES)$/;"	m
+DEFINES	Makefile	/^DEFINES       = -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_SHARED$/;"	m
+DEL_DIR	Makefile	/^DEL_DIR       = rmdir$/;"	m
+DEL_FILE	Makefile	/^DEL_FILE      = rm -f$/;"	m
+DESTDIR	Makefile	/^DESTDIR       = $/;"	m
+DIST	Makefile	/^DIST          = \/usr\/share\/qt4\/mkspecs\/common\/g++.conf \\$/;"	m
+INCPATH	Makefile	/^INCPATH       = -I\/usr\/share\/qt4\/mkspecs\/linux-g++ -I. -I\/usr\/include\/qt4\/QtCore -I\/usr\/include\/qt4\/QtCore -I\/usr\/include\/qt4\/QtGui -I\/usr\/include\/qt4\/QtGui -I\/usr\/include\/qt4 -I. -I. -I.$/;"	m
+INSTALL_DIR	Makefile	/^INSTALL_DIR   = $(COPY_DIR)$/;"	m
+INSTALL_FILE	Makefile	/^INSTALL_FILE  = install -m 644 -p$/;"	m
+INSTALL_PROGRAM	Makefile	/^INSTALL_PROGRAM = install -m 755 -p$/;"	m
+LFLAGS	Makefile	/^LFLAGS        = -Wl,--no-undefined$/;"	m
+LIBS	Makefile	/^LIBS          = $(SUBLIBS)  -L\/usr\/lib -lQtGui -lQtCore -lpthread$/;"	m
+LINK	Makefile	/^LINK          = g++$/;"	m
+MKDIR	Makefile	/^MKDIR         = mkdir -p$/;"	m
+MOVE	Makefile	/^MOVE          = mv -f$/;"	m
+OBJECTS	Makefile	/^OBJECTS       = ball.o \\$/;"	m
+OBJECTS_DIR	Makefile	/^OBJECTS_DIR   = .\/$/;"	m
+PADDLE_H	paddle.h	2;"	d
+Paddle	paddle.cpp	/^Paddle::Paddle()$/;"	f	class:Paddle
+Paddle	paddle.h	/^class Paddle$/;"	c
+QMAKE	Makefile	/^QMAKE         = \/usr\/bin\/qmake$/;"	m
+QMAKE_TARGET	Makefile	/^QMAKE_TARGET  = breakout$/;"	m
+RANLIB	Makefile	/^RANLIB        = $/;"	m
+SED	Makefile	/^SED           = sed$/;"	m
+SOURCES	Makefile	/^SOURCES       = ball.cpp \\$/;"	m
+SYMLINK	Makefile	/^SYMLINK       = ln -sf$/;"	m
+TAR	Makefile	/^TAR           = tar -cf$/;"	m
+TARGET	Makefile	/^TARGET        = breakout$/;"	m
+angle	ball.h	/^    int angle;$/;"	m	class:Ball
+autoMove	ball.cpp	/^void Ball::autoMove()$/;"	f	class:Ball
+ball	breakout.h	/^    	Ball *ball;$/;"	m	class:Breakout
+brick_cnt	breakout.h	/^		int brick_line, brick_col, brick_cnt; 		\/* brick的行数和列数和总数 *\/$/;"	m	class:Breakout
+brick_col	breakout.h	/^		int brick_line, brick_col, brick_cnt; 		\/* brick的行数和列数和总数 *\/$/;"	m	class:Breakout
+brick_line	breakout.h	/^		int brick_line, brick_col, brick_cnt; 		\/* brick的行数和列数和总数 *\/$/;"	m	class:Breakout
+bricks	breakout.h	/^    	Brick ** bricks; 	\/* 盛放brick的数组 *\/$/;"	m	class:Breakout
+checkCollision	breakout.cpp	/^void Breakout::checkCollision()$/;"	f	class:Breakout
+destroyed	brick.h	/^    	bool destroyed;$/;"	m	class:Brick
+gameOver	breakout.h	/^    	bool gameOver;$/;"	m	class:Breakout
+gameStarted	breakout.h	/^    	bool gameStarted;$/;"	m	class:Breakout
+gameWon	breakout.h	/^    	bool gameWon;$/;"	m	class:Breakout
+getImage	ball.cpp	/^QImage & Ball::getImage()$/;"	f	class:Ball
+getImage	brick.cpp	/^QImage & Brick::getImage()$/;"	f	class:Brick
+getImage	paddle.cpp	/^QImage & Paddle::getImage()$/;"	f	class:Paddle
+getMaxX	ball.cpp	/^int Ball::getMaxX()$/;"	f	class:Ball
+getMaxX	paddle.cpp	/^int Paddle::getMaxX()$/;"	f	class:Paddle
+getMaxY	ball.cpp	/^int Ball::getMaxY()$/;"	f	class:Ball
+getMaxY	paddle.cpp	/^int Paddle::getMaxY()$/;"	f	class:Paddle
+getMinX	ball.cpp	/^int Ball::getMinX()$/;"	f	class:Ball
+getMinX	paddle.cpp	/^int Paddle::getMinX()$/;"	f	class:Paddle
+getMinY	ball.cpp	/^int Ball::getMinY()$/;"	f	class:Ball
+getMinY	paddle.cpp	/^int Paddle::getMinY()$/;"	f	class:Paddle
+getRect	ball.cpp	/^QRect Ball::getRect()$/;"	f	class:Ball
+getRect	brick.cpp	/^QRect Brick::getRect()$/;"	f	class:Brick
+getRect	paddle.cpp	/^QRect Paddle::getRect()$/;"	f	class:Paddle
+getX	ball.cpp	/^int Ball::getX()$/;"	f	class:Ball
+getX	paddle.cpp	/^int Paddle::getX()$/;"	f	class:Paddle
+getXDir	ball.cpp	/^int Ball::getXDir()$/;"	f	class:Ball
+getY	ball.cpp	/^int Ball::getY()$/;"	f	class:Ball
+getY	paddle.cpp	/^int Paddle::getY()$/;"	f	class:Paddle
+getYDir	ball.cpp	/^int Ball::getYDir()$/;"	f	class:Ball
+image	ball.h	/^    QImage image;$/;"	m	class:Ball
+image	brick.h	/^    	QImage image;$/;"	m	class:Brick
+image	paddle.h	/^    	QImage image;$/;"	m	class:Paddle
+interval	breakout.h	/^		int interval; 		\/* 计时器触发的事件间隔 *\/$/;"	m	class:Breakout
+isDestroyed	brick.cpp	/^bool Brick::isDestroyed()$/;"	f	class:Brick
+keyPressEvent	breakout.cpp	/^void Breakout::keyPressEvent(QKeyEvent *event)$/;"	f	class:Breakout
+main	main.cpp	/^int main(int argc, char *argv[])$/;"	f
+max_x	ball.h	/^	int max_x;$/;"	m	class:Ball
+max_x	paddle.h	/^		int max_x;$/;"	m	class:Paddle
+max_y	ball.h	/^	int max_y;$/;"	m	class:Ball
+max_y	paddle.h	/^		int max_y;$/;"	m	class:Paddle
+metaObject	moc_breakout.cpp	/^const QMetaObject *Breakout::metaObject() const$/;"	f	class:Breakout
+min_x	ball.h	/^	int min_x;$/;"	m	class:Ball
+min_x	paddle.h	/^		int min_x;$/;"	m	class:Paddle
+min_y	ball.h	/^	int min_y;$/;"	m	class:Ball
+min_y	paddle.h	/^		int min_y;$/;"	m	class:Paddle
+moveBottom	ball.cpp	/^void Ball::moveBottom(int bottom)$/;"	f	class:Ball
+moveLeft	ball.cpp	/^void Ball::moveLeft(int left)$/;"	f	class:Ball
+moveLeft	paddle.cpp	/^void Paddle::moveLeft(int left)$/;"	f	class:Paddle
+moveRight	ball.cpp	/^void Ball::moveRight(int right)$/;"	f	class:Ball
+moveRight	paddle.cpp	/^void Paddle::moveRight(int right)$/;"	f	class:Paddle
+moveTop	ball.cpp	/^void Ball::moveTop(int top)$/;"	f	class:Ball
+paddle	breakout.h	/^    	Paddle *paddle;$/;"	m	class:Breakout
+paintEvent	breakout.cpp	/^void Breakout::paintEvent(QPaintEvent *event)$/;"	f	class:Breakout
+pauseGame	breakout.cpp	/^void Breakout::pauseGame()$/;"	f	class:Breakout
+paused	breakout.h	/^    	bool paused;$/;"	m	class:Breakout
+position	brick.h	/^    	int position;$/;"	m	class:Brick
+qt_meta_data_Breakout	moc_breakout.cpp	/^static const uint qt_meta_data_Breakout[] = {$/;"	v	file:
+qt_meta_stringdata_Breakout	moc_breakout.cpp	/^static const char qt_meta_stringdata_Breakout[] = {$/;"	v	file:
+qt_metacall	moc_breakout.cpp	/^int Breakout::qt_metacall(QMetaObject::Call _c, int _id, void **_a)$/;"	f	class:Breakout
+qt_metacast	moc_breakout.cpp	/^void *Breakout::qt_metacast(const char *_clname)$/;"	f	class:Breakout
+rect	ball.h	/^    QRect rect;$/;"	m	class:Ball
+rect	brick.h	/^    	QRect rect;$/;"	m	class:Brick
+rect	paddle.h	/^    	QRect rect;$/;"	m	class:Paddle
+resetState	ball.cpp	/^void Ball::resetState() $/;"	f	class:Ball
+resetState	paddle.cpp	/^void Paddle::resetState()$/;"	f	class:Paddle
+setDestroyed	brick.cpp	/^void Brick::setDestroyed(bool destr)$/;"	f	class:Brick
+setMaxX	ball.cpp	/^void Ball::setMaxX(int xx)$/;"	f	class:Ball
+setMaxX	paddle.cpp	/^void Paddle::setMaxX(int xx)$/;"	f	class:Paddle
+setMaxY	ball.cpp	/^void Ball::setMaxY(int yy)$/;"	f	class:Ball
+setMaxY	paddle.cpp	/^void Paddle::setMaxY(int yy)$/;"	f	class:Paddle
+setMinX	ball.cpp	/^void Ball::setMinX(int xx)$/;"	f	class:Ball
+setMinX	paddle.cpp	/^void Paddle::setMinX(int xx)$/;"	f	class:Paddle
+setMinY	ball.cpp	/^void Ball::setMinY(int yy)$/;"	f	class:Ball
+setMinY	paddle.cpp	/^void Paddle::setMinY(int yy)$/;"	f	class:Paddle
+setRect	brick.cpp	/^void Brick::setRect(QRect rct)$/;"	f	class:Brick
+setX	ball.cpp	/^void Ball::setX(int xx)$/;"	f	class:Ball
+setX	paddle.cpp	/^void Paddle::setX(int xx)$/;"	f	class:Paddle
+setXDir	ball.cpp	/^void Ball::setXDir(int x)$/;"	f	class:Ball
+setY	ball.cpp	/^void Ball::setY(int yy)$/;"	f	class:Ball
+setY	paddle.cpp	/^void Paddle::setY(int yy)$/;"	f	class:Paddle
+setYDir	ball.cpp	/^void Ball::setYDir(int y)$/;"	f	class:Ball
+speed	ball.h	/^    int speed;$/;"	m	class:Ball
+startGame	breakout.cpp	/^void Breakout::startGame()$/;"	f	class:Breakout
+staticMetaObject	moc_breakout.cpp	/^const QMetaObject Breakout::staticMetaObject = {$/;"	m	class:Breakout	file:
+stopGame	breakout.cpp	/^void Breakout::stopGame()$/;"	f	class:Breakout
+stuck	ball.h	/^    bool stuck;$/;"	m	class:Ball
+timerEvent	breakout.cpp	/^void Breakout::timerEvent(QTimerEvent *event)$/;"	f	class:Breakout
+timerId	breakout.h	/^    	int timerId; 		\/* 计时器的ID *\/$/;"	m	class:Breakout
+victory	breakout.cpp	/^void Breakout::victory()$/;"	f	class:Breakout
+win_height	breakout.h	/^		int win_width, win_height; 	\/* 窗口的宽和高 *\/$/;"	m	class:Breakout
+win_width	breakout.h	/^		int win_width, win_height; 	\/* 窗口的宽和高 *\/$/;"	m	class:Breakout
+x	ball.h	/^	int x;$/;"	m	class:Ball
+x	breakout.h	/^    	int x; 				\/*  *\/$/;"	m	class:Breakout
+x	paddle.h	/^		int x;$/;"	m	class:Paddle
+xdir	ball.h	/^    int xdir;$/;"	m	class:Ball
+y	ball.h	/^	int y;$/;"	m	class:Ball
+y	paddle.h	/^		int y;$/;"	m	class:Paddle
+ydir	ball.h	/^    int ydir;$/;"	m	class:Ball
+~Ball	ball.cpp	/^Ball::~Ball()$/;"	f	class:Ball
+~Breakout	breakout.cpp	/^Breakout::~Breakout() $/;"	f	class:Breakout
+~Brick	brick.cpp	/^Brick::~Brick() $/;"	f	class:Brick
+~Paddle	paddle.cpp	/^Paddle::~Paddle()$/;"	f	class:Paddle
