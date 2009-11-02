@@ -12,12 +12,10 @@ QValidator::State HexSpinBox::validate(QString &text, int &pos) const
 }
 QString HexSpinBox::textFromValue( int value) const
 {
-    printf("textFromValue\n");
     return QString::number(value, 16).toUpper();
 }
-int HexSpinBox::valueFromText( const QString &text) const
+int HexSpinBox::valueFromText(const QString &text) const
 {
     bool ok;
-    printf("valueFromText\n");
     return text.toInt(&ok, 16);
 }

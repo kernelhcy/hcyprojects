@@ -2,6 +2,7 @@
 #define MAIhNWINDOW_H
 #include <QMainWindow>
 #include <QtGui>
+#include "heads.h"
 #include "finddialog.h"
 #include "gotocelldialog.h"
 #include "sortdialog.h"

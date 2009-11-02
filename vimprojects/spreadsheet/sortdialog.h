@@ -3,6 +3,7 @@
 #include <QDialog>
 #include "spreadsheet.h"
 #include <iostream>
+#include "heads.h"
 
 class QLabel;
 class QPushButton;

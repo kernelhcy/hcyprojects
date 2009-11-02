@@ -3,7 +3,7 @@
 MainWindow::MainWindow()
 {
 	spreadsheet = new Spreadsheet;
-	//setCentralWidget(spreadsheet);
+    setCentralWidget(spreadsheet);
 	createActions();
 	createMenus();
 	createContextMenu();

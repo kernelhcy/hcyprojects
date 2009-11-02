@@ -7,6 +7,7 @@ class QCheckBox;
 class QLabel;
 class QLineEdit;
 class QPushButton;
+#include "heads.h"
 
 class FindDialog : public QDialog
 {

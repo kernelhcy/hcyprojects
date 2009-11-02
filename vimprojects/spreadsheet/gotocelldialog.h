@@ -4,6 +4,8 @@
 #include <QtGui>
 #include <QDialog>
 #include "hexspinbox.h"
+#include "heads.h"
+
 class HexSpinBox;
 class QLabel;
 class QPushButton;

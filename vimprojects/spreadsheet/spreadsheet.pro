@@ -13,11 +13,14 @@ HEADERS += fd.h \
     sortdialog.h \
     spreadsheet.h \
     gotocelldialog.h \
-    hexspinbox.h
+    hexspinbox.h \
+    cell.h \
+    heads.h
 SOURCES += finddialog.cpp \
     main.cpp \
     mainwindow.cpp \
     sortdialog.cpp \
     spreadsheet.cpp \
     gotocelldialog.cpp \
-    hexspinbox.cpp
+    hexspinbox.cpp \
+    cell.cpp
