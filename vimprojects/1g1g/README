@@ -1,0 +1,12 @@
+Program dependencies : 
+libQtCore libQtGui libQtNetwork libQtWebKit(>=4.5.0)
+
+Installation :
+1 Extract the tar archive file
+2 Make sure you have libqt4-dev package installed
+3 qmake -o Makefile linux1g1g.pro
+4 make
+5 copy the compiled executable file to /usr/bin/
+6 In order to use global shortcuts, you have to make sure Xbindkeys has already 
+  been installed. Then run ./bindkeys.sh from the source package directory.
+
