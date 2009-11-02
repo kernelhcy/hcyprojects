@@ -1,0 +1,29 @@
+﻿package com.ruochi.component{
+	import flash.display.*;
+	import flash.events.*;
+	import flash.net.URLLoader;
+	import flash.net.URLRequest;
+	import flash.text.*;
+	import gs.TweenFilterLite;
+	import gs.TweenLite;
+	public class WindowLoader extends Sprite {
+		public var id, windowWidth, windowHeight:Number;
+		private var ldr:Loader;
+		public var source:*;
+		public var sourceUrl:String;
+		public function WindowLoader(_sourceUrl:String,_stage) {
+			sourceUrl = _sourceUrl;
+			init()
+			_stage.addChild(this)
+		}
+		private function init() {
+			ldr = new Loader();
+			ldr.contentLoaderInfo.addEventListener(Event.COMPLETE, onLoaded, false, 0, true)
+			ldr.load(new URLRequest(sourceUrl))
+		}
+		private function onLoaded(e:Event) {
+			source =e.target.loader.content
+			addChild(source)
+		}
+	}
+}

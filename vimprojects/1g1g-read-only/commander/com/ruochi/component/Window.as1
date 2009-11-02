@@ -1,0 +1,21 @@
+﻿package com.ruochi.component{
+	import flash.display.*;
+	import flash.events.*;
+	import flash.text.*;
+	import gs.TweenFilterLite;
+	import gs.TweenLite;
+	public class WindowLoader extends MovieClip {
+		public var id, windowWidth, windowHeight:Number;
+		private var 
+		public function WindowLoader(_source:String = null) {
+			init()
+			this.addEventListener(Event.ADDED_TO_STAGE, onAddToStage);
+		}
+		private function init() {
+			
+		}
+		private function onAddToStage() {
+			
+		}
+	}
+}
