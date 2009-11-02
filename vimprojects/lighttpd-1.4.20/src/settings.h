@@ -23,16 +23,18 @@
 #define MAX_HTTP_REQUEST_HEADER  (32 * 1024)
 
 typedef enum { HANDLER_UNSET,
-		HANDLER_GO_ON,
-		HANDLER_FINISHED,
-		HANDLER_COMEBACK,
-		HANDLER_WAIT_FOR_EVENT,
-		HANDLER_ERROR,
-		HANDLER_WAIT_FOR_FD
+	HANDLER_GO_ON,
+	HANDLER_FINISHED,
+	HANDLER_COMEBACK,
+	HANDLER_WAIT_FOR_EVENT,
+	HANDLER_ERROR,
+	HANDLER_WAIT_FOR_FD
 } handler_t;
 
 
-/* we use it in a enum */
+/*
+ * we use it in a enum 
+ */
 #ifdef TRUE
 #undef TRUE
 #endif

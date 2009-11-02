@@ -13,7 +13,7 @@ typedef struct {
 
 	lua_State *L;
 
-	time_t last_used; /* LRU */
+	time_t last_used;			/* LRU */
 } script;
 
 typedef struct {
@@ -24,10 +24,10 @@ typedef struct {
 } script_cache;
 
 script_cache *script_cache_init(void);
-void script_cache_free(script_cache *cache);
+void script_cache_free(script_cache * cache);
 
-lua_State *script_cache_get_script(server *srv, connection *con,
-	       	script_cache *cache, buffer *name);
+lua_State *script_cache_get_script(server * srv, connection * con,
+								   script_cache * cache, buffer * name);
 
 #endif
 #endif

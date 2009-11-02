@@ -7,7 +7,7 @@
 
 #include "buffer.h"
 
-
+//16进制
 static const char hex_chars[] = "0123456789abcdef";
 
 
@@ -16,10 +16,11 @@ static const char hex_chars[] = "0123456789abcdef";
  *
  */
 
-buffer* buffer_init(void) {
+buffer* buffer_init(void) 
+{
 	buffer *b;
 
-	b = malloc(sizeof(*b));
+	b = malloc(sizeof(*b));//b不指向任何数据，但可以确定其可以指向的数据的大小！
 	assert(b);
 
 	b->ptr = NULL;
@@ -28,8 +29,9 @@ buffer* buffer_init(void) {
 
 	return b;
 }
-
-buffer *buffer_init_buffer(buffer *src) {
+//用一个buffer src，初始化一个新的buffer
+buffer *buffer_init_buffer(buffer *src) 
+{
 	buffer *b = buffer_init();
 	buffer_copy_string_buffer(b, src);
 	return b;
@@ -40,22 +42,31 @@ buffer *buffer_init_buffer(buffer *src) {
  *
  */
 
-void buffer_free(buffer *b) {
+void buffer_free(buffer *b) 
+{
 	if (!b) return;
 
 	free(b->ptr);
 	free(b);
 }
 
-void buffer_reset(buffer *b) {
+void buffer_reset(buffer *b) 
+{
 	if (!b) return;
 
-	/* limit don't reuse buffer larger than ... bytes */
-	if (b->size > BUFFER_MAX_REUSE_SIZE) {
+	/* 
+	 * limit don't reuse buffer larger than ... bytes 
+	 * 当buffer的大小超过BUFFER_MAX_REUSE_SIZE时，
+	 * 直接释放buffer的空间，而不是重新使用。
+	 */
+	if (b->size > BUFFER_MAX_REUSE_SIZE) 
+	{
 		free(b->ptr);
 		b->ptr = NULL;
 		b->size = 0;
-	} else if (b->size) {
+	} 
+	else if (b->size) 
+	{
 		b->ptr[0] = '\0';
 	}
 
@@ -67,21 +78,28 @@ void buffer_reset(buffer *b) {
  *
  * allocate (if neccessary) enough space for 'size' bytes and
  * set the 'used' counter to 0
- *
+ * 为复制分配足够的空间，并将used设置为0
+ * size为复制所需要的空间
  */
 
 #define BUFFER_PIECE_SIZE 64
 
-int buffer_prepare_copy(buffer *b, size_t size) {
+int buffer_prepare_copy(buffer *b, size_t size) 
+{
 	if (!b) return -1;
-
-	if ((0 == b->size) ||
-	    (size > b->size)) {
-		if (b->size) free(b->ptr);
+	
+	//当原有的空间为0或小于所需的size，则重新分配空间
+	if ((0 == b -> size) || (size > b -> size)) 
+	{
+		if (b->size) 
+			free(b->ptr);
 
 		b->size = size;
 
-		/* always allocate a multiply of BUFFER_PIECE_SIZE */
+		/* 
+		 * always allocate a multiply of BUFFER_PIECE_SIZE 
+		 * 总是分配BUFFER_PIECE_SIZE倍数的大小的内存空间
+		 */
 		b->size += BUFFER_PIECE_SIZE - (b->size % BUFFER_PIECE_SIZE);
 
 		b->ptr = malloc(b->size);
@@ -95,10 +113,12 @@ int buffer_prepare_copy(buffer *b, size_t size) {
  *
  * increase the internal buffer (if neccessary) to append another 'size' byte
  * ->used isn't changed
+ * 为追加size大小的数据而准备空间，可能分配更多的空间
  *
  */
 
-int buffer_prepare_append(buffer *b, size_t size) {
+int buffer_prepare_append(buffer *b, size_t size) 
+{
 	if (!b) return -1;
 
 	if (0 == b->size) {
@@ -121,7 +141,7 @@ int buffer_prepare_append(buffer *b, size_t size) {
 	}
 	return 0;
 }
-
+//将s复制到b中，覆盖原来的数据
 int buffer_copy_string(buffer *b, const char *s) {
 	size_t s_len;
 
@@ -135,13 +155,15 @@ int buffer_copy_string(buffer *b, const char *s) {
 
 	return 0;
 }
-
+/**
+ * 将s复制到b的数据区中，s_len是s的长度
+ */
 int buffer_copy_string_len(buffer *b, const char *s, size_t s_len) {
 	if (!s || !b) return -1;
 #if 0
 	/* removed optimization as we have to keep the empty string
 	 * in some cases for the config handling
-	 *
+	 * 复制空串
 	 * url.access-deny = ( "" )
 	 */
 	if (s_len == 0) return 0;
@@ -154,34 +176,57 @@ int buffer_copy_string_len(buffer *b, const char *s, size_t s_len) {
 
 	return 0;
 }
-
-int buffer_copy_string_buffer(buffer *b, const buffer *src) {
+/**
+ * 将src的内容复制给b
+ */
+int buffer_copy_string_buffer(buffer *b, const buffer *src) 
+{
 	if (!src) return -1;
 
-	if (src->used == 0) {
+	if (src->used == 0) 
+	{
 		b->used = 0;
 		return 0;
 	}
 	return buffer_copy_string_len(b, src->ptr, src->used - 1);
 }
 
-int buffer_append_string(buffer *b, const char *s) {
+//将s追加到b中
+int buffer_append_string(buffer *b, const char *s)
+{
 	size_t s_len;
 
 	if (!s || !b) return -1;
 
 	s_len = strlen(s);
 	buffer_prepare_append(b, s_len + 1);
+
+	/*
+	 * 如果buffer中原来有数据（字符串），那么最后一个字符是NULL,
+	 * 在复制的时候，要覆盖这个字符。
+	 * 但当buffer为空时，就不需要覆盖NULL字符，因此，需要加一，
+	 * 以便和有数据的情况下处理相同。
+	 */
 	if (b->used == 0)
 		b->used++;
-
+	
+	//覆盖原来数据最后一个字符NULL，同时，也将s中的NULL复制到b中。
 	memcpy(b->ptr + b->used - 1, s, s_len + 1);
 	b->used += s_len;
 
 	return 0;
 }
 
-int buffer_append_string_rfill(buffer *b, const char *s, size_t maxlen) {
+/**
+ * 将s追加到b中
+ * 如果s的长度小于maxlen，则在b的数据中补上空格，使得
+ * b追加的数据的长度等于maxlen。
+ *
+ * s的长度大于maxlen？？？
+ *
+ */
+int buffer_append_string_rfill(buffer *b, const char *s, size_t maxlen) 
+{
 	size_t s_len;
 
 	if (!s || !b) return -1;
@@ -191,11 +236,16 @@ int buffer_append_string_rfill(buffer *b, const char *s, size_t maxlen) {
 	if (b->used == 0)
 		b->used++;
 
+	//如果s的长度大于maxlen，这就溢出了。。。
 	memcpy(b->ptr + b->used - 1, s, s_len);
-	if (maxlen > s_len) {
+	
+	//追加空格
+	if (maxlen > s_len) 
+	{
 		memset(b->ptr + b->used - 1 + s_len, ' ', maxlen - s_len);
 	}
-
+	
+	//设置
 	b->used += maxlen;
 	b->ptr[b->used - 1] = '\0';
 	return 0;
@@ -207,12 +257,19 @@ int buffer_append_string_rfill(buffer *b, const char *s, size_t maxlen) {
  * the resulting buffer is terminated with a '\0'
  * s is treated as a un-terminated string (a \0 is handled a normal character)
  *
+ * 追加s到b中。
+ * s被看作是一个不以'\0'结尾的字符串，s_len是s的长度。
+ * 最终b中的数据以'\0'结尾。
+ * 也就是说，如果s的结尾是'\0'，那么，最终，b中的数据末尾有两个'\0'，而且
+ * b中used表示的数据长度，包括其中一个'\0'！
+ *
  * @param b a buffer
  * @param s the string
  * @param s_len size of the string (without the terminating \0)
  */
 
-int buffer_append_string_len(buffer *b, const char *s, size_t s_len) {
+int buffer_append_string_len(buffer *b, const char *s, size_t s_len) 
+{
 	if (!s || !b) return -1;
 	if (s_len == 0) return 0;
 
@@ -227,54 +284,82 @@ int buffer_append_string_len(buffer *b, const char *s, size_t s_len) {
 	return 0;
 }
 
-int buffer_append_string_buffer(buffer *b, const buffer *src) {
+//将src中的数据追加到b中
+int buffer_append_string_buffer(buffer *b, const buffer *src) 
+{
 	if (!src) return -1;
 	if (src->used == 0) return 0;
 
 	return buffer_append_string_len(b, src->ptr, src->used - 1);
 }
 
-int buffer_append_memory(buffer *b, const char *s, size_t s_len) {
+/**
+ * 将s指向的内存区域中的数据追加到b中。
+ * 由于追加的是数据而不是字符串，因此，在追加后不需要加上'\0'！
+ * s_len为内存区大小
+ */
+int buffer_append_memory(buffer *b, const char *s, size_t s_len) 
+{
 	if (!s || !b) return -1;
 	if (s_len == 0) return 0;
 
 	buffer_prepare_append(b, s_len);
 	memcpy(b->ptr + b->used, s, s_len);
 	b->used += s_len;
-
+	/* 不需要追加一个'\0' */
 	return 0;
 }
 
-int buffer_copy_memory(buffer *b, const char *s, size_t s_len) {
+//复制s指向的内存区域中的数据到b中
+int buffer_copy_memory(buffer *b, const char *s, size_t s_len) 
+{
 	if (!s || !b) return -1;
-
+	
+	//将b的数据长度设为0,调用buffer_append_memory覆盖原来的数据。
 	b->used = 0;
 
 	return buffer_append_memory(b, s, s_len);
 }
-
-int buffer_append_long_hex(buffer *b, unsigned long value) {
+/**
+ * 将无符号长整型value以16进制的形式追加到b中。
+ * 其中需要将value转化成对应的16进制字符串。
+ */
+int buffer_append_long_hex(buffer *b, unsigned long value) 
+{
 	char *buf;
 	int shift = 0;
 	unsigned long copy = value;
-
-	while (copy) {
+	
+	//计算十六进制表示的value的长度
+	while (copy) 
+	{
 		copy >>= 4;
 		shift++;
 	}
+
 	if (shift == 0)
 		shift++;
+	/*
+	 * 保证追加的字符串为偶数位。
+	 * 如若不是偶数位，则在最前面加一个'0'.
+	 */
 	if (shift & 0x01)
 		shift++;
 
-	buffer_prepare_append(b, shift + 1);
+	buffer_prepare_append(b, shift + 1);//最后一个'\0'
 	if (b->used == 0)
 		b->used++;
+	//buf指向开始存放的位置
 	buf = b->ptr + (b->used - 1);
+
 	b->used += shift;
 
+	/*
+	 * 每四位一组，转化value为十六进制形式的字符串
+	 */
 	shift <<= 2;
-	while (shift > 0) {
+	while (shift > 0) 
+	{
 		shift -= 4;
 		*(buf++) = hex_chars[(value >> shift) & 0x0F];
 	}
@@ -282,20 +367,35 @@ int buffer_append_long_hex(buffer *b, unsigned long value) {
 
 	return 0;
 }
-
-int LI_ltostr(char *buf, long val) {
+/*
+ * 将长整型val转化成字符串，并存入buf中。
+ */
+int LI_ltostr(char *buf, long val) 
+{
 	char swap;
 	char *end;
 	int len = 1;
 
-	if (val < 0) {
+	//val为负数，加一个负号，然后转化成正数
+	if (val < 0) 
+	{
 		len++;
 		*(buf++) = '-';
 		val = -val;
 	}
 
 	end = buf;
-	while (val > 9) {
+	/*
+	 * 这里val必须设置为大于9，并在循环外在做一次转换(*(end) = '0' + val)！
+	 * 因为如果val设置为大于0,当val为0时，将不进入循环，那么循环后面直接在buf中
+	 * 追加'\0'。这样0就被转化成了空串！！
+	 *
+	 * 这里val转化后的字符串是逆序存放在buf中的，在后面要反转，
+	 * 以得到正确的顺序。
+	 *
+	 */
+	while (val > 9) 
+	{
 		*(end++) = '0' + (val % 10);
 		val = val / 10;
 	}
@@ -303,7 +403,9 @@ int LI_ltostr(char *buf, long val) {
 	*(end + 1) = '\0';
 	len += end - buf;
 
-	while (buf < end) {
+	//将字符串反转，
+	while (buf < end) 
+	{
 		swap = *end;
 		*end = *buf;
 		*buf = swap;
@@ -315,10 +417,11 @@ int LI_ltostr(char *buf, long val) {
 	return len;
 }
 
-int buffer_append_long(buffer *b, long val) {
+int buffer_append_long(buffer *b, long val) 
+{
 	if (!b) return -1;
 
-	buffer_prepare_append(b, 32);
+	buffer_prepare_append(b, 32); 	//将b的数据空间扩展32个字节
 	if (b->used == 0)
 		b->used++;
 
@@ -326,15 +429,19 @@ int buffer_append_long(buffer *b, long val) {
 	return 0;
 }
 
-int buffer_copy_long(buffer *b, long val) {
+int buffer_copy_long(buffer *b, long val) 
+{
 	if (!b) return -1;
 
 	b->used = 0;
 	return buffer_append_long(b, val);
 }
 
+//追加off_t类型的val到b中。
+//如果off_t的长度和long相同，则不需要下面的函数定义。
 #if !defined(SIZEOF_LONG) || (SIZEOF_LONG != SIZEOF_OFF_T)
-int buffer_append_off_t(buffer *b, off_t val) {
+int buffer_append_off_t(buffer *b, off_t val) 
+{
 	char swap;
 	char *end;
 	char *start;
@@ -383,17 +490,23 @@ int buffer_copy_off_t(buffer *b, off_t val) {
 }
 #endif /* !defined(SIZEOF_LONG) || (SIZEOF_LONG != SIZEOF_OFF_T) */
 
-char int2hex(char c) {
+//将c转化成对应的16进制形式
+char int2hex(char c) 
+{
 	return hex_chars[(c & 0x0F)];
 }
 
-/* converts hex char (0-9, A-Z, a-z) to decimal.
+/** 
+ * converts hex char (0-9, A-Z, a-z) to decimal.
  * returns 0xFF on invalid input.
+ * 将16进制的字符转化成对应的数字
+ * 非法输入返回0xFF
  */
-char hex2int(unsigned char hex) {
+char hex2int(unsigned char hex) 
+{
 	hex = hex - '0';
 	if (hex > 9) {
-		hex = (hex + '0' - 1) | 0x20;
+		hex = (hex + '0' - 1) | 0x20; //将大写字符转化成小写字母
 		hex = hex - 'a' + 11;
 	}
 	if (hex > 15)
@@ -404,11 +517,12 @@ char hex2int(unsigned char hex) {
 
 
 /**
- * init the buffer
+ * init the buffer array
  *
  */
 
-buffer_array* buffer_array_init(void) {
+buffer_array* buffer_array_init(void) 
+{
 	buffer_array *b;
 
 	b = malloc(sizeof(*b));
@@ -421,13 +535,15 @@ buffer_array* buffer_array_init(void) {
 	return b;
 }
 
-void buffer_array_reset(buffer_array *b) {
+void buffer_array_reset(buffer_array *b) 
+{
 	size_t i;
 
 	if (!b) return;
 
 	/* if they are too large, reduce them */
-	for (i = 0; i < b->used; i++) {
+	for (i = 0; i < b->used; i++) 
+	{
 		buffer_reset(b->ptr[i]);
 	}
 
@@ -440,55 +556,75 @@ void buffer_array_reset(buffer_array *b) {
  *
  */
 
-void buffer_array_free(buffer_array *b) {
+void buffer_array_free(buffer_array *b) 
+{
 	size_t i;
 	if (!b) return;
 
-	for (i = 0; i < b->size; i++) {
+	for (i = 0; i < b->size; i++) 
+	{
 		if (b->ptr[i]) buffer_free(b->ptr[i]);
 	}
 	free(b->ptr);
 	free(b);
 }
 
-buffer *buffer_array_append_get_buffer(buffer_array *b) {
+/**
+ * 返回buffer array中第一个未使用的buffer
+ * 如果buffer array为空或以满，则分配新的空间。
+ *
+ */
+buffer *buffer_array_append_get_buffer(buffer_array *b) 
+{
 	size_t i;
 
-	if (b->size == 0) {
+	if (b->size == 0) //分配空间
+	{
 		b->size = 16;
 		b->ptr = malloc(sizeof(*b->ptr) * b->size);
 		assert(b->ptr);
-		for (i = 0; i < b->size; i++) {
+		for (i = 0; i < b->size; i++) 
+		{
 			b->ptr[i] = NULL;
 		}
-	} else if (b->size == b->used) {
+	} 
+	else if (b->size == b->used) //满，重新分配空间
+	{
 		b->size += 16;
 		b->ptr = realloc(b->ptr, sizeof(*b->ptr) * b->size);
 		assert(b->ptr);
-		for (i = b->used; i < b->size; i++) {
+		for (i = b->used; i < b->size; i++) 
+		{
 			b->ptr[i] = NULL;
 		}
 	}
 
-	if (b->ptr[b->used] == NULL) {
-		b->ptr[b->used] = buffer_init();
+	if (b->ptr[b->used] == NULL) 
+	{
+		b->ptr[b->used] = buffer_init(); //初始化这个buffer
 	}
 
 	b->ptr[b->used]->used = 0;
 
-	return b->ptr[b->used++];
+	return b->ptr[b->used++]; 
 }
 
-
-char * buffer_search_string_len(buffer *b, const char *needle, size_t len) {
+/**
+ * 判断b中是否含有字符串needle，needle的长度为len
+ * 如果存在，则返回needle在b中的指针位置，否则返回NULL
+ */
+char * buffer_search_string_len(buffer *b, const char *needle, size_t len) 
+{
 	size_t i;
 	if (len == 0) return NULL;
 	if (needle == NULL) return NULL;
 
 	if (b->used < len) return NULL;
 
-	for(i = 0; i < b->used - len; i++) {
-		if (0 == memcmp(b->ptr + i, needle, len)) {
+	for(i = 0; i < b->used - len; i++) 
+	{
+		if (0 == memcmp(b->ptr + i, needle, len)) 
+		{
 			return b->ptr + i;
 		}
 	}
@@ -496,15 +632,18 @@ char * buffer_search_string_len(buffer *b, const char *needle, size_t len) {
 	return NULL;
 }
 
-buffer *buffer_init_string(const char *str) {
+//用字符串str初始化一个buffer
+buffer *buffer_init_string(const char *str) 
+{
 	buffer *b = buffer_init();
 
 	buffer_copy_string(b, str);
 
 	return b;
 }
-
-int buffer_is_empty(buffer *b) {
+//判断b是否为空
+int buffer_is_empty(buffer *b) 
+{
 	if (!b) return 1;
 	return (b->used == 0);
 }
@@ -516,14 +655,18 @@ int buffer_is_empty(buffer *b) {
  * alignment properly.
  */
 
-int buffer_is_equal(buffer *a, buffer *b) {
+int buffer_is_equal(buffer *a, buffer *b) 
+{
 	if (a->used != b->used) return 0;
+	/* a中没有数据，返回1 */
 	if (a->used == 0) return 1;
 
 	return (0 == strcmp(a->ptr, b->ptr));
 }
 
-int buffer_is_equal_string(buffer *a, const char *s, size_t b_len) {
+//b中的数据是否等于s，b_len为s的长度
+int buffer_is_equal_string(buffer *a, const char *s, size_t b_len) 
+{
 	buffer b;
 
 	b.ptr = (char *)s;
@@ -532,12 +675,15 @@ int buffer_is_equal_string(buffer *a, const char *s, size_t b_len) {
 	return buffer_is_equal(a, &b);
 }
 
-/* simple-assumption:
+/** 
+ * simple-assumption:
  *
  * most parts are equal and doing a case conversion needs time
- *
+ * 假设比较的部分相同的较多且大小写转换需要时间。
+ * 
  */
-int buffer_caseless_compare(const char *a, size_t a_len, const char *b, size_t b_len) {
+int buffer_caseless_compare(const char *a, size_t a_len, const char *b, size_t b_len) 
+{
 	size_t ndx = 0, max_ndx;
 	size_t *al, *bl;
 	size_t mask = sizeof(*al) - 1;
@@ -545,10 +691,13 @@ int buffer_caseless_compare(const char *a, size_t a_len, const char *b, size_t b
 	al = (size_t *)a;
 	bl = (size_t *)b;
 
-	/* is the alignment correct ? */
+	/* 一开始，将字符串数组转化成size_t类型的数组，通过比较size_t类型来比较是否相同 */
+	/* libc的字符串比较函数也使用了相同的技巧，可有效的加快比较速度 */
+	/* 检查a1和b1的位置是否对齐(size_t的类型长度的倍数?) ? */
 	if ( ((size_t)al & mask) == 0 &&
-	     ((size_t)bl & mask) == 0 ) {
-
+	     ((size_t)bl & mask) == 0 ) 
+	{
+		/* 确定比较的长度 */
 		max_ndx = ((a_len < b_len) ? a_len : b_len) & ~mask;
 
 		for (; ndx < max_ndx; ndx += sizeof(*al)) {
@@ -558,7 +707,9 @@ int buffer_caseless_compare(const char *a, size_t a_len, const char *b, size_t b
 		}
 
 	}
-
+	/* 相同的部分比较完毕 */
+	
+	/* 开始比较字符串，并忽略大小写 */
 	a = (char *)al;
 	b = (char *)bl;
 
@@ -567,6 +718,11 @@ int buffer_caseless_compare(const char *a, size_t a_len, const char *b, size_t b
 	for (; ndx < max_ndx; ndx++) {
 		char a1 = *a++, b1 = *b++;
 
+		/*
+			'A'的二进制表示为0100 0001，'a'的二进制表示为0110 0001，
+			大写字母比小写字母的ASCII值小了32。
+			通过或上一个32，可以使所有的字母全部转换成大写字母。
+		*/
 		if (a1 != b1) {
 			if ((a1 >= 'A' && a1 <= 'Z') && (b1 >= 'a' && b1 <= 'z'))
 				a1 |= 32;
@@ -589,11 +745,11 @@ int buffer_caseless_compare(const char *a, size_t a_len, const char *b, size_t b
 
 /**
  * check if the rightmost bytes of the string are equal.
- *
- *
+ * 判断b1和b2中，最右边的len个字符是否相同。
  */
 
-int buffer_is_equal_right_len(buffer *b1, buffer *b2, size_t len) {
+int buffer_is_equal_right_len(buffer *b1, buffer *b2, size_t len) 
+{
 	/* no, len -> equal */
 	if (len == 0) return 1;
 
@@ -604,14 +760,16 @@ int buffer_is_equal_right_len(buffer *b1, buffer *b2, size_t len) {
 	if (b1->used - 1 < len || b1->used - 1 < len) return 0;
 
 	if (0 == strncmp(b1->ptr + b1->used - 1 - len,
-			 b2->ptr + b2->used - 1 - len, len)) {
+			 b2->ptr + b2->used - 1 - len, len))
+	{
 		return 1;
 	}
 
 	return 0;
 }
 
-int buffer_copy_string_hex(buffer *b, const char *in, size_t in_len) {
+int buffer_copy_string_hex(buffer *b, const char *in, size_t in_len) 
+{
 	size_t i;
 
 	/* BO protection */
@@ -619,7 +777,8 @@ int buffer_copy_string_hex(buffer *b, const char *in, size_t in_len) {
 
 	buffer_prepare_copy(b, in_len * 2 + 1);
 
-	for (i = 0; i < in_len; i++) {
+	for (i = 0; i < in_len; i++) 
+	{
 		b->ptr[b->used++] = hex_chars[(in[i] >> 4) & 0x0F];
 		b->ptr[b->used++] = hex_chars[in[i] & 0x0F];
 	}
@@ -629,7 +788,8 @@ int buffer_copy_string_hex(buffer *b, const char *in, size_t in_len) {
 }
 
 /* everything except: ! ( ) * - . 0-9 A-Z _ a-z */
-const char encoded_chars_rel_uri_part[] = {
+const char encoded_chars_rel_uri_part[] = 
+{
 	/*
 	0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 	*/
@@ -652,7 +812,8 @@ const char encoded_chars_rel_uri_part[] = {
 };
 
 /* everything except: ! ( ) * - . / 0-9 A-Z _ a-z */
-const char encoded_chars_rel_uri[] = {
+const char encoded_chars_rel_uri[] = 
+{
 	/*
 	0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 	*/
@@ -674,7 +835,9 @@ const char encoded_chars_rel_uri[] = {
 	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  F0 -  FF */
 };
 
-const char encoded_chars_html[] = {
+const char encoded_chars_html[] = 
+{
+
 	/*
 	0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 	*/
@@ -696,7 +859,8 @@ const char encoded_chars_html[] = {
 	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  F0 -  FF */
 };
 
-const char encoded_chars_minimal_xml[] = {
+const char encoded_chars_minimal_xml[] = 
+{
 	/*
 	0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 	*/
@@ -718,7 +882,8 @@ const char encoded_chars_minimal_xml[] = {
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  F0 -  FF */
 };
 
-const char encoded_chars_hex[] = {
+const char encoded_chars_hex[] = 
+{
 	/*
 	0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 	*/
@@ -740,7 +905,8 @@ const char encoded_chars_hex[] = {
 	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  F0 -  FF */
 };
 
-const char encoded_chars_http_header[] = {
+const char encoded_chars_http_header[] = 
+{
 	/*
 	0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 	*/
@@ -764,7 +930,8 @@ const char encoded_chars_http_header[] = {
 
 
 
-int buffer_append_string_encoded(buffer *b, const char *s, size_t s_len, buffer_encoding_t encoding) {
+int buffer_append_string_encoded(buffer *b, const char *s, size_t s_len, buffer_encoding_t encoding) 
+{
 	unsigned char *ds, *d;
 	size_t d_len, ndx;
 	const char *map = NULL;
@@ -875,7 +1042,8 @@ int buffer_append_string_encoded(buffer *b, const char *s, size_t s_len, buffer_
  * replaces non-printable characters with '_'
  */
 
-static int buffer_urldecode_internal(buffer *url, int is_query) {
+static int buffer_urldecode_internal(buffer *url, int is_query) 
+{
 	unsigned char high, low;
 	const char *src;
 	char *dst;
@@ -918,11 +1086,13 @@ static int buffer_urldecode_internal(buffer *url, int is_query) {
 	return 0;
 }
 
-int buffer_urldecode_path(buffer *url) {
+int buffer_urldecode_path(buffer *url) 
+{
 	return buffer_urldecode_internal(url, 0);
 }
 
-int buffer_urldecode_query(buffer *url) {
+int buffer_urldecode_query(buffer *url) 
+{
 	return buffer_urldecode_internal(url, 1);
 }
 

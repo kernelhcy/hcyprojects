@@ -35,7 +35,8 @@ typedef struct {
 	plugin_config conf;
 } plugin_data;
 
-INIT_FUNC(mod_simple_vhost_init) {
+INIT_FUNC(mod_simple_vhost_init)
+{
 	plugin_data *p;
 
 	p = calloc(1, sizeof(*p));
@@ -45,16 +46,20 @@ INIT_FUNC(mod_simple_vhost_init) {
 	return p;
 }
 
-FREE_FUNC(mod_simple_vhost_free) {
+FREE_FUNC(mod_simple_vhost_free)
+{
 	plugin_data *p = p_d;
 
 	UNUSED(srv);
 
-	if (!p) return HANDLER_GO_ON;
+	if (!p)
+		return HANDLER_GO_ON;
 
-	if (p->config_storage) {
+	if (p->config_storage)
+	{
 		size_t i;
-		for (i = 0; i < srv->config_context->used; i++) {
+		for (i = 0; i < srv->config_context->used; i++)
+		{
 			plugin_config *s = p->config_storage[i];
 
 			buffer_free(s->document_root);
@@ -78,23 +83,35 @@ FREE_FUNC(mod_simple_vhost_free) {
 	return HANDLER_GO_ON;
 }
 
-SETDEFAULTS_FUNC(mod_simple_vhost_set_defaults) {
+SETDEFAULTS_FUNC(mod_simple_vhost_set_defaults)
+{
 	plugin_data *p = p_d;
 	size_t i;
 
 	config_values_t cv[] = {
-		{ "simple-vhost.server-root",       NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },
-		{ "simple-vhost.default-host",      NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },
-		{ "simple-vhost.document-root",     NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },
-		{ "simple-vhost.debug",             NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_CONNECTION },
-		{ NULL,                             NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET }
+		{"simple-vhost.server-root", NULL, T_CONFIG_STRING,
+		 T_CONFIG_SCOPE_CONNECTION}
+		,
+		{"simple-vhost.default-host", NULL, T_CONFIG_STRING,
+		 T_CONFIG_SCOPE_CONNECTION}
+		,
+		{"simple-vhost.document-root", NULL, T_CONFIG_STRING,
+		 T_CONFIG_SCOPE_CONNECTION}
+		,
+		{"simple-vhost.debug", NULL, T_CONFIG_SHORT,
+		 T_CONFIG_SCOPE_CONNECTION}
+		,
+		{NULL, NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET}
 	};
 
-	if (!p) return HANDLER_ERROR;
+	if (!p)
+		return HANDLER_ERROR;
 
-	p->config_storage = calloc(1, srv->config_context->used * sizeof(specific_config *));
+	p->config_storage =
+		calloc(1, srv->config_context->used * sizeof(specific_config *));
 
-	for (i = 0; i < srv->config_context->used; i++) {
+	for (i = 0; i < srv->config_context->used; i++)
+	{
 		plugin_config *s;
 
 		s = calloc(1, sizeof(plugin_config));
@@ -117,7 +134,11 @@ SETDEFAULTS_FUNC(mod_simple_vhost_set_defaults) {
 
 		p->config_storage[i] = s;
 
-		if (0 != config_insert_values_global(srv, ((data_config *)srv->config_context->data[i])->value, cv)) {
+		if (0 !=
+			config_insert_values_global(srv,
+										((data_config *) srv->
+										 config_context->data[i])->value, cv))
+		{
 			return HANDLER_ERROR;
 		}
 	}
@@ -125,48 +146,64 @@ SETDEFAULTS_FUNC(mod_simple_vhost_set_defaults) {
 	return HANDLER_GO_ON;
 }
 
-static int build_doc_root(server *srv, connection *con, plugin_data *p, buffer *out, buffer *host) {
+static int
+build_doc_root(server * srv, connection * con, plugin_data * p,
+			   buffer * out, buffer * host)
+{
 	stat_cache_entry *sce = NULL;
 
 	buffer_prepare_copy(out, 128);
 
-	if (p->conf.server_root->used) {
+	if (p->conf.server_root->used)
+	{
 		buffer_copy_string_buffer(out, p->conf.server_root);
 
-		if (host->used) {
-			/* a hostname has to start with a alpha-numerical character
-			 * and must not contain a slash "/"
+		if (host->used)
+		{
+			/*
+			 * a hostname has to start with a alpha-numerical character and
+			 * must not contain a slash "/" 
 			 */
 			char *dp;
 
 			BUFFER_APPEND_SLASH(out);
 
-			if (NULL == (dp = strchr(host->ptr, ':'))) {
+			if (NULL == (dp = strchr(host->ptr, ':')))
+			{
 				buffer_append_string_buffer(out, host);
-			} else {
+			} else
+			{
 				buffer_append_string_len(out, host->ptr, dp - host->ptr);
 			}
 		}
 		BUFFER_APPEND_SLASH(out);
 
-		if (p->conf.document_root->used > 2 && p->conf.document_root->ptr[0] == '/') {
-			buffer_append_string_len(out, p->conf.document_root->ptr + 1, p->conf.document_root->used - 2);
-		} else {
+		if (p->conf.document_root->used > 2
+			&& p->conf.document_root->ptr[0] == '/')
+		{
+			buffer_append_string_len(out, p->conf.document_root->ptr + 1,
+									 p->conf.document_root->used - 2);
+		} else
+		{
 			buffer_append_string_buffer(out, p->conf.document_root);
 			BUFFER_APPEND_SLASH(out);
 		}
-	} else {
+	} else
+	{
 		buffer_copy_string_buffer(out, con->conf.document_root);
 		BUFFER_APPEND_SLASH(out);
 	}
 
-	if (HANDLER_ERROR == stat_cache_get_entry(srv, con, out, &sce)) {
-		if (p->conf.debug) {
+	if (HANDLER_ERROR == stat_cache_get_entry(srv, con, out, &sce))
+	{
+		if (p->conf.debug)
+		{
 			log_error_write(srv, __FILE__, __LINE__, "sb",
-					strerror(errno), out);
+							strerror(errno), out);
 		}
 		return -1;
-	} else if (!S_ISDIR(sce->st.st_mode)) {
+	} else if (!S_ISDIR(sce->st.st_mode))
+	{
 		return -1;
 	}
 
@@ -176,7 +213,10 @@ static int build_doc_root(server *srv, connection *con, plugin_data *p, buffer *
 
 #define PATCH(x) \
 	p->conf.x = s->x;
-static int mod_simple_vhost_patch_connection(server *srv, connection *con, plugin_data *p) {
+static int
+mod_simple_vhost_patch_connection(server * srv, connection * con,
+								  plugin_data * p)
+{
 	size_t i, j;
 	plugin_config *s = p->config_storage[0];
 
@@ -190,28 +230,45 @@ static int mod_simple_vhost_patch_connection(server *srv, connection *con, plugi
 
 	PATCH(debug);
 
-	/* skip the first, the global context */
-	for (i = 1; i < srv->config_context->used; i++) {
-		data_config *dc = (data_config *)srv->config_context->data[i];
+	/*
+	 * skip the first, the global context 
+	 */
+	for (i = 1; i < srv->config_context->used; i++)
+	{
+		data_config *dc = (data_config *) srv->config_context->data[i];
 		s = p->config_storage[i];
 
-		/* condition didn't match */
-		if (!config_check_cond(srv, con, dc)) continue;
+		/*
+		 * condition didn't match 
+		 */
+		if (!config_check_cond(srv, con, dc))
+			continue;
 
-		/* merge config */
-		for (j = 0; j < dc->value->used; j++) {
+		/*
+		 * merge config 
+		 */
+		for (j = 0; j < dc->value->used; j++)
+		{
 			data_unset *du = dc->value->data[j];
 
-			if (buffer_is_equal_string(du->key, CONST_STR_LEN("simple-vhost.server-root"))) {
+			if (buffer_is_equal_string
+				(du->key, CONST_STR_LEN("simple-vhost.server-root")))
+			{
 				PATCH(server_root);
 				PATCH(docroot_cache_key);
 				PATCH(docroot_cache_value);
 				PATCH(docroot_cache_servername);
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("simple-vhost.default-host"))) {
+			} else if (buffer_is_equal_string
+					   (du->key, CONST_STR_LEN("simple-vhost.default-host")))
+			{
 				PATCH(default_host);
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("simple-vhost.document-root"))) {
+			} else if (buffer_is_equal_string
+					   (du->key, CONST_STR_LEN("simple-vhost.document-root")))
+			{
 				PATCH(document_root);
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("simple-vhost.debug"))) {
+			} else if (buffer_is_equal_string
+					   (du->key, CONST_STR_LEN("simple-vhost.debug")))
+			{
 				PATCH(debug);
 			}
 		}
@@ -219,9 +276,12 @@ static int mod_simple_vhost_patch_connection(server *srv, connection *con, plugi
 
 	return 0;
 }
+
 #undef PATCH
 
-static handler_t mod_simple_vhost_docroot(server *srv, connection *con, void *p_data) {
+static handler_t
+mod_simple_vhost_docroot(server * srv, connection * con, void *p_data)
+{
 	plugin_data *p = p_data;
 
 	/*
@@ -233,31 +293,48 @@ static handler_t mod_simple_vhost_docroot(server *srv, connection *con, void *p_
 	mod_simple_vhost_patch_connection(srv, con, p);
 
 	if (p->conf.docroot_cache_key->used &&
-	    con->uri.authority->used &&
-	    buffer_is_equal(p->conf.docroot_cache_key, con->uri.authority)) {
-		/* cache hit */
-		buffer_copy_string_buffer(con->physical.doc_root, p->conf.docroot_cache_value);
-		buffer_copy_string_buffer(con->server_name,       p->conf.docroot_cache_servername);
-	} else {
-		/* build document-root */
+		con->uri.authority->used &&
+		buffer_is_equal(p->conf.docroot_cache_key, con->uri.authority))
+	{
+		/*
+		 * cache hit 
+		 */
+		buffer_copy_string_buffer(con->physical.doc_root,
+								  p->conf.docroot_cache_value);
+		buffer_copy_string_buffer(con->server_name,
+								  p->conf.docroot_cache_servername);
+	} else
+	{
+		/*
+		 * build document-root 
+		 */
 		if ((con->uri.authority->used == 0) ||
-		    build_doc_root(srv, con, p, p->doc_root, con->uri.authority)) {
-			/* not found, fallback the default-host */
-			if (build_doc_root(srv, con, p,
-					   p->doc_root,
-					   p->conf.default_host)) {
+			build_doc_root(srv, con, p, p->doc_root, con->uri.authority))
+		{
+			/*
+			 * not found, fallback the default-host 
+			 */
+			if (build_doc_root(srv, con, p, p->doc_root, p->conf.default_host))
+			{
 				return HANDLER_GO_ON;
-			} else {
-				buffer_copy_string_buffer(con->server_name, p->conf.default_host);
+			} else
+			{
+				buffer_copy_string_buffer(con->server_name,
+										  p->conf.default_host);
 			}
-		} else {
+		} else
+		{
 			buffer_copy_string_buffer(con->server_name, con->uri.authority);
 		}
 
-		/* copy to cache */
-		buffer_copy_string_buffer(p->conf.docroot_cache_key,        con->uri.authority);
-		buffer_copy_string_buffer(p->conf.docroot_cache_value,      p->doc_root);
-		buffer_copy_string_buffer(p->conf.docroot_cache_servername, con->server_name);
+		/*
+		 * copy to cache 
+		 */
+		buffer_copy_string_buffer(p->conf.docroot_cache_key,
+								  con->uri.authority);
+		buffer_copy_string_buffer(p->conf.docroot_cache_value, p->doc_root);
+		buffer_copy_string_buffer(p->conf.docroot_cache_servername,
+								  con->server_name);
 
 		buffer_copy_string_buffer(con->physical.doc_root, p->doc_root);
 	}
@@ -266,16 +343,17 @@ static handler_t mod_simple_vhost_docroot(server *srv, connection *con, void *p_
 }
 
 
-int mod_simple_vhost_plugin_init(plugin *p) {
-	p->version     = LIGHTTPD_VERSION_ID;
-	p->name        = buffer_init_string("simple_vhost");
+int mod_simple_vhost_plugin_init(plugin * p)
+{
+	p->version = LIGHTTPD_VERSION_ID;
+	p->name = buffer_init_string("simple_vhost");
 
-	p->init        = mod_simple_vhost_init;
+	p->init = mod_simple_vhost_init;
 	p->set_defaults = mod_simple_vhost_set_defaults;
-	p->handle_docroot  = mod_simple_vhost_docroot;
-	p->cleanup     = mod_simple_vhost_free;
+	p->handle_docroot = mod_simple_vhost_docroot;
+	p->cleanup = mod_simple_vhost_free;
 
-	p->data        = NULL;
+	p->data = NULL;
 
 	return 0;
 }

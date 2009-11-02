@@ -7,7 +7,9 @@
 
 #include <sys/types.h>
 
-/* on linux 2.4.x you get either sendfile or LFS */
+/*
+ * on linux 2.4.x you get either sendfile or LFS 
+ */
 #if defined HAVE_SYS_SENDFILE_H && defined HAVE_SENDFILE && (!defined _LARGEFILE_SOURCE || defined HAVE_SENDFILE64) && defined HAVE_WRITEV && defined(__linux__) && !defined HAVE_SENDFILE_BROKEN
 # define USE_LINUX_SENDFILE
 # include <sys/sendfile.h>
@@ -33,7 +35,9 @@
 #if defined HAVE_SYS_MMAN_H && defined HAVE_MMAP
 # define USE_MMAP
 # include <sys/mman.h>
-/* NetBSD 1.3.x needs it */
+/*
+ * NetBSD 1.3.x needs it 
+ */
 # ifndef MAP_FAILED
 #  define MAP_FAILED -1
 # endif
@@ -46,13 +50,22 @@
 #include "base.h"
 
 
-int network_write_chunkqueue_write(server *srv, connection *con, int fd, chunkqueue *cq);
-int network_write_chunkqueue_writev(server *srv, connection *con, int fd, chunkqueue *cq);
-int network_write_chunkqueue_linuxsendfile(server *srv, connection *con, int fd, chunkqueue *cq);
-int network_write_chunkqueue_freebsdsendfile(server *srv, connection *con, int fd, chunkqueue *cq);
-int network_write_chunkqueue_solarissendfilev(server *srv, connection *con, int fd, chunkqueue *cq);
+int network_write_chunkqueue_write(server * srv, connection * con,
+								   int fd, chunkqueue * cq);
+int network_write_chunkqueue_writev(server * srv, connection * con,
+									int fd, chunkqueue * cq);
+int network_write_chunkqueue_linuxsendfile(server * srv,
+										   connection * con, int fd,
+										   chunkqueue * cq);
+int network_write_chunkqueue_freebsdsendfile(server * srv,
+											 connection * con,
+											 int fd, chunkqueue * cq);
+int network_write_chunkqueue_solarissendfilev(server * srv,
+											  connection * con,
+											  int fd, chunkqueue * cq);
 #ifdef USE_OPENSSL
-int network_write_chunkqueue_openssl(server *srv, connection *con, SSL *ssl, chunkqueue *cq);
+int network_write_chunkqueue_openssl(server * srv, connection * con,
+									 SSL * ssl, chunkqueue * cq);
 #endif
 
 #endif

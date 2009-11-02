@@ -8,7 +8,7 @@
 #define HASHLEN 16
 typedef unsigned char HASH[HASHLEN];
 #define HASHHEXLEN 32
-typedef char HASHHEX[HASHHEXLEN+1];
+typedef char HASHHEX[HASHHEXLEN + 1];
 #ifdef USE_OPENSSL
 #define IN const
 #else
@@ -16,9 +16,6 @@ typedef char HASHHEX[HASHHEXLEN+1];
 #endif
 #define OUT
 
-void CvtHex(
-    IN HASH Bin,
-    OUT HASHHEX Hex
-    );
+void CvtHex(IN HASH Bin, OUT HASHHEX Hex);
 
 #endif

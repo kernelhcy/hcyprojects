@@ -11,7 +11,9 @@
 #include <pcre.h>
 #endif
 
-/* plugin config for all request/connections */
+/*
+ * plugin config for all request/connections 
+ */
 
 typedef struct {
 	array *ssi_extension;
@@ -38,6 +40,7 @@ typedef struct {
 	plugin_config conf;
 } plugin_data;
 
-int ssi_eval_expr(server *srv, connection *con, plugin_data *p, const char *expr);
+int ssi_eval_expr(server * srv, connection * con, plugin_data * p,
+				  const char *expr);
 
 #endif

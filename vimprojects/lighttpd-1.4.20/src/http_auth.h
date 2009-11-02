@@ -18,8 +18,10 @@ typedef enum {
 } auth_backend_t;
 
 typedef struct {
-	/* auth */
-	array  *auth_require;
+	/*
+	 * auth 
+	 */
+	array *auth_require;
 
 	buffer *auth_plain_groupfile;
 	buffer *auth_plain_userfile;
@@ -40,7 +42,9 @@ typedef struct {
 
 	unsigned short auth_debug;
 
-	/* generated */
+	/*
+	 * generated 
+	 */
 	auth_backend_t auth_backend;
 
 #ifdef USE_LDAP
@@ -63,11 +67,18 @@ typedef struct {
 
 	mod_auth_plugin_config **config_storage;
 
-	mod_auth_plugin_config conf; /* this is only used as long as no handler_ctx is setup */
+	mod_auth_plugin_config conf;	/* this is only used as long as no
+									 * handler_ctx is setup */
 } mod_auth_plugin_data;
 
-int http_auth_basic_check(server *srv, connection *con, mod_auth_plugin_data *p, array *req, buffer *url, const char *realm_str);
-int http_auth_digest_check(server *srv, connection *con, mod_auth_plugin_data *p, array *req, buffer *url, const char *realm_str);
-int http_auth_digest_generate_nonce(server *srv, mod_auth_plugin_data *p, buffer *fn, char hh[33]);
+int http_auth_basic_check(server * srv, connection * con,
+						  mod_auth_plugin_data * p, array * req,
+						  buffer * url, const char *realm_str);
+int http_auth_digest_check(server * srv, connection * con,
+						   mod_auth_plugin_data * p, array * req,
+						   buffer * url, const char *realm_str);
+int http_auth_digest_generate_nonce(server * srv,
+									mod_auth_plugin_data * p,
+									buffer * fn, char hh[33]);
 
 #endif

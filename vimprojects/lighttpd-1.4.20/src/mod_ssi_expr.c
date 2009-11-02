@@ -19,7 +19,8 @@ typedef struct {
 	int in_cond;
 } ssi_tokenizer_t;
 
-ssi_val_t *ssi_val_init() {
+ssi_val_t *ssi_val_init()
+{
 	ssi_val_t *s;
 
 	s = calloc(1, sizeof(*s));
@@ -27,32 +28,41 @@ ssi_val_t *ssi_val_init() {
 	return s;
 }
 
-void ssi_val_free(ssi_val_t *s) {
-	if (s->str) buffer_free(s->str);
+void ssi_val_free(ssi_val_t * s)
+{
+	if (s->str)
+		buffer_free(s->str);
 
 	free(s);
 }
 
-int ssi_val_tobool(ssi_val_t *B) {
-	if (B->type == SSI_TYPE_STRING) {
+int ssi_val_tobool(ssi_val_t * B)
+{
+	if (B->type == SSI_TYPE_STRING)
+	{
 		return B->str->used > 1 ? 1 : 0;
-	} else {
+	} else
+	{
 		return B->bo;
 	}
 }
 
-static int ssi_expr_tokenizer(server *srv, connection *con, plugin_data *p,
-			      ssi_tokenizer_t *t, int *token_id, buffer *token) {
+static int
+ssi_expr_tokenizer(server * srv, connection * con, plugin_data * p,
+				   ssi_tokenizer_t * t, int *token_id, buffer * token)
+{
 	int tid = 0;
 	size_t i;
 
 	UNUSED(con);
 
-	for (tid = 0; tid == 0 && t->offset < t->size && t->input[t->offset] ; ) {
+	for (tid = 0; tid == 0 && t->offset < t->size && t->input[t->offset];)
+	{
 		char c = t->input[t->offset];
 		data_string *ds;
 
-		switch (c) {
+		switch (c)
+		{
 		case '=':
 			tid = TK_EQ;
 
@@ -63,14 +73,16 @@ static int ssi_expr_tokenizer(server *srv, connection *con, plugin_data *p,
 
 			break;
 		case '>':
-			if (t->input[t->offset + 1] == '=') {
+			if (t->input[t->offset + 1] == '=')
+			{
 				t->offset += 2;
 				t->line_pos += 2;
 
 				tid = TK_GE;
 
 				buffer_copy_string_len(token, CONST_STR_LEN("(>=)"));
-			} else {
+			} else
+			{
 				t->offset += 1;
 				t->line_pos += 1;
 
@@ -81,14 +93,16 @@ static int ssi_expr_tokenizer(server *srv, connection *con, plugin_data *p,
 
 			break;
 		case '<':
-			if (t->input[t->offset + 1] == '=') {
+			if (t->input[t->offset + 1] == '=')
+			{
 				t->offset += 2;
 				t->line_pos += 2;
 
 				tid = TK_LE;
 
 				buffer_copy_string_len(token, CONST_STR_LEN("(<=)"));
-			} else {
+			} else
+			{
 				t->offset += 1;
 				t->line_pos += 1;
 
@@ -100,14 +114,16 @@ static int ssi_expr_tokenizer(server *srv, connection *con, plugin_data *p,
 			break;
 
 		case '!':
-			if (t->input[t->offset + 1] == '=') {
+			if (t->input[t->offset + 1] == '=')
+			{
 				t->offset += 2;
 				t->line_pos += 2;
 
 				tid = TK_NE;
 
 				buffer_copy_string_len(token, CONST_STR_LEN("(!=)"));
-			} else {
+			} else
+			{
 				t->offset += 1;
 				t->line_pos += 1;
 
@@ -118,33 +134,35 @@ static int ssi_expr_tokenizer(server *srv, connection *con, plugin_data *p,
 
 			break;
 		case '&':
-			if (t->input[t->offset + 1] == '&') {
+			if (t->input[t->offset + 1] == '&')
+			{
 				t->offset += 2;
 				t->line_pos += 2;
 
 				tid = TK_AND;
 
 				buffer_copy_string_len(token, CONST_STR_LEN("(&&)"));
-			} else {
+			} else
+			{
 				log_error_write(srv, __FILE__, __LINE__, "sds",
-						"pos:", t->line_pos,
-						"missing second &");
+								"pos:", t->line_pos, "missing second &");
 				return -1;
 			}
 
 			break;
 		case '|':
-			if (t->input[t->offset + 1] == '|') {
+			if (t->input[t->offset + 1] == '|')
+			{
 				t->offset += 2;
 				t->line_pos += 2;
 
 				tid = TK_OR;
 
 				buffer_copy_string_len(token, CONST_STR_LEN("(||)"));
-			} else {
+			} else
+			{
 				log_error_write(srv, __FILE__, __LINE__, "sds",
-						"pos:", t->line_pos,
-						"missing second |");
+								"pos:", t->line_pos, "missing second |");
 				return -1;
 			}
 
@@ -156,22 +174,28 @@ static int ssi_expr_tokenizer(server *srv, connection *con, plugin_data *p,
 			break;
 
 		case '\'':
-			/* search for the terminating " */
-			for (i = 1; t->input[t->offset + i] && t->input[t->offset + i] != '\'';  i++);
+			/*
+			 * search for the terminating " 
+			 */
+			for (i = 1; t->input[t->offset + i]
+				 && t->input[t->offset + i] != '\''; i++);
 
-			if (t->input[t->offset + i]) {
+			if (t->input[t->offset + i])
+			{
 				tid = TK_VALUE;
 
-				buffer_copy_string_len(token, t->input + t->offset + 1, i-1);
+				buffer_copy_string_len(token, t->input + t->offset + 1, i - 1);
 
 				t->offset += i + 1;
 				t->line_pos += i + 1;
-			} else {
-				/* ERROR */
+			} else
+			{
+				/*
+				 * ERROR 
+				 */
 
 				log_error_write(srv, __FILE__, __LINE__, "sds",
-						"pos:", t->line_pos,
-						"missing closing quote");
+								"pos:", t->line_pos, "missing closing quote");
 
 				return -1;
 			}
@@ -194,31 +218,44 @@ static int ssi_expr_tokenizer(server *srv, connection *con, plugin_data *p,
 			buffer_copy_string_len(token, CONST_STR_LEN(")"));
 			break;
 		case '$':
-			if (t->input[t->offset + 1] == '{') {
-				for (i = 2; t->input[t->offset + i] && t->input[t->offset + i] != '}';  i++);
+			if (t->input[t->offset + 1] == '{')
+			{
+				for (i = 2; t->input[t->offset + i]
+					 && t->input[t->offset + i] != '}'; i++);
 
-				if (t->input[t->offset + i] != '}') {
+				if (t->input[t->offset + i] != '}')
+				{
 					log_error_write(srv, __FILE__, __LINE__, "sds",
-							"pos:", t->line_pos,
-							"missing closing quote");
+									"pos:", t->line_pos,
+									"missing closing quote");
 
 					return -1;
 				}
 
-				buffer_copy_string_len(token, t->input + t->offset + 2, i-3);
-			} else {
-				for (i = 1; isalpha(t->input[t->offset + i]) || t->input[t->offset + i] == '_';  i++);
+				buffer_copy_string_len(token, t->input + t->offset + 2, i - 3);
+			} else
+			{
+				for (i = 1; isalpha(t->input[t->offset + i])
+					 || t->input[t->offset + i] == '_'; i++);
 
-				buffer_copy_string_len(token, t->input + t->offset + 1, i-1);
+				buffer_copy_string_len(token, t->input + t->offset + 1, i - 1);
 			}
 
 			tid = TK_VALUE;
 
-			if (NULL != (ds = (data_string *)array_get_element(p->ssi_cgi_env, token->ptr))) {
+			if (NULL !=
+				(ds =
+				 (data_string *) array_get_element(p->ssi_cgi_env, token->ptr)))
+			{
 				buffer_copy_string_buffer(token, ds->value);
-			} else if (NULL != (ds = (data_string *)array_get_element(p->ssi_vars, token->ptr))) {
+			} else if (NULL !=
+					   (ds =
+						(data_string *) array_get_element(p->ssi_vars,
+														  token->ptr)))
+			{
 				buffer_copy_string_buffer(token, ds->value);
-			} else {
+			} else
+			{
 				buffer_copy_string_len(token, CONST_STR_LEN(""));
 			}
 
@@ -227,9 +264,11 @@ static int ssi_expr_tokenizer(server *srv, connection *con, plugin_data *p,
 
 			break;
 		default:
-			for (i = 0; isgraph(t->input[t->offset + i]);  i++) {
+			for (i = 0; isgraph(t->input[t->offset + i]); i++)
+			{
 				char d = t->input[t->offset + i];
-				switch(d) {
+				switch (d)
+				{
 				case ' ':
 				case '\t':
 				case ')':
@@ -256,19 +295,22 @@ static int ssi_expr_tokenizer(server *srv, connection *con, plugin_data *p,
 		}
 	}
 
-	if (tid) {
+	if (tid)
+	{
 		*token_id = tid;
 
 		return 1;
-	} else if (t->offset < t->size) {
+	} else if (t->offset < t->size)
+	{
 		log_error_write(srv, __FILE__, __LINE__, "sds",
-				"pos:", t->line_pos,
-				"foobar");
+						"pos:", t->line_pos, "foobar");
 	}
 	return 0;
 }
 
-int ssi_eval_expr(server *srv, connection *con, plugin_data *p, const char *expr) {
+int
+ssi_eval_expr(server * srv, connection * con, plugin_data * p, const char *expr)
+{
 	ssi_tokenizer_t t;
 	void *pParser;
 	int token_id;
@@ -288,37 +330,39 @@ int ssi_eval_expr(server *srv, connection *con, plugin_data *p, const char *expr
 	context.ok = 1;
 	context.srv = srv;
 
-	/* default context */
+	/*
+	 * default context 
+	 */
 
-	pParser = ssiexprparserAlloc( malloc );
+	pParser = ssiexprparserAlloc(malloc);
 	token = buffer_init();
-	while((1 == (ret = ssi_expr_tokenizer(srv, con, p, &t, &token_id, token))) && context.ok) {
+	while ((1 == (ret = ssi_expr_tokenizer(srv, con, p, &t, &token_id, token)))
+		   && context.ok)
+	{
 		ssiexprparser(pParser, token_id, token, &context);
 
 		token = buffer_init();
 	}
 	ssiexprparser(pParser, 0, token, &context);
-	ssiexprparserFree(pParser, free );
+	ssiexprparserFree(pParser, free);
 
 	buffer_free(token);
 
-	if (ret == -1) {
-		log_error_write(srv, __FILE__, __LINE__, "s",
-				"expr parser failed");
+	if (ret == -1)
+	{
+		log_error_write(srv, __FILE__, __LINE__, "s", "expr parser failed");
 		return -1;
 	}
 
-	if (context.ok == 0) {
+	if (context.ok == 0)
+	{
 		log_error_write(srv, __FILE__, __LINE__, "sds",
-				"pos:", t.line_pos,
-				"parser failed somehow near here");
+						"pos:", t.line_pos, "parser failed somehow near here");
 		return -1;
 	}
 #if 0
 	log_error_write(srv, __FILE__, __LINE__, "ssd",
-			"expr: ",
-			expr,
-			context.val.bo);
+					"expr: ", expr, context.val.bo);
 #endif
 	return context.val.bo;
 }

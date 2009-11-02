@@ -13,36 +13,53 @@
 #include "buffer.h"
 
 #ifdef USE_POLL
-static void fdevent_poll_free(fdevents *ev) {
+static void fdevent_poll_free(fdevents * ev)
+{
 	free(ev->pollfds);
-	if (ev->unused.ptr) free(ev->unused.ptr);
+	if (ev->unused.ptr)
+		free(ev->unused.ptr);
 }
 
-static int fdevent_poll_event_del(fdevents *ev, int fde_ndx, int fd) {
-	if (fde_ndx < 0) return -1;
+static int fdevent_poll_event_del(fdevents * ev, int fde_ndx, int fd)
+{
+	if (fde_ndx < 0)
+		return -1;
 
-	if ((size_t)fde_ndx >= ev->used) {
-		fprintf(stderr, "%s.%d: del! out of range %d %zd\n", __FILE__, __LINE__, fde_ndx, ev->used);
+	if ((size_t) fde_ndx >= ev->used)
+	{
+		fprintf(stderr, "%s.%d: del! out of range %d %zd\n", __FILE__,
+				__LINE__, fde_ndx, ev->used);
 		SEGFAULT();
 	}
 
-	if (ev->pollfds[fde_ndx].fd == fd) {
+	if (ev->pollfds[fde_ndx].fd == fd)
+	{
 		size_t k = fde_ndx;
 
 		ev->pollfds[k].fd = -1;
-		/* ev->pollfds[k].events = 0; */
-		/* ev->pollfds[k].revents = 0; */
+		/*
+		 * ev->pollfds[k].events = 0; 
+		 */
+		/*
+		 * ev->pollfds[k].revents = 0; 
+		 */
 
-		if (ev->unused.size == 0) {
+		if (ev->unused.size == 0)
+		{
 			ev->unused.size = 16;
-			ev->unused.ptr = malloc(sizeof(*(ev->unused.ptr)) * ev->unused.size);
-		} else if (ev->unused.size == ev->unused.used) {
+			ev->unused.ptr =
+				malloc(sizeof(*(ev->unused.ptr)) * ev->unused.size);
+		} else if (ev->unused.size == ev->unused.used)
+		{
 			ev->unused.size += 16;
-			ev->unused.ptr = realloc(ev->unused.ptr, sizeof(*(ev->unused.ptr)) * ev->unused.size);
+			ev->unused.ptr =
+				realloc(ev->unused.ptr,
+						sizeof(*(ev->unused.ptr)) * ev->unused.size);
 		}
 
 		ev->unused.ptr[ev->unused.used++] = k;
-	} else {
+	} else
+	{
 		SEGFAULT();
 	}
 
@@ -50,43 +67,58 @@ static int fdevent_poll_event_del(fdevents *ev, int fde_ndx, int fd) {
 }
 
 #if 0
-static int fdevent_poll_event_compress(fdevents *ev) {
+static int fdevent_poll_event_compress(fdevents * ev)
+{
 	size_t j;
 
-	if (ev->used == 0) return 0;
-	if (ev->unused.used != 0) return 0;
+	if (ev->used == 0)
+		return 0;
+	if (ev->unused.used != 0)
+		return 0;
 
-	for (j = ev->used - 1; j + 1 > 0 && ev->pollfds[j].fd == -1; j--) ev->used--;
+	for (j = ev->used - 1; j + 1 > 0 && ev->pollfds[j].fd == -1; j--)
+		ev->used--;
 
 	return 0;
 }
 #endif
 
-static int fdevent_poll_event_add(fdevents *ev, int fde_ndx, int fd, int events) {
-	/* known index */
+static int
+fdevent_poll_event_add(fdevents * ev, int fde_ndx, int fd, int events)
+{
+	/*
+	 * known index 
+	 */
 
-	if (fde_ndx != -1) {
-		if (ev->pollfds[fde_ndx].fd == fd) {
+	if (fde_ndx != -1)
+	{
+		if (ev->pollfds[fde_ndx].fd == fd)
+		{
 			ev->pollfds[fde_ndx].events = events;
 
 			return fde_ndx;
 		}
-		fprintf(stderr, "%s.%d: add: (%d, %d)\n", __FILE__, __LINE__, fde_ndx, ev->pollfds[fde_ndx].fd);
+		fprintf(stderr, "%s.%d: add: (%d, %d)\n", __FILE__, __LINE__,
+				fde_ndx, ev->pollfds[fde_ndx].fd);
 		SEGFAULT();
 	}
 
-	if (ev->unused.used > 0) {
+	if (ev->unused.used > 0)
+	{
 		int k = ev->unused.ptr[--ev->unused.used];
 
 		ev->pollfds[k].fd = fd;
 		ev->pollfds[k].events = events;
 
 		return k;
-	} else {
-		if (ev->size == 0) {
+	} else
+	{
+		if (ev->size == 0)
+		{
 			ev->size = 16;
 			ev->pollfds = malloc(sizeof(*ev->pollfds) * ev->size);
-		} else if (ev->size == ev->used) {
+		} else if (ev->size == ev->used)
+		{
 			ev->size += 16;
 			ev->pollfds = realloc(ev->pollfds, sizeof(*ev->pollfds) * ev->size);
 		}
@@ -98,59 +130,79 @@ static int fdevent_poll_event_add(fdevents *ev, int fde_ndx, int fd, int events)
 	}
 }
 
-static int fdevent_poll_poll(fdevents *ev, int timeout_ms) {
+static int fdevent_poll_poll(fdevents * ev, int timeout_ms)
+{
 #if 0
 	fdevent_poll_event_compress(ev);
 #endif
 	return poll(ev->pollfds, ev->used, timeout_ms);
 }
 
-static int fdevent_poll_event_get_revent(fdevents *ev, size_t ndx) {
+static int fdevent_poll_event_get_revent(fdevents * ev, size_t ndx)
+{
 	int r, poll_r;
-	if (ndx >= ev->used) {
-		fprintf(stderr, "%s.%d: dying because: event: %zd >= %zd\n", __FILE__, __LINE__, ndx, ev->used);
+	if (ndx >= ev->used)
+	{
+		fprintf(stderr, "%s.%d: dying because: event: %zd >= %zd\n",
+				__FILE__, __LINE__, ndx, ev->used);
 
 		SEGFAULT();
 
 		return 0;
 	}
 
-	if (ev->pollfds[ndx].revents & POLLNVAL) {
-		/* should never happen */
+	if (ev->pollfds[ndx].revents & POLLNVAL)
+	{
+		/*
+		 * should never happen 
+		 */
 		SEGFAULT();
 	}
 
 	r = 0;
 	poll_r = ev->pollfds[ndx].revents;
 
-	/* map POLL* to FDEVEN_* */
+	/*
+	 * map POLL* to FDEVEN_* 
+	 */
 
-	if (poll_r & POLLIN) r |= FDEVENT_IN;
-	if (poll_r & POLLOUT) r |= FDEVENT_OUT;
-	if (poll_r & POLLERR) r |= FDEVENT_ERR;
-	if (poll_r & POLLHUP) r |= FDEVENT_HUP;
-	if (poll_r & POLLNVAL) r |= FDEVENT_NVAL;
-	if (poll_r & POLLPRI) r |= FDEVENT_PRI;
+	if (poll_r & POLLIN)
+		r |= FDEVENT_IN;
+	if (poll_r & POLLOUT)
+		r |= FDEVENT_OUT;
+	if (poll_r & POLLERR)
+		r |= FDEVENT_ERR;
+	if (poll_r & POLLHUP)
+		r |= FDEVENT_HUP;
+	if (poll_r & POLLNVAL)
+		r |= FDEVENT_NVAL;
+	if (poll_r & POLLPRI)
+		r |= FDEVENT_PRI;
 
 	return ev->pollfds[ndx].revents;
 }
 
-static int fdevent_poll_event_get_fd(fdevents *ev, size_t ndx) {
+static int fdevent_poll_event_get_fd(fdevents * ev, size_t ndx)
+{
 	return ev->pollfds[ndx].fd;
 }
 
-static int fdevent_poll_event_next_fdndx(fdevents *ev, int ndx) {
+static int fdevent_poll_event_next_fdndx(fdevents * ev, int ndx)
+{
 	size_t i;
 
 	i = (ndx < 0) ? 0 : ndx + 1;
-	for (; i < ev->used; i++) {
-		if (ev->pollfds[i].revents) break;
+	for (; i < ev->used; i++)
+	{
+		if (ev->pollfds[i].revents)
+			break;
 	}
 
 	return i;
 }
 
-int fdevent_poll_init(fdevents *ev) {
+int fdevent_poll_init(fdevents * ev)
+{
 	ev->type = FDEVENT_HANDLER_POLL;
 #define SET(x) \
 	ev->x = fdevent_poll_##x;
@@ -172,10 +224,12 @@ int fdevent_poll_init(fdevents *ev) {
 
 
 #else
-int fdevent_poll_init(fdevents *ev) {
+int fdevent_poll_init(fdevents * ev)
+{
 	UNUSED(ev);
 
-	fprintf(stderr, "%s.%d: poll is not supported, try to set server.event-handler = \"select\"\n",
+	fprintf(stderr,
+			"%s.%d: poll is not supported, try to set server.event-handler = \"select\"\n",
 			__FILE__, __LINE__);
 	return -1;
 }

@@ -24,32 +24,34 @@
 static siginfo_t last_sigterm_info;
 static siginfo_t last_sighup_info;
 
-static volatile sig_atomic_t start_process    = 1;
+static volatile sig_atomic_t start_process = 1;
 static volatile sig_atomic_t graceful_restart = 0;
 static volatile pid_t pid = -1;
 
 #define UNUSED(x) ( (void)(x) )
 
-static void sigaction_handler(int sig, siginfo_t *si, void *context) {
+static void sigaction_handler(int sig, siginfo_t * si, void *context)
+{
 	int exitcode;
 
 	UNUSED(context);
-	switch (sig) {
-	case SIGINT: 
+	switch (sig)
+	{
+	case SIGINT:
 	case SIGTERM:
 		memcpy(&last_sigterm_info, si, sizeof(*si));
 
 		/** forward the sig to the child */
 		kill(pid, sig);
 		break;
-	case SIGHUP: /** do a graceful restart */
+	case SIGHUP:	/** do a graceful restart */
 		memcpy(&last_sighup_info, si, sizeof(*si));
 
 		/** do a graceful shutdown on the main process and start a new child */
 		kill(pid, SIGINT);
 
-		usleep(5 * 1000); /** wait 5 microsec */
-		
+		usleep(5 * 1000);	  /** wait 5 microsec */
+
 		start_process = 1;
 		break;
 	case SIGCHLD:
@@ -59,7 +61,8 @@ static void sigaction_handler(int sig, siginfo_t *si, void *context) {
 	}
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
 	int is_shutdown = 0;
 	struct sigaction act;
 
@@ -78,76 +81,90 @@ int main(int argc, char **argv) {
 	sigemptyset(&act.sa_mask);
 	act.sa_flags = SA_SIGINFO;
 
-	sigaction(SIGINT,  &act, NULL);
+	sigaction(SIGINT, &act, NULL);
 	sigaction(SIGTERM, &act, NULL);
-	sigaction(SIGHUP,  &act, NULL);
+	sigaction(SIGHUP, &act, NULL);
 	sigaction(SIGALRM, &act, NULL);
 	sigaction(SIGCHLD, &act, NULL);
 
-	/* check that the compiled in path has the right user,
-	 *
-	 * BEWARE: there is a race between the check here and the exec later
+	/*
+	 * check that the compiled in path has the right user, BEWARE: there is a
+	 * race between the check here and the exec later 
 	 */
 
-	while (!is_shutdown) {
+	while (!is_shutdown)
+	{
 		int exitcode = 0;
 
-		if (start_process) {
+		if (start_process)
+		{
 			pid = fork();
 
-			if (0 == pid) {
-				/* i'm the child */
+			if (0 == pid)
+			{
+				/*
+				 * i'm the child 
+				 */
 
 				argv[0] = BINPATH;
 
 				execvp(BINPATH, argv);
 
 				exit(1);
-			} else if (-1 == pid) {
+			} else if (-1 == pid)
+			{
 				/** error */
 
 				return -1;
 			}
 
-			/* I'm the angel */
+			/*
+			 * I'm the angel 
+			 */
 			start_process = 0;
 		}
-	       
-		if ((pid_t)-1 == waitpid(pid, &exitcode, 0)) {
-			switch (errno) {
+
+		if ((pid_t) - 1 == waitpid(pid, &exitcode, 0))
+		{
+			switch (errno)
+			{
 			case EINTR:
-				/* someone sent a signal ... 
-				 * do we have to shutdown or restart the process */
+				/*
+				 * someone sent a signal ... do we have to shutdown or restart 
+				 * the process 
+				 */
 				break;
 			case ECHILD:
 				/** 
 				 * make sure we are not in a race between the signal handler
 				 * and the process restart */
-				if (!start_process) is_shutdown = 1;
+				if (!start_process)
+					is_shutdown = 1;
 				break;
 			default:
 				break;
 			}
-		} else {
+		} else
+		{
 			/** process went away */
 
-			if (WIFEXITED(exitcode)) {
+			if (WIFEXITED(exitcode))
+			{
 				/** normal exit */
 
 				is_shutdown = 1;
 
-				fprintf(stderr, "%s.%d: child (pid=%d) exited normally with exitcode: %d\n", 
-						__FILE__, __LINE__,
-						pid,
-						WEXITSTATUS(exitcode));
+				fprintf(stderr,
+						"%s.%d: child (pid=%d) exited normally with exitcode: %d\n",
+						__FILE__, __LINE__, pid, WEXITSTATUS(exitcode));
 
-			} else if (WIFSIGNALED(exitcode)) {
+			} else if (WIFSIGNALED(exitcode))
+			{
 				/** got a signal */
 
-				fprintf(stderr, "%s.%d: child (pid=%d) exited unexpectedly with signal %d, restarting\n", 
-						__FILE__, __LINE__,
-						pid,
-						WTERMSIG(exitcode));
+				fprintf(stderr,
+						"%s.%d: child (pid=%d) exited unexpectedly with signal %d, restarting\n",
+						__FILE__, __LINE__, pid, WTERMSIG(exitcode));
 
 				start_process = 1;
 			}
@@ -156,4 +173,3 @@ int main(int argc, char **argv) {
 
 	return 0;
 }
-

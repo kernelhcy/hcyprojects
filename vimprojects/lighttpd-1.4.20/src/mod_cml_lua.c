@@ -19,7 +19,7 @@
 #define HASHLEN 16
 typedef unsigned char HASH[HASHLEN];
 #define HASHHEXLEN 32
-typedef char HASHHEX[HASHHEXLEN+1];
+typedef char HASHHEX[HASHHEXLEN + 1];
 #ifdef USE_OPENSSL
 #define IN const
 #else
@@ -38,19 +38,22 @@ typedef struct {
 	int done;
 } readme;
 
-static const char * load_file(lua_State *L, void *data, size_t *size) {
+static const char *load_file(lua_State * L, void *data, size_t * size)
+{
 	readme *rm = data;
 
 	UNUSED(L);
 
-	if (rm->done) return 0;
+	if (rm->done)
+		return 0;
 
 	*size = rm->st.size;
 	rm->done = 1;
 	return rm->st.start;
 }
 
-static int lua_to_c_get_string(lua_State *L, const char *varname, buffer *b) {
+static int lua_to_c_get_string(lua_State * L, const char *varname, buffer * b)
+{
 	int curelem;
 
 	lua_pushstring(L, varname);
@@ -58,8 +61,11 @@ static int lua_to_c_get_string(lua_State *L, const char *varname, buffer *b) {
 	curelem = lua_gettop(L);
 	lua_gettable(L, LUA_GLOBALSINDEX);
 
-	/* it should be a table */
-	if (!lua_isstring(L, curelem)) {
+	/*
+	 * it should be a table 
+	 */
+	if (!lua_isstring(L, curelem))
+	{
 		lua_settop(L, curelem - 1);
 
 		return -1;
@@ -74,7 +80,8 @@ static int lua_to_c_get_string(lua_State *L, const char *varname, buffer *b) {
 	return 0;
 }
 
-static int lua_to_c_is_table(lua_State *L, const char *varname) {
+static int lua_to_c_is_table(lua_State * L, const char *varname)
+{
 	int curelem;
 
 	lua_pushstring(L, varname);
@@ -82,8 +89,11 @@ static int lua_to_c_is_table(lua_State *L, const char *varname) {
 	curelem = lua_gettop(L);
 	lua_gettable(L, LUA_GLOBALSINDEX);
 
-	/* it should be a table */
-	if (!lua_istable(L, curelem)) {
+	/*
+	 * it should be a table 
+	 */
+	if (!lua_istable(L, curelem))
+	{
 		lua_settop(L, curelem - 1);
 
 		return 0;
@@ -96,7 +106,10 @@ static int lua_to_c_is_table(lua_State *L, const char *varname) {
 	return 1;
 }
 
-static int c_to_lua_push(lua_State *L, int tbl, const char *key, size_t key_len, const char *val, size_t val_len) {
+static int
+c_to_lua_push(lua_State * L, int tbl, const char *key, size_t key_len,
+			  const char *val, size_t val_len)
+{
 	lua_pushlstring(L, key, key_len);
 	lua_pushlstring(L, val, val_len);
 	lua_settable(L, tbl);
@@ -105,18 +118,24 @@ static int c_to_lua_push(lua_State *L, int tbl, const char *key, size_t key_len,
 }
 
 
-int cache_export_get_params(lua_State *L, int tbl, buffer *qrystr) {
+int cache_export_get_params(lua_State * L, int tbl, buffer * qrystr)
+{
 	size_t is_key = 1;
 	size_t i;
 	char *key = NULL, *val = NULL;
 
 	key = qrystr->ptr;
 
-	/* we need the \0 */
-	for (i = 0; i < qrystr->used; i++) {
-		switch(qrystr->ptr[i]) {
+	/*
+	 * we need the \0 
+	 */
+	for (i = 0; i < qrystr->used; i++)
+	{
+		switch (qrystr->ptr[i])
+		{
 		case '=':
-			if (is_key) {
+			if (is_key)
+			{
 				val = qrystr->ptr + i + 1;
 
 				qrystr->ptr[i] = '\0';
@@ -126,16 +145,19 @@ int cache_export_get_params(lua_State *L, int tbl, buffer *qrystr) {
 
 			break;
 		case '&':
-		case '\0': /* fin symbol */
-			if (!is_key) {
-				/* we need at least a = since the last & */
+		case '\0':				/* fin symbol */
+			if (!is_key)
+			{
+				/*
+				 * we need at least a = since the last & 
+				 */
 
-				/* terminate the value */
+				/*
+				 * terminate the value 
+				 */
 				qrystr->ptr[i] = '\0';
 
-				c_to_lua_push(L, tbl,
-					      key, strlen(key),
-					      val, strlen(val));
+				c_to_lua_push(L, tbl, key, strlen(key), val, strlen(val));
 			}
 
 			key = qrystr->ptr + i + 1;
@@ -147,33 +169,47 @@ int cache_export_get_params(lua_State *L, int tbl, buffer *qrystr) {
 
 	return 0;
 }
+
 #if 0
-int cache_export_cookie_params(server *srv, connection *con, plugin_data *p) {
+int cache_export_cookie_params(server * srv, connection * con, plugin_data * p)
+{
 	data_unset *d;
 
 	UNUSED(srv);
 
-	if (NULL != (d = array_get_element(con->request.headers, "Cookie"))) {
-		data_string *ds = (data_string *)d;
+	if (NULL != (d = array_get_element(con->request.headers, "Cookie")))
+	{
+		data_string *ds = (data_string *) d;
 		size_t key = 0, value = 0;
 		size_t is_key = 1, is_sid = 0;
 		size_t i;
 
-		/* found COOKIE */
-		if (!DATA_IS_STRING(d)) return -1;
-		if (ds->value->used == 0) return -1;
+		/*
+		 * found COOKIE 
+		 */
+		if (!DATA_IS_STRING(d))
+			return -1;
+		if (ds->value->used == 0)
+			return -1;
 
 		if (ds->value->ptr[0] == '\0' ||
-		    ds->value->ptr[0] == '=' ||
-		    ds->value->ptr[0] == ';') return -1;
+			ds->value->ptr[0] == '=' || ds->value->ptr[0] == ';')
+			return -1;
 
 		buffer_reset(p->session_id);
-		for (i = 0; i < ds->value->used; i++) {
-			switch(ds->value->ptr[i]) {
+		for (i = 0; i < ds->value->used; i++)
+		{
+			switch (ds->value->ptr[i])
+			{
 			case '=':
-				if (is_key) {
-					if (0 == strncmp(ds->value->ptr + key, "PHPSESSID", i - key)) {
-						/* found PHP-session-id-key */
+				if (is_key)
+				{
+					if (0 ==
+						strncmp(ds->value->ptr + key, "PHPSESSID", i - key))
+					{
+						/*
+						 * found PHP-session-id-key 
+						 */
 						is_sid = 1;
 					}
 					value = i + 1;
@@ -183,8 +219,10 @@ int cache_export_cookie_params(server *srv, connection *con, plugin_data *p) {
 
 				break;
 			case ';':
-				if (is_sid) {
-					buffer_copy_string_len(p->session_id, ds->value->ptr + value, i - value);
+				if (is_sid)
+				{
+					buffer_copy_string_len(p->session_id,
+										   ds->value->ptr + value, i - value);
 				}
 
 				is_sid = 0;
@@ -193,14 +231,20 @@ int cache_export_cookie_params(server *srv, connection *con, plugin_data *p) {
 				is_key = 1;
 				break;
 			case ' ':
-				if (is_key == 1 && key == i) key = i + 1;
-				if (is_key == 0 && value == i) value = i + 1;
+				if (is_key == 1 && key == i)
+					key = i + 1;
+				if (is_key == 0 && value == i)
+					value = i + 1;
 				break;
 			case '\0':
-				if (is_sid) {
-					buffer_copy_string_len(p->session_id, ds->value->ptr + value, i - value);
+				if (is_sid)
+				{
+					buffer_copy_string_len(p->session_id,
+										   ds->value->ptr + value, i - value);
 				}
-				/* fin */
+				/*
+				 * fin 
+				 */
 				break;
 			}
 		}
@@ -210,7 +254,9 @@ int cache_export_cookie_params(server *srv, connection *con, plugin_data *p) {
 }
 #endif
 
-int cache_parse_lua(server *srv, connection *con, plugin_data *p, buffer *fn) {
+int
+cache_parse_lua(server * srv, connection * con, plugin_data * p, buffer * fn)
+{
 	lua_State *L;
 	readme rm;
 	int ret = -1;
@@ -220,11 +266,15 @@ int cache_parse_lua(server *srv, connection *con, plugin_data *p, buffer *fn) {
 	rm.done = 0;
 	stream_open(&rm.st, fn);
 
-	/* push the lua file to the interpreter and see what happends */
+	/*
+	 * push the lua file to the interpreter and see what happends 
+	 */
 	L = luaL_newstate();
 	luaL_openlibs(L);
 
-	/* register functions */
+	/*
+	 * register functions 
+	 */
 	lua_register(L, "md5", f_crypto_md5);
 	lua_register(L, "file_mtime", f_file_mtime);
 	lua_register(L, "file_isreg", f_file_isreg);
@@ -247,7 +297,9 @@ int cache_parse_lua(server *srv, connection *con, plugin_data *p, buffer *fn) {
 	lua_pushcclosure(L, f_memcache_exists, 1);
 	lua_settable(L, LUA_GLOBALSINDEX);
 #endif
-	/* register CGI environment */
+	/*
+	 * register CGI environment 
+	 */
 	lua_pushliteral(L, "request");
 	lua_newtable(L);
 	lua_settable(L, LUA_GLOBALSINDEX);
@@ -256,18 +308,28 @@ int cache_parse_lua(server *srv, connection *con, plugin_data *p, buffer *fn) {
 	header_tbl = lua_gettop(L);
 	lua_gettable(L, LUA_GLOBALSINDEX);
 
-	c_to_lua_push(L, header_tbl, CONST_STR_LEN("REQUEST_URI"), CONST_BUF_LEN(con->request.orig_uri));
-	c_to_lua_push(L, header_tbl, CONST_STR_LEN("SCRIPT_NAME"), CONST_BUF_LEN(con->uri.path));
-	c_to_lua_push(L, header_tbl, CONST_STR_LEN("SCRIPT_FILENAME"), CONST_BUF_LEN(con->physical.path));
-	c_to_lua_push(L, header_tbl, CONST_STR_LEN("DOCUMENT_ROOT"), CONST_BUF_LEN(con->physical.doc_root));
-	if (!buffer_is_empty(con->request.pathinfo)) {
-		c_to_lua_push(L, header_tbl, CONST_STR_LEN("PATH_INFO"), CONST_BUF_LEN(con->request.pathinfo));
+	c_to_lua_push(L, header_tbl, CONST_STR_LEN("REQUEST_URI"),
+				  CONST_BUF_LEN(con->request.orig_uri));
+	c_to_lua_push(L, header_tbl, CONST_STR_LEN("SCRIPT_NAME"),
+				  CONST_BUF_LEN(con->uri.path));
+	c_to_lua_push(L, header_tbl, CONST_STR_LEN("SCRIPT_FILENAME"),
+				  CONST_BUF_LEN(con->physical.path));
+	c_to_lua_push(L, header_tbl, CONST_STR_LEN("DOCUMENT_ROOT"),
+				  CONST_BUF_LEN(con->physical.doc_root));
+	if (!buffer_is_empty(con->request.pathinfo))
+	{
+		c_to_lua_push(L, header_tbl, CONST_STR_LEN("PATH_INFO"),
+					  CONST_BUF_LEN(con->request.pathinfo));
 	}
 
-	c_to_lua_push(L, header_tbl, CONST_STR_LEN("CWD"), CONST_BUF_LEN(p->basedir));
-	c_to_lua_push(L, header_tbl, CONST_STR_LEN("BASEURL"), CONST_BUF_LEN(p->baseurl));
+	c_to_lua_push(L, header_tbl, CONST_STR_LEN("CWD"),
+				  CONST_BUF_LEN(p->basedir));
+	c_to_lua_push(L, header_tbl, CONST_STR_LEN("BASEURL"),
+				  CONST_BUF_LEN(p->baseurl));
 
-	/* register GET parameter */
+	/*
+	 * register GET parameter 
+	 */
 	lua_pushliteral(L, "get");
 	lua_newtable(L);
 	lua_settable(L, LUA_GLOBALSINDEX);
@@ -280,7 +342,9 @@ int cache_parse_lua(server *srv, connection *con, plugin_data *p, buffer *fn) {
 	cache_export_get_params(L, header_tbl, b);
 	buffer_reset(b);
 
-	/* 2 default constants */
+	/*
+	 * 2 default constants 
+	 */
 	lua_pushliteral(L, "CACHE_HIT");
 	lua_pushboolean(L, 0);
 	lua_settable(L, LUA_GLOBALSINDEX);
@@ -289,34 +353,46 @@ int cache_parse_lua(server *srv, connection *con, plugin_data *p, buffer *fn) {
 	lua_pushboolean(L, 1);
 	lua_settable(L, LUA_GLOBALSINDEX);
 
-	/* load lua program */
-	if (lua_load(L, load_file, &rm, fn->ptr) || lua_pcall(L,0,1,0)) {
-		log_error_write(srv, __FILE__, __LINE__, "s",
-				lua_tostring(L,-1));
+	/*
+	 * load lua program 
+	 */
+	if (lua_load(L, load_file, &rm, fn->ptr) || lua_pcall(L, 0, 1, 0))
+	{
+		log_error_write(srv, __FILE__, __LINE__, "s", lua_tostring(L, -1));
 
 		goto error;
 	}
 
-	/* get return value */
-	ret = (int)lua_tonumber(L, -1);
+	/*
+	 * get return value 
+	 */
+	ret = (int) lua_tonumber(L, -1);
 	lua_pop(L, 1);
 
-	/* fetch the data from lua */
+	/*
+	 * fetch the data from lua 
+	 */
 	lua_to_c_get_string(L, "trigger_handler", p->trigger_handler);
 
-	if (0 == lua_to_c_get_string(L, "output_contenttype", b)) {
-		response_header_overwrite(srv, con, CONST_STR_LEN("Content-Type"), CONST_BUF_LEN(b));
+	if (0 == lua_to_c_get_string(L, "output_contenttype", b))
+	{
+		response_header_overwrite(srv, con, CONST_STR_LEN("Content-Type"),
+								  CONST_BUF_LEN(b));
 	}
 
-	if (ret == 0) {
-		/* up to now it is a cache-hit, check if all files exist */
+	if (ret == 0)
+	{
+		/*
+		 * up to now it is a cache-hit, check if all files exist 
+		 */
 
 		int curelem;
 		time_t mtime = 0;
 
-		if (!lua_to_c_is_table(L, "output_include")) {
+		if (!lua_to_c_is_table(L, "output_include"))
+		{
 			log_error_write(srv, __FILE__, __LINE__, "s",
-				"output_include is missing or not a table");
+							"output_include is missing or not a table");
 			ret = -1;
 
 			goto error;
@@ -327,50 +403,68 @@ int cache_parse_lua(server *srv, connection *con, plugin_data *p, buffer *fn) {
 		curelem = lua_gettop(L);
 		lua_gettable(L, LUA_GLOBALSINDEX);
 
-		/* HOW-TO build a etag ?
-		 * as we don't just have one file we have to take the stat()
-		 * from all base files, merge them and build the etag from
-		 * it later.
-		 *
-		 * The mtime of the content is the mtime of the freshest base file
-		 *
-		 * */
+		/*
+		 * HOW-TO build a etag ? as we don't just have one file we have to take 
+		 * the stat() from all base files, merge them and build the etag from
+		 * it later. The mtime of the content is the mtime of the freshest
+		 * base file 
+		 */
 
-		lua_pushnil(L);  /* first key */
-		while (lua_next(L, curelem) != 0) {
+		lua_pushnil(L);			/* first key */
+		while (lua_next(L, curelem) != 0)
+		{
 			stat_cache_entry *sce = NULL;
-			/* key' is at index -2 and value' at index -1 */
+			/*
+			 * key' is at index -2 and value' at index -1 
+			 */
 
-			if (lua_isstring(L, -1)) {
+			if (lua_isstring(L, -1))
+			{
 				const char *s = lua_tostring(L, -1);
 
-				/* the file is relative, make it absolute */
-				if (s[0] != '/') {
+				/*
+				 * the file is relative, make it absolute 
+				 */
+				if (s[0] != '/')
+				{
 					buffer_copy_string_buffer(b, p->basedir);
 					buffer_append_string(b, lua_tostring(L, -1));
-				} else {
+				} else
+				{
 					buffer_copy_string(b, lua_tostring(L, -1));
 				}
 
-				if (HANDLER_ERROR == stat_cache_get_entry(srv, con, b, &sce)) {
-					/* stat failed */
+				if (HANDLER_ERROR == stat_cache_get_entry(srv, con, b, &sce))
+				{
+					/*
+					 * stat failed 
+					 */
 
-					switch(errno) {
+					switch (errno)
+					{
 					case ENOENT:
-						/* a file is missing, call the handler to generate it */
-						if (!buffer_is_empty(p->trigger_handler)) {
-							ret = 1; /* cache-miss */
+						/*
+						 * a file is missing, call the handler to generate it 
+						 */
+						if (!buffer_is_empty(p->trigger_handler))
+						{
+							ret = 1;	/* cache-miss */
 
-							log_error_write(srv, __FILE__, __LINE__, "s",
-									"a file is missing, calling handler");
+							log_error_write(srv, __FILE__,
+											__LINE__, "s",
+											"a file is missing, calling handler");
 
 							break;
-						} else {
-							/* handler not set -> 500 */
+						} else
+						{
+							/*
+							 * handler not set -> 500 
+							 */
 							ret = -1;
 
-							log_error_write(srv, __FILE__, __LINE__, "s",
-									"a file missing and no handler set");
+							log_error_write(srv, __FILE__,
+											__LINE__, "s",
+											"a file missing and no handler set");
 
 							break;
 						}
@@ -378,67 +472,92 @@ int cache_parse_lua(server *srv, connection *con, plugin_data *p, buffer *fn) {
 					default:
 						break;
 					}
-				} else {
-					chunkqueue_append_file(con->write_queue, b, 0, sce->st.st_size);
-					if (sce->st.st_mtime > mtime) mtime = sce->st.st_mtime;
+				} else
+				{
+					chunkqueue_append_file(con->write_queue, b, 0,
+										   sce->st.st_size);
+					if (sce->st.st_mtime > mtime)
+						mtime = sce->st.st_mtime;
 				}
-			} else {
-				/* not a string */
+			} else
+			{
+				/*
+				 * not a string 
+				 */
 				ret = -1;
-				log_error_write(srv, __FILE__, __LINE__, "s",
-						"not a string");
+				log_error_write(srv, __FILE__, __LINE__, "s", "not a string");
 				break;
 			}
 
-			lua_pop(L, 1);  /* removes value'; keeps key' for next iteration */
+			lua_pop(L, 1);		/* removes value'; keeps key' for next
+								 * iteration */
 		}
 
 		lua_settop(L, curelem - 1);
 
-		if (ret == 0) {
+		if (ret == 0)
+		{
 			data_string *ds;
 			char timebuf[sizeof("Sat, 23 Jul 2005 21:20:01 GMT")];
 			buffer tbuf;
 
 			con->file_finished = 1;
 
-			ds = (data_string *)array_get_element(con->response.headers, "Last-Modified");
+			ds = (data_string *) array_get_element(con->response.headers,
+												   "Last-Modified");
 
-			/* no Last-Modified specified */
-			if ((mtime) && (NULL == ds)) {
+			/*
+			 * no Last-Modified specified 
+			 */
+			if ((mtime) && (NULL == ds))
+			{
 
-				strftime(timebuf, sizeof(timebuf), "%a, %d %b %Y %H:%M:%S GMT", gmtime(&mtime));
+				strftime(timebuf, sizeof(timebuf),
+						 "%a, %d %b %Y %H:%M:%S GMT", gmtime(&mtime));
 
-				response_header_overwrite(srv, con, CONST_STR_LEN("Last-Modified"), timebuf, sizeof(timebuf) - 1);
+				response_header_overwrite(srv, con,
+										  CONST_STR_LEN
+										  ("Last-Modified"), timebuf,
+										  sizeof(timebuf) - 1);
 
 
 				tbuf.ptr = timebuf;
 				tbuf.used = sizeof(timebuf);
 				tbuf.size = sizeof(timebuf);
-			} else if (ds) {
+			} else if (ds)
+			{
 				tbuf.ptr = ds->value->ptr;
 				tbuf.used = ds->value->used;
 				tbuf.size = ds->value->size;
-			} else {
+			} else
+			{
 				tbuf.size = 0;
 				tbuf.used = 0;
 				tbuf.ptr = NULL;
 			}
 
-			if (HANDLER_FINISHED == http_response_handle_cachable(srv, con, &tbuf)) {
-				/* ok, the client already has our content,
-				 * no need to send it again */
+			if (HANDLER_FINISHED ==
+				http_response_handle_cachable(srv, con, &tbuf))
+			{
+				/*
+				 * ok, the client already has our content, no need to send it
+				 * again 
+				 */
 
 				chunkqueue_reset(con->write_queue);
-				ret = 0; /* cache-hit */
+				ret = 0;		/* cache-hit */
 			}
-		} else {
+		} else
+		{
 			chunkqueue_reset(con->write_queue);
 		}
 	}
 
-	if (ret == 1 && !buffer_is_empty(p->trigger_handler)) {
-		/* cache-miss */
+	if (ret == 1 && !buffer_is_empty(p->trigger_handler))
+	{
+		/*
+		 * cache-miss 
+		 */
 		buffer_copy_string_buffer(con->uri.path, p->baseurl);
 		buffer_append_string_buffer(con->uri.path, p->trigger_handler);
 
@@ -448,21 +567,25 @@ int cache_parse_lua(server *srv, connection *con, plugin_data *p, buffer *fn) {
 		chunkqueue_reset(con->write_queue);
 	}
 
-error:
+  error:
 	lua_close(L);
 
 	stream_close(&rm.st);
 	buffer_free(b);
 
-	return ret /* cache-error */;
+	return ret /* cache-error */ ;
 }
 #else
-int cache_parse_lua(server *srv, connection *con, plugin_data *p, buffer *fn) {
+int
+cache_parse_lua(server * srv, connection * con, plugin_data * p, buffer * fn)
+{
 	UNUSED(srv);
 	UNUSED(con);
 	UNUSED(p);
 	UNUSED(fn);
-	/* error */
+	/*
+	 * error 
+	 */
 	return -1;
 }
 #endif

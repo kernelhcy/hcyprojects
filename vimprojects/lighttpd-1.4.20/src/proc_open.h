@@ -20,6 +20,7 @@ typedef struct {
 	proc_pid_t child;
 } proc_handler_t;
 
-int proc_close(proc_handler_t *ht);
-int proc_open(proc_handler_t *ht, const char *command);
-int proc_open_buffer(proc_handler_t *ht, const char *command, buffer *in, buffer *out, buffer *err);
+int proc_close(proc_handler_t * ht);
+int proc_open(proc_handler_t * ht, const char *command);
+int proc_open_buffer(proc_handler_t * ht, const char *command,
+					 buffer * in, buffer * out, buffer * err);

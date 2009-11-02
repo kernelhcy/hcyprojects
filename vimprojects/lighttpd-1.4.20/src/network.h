@@ -3,11 +3,11 @@
 
 #include "server.h"
 
-int network_write_chunkqueue(server *srv, connection *con, chunkqueue *c);
+int network_write_chunkqueue(server * srv, connection * con, chunkqueue * c);
 
-int network_init(server *srv);
-int network_close(server *srv);
+int network_init(server * srv);
+int network_close(server * srv);
 
-int network_register_fdevents(server *srv);
+int network_register_fdevents(server * srv);
 
 #endif

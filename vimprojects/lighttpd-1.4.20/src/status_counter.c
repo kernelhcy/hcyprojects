@@ -15,26 +15,38 @@
  *   fastcgi.backend.<key>.disconnects = ...
  */
 
-data_integer *status_counter_get_counter(server *srv, const char *s, size_t len) {
+data_integer *status_counter_get_counter(server * srv, const char *s,
+										 size_t len)
+{
 	data_integer *di;
 
-	if (NULL == (di = (data_integer *)array_get_element(srv->status, s))) {
-		/* not found, create it */
+	if (NULL == (di = (data_integer *) array_get_element(srv->status, s)))
+	{
+		/*
+		 * not found, create it 
+		 */
 
-		if (NULL == (di = (data_integer *)array_get_unused_element(srv->status, TYPE_INTEGER))) {
+		if (NULL ==
+			(di =
+			 (data_integer *) array_get_unused_element(srv->status,
+													   TYPE_INTEGER)))
+		{
 			di = data_integer_init();
 		}
 		buffer_copy_string_len(di->key, s, len);
 		di->value = 0;
 
-		array_insert_unique(srv->status, (data_unset *)di);
+		array_insert_unique(srv->status, (data_unset *) di);
 	}
 	return di;
 }
 
-/* dummies of the statistic framework functions
- * they will be moved to a statistics.c later */
-int status_counter_inc(server *srv, const char *s, size_t len) {
+/*
+ * dummies of the statistic framework functions they will be moved to a
+ * statistics.c later 
+ */
+int status_counter_inc(server * srv, const char *s, size_t len)
+{
 	data_integer *di = status_counter_get_counter(srv, s, len);
 
 	di->value++;
@@ -42,19 +54,21 @@ int status_counter_inc(server *srv, const char *s, size_t len) {
 	return 0;
 }
 
-int status_counter_dec(server *srv, const char *s, size_t len) {
+int status_counter_dec(server * srv, const char *s, size_t len)
+{
 	data_integer *di = status_counter_get_counter(srv, s, len);
 
-	if (di->value > 0) di->value--;
+	if (di->value > 0)
+		di->value--;
 
 	return 0;
 }
 
-int status_counter_set(server *srv, const char *s, size_t len, int val) {
+int status_counter_set(server * srv, const char *s, size_t len, int val)
+{
 	data_integer *di = status_counter_get_counter(srv, s, len);
 
 	di->value = val;
 
 	return 0;
 }
-

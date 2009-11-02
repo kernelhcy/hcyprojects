@@ -9,7 +9,8 @@
 #include <lualib.h>
 #include <lauxlib.h>
 
-script *script_init() {
+script *script_init()
+{
 	script *sc;
 
 	sc = calloc(1, sizeof(*sc));
@@ -19,10 +20,12 @@ script *script_init() {
 	return sc;
 }
 
-void script_free(script *sc) {
-	if (!sc) return;
+void script_free(script * sc)
+{
+	if (!sc)
+		return;
 
-	lua_pop(sc->L, 1); /* the function copy */
+	lua_pop(sc->L, 1);			/* the function copy */
 
 	buffer_free(sc->name);
 	buffer_free(sc->etag);
@@ -32,7 +35,8 @@ void script_free(script *sc) {
 	free(sc);
 }
 
-script_cache *script_cache_init() {
+script_cache *script_cache_init()
+{
 	script_cache *p;
 
 	p = calloc(1, sizeof(*p));
@@ -40,12 +44,15 @@ script_cache *script_cache_init() {
 	return p;
 }
 
-void script_cache_free(script_cache *p) {
+void script_cache_free(script_cache * p)
+{
 	size_t i;
 
-	if (!p) return;
+	if (!p)
+		return;
 
-	for (i = 0; i < p->used; i++) {
+	for (i = 0; i < p->used; i++)
+	{
 		script_free(p->ptr[i]);
 	}
 
@@ -54,34 +61,45 @@ void script_cache_free(script_cache *p) {
 	free(p);
 }
 
-lua_State *script_cache_get_script(server *srv, connection *con, script_cache *cache, buffer *name) {
+lua_State *script_cache_get_script(server * srv, connection * con,
+								   script_cache * cache, buffer * name)
+{
 	size_t i;
 	script *sc = NULL;
 	stat_cache_entry *sce;
 
-	for (i = 0; i < cache->used; i++) {
+	for (i = 0; i < cache->used; i++)
+	{
 		sc = cache->ptr[i];
 
-		if (buffer_is_equal(name, sc->name)) {
+		if (buffer_is_equal(name, sc->name))
+		{
 			sc->last_used = time(NULL);
 
-			/* oops, the script failed last time */
+			/*
+			 * oops, the script failed last time 
+			 */
 
-			if (lua_gettop(sc->L) == 0) break;
+			if (lua_gettop(sc->L) == 0)
+				break;
 
-			if (HANDLER_ERROR == stat_cache_get_entry(srv, con, sc->name, &sce)) {
-				lua_pop(sc->L, 1); /* pop the old function */
+			if (HANDLER_ERROR == stat_cache_get_entry(srv, con, sc->name, &sce))
+			{
+				lua_pop(sc->L, 1);	/* pop the old function */
 				break;
 			}
 
-			if (!buffer_is_equal(sce->etag, sc->etag)) {
-				/* the etag is outdated, reload the function */
+			if (!buffer_is_equal(sce->etag, sc->etag))
+			{
+				/*
+				 * the etag is outdated, reload the function 
+				 */
 				lua_pop(sc->L, 1);
 				break;
 			}
 
 			assert(lua_isfunction(sc->L, -1));
-			lua_pushvalue(sc->L, -1); /* copy the function-reference */
+			lua_pushvalue(sc->L, -1);	/* copy the function-reference */
 
 			return sc->L;
 		}
@@ -89,17 +107,23 @@ lua_State *script_cache_get_script(server *srv, connection *con, script_cache *c
 		sc = NULL;
 	}
 
-	/* if the script was script already loaded but either got changed or
-	 * failed to load last time */
-	if (sc == NULL) {
+	/*
+	 * if the script was script already loaded but either got changed or failed 
+	 * to load last time 
+	 */
+	if (sc == NULL)
+	{
 		sc = script_init();
 
-		if (cache->size == 0) {
+		if (cache->size == 0)
+		{
 			cache->size = 16;
 			cache->ptr = malloc(cache->size * sizeof(*(cache->ptr)));
-		} else if (cache->used == cache->size) {
+		} else if (cache->used == cache->size)
+		{
 			cache->size += 16;
-			cache->ptr = realloc(cache->ptr, cache->size * sizeof(*(cache->ptr)));
+			cache->ptr =
+				realloc(cache->ptr, cache->size * sizeof(*(cache->ptr)));
 		}
 
 		cache->ptr[cache->used++] = sc;
@@ -112,13 +136,17 @@ lua_State *script_cache_get_script(server *srv, connection *con, script_cache *c
 
 	sc->last_used = time(NULL);
 
-	if (0 != luaL_loadfile(sc->L, name->ptr)) {
-		/* oops, an error, return it */
+	if (0 != luaL_loadfile(sc->L, name->ptr))
+	{
+		/*
+		 * oops, an error, return it 
+		 */
 
 		return sc->L;
 	}
 
-	if (HANDLER_GO_ON == stat_cache_get_entry(srv, con, sc->name, &sce)) {
+	if (HANDLER_GO_ON == stat_cache_get_entry(srv, con, sc->name, &sce))
+	{
 		buffer_copy_string_buffer(sc->etag, sce->etag);
 	}
 
@@ -129,7 +157,7 @@ lua_State *script_cache_get_script(server *srv, connection *con, script_cache *c
 	 * duplicate it here
 	 */
 	assert(lua_isfunction(sc->L, -1));
-	lua_pushvalue(sc->L, -1); /* copy the function-reference */
+	lua_pushvalue(sc->L, -1);	/* copy the function-reference */
 
 	return sc->L;
 }

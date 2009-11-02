@@ -17,7 +17,7 @@
 typedef struct {
 	buffer *ext;
 
-	array  *mc_hosts;
+	array *mc_hosts;
 	buffer *mc_namespace;
 #if defined(HAVE_MEMCACHE_H)
 	struct memcache *mc;
@@ -38,6 +38,7 @@ typedef struct {
 	plugin_config conf;
 } plugin_data;
 
-int cache_parse_lua(server *srv, connection *con, plugin_data *p, buffer *fn);
+int cache_parse_lua(server * srv, connection * con, plugin_data * p,
+					buffer * fn);
 
 #endif

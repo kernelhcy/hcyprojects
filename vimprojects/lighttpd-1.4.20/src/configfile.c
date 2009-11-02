@@ -23,92 +23,160 @@
 #include "proc_open.h"
 
 
-static int config_insert(server *srv) {
+static int config_insert(server * srv)
+{
 	size_t i;
 	int ret = 0;
 	buffer *stat_cache_string;
 
 	config_values_t cv[] = {
-		{ "server.bind",                 NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 0 */
-		{ "server.errorlog",             NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 1 */
-		{ "server.errorfile-prefix",     NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 2 */
-		{ "server.chroot",               NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 3 */
-		{ "server.username",             NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 4 */
-		{ "server.groupname",            NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 5 */
-		{ "server.port",                 NULL, T_CONFIG_SHORT,  T_CONFIG_SCOPE_SERVER },      /* 6 */
-		{ "server.tag",                  NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },  /* 7 */
-		{ "server.use-ipv6",             NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 8 */
-		{ "server.modules",              NULL, T_CONFIG_ARRAY, T_CONFIG_SCOPE_SERVER },       /* 9 */
+		{"server.bind", NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER},	/* 0 */
+		{"server.errorlog", NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER},	/* 1 
+																			 */
+		{"server.errorfile-prefix", NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER},	/* 2 
+																					 */
+		{"server.chroot", NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER},	/* 3 
+																			 */
+		{"server.username", NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER},	/* 4 
+																			 */
+		{"server.groupname", NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER},	/* 5 
+																			 */
+		{"server.port", NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER},	/* 6 */
+		{"server.tag", NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION},	/* 7 
+																			 */
+		{"server.use-ipv6", NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION},	/* 8 
+																				 */
+		{"server.modules", NULL, T_CONFIG_ARRAY, T_CONFIG_SCOPE_SERVER},	/* 9 
+																			 */
 
-		{ "server.event-handler",        NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 10 */
-		{ "server.pid-file",             NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 11 */
-		{ "server.max-request-size",     NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_CONNECTION },   /* 12 */
-		{ "server.max-worker",           NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },       /* 13 */
-		{ "server.document-root",        NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },  /* 14 */
-		{ "server.force-lowercase-filenames", NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },   /* 15 */
-		{ "debug.log-condition-handling", NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },    /* 16 */
-		{ "server.max-keep-alive-requests", NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_CONNECTION }, /* 17 */
-		{ "server.name",                 NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },  /* 18 */
-		{ "server.max-keep-alive-idle",  NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_CONNECTION },   /* 19 */
+		{"server.event-handler", NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER},	/* 10 
+																				 */
+		{"server.pid-file", NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER},	/* 11 
+																			 */
+		{"server.max-request-size", NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_CONNECTION},	/* 12 
+																						 */
+		{"server.max-worker", NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER},	/* 13 
+																			 */
+		{"server.document-root", NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION},	/* 14 
+																					 */
+		{"server.force-lowercase-filenames", NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER},	/* 15 
+																								 */
+		{"debug.log-condition-handling", NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER},	/* 16 
+																							 */
+		{"server.max-keep-alive-requests", NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_CONNECTION},	/* 17 
+																								 */
+		{"server.name", NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION},	/* 18 
+																			 */
+		{"server.max-keep-alive-idle", NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_CONNECTION},	/* 19 
+																							 */
 
-		{ "server.max-read-idle",        NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_CONNECTION },   /* 20 */
-		{ "server.max-write-idle",       NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_CONNECTION },   /* 21 */
-		{ "server.error-handler-404",    NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },  /* 22 */
-		{ "server.max-fds",              NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },       /* 23 */
+		{"server.max-read-idle", NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_CONNECTION},	/* 20 
+																					 */
+		{"server.max-write-idle", NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_CONNECTION},	/* 21 
+																					 */
+		{"server.error-handler-404", NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION},	/* 22 
+																						 */
+		{"server.max-fds", NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER},	/* 23 
+																			 */
 #ifdef HAVE_LSTAT
-		{ "server.follow-symlink",       NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 24 */
+		{"server.follow-symlink", NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION},	/* 24 
+																						 */
 #else
-		{ "server.follow-symlink",
-		  "Your system lacks lstat(). We can not differ symlinks from files."
-		  "Please remove server.follow-symlinks from your config.",
-		  T_CONFIG_UNSUPPORTED, T_CONFIG_SCOPE_UNSET }, /* 24 */
+		{"server.follow-symlink",
+		 "Your system lacks lstat(). We can not differ symlinks from files."
+		 "Please remove server.follow-symlinks from your config.",
+		 T_CONFIG_UNSUPPORTED, T_CONFIG_SCOPE_UNSET},	/* 24 */
 #endif
-		{ "server.kbytes-per-second",    NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_CONNECTION },   /* 25 */
-		{ "connection.kbytes-per-second", NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_CONNECTION },  /* 26 */
-		{ "mimetype.use-xattr",          NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 27 */
-		{ "mimetype.assign",             NULL, T_CONFIG_ARRAY, T_CONFIG_SCOPE_CONNECTION },   /* 28 */
-		{ "ssl.pemfile",                 NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 29 */
+		{"server.kbytes-per-second", NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_CONNECTION},	/* 25 
+																						 */
+		{"connection.kbytes-per-second", NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_CONNECTION},	/* 26 
+																							 */
+		{"mimetype.use-xattr", NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION},	/* 27 
+																					 */
+		{"mimetype.assign", NULL, T_CONFIG_ARRAY, T_CONFIG_SCOPE_CONNECTION},	/* 28 
+																				 */
+		{"ssl.pemfile", NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER},	/* 29 */
 
-		{ "ssl.engine",                  NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },     /* 30 */
+		{"ssl.engine", NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER},	/* 30 */
 
-		{ "debug.log-file-not-found",    NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },     /* 31 */
-		{ "debug.log-request-handling",  NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },     /* 32 */
-		{ "debug.log-response-header",   NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },     /* 33 */
-		{ "debug.log-request-header",    NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },     /* 34 */
-		{ "debug.log-ssl-noise",         NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },     /* 35 */
+		{"debug.log-file-not-found", NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER},	/* 31 
+																						 */
+		{"debug.log-request-handling", NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER},	/* 32 
+																						 */
+		{"debug.log-response-header", NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER},	/* 33 
+																						 */
+		{"debug.log-request-header", NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER},	/* 34 
+																						 */
+		{"debug.log-ssl-noise", NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER},	/* 35 
+																				 */
 
-		{ "server.protocol-http11",      NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },     /* 36 */
-		{ "debug.log-request-header-on-error", NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER }, /* 37 */
-		{ "debug.log-state-handling",    NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },     /* 38 */
-		{ "ssl.ca-file",                 NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 39 */
+		{"server.protocol-http11", NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER},	/* 36 
+																					 */
+		{"debug.log-request-header-on-error", NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER},	/* 37 
+																								 */
+		{"debug.log-state-handling", NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER},	/* 38 
+																						 */
+		{"ssl.ca-file", NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER},	/* 39 */
 
-		{ "server.errorlog-use-syslog",  NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },     /* 40 */
-		{ "server.range-requests",       NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 41 */
-		{ "server.stat-cache-engine",    NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },  /* 42 */
-		{ "server.max-connections",      NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER },       /* 43 */
-		{ "server.network-backend",      NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },  /* 44 */
-		{ "server.upload-dirs",          NULL, T_CONFIG_ARRAY, T_CONFIG_SCOPE_CONNECTION },   /* 45 */
-		{ "server.core-files",           NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 46 */
-		{ "ssl.cipher-list",             NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER },      /* 47 */
-		{ "ssl.use-sslv2",               NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 48 */
-		{ "etag.use-inode",             NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER }, /* 49 */
-		{ "etag.use-mtime",             NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER }, /* 50 */
-		{ "etag.use-size",             NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER }, /* 51 */
-		{ "server.host",                 "use server.bind instead", T_CONFIG_DEPRECATED, T_CONFIG_SCOPE_UNSET },
-		{ "server.docroot",              "use server.document-root instead", T_CONFIG_DEPRECATED, T_CONFIG_SCOPE_UNSET },
-		{ "server.virtual-root",         "load mod_simple_vhost and use simple-vhost.server-root instead", T_CONFIG_DEPRECATED, T_CONFIG_SCOPE_UNSET },
-		{ "server.virtual-default-host", "load mod_simple_vhost and use simple-vhost.default-host instead", T_CONFIG_DEPRECATED, T_CONFIG_SCOPE_UNSET },
-		{ "server.virtual-docroot",      "load mod_simple_vhost and use simple-vhost.document-root instead", T_CONFIG_DEPRECATED, T_CONFIG_SCOPE_UNSET },
-		{ "server.userid",               "use server.username instead", T_CONFIG_DEPRECATED, T_CONFIG_SCOPE_UNSET },
-		{ "server.groupid",              "use server.groupname instead", T_CONFIG_DEPRECATED, T_CONFIG_SCOPE_UNSET },
-		{ "server.use-keep-alive",       "use server.max-keep-alive-requests = 0 instead", T_CONFIG_DEPRECATED, T_CONFIG_SCOPE_UNSET },
-		{ "server.force-lower-case-files",       "use server.force-lowercase-filenames instead", T_CONFIG_DEPRECATED, T_CONFIG_SCOPE_UNSET },
+		{"server.errorlog-use-syslog", NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER},	/* 40 
+																						 */
+		{"server.range-requests", NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION},	/* 41 
+																						 */
+		{"server.stat-cache-engine", NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION},	/* 42 
+																						 */
+		{"server.max-connections", NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_SERVER},	/* 43 
+																					 */
+		{"server.network-backend", NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION},	/* 44 
+																						 */
+		{"server.upload-dirs", NULL, T_CONFIG_ARRAY, T_CONFIG_SCOPE_CONNECTION},	/* 45 
+																					 */
+		{"server.core-files", NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION},	/* 46 
+																					 */
+		{"ssl.cipher-list", NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER},	/* 47 
+																			 */
+		{"ssl.use-sslv2", NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION},	/* 48 
+																				 */
+		{"etag.use-inode", NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER},	/* 49 
+																			 */
+		{"etag.use-mtime", NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER},	/* 50 
+																			 */
+		{"etag.use-size", NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER},	/* 51 
+																			 */
+		{"server.host", "use server.bind instead", T_CONFIG_DEPRECATED,
+		 T_CONFIG_SCOPE_UNSET},
+		{"server.docroot", "use server.document-root instead",
+		 T_CONFIG_DEPRECATED, T_CONFIG_SCOPE_UNSET},
+		{"server.virtual-root",
+		 "load mod_simple_vhost and use simple-vhost.server-root instead",
+		 T_CONFIG_DEPRECATED, T_CONFIG_SCOPE_UNSET},
+		{"server.virtual-default-host",
+		 "load mod_simple_vhost and use simple-vhost.default-host instead",
+		 T_CONFIG_DEPRECATED, T_CONFIG_SCOPE_UNSET},
+		{"server.virtual-docroot",
+		 "load mod_simple_vhost and use simple-vhost.document-root instead",
+		 T_CONFIG_DEPRECATED, T_CONFIG_SCOPE_UNSET},
+		{"server.userid", "use server.username instead",
+		 T_CONFIG_DEPRECATED,
+		 T_CONFIG_SCOPE_UNSET},
+		{"server.groupid", "use server.groupname instead",
+		 T_CONFIG_DEPRECATED,
+		 T_CONFIG_SCOPE_UNSET},
+		{"server.use-keep-alive",
+		 "use server.max-keep-alive-requests = 0 instead",
+		 T_CONFIG_DEPRECATED,
+		 T_CONFIG_SCOPE_UNSET},
+		{"server.force-lower-case-files",
+		 "use server.force-lowercase-filenames instead",
+		 T_CONFIG_DEPRECATED,
+		 T_CONFIG_SCOPE_UNSET},
 
-		{ NULL,                          NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET }
+		{NULL, NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET}
 	};
 
 
-	/* 0 */
+	/*
+	 * 0 
+	 */
 	cv[0].destination = srv->srvconf.bindhost;
 	cv[1].destination = srv->srvconf.errorlog_file;
 	cv[3].destination = srv->srvconf.changeroot;
@@ -135,40 +203,42 @@ static int config_insert(server *srv) {
 
 	cv[43].destination = &(srv->srvconf.max_conns);
 	cv[12].destination = &(srv->srvconf.max_request_size);
-	srv->config_storage = calloc(1, srv->config_context->used * sizeof(specific_config *));
+	srv->config_storage =
+		calloc(1, srv->config_context->used * sizeof(specific_config *));
 
 	assert(srv->config_storage);
 
-	for (i = 0; i < srv->config_context->used; i++) {
+	for (i = 0; i < srv->config_context->used; i++)
+	{
 		specific_config *s;
 
 		s = calloc(1, sizeof(specific_config));
 		assert(s);
 		s->document_root = buffer_init();
-		s->mimetypes     = array_init();
-		s->server_name   = buffer_init();
-		s->ssl_pemfile   = buffer_init();
-		s->ssl_ca_file   = buffer_init();
+		s->mimetypes = array_init();
+		s->server_name = buffer_init();
+		s->ssl_pemfile = buffer_init();
+		s->ssl_ca_file = buffer_init();
 		s->error_handler = buffer_init();
-		s->server_tag    = buffer_init();
+		s->server_tag = buffer_init();
 		s->ssl_cipher_list = buffer_init();
 		s->errorfile_prefix = buffer_init();
 		s->max_keep_alive_requests = 16;
 		s->max_keep_alive_idle = 5;
 		s->max_read_idle = 60;
 		s->max_write_idle = 360;
-		s->use_xattr     = 0;
-		s->is_ssl        = 0;
+		s->use_xattr = 0;
+		s->is_ssl = 0;
 		s->ssl_use_sslv2 = 1;
-		s->use_ipv6      = 0;
+		s->use_ipv6 = 0;
 #ifdef HAVE_LSTAT
 		s->follow_symlink = 1;
 #endif
 		s->kbytes_per_second = 0;
-		s->allow_http11  = 1;
+		s->allow_http11 = 1;
 		s->etag_use_inode = 1;
 		s->etag_use_mtime = 1;
-		s->etag_use_size  = 1;
+		s->etag_use_size = 1;
 		s->range_requests = 1;
 		s->force_lowercase_filenames = 0;
 		s->global_kbytes_per_second = 0;
@@ -181,7 +251,9 @@ static int config_insert(server *srv) {
 		cv[8].destination = &(s->use_ipv6);
 
 
-		/* 13 max-worker */
+		/*
+		 * 13 max-worker 
+		 */
 		cv[14].destination = s->document_root;
 		cv[15].destination = &(s->force_lowercase_filenames);
 		cv[16].destination = &(s->log_condition_handling);
@@ -194,7 +266,9 @@ static int config_insert(server *srv) {
 #ifdef HAVE_LSTAT
 		cv[24].destination = &(s->follow_symlink);
 #endif
-		/* 23 -> max-fds */
+		/*
+		 * 23 -> max-fds 
+		 */
 		cv[25].destination = &(s->global_kbytes_per_second);
 		cv[26].destination = &(s->kbytes_per_second);
 		cv[27].destination = &(s->use_xattr);
@@ -220,28 +294,40 @@ static int config_insert(server *srv) {
 
 		srv->config_storage[i] = s;
 
-		if (0 != (ret = config_insert_values_global(srv, ((data_config *)srv->config_context->data[i])->value, cv))) {
+		if (0 !=
+			(ret =
+			 config_insert_values_global(srv,
+										 ((data_config *) srv->
+										  config_context->data[i])->value, cv)))
+		{
 			break;
 		}
 	}
 
-	if (buffer_is_empty(stat_cache_string)) {
+	if (buffer_is_empty(stat_cache_string))
+	{
 		srv->srvconf.stat_cache_engine = STAT_CACHE_ENGINE_SIMPLE;
-	} else if (buffer_is_equal_string(stat_cache_string, CONST_STR_LEN("simple"))) {
+	} else if (buffer_is_equal_string
+			   (stat_cache_string, CONST_STR_LEN("simple")))
+	{
 		srv->srvconf.stat_cache_engine = STAT_CACHE_ENGINE_SIMPLE;
 #ifdef HAVE_FAM_H
-	} else if (buffer_is_equal_string(stat_cache_string, CONST_STR_LEN("fam"))) {
+	} else if (buffer_is_equal_string(stat_cache_string, CONST_STR_LEN("fam")))
+	{
 		srv->srvconf.stat_cache_engine = STAT_CACHE_ENGINE_FAM;
 #endif
-	} else if (buffer_is_equal_string(stat_cache_string, CONST_STR_LEN("disable"))) {
+	} else if (buffer_is_equal_string
+			   (stat_cache_string, CONST_STR_LEN("disable")))
+	{
 		srv->srvconf.stat_cache_engine = STAT_CACHE_ENGINE_NONE;
-	} else {
+	} else
+	{
 		log_error_write(srv, __FILE__, __LINE__, "sb",
-				"server.stat-cache-engine can be one of \"disable\", \"simple\","
+						"server.stat-cache-engine can be one of \"disable\", \"simple\","
 #ifdef HAVE_FAM_H
-				" \"fam\","
+						" \"fam\","
 #endif
-				" but not:", stat_cache_string);
+						" but not:", stat_cache_string);
 		ret = HANDLER_ERROR;
 	}
 
@@ -253,7 +339,8 @@ static int config_insert(server *srv) {
 
 
 #define PATCH(x) con->conf.x = s->x
-int config_setup_connection(server *srv, connection *con) {
+int config_setup_connection(server * srv, connection * con)
+{
 	specific_config *s = srv->config_storage[0];
 
 	PATCH(allow_http11);
@@ -295,103 +382,180 @@ int config_setup_connection(server *srv, connection *con) {
 	PATCH(etag_use_inode);
 	PATCH(etag_use_mtime);
 	PATCH(etag_use_size);
- 
+
 	return 0;
 }
 
-int config_patch_connection(server *srv, connection *con, comp_key_t comp) {
+int config_patch_connection(server * srv, connection * con, comp_key_t comp)
+{
 	size_t i, j;
 
 	con->conditional_is_valid[comp] = 1;
 
-	/* skip the first, the global context */
-	for (i = 1; i < srv->config_context->used; i++) {
-		data_config *dc = (data_config *)srv->config_context->data[i];
+	/*
+	 * skip the first, the global context 
+	 */
+	for (i = 1; i < srv->config_context->used; i++)
+	{
+		data_config *dc = (data_config *) srv->config_context->data[i];
 		specific_config *s = srv->config_storage[i];
 
-		/* condition didn't match */
-		if (!config_check_cond(srv, con, dc)) continue;
+		/*
+		 * condition didn't match 
+		 */
+		if (!config_check_cond(srv, con, dc))
+			continue;
 
-		/* merge config */
-		for (j = 0; j < dc->value->used; j++) {
+		/*
+		 * merge config 
+		 */
+		for (j = 0; j < dc->value->used; j++)
+		{
 			data_unset *du = dc->value->data[j];
 
-			if (buffer_is_equal_string(du->key, CONST_STR_LEN("server.document-root"))) {
+			if (buffer_is_equal_string
+				(du->key, CONST_STR_LEN("server.document-root")))
+			{
 				PATCH(document_root);
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("server.range-requests"))) {
+			} else if (buffer_is_equal_string
+					   (du->key, CONST_STR_LEN("server.range-requests")))
+			{
 				PATCH(range_requests);
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("server.error-handler-404"))) {
+			} else if (buffer_is_equal_string
+					   (du->key, CONST_STR_LEN("server.error-handler-404")))
+			{
 				PATCH(error_handler);
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("server.errorfile-prefix"))) {
+			} else if (buffer_is_equal_string
+					   (du->key, CONST_STR_LEN("server.errorfile-prefix")))
+			{
 				PATCH(errorfile_prefix);
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("mimetype.assign"))) {
+			} else if (buffer_is_equal_string
+					   (du->key, CONST_STR_LEN("mimetype.assign")))
+			{
 				PATCH(mimetypes);
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("server.max-keep-alive-requests"))) {
+			} else if (buffer_is_equal_string
+					   (du->key,
+						CONST_STR_LEN("server.max-keep-alive-requests")))
+			{
 				PATCH(max_keep_alive_requests);
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("server.max-keep-alive-idle"))) {
+			} else if (buffer_is_equal_string
+					   (du->key, CONST_STR_LEN("server.max-keep-alive-idle")))
+			{
 				PATCH(max_keep_alive_idle);
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("server.max-write-idle"))) {
+			} else if (buffer_is_equal_string
+					   (du->key, CONST_STR_LEN("server.max-write-idle")))
+			{
 				PATCH(max_write_idle);
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("server.max-read-idle"))) {
+			} else if (buffer_is_equal_string
+					   (du->key, CONST_STR_LEN("server.max-read-idle")))
+			{
 				PATCH(max_read_idle);
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("mimetype.use-xattr"))) {
+			} else if (buffer_is_equal_string
+					   (du->key, CONST_STR_LEN("mimetype.use-xattr")))
+			{
 				PATCH(use_xattr);
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("etag.use-inode"))) {
+			} else if (buffer_is_equal_string
+					   (du->key, CONST_STR_LEN("etag.use-inode")))
+			{
 				PATCH(etag_use_inode);
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("etag.use-mtime"))) {
+			} else if (buffer_is_equal_string
+					   (du->key, CONST_STR_LEN("etag.use-mtime")))
+			{
 				PATCH(etag_use_mtime);
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("etag.use-size"))) {
+			} else if (buffer_is_equal_string
+					   (du->key, CONST_STR_LEN("etag.use-size")))
+			{
 				PATCH(etag_use_size);
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("ssl.pemfile"))) {
+			} else if (buffer_is_equal_string
+					   (du->key, CONST_STR_LEN("ssl.pemfile")))
+			{
 				PATCH(ssl_pemfile);
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("ssl.ca-file"))) {
+			} else if (buffer_is_equal_string
+					   (du->key, CONST_STR_LEN("ssl.ca-file")))
+			{
 				PATCH(ssl_ca_file);
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("ssl.use-sslv2"))) {
+			} else if (buffer_is_equal_string
+					   (du->key, CONST_STR_LEN("ssl.use-sslv2")))
+			{
 				PATCH(ssl_use_sslv2);
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("ssl.cipher-list"))) {
+			} else if (buffer_is_equal_string
+					   (du->key, CONST_STR_LEN("ssl.cipher-list")))
+			{
 				PATCH(ssl_cipher_list);
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("ssl.engine"))) {
+			} else if (buffer_is_equal_string
+					   (du->key, CONST_STR_LEN("ssl.engine")))
+			{
 				PATCH(is_ssl);
 #ifdef HAVE_LSTAT
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("server.follow-symlink"))) {
+			} else if (buffer_is_equal_string
+					   (du->key, CONST_STR_LEN("server.follow-symlink")))
+			{
 				PATCH(follow_symlink);
 #endif
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("server.name"))) {
+			} else if (buffer_is_equal_string
+					   (du->key, CONST_STR_LEN("server.name")))
+			{
 				buffer_copy_string_buffer(con->server_name, s->server_name);
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("server.tag"))) {
+			} else
+				if (buffer_is_equal_string
+					(du->key, CONST_STR_LEN("server.tag")))
+			{
 				PATCH(server_tag);
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("connection.kbytes-per-second"))) {
+			} else if (buffer_is_equal_string
+					   (du->key, CONST_STR_LEN("connection.kbytes-per-second")))
+			{
 				PATCH(kbytes_per_second);
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("debug.log-request-handling"))) {
+			} else if (buffer_is_equal_string
+					   (du->key, CONST_STR_LEN("debug.log-request-handling")))
+			{
 				PATCH(log_request_handling);
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("debug.log-request-header"))) {
+			} else if (buffer_is_equal_string
+					   (du->key, CONST_STR_LEN("debug.log-request-header")))
+			{
 				PATCH(log_request_header);
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("debug.log-response-header"))) {
+			} else if (buffer_is_equal_string
+					   (du->key, CONST_STR_LEN("debug.log-response-header")))
+			{
 				PATCH(log_response_header);
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("debug.log-condition-handling"))) {
+			} else if (buffer_is_equal_string
+					   (du->key, CONST_STR_LEN("debug.log-condition-handling")))
+			{
 				PATCH(log_condition_handling);
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("debug.log-file-not-found"))) {
+			} else if (buffer_is_equal_string
+					   (du->key, CONST_STR_LEN("debug.log-file-not-found")))
+			{
 				PATCH(log_file_not_found);
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("debug.log-ssl-noise"))) {
+			} else if (buffer_is_equal_string
+					   (du->key, CONST_STR_LEN("debug.log-ssl-noise")))
+			{
 				PATCH(log_ssl_noise);
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("server.protocol-http11"))) {
+			} else if (buffer_is_equal_string
+					   (du->key, CONST_STR_LEN("server.protocol-http11")))
+			{
 				PATCH(allow_http11);
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("server.force-lowercase-filenames"))) {
+			} else if (buffer_is_equal_string
+					   (du->key,
+						CONST_STR_LEN("server.force-lowercase-filenames")))
+			{
 				PATCH(force_lowercase_filenames);
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("server.kbytes-per-second"))) {
+			} else if (buffer_is_equal_string
+					   (du->key, CONST_STR_LEN("server.kbytes-per-second")))
+			{
 				PATCH(global_kbytes_per_second);
 				PATCH(global_bytes_per_second_cnt);
-				con->conf.global_bytes_per_second_cnt_ptr = &s->global_bytes_per_second_cnt;
+				con->conf.global_bytes_per_second_cnt_ptr =
+					&s->global_bytes_per_second_cnt;
 			}
 		}
 	}
 
-		con->etag_flags = (con->conf.etag_use_mtime ? ETAG_USE_MTIME : 0) |
-				  (con->conf.etag_use_inode ? ETAG_USE_INODE : 0) |
-				  (con->conf.etag_use_size  ? ETAG_USE_SIZE  : 0);
+	con->etag_flags = (con->conf.etag_use_mtime ? ETAG_USE_MTIME : 0) |
+		(con->conf.etag_use_inode ? ETAG_USE_INODE : 0) |
+		(con->conf.etag_use_size ? ETAG_USE_SIZE : 0);
 
 	return 0;
 }
+
 #undef PATCH
 
 typedef struct {
@@ -412,19 +576,25 @@ typedef struct {
 } tokenizer_t;
 
 #if 0
-static int tokenizer_open(server *srv, tokenizer_t *t, buffer *basedir, const char *fn) {
+static int
+tokenizer_open(server * srv, tokenizer_t * t, buffer * basedir, const char *fn)
+{
 	if (buffer_is_empty(basedir) ||
-			(fn[0] == '/' || fn[0] == '\\') ||
-			(fn[0] == '.' && (fn[1] == '/' || fn[1] == '\\'))) {
+		(fn[0] == '/' || fn[0] == '\\') ||
+		(fn[0] == '.' && (fn[1] == '/' || fn[1] == '\\')))
+	{
 		t->file = buffer_init_string(fn);
-	} else {
+	} else
+	{
 		t->file = buffer_init_buffer(basedir);
 		buffer_append_string(t->file, fn);
 	}
 
-	if (0 != stream_open(&(t->s), t->file)) {
+	if (0 != stream_open(&(t->s), t->file))
+	{
 		log_error_write(srv, __FILE__, __LINE__, "sbss",
-				"opening configfile ", t->file, "failed:", strerror(errno));
+						"opening configfile ", t->file, "failed:",
+						strerror(errno));
 		buffer_free(t->file);
 		return -1;
 	}
@@ -441,124 +611,149 @@ static int tokenizer_open(server *srv, tokenizer_t *t, buffer *basedir, const ch
 	return 0;
 }
 
-static int tokenizer_close(server *srv, tokenizer_t *t) {
+static int tokenizer_close(server * srv, tokenizer_t * t)
+{
 	UNUSED(srv);
 
 	buffer_free(t->file);
 	return stream_close(&(t->s));
 }
 #endif
-static int config_skip_newline(tokenizer_t *t) {
+static int config_skip_newline(tokenizer_t * t)
+{
 	int skipped = 1;
 	assert(t->input[t->offset] == '\r' || t->input[t->offset] == '\n');
-	if (t->input[t->offset] == '\r' && t->input[t->offset + 1] == '\n') {
-		skipped ++;
-		t->offset ++;
+	if (t->input[t->offset] == '\r' && t->input[t->offset + 1] == '\n')
+	{
+		skipped++;
+		t->offset++;
 	}
-	t->offset ++;
+	t->offset++;
 	return skipped;
 }
 
-static int config_skip_comment(tokenizer_t *t) {
+static int config_skip_comment(tokenizer_t * t)
+{
 	int i;
 	assert(t->input[t->offset] == '#');
 	for (i = 1; t->input[t->offset + i] &&
-	     (t->input[t->offset + i] != '\n' && t->input[t->offset + i] != '\r');
-	     i++);
+		 (t->input[t->offset + i] != '\n'
+		  && t->input[t->offset + i] != '\r'); i++);
 	t->offset += i;
 	return i;
 }
 
-static int config_tokenizer(server *srv, tokenizer_t *t, int *token_id, buffer *token) {
+static int
+config_tokenizer(server * srv, tokenizer_t * t, int *token_id, buffer * token)
+{
 	int tid = 0;
 	size_t i;
 
-	for (tid = 0; tid == 0 && t->offset < t->size && t->input[t->offset] ; ) {
+	for (tid = 0; tid == 0 && t->offset < t->size && t->input[t->offset];)
+	{
 		char c = t->input[t->offset];
 		const char *start = NULL;
 
-		switch (c) {
+		switch (c)
+		{
 		case '=':
-			if (t->in_brace) {
-				if (t->input[t->offset + 1] == '>') {
+			if (t->in_brace)
+			{
+				if (t->input[t->offset + 1] == '>')
+				{
 					t->offset += 2;
 
 					buffer_copy_string_len(token, CONST_STR_LEN("=>"));
 
 					tid = TK_ARRAY_ASSIGN;
-				} else {
-					log_error_write(srv, __FILE__, __LINE__, "sbsdsds",
-							"source:", t->source,
-							"line:", t->line, "pos:", t->line_pos,
-							"use => for assignments in arrays");
+				} else
+				{
+					log_error_write(srv, __FILE__, __LINE__,
+									"sbsdsds", "source:", t->source,
+									"line:", t->line, "pos:",
+									t->line_pos,
+									"use => for assignments in arrays");
 					return -1;
 				}
-			} else if (t->in_cond) {
-				if (t->input[t->offset + 1] == '=') {
+			} else if (t->in_cond)
+			{
+				if (t->input[t->offset + 1] == '=')
+				{
 					t->offset += 2;
 
 					buffer_copy_string_len(token, CONST_STR_LEN("=="));
 
 					tid = TK_EQ;
-				} else if (t->input[t->offset + 1] == '~') {
+				} else if (t->input[t->offset + 1] == '~')
+				{
 					t->offset += 2;
 
 					buffer_copy_string_len(token, CONST_STR_LEN("=~"));
 
 					tid = TK_MATCH;
-				} else {
-					log_error_write(srv, __FILE__, __LINE__, "sbsdsds",
-							"source:", t->source,
-							"line:", t->line, "pos:", t->line_pos,
-							"only =~ and == are allowed in the condition");
+				} else
+				{
+					log_error_write(srv, __FILE__, __LINE__,
+									"sbsdsds", "source:", t->source,
+									"line:", t->line, "pos:",
+									t->line_pos,
+									"only =~ and == are allowed in the condition");
 					return -1;
 				}
 				t->in_key = 1;
 				t->in_cond = 0;
-			} else if (t->in_key) {
+			} else if (t->in_key)
+			{
 				tid = TK_ASSIGN;
 
 				buffer_copy_string_len(token, t->input + t->offset, 1);
 
 				t->offset++;
 				t->line_pos++;
-			} else {
+			} else
+			{
 				log_error_write(srv, __FILE__, __LINE__, "sbsdsds",
-						"source:", t->source,
-						"line:", t->line, "pos:", t->line_pos,
-						"unexpected equal-sign: =");
+								"source:", t->source,
+								"line:", t->line, "pos:", t->line_pos,
+								"unexpected equal-sign: =");
 				return -1;
 			}
 
 			break;
 		case '!':
-			if (t->in_cond) {
-				if (t->input[t->offset + 1] == '=') {
+			if (t->in_cond)
+			{
+				if (t->input[t->offset + 1] == '=')
+				{
 					t->offset += 2;
 
 					buffer_copy_string_len(token, CONST_STR_LEN("!="));
 
 					tid = TK_NE;
-				} else if (t->input[t->offset + 1] == '~') {
+				} else if (t->input[t->offset + 1] == '~')
+				{
 					t->offset += 2;
 
 					buffer_copy_string_len(token, CONST_STR_LEN("!~"));
 
 					tid = TK_NOMATCH;
-				} else {
-					log_error_write(srv, __FILE__, __LINE__, "sbsdsds",
-							"source:", t->source,
-							"line:", t->line, "pos:", t->line_pos,
-							"only !~ and != are allowed in the condition");
+				} else
+				{
+					log_error_write(srv, __FILE__, __LINE__,
+									"sbsdsds", "source:", t->source,
+									"line:", t->line, "pos:",
+									t->line_pos,
+									"only !~ and != are allowed in the condition");
 					return -1;
 				}
 				t->in_key = 1;
 				t->in_cond = 0;
-			} else {
+			} else
+			{
 				log_error_write(srv, __FILE__, __LINE__, "sbsdsds",
-						"source:", t->source,
-						"line:", t->line, "pos:", t->line_pos,
-						"unexpected exclamation-marks: !");
+								"source:", t->source,
+								"line:", t->line, "pos:", t->line_pos,
+								"unexpected exclamation-marks: !");
 				return -1;
 			}
 
@@ -570,10 +765,13 @@ static int config_tokenizer(server *srv, tokenizer_t *t, int *token_id, buffer *
 			break;
 		case '\n':
 		case '\r':
-			if (t->in_brace == 0) {
+			if (t->in_brace == 0)
+			{
 				int done = 0;
-				while (!done && t->offset < t->size) {
-					switch (t->input[t->offset]) {
+				while (!done && t->offset < t->size)
+				{
+					switch (t->input[t->offset])
+					{
 					case '\r':
 					case '\n':
 						config_skip_newline(t);
@@ -598,14 +796,16 @@ static int config_tokenizer(server *srv, tokenizer_t *t, int *token_id, buffer *
 				t->in_key = 1;
 				tid = TK_EOL;
 				buffer_copy_string_len(token, CONST_STR_LEN("(EOL)"));
-			} else {
+			} else
+			{
 				config_skip_newline(t);
 				t->line_pos = 1;
 				t->line++;
 			}
 			break;
 		case ',':
-			if (t->in_brace > 0) {
+			if (t->in_brace > 0)
+			{
 				tid = TK_COMMA;
 
 				buffer_copy_string_len(token, CONST_STR_LEN("(COMMA)"));
@@ -615,40 +815,52 @@ static int config_tokenizer(server *srv, tokenizer_t *t, int *token_id, buffer *
 			t->line_pos++;
 			break;
 		case '"':
-			/* search for the terminating " */
+			/*
+			 * search for the terminating " 
+			 */
 			start = t->input + t->offset + 1;
 			buffer_copy_string_len(token, CONST_STR_LEN(""));
 
-			for (i = 1; t->input[t->offset + i]; i++) {
+			for (i = 1; t->input[t->offset + i]; i++)
+			{
 				if (t->input[t->offset + i] == '\\' &&
-				    t->input[t->offset + i + 1] == '"') {
+					t->input[t->offset + i + 1] == '"')
+				{
 
-					buffer_append_string_len(token, start, t->input + t->offset + i - start);
+					buffer_append_string_len(token, start,
+											 t->input + t->offset + i - start);
 
 					start = t->input + t->offset + i + 1;
 
-					/* skip the " */
+					/*
+					 * skip the " 
+					 */
 					i++;
 					continue;
 				}
 
 
-				if (t->input[t->offset + i] == '"') {
+				if (t->input[t->offset + i] == '"')
+				{
 					tid = TK_STRING;
 
-					buffer_append_string_len(token, start, t->input + t->offset + i - start);
+					buffer_append_string_len(token, start,
+											 t->input + t->offset + i - start);
 
 					break;
 				}
 			}
 
-			if (t->input[t->offset + i] == '\0') {
-				/* ERROR */
+			if (t->input[t->offset + i] == '\0')
+			{
+				/*
+				 * ERROR 
+				 */
 
 				log_error_write(srv, __FILE__, __LINE__, "sbsdsds",
-						"source:", t->source,
-						"line:", t->line, "pos:", t->line_pos,
-						"missing closing quote");
+								"source:", t->source,
+								"line:", t->line, "pos:", t->line_pos,
+								"missing closing quote");
 
 				return -1;
 			}
@@ -685,11 +897,13 @@ static int config_tokenizer(server *srv, tokenizer_t *t, int *token_id, buffer *
 			break;
 
 		case '+':
-			if (t->input[t->offset + 1] == '=') {
+			if (t->input[t->offset + 1] == '=')
+			{
 				t->offset += 2;
 				buffer_copy_string_len(token, CONST_STR_LEN("+="));
 				tid = TK_APPEND;
-			} else {
+			} else
+			{
 				t->offset++;
 				tid = TK_PLUS;
 				buffer_copy_string_len(token, CONST_STR_LEN("+"));
@@ -736,31 +950,43 @@ static int config_tokenizer(server *srv, tokenizer_t *t, int *token_id, buffer *
 
 			break;
 		default:
-			if (t->in_cond) {
+			if (t->in_cond)
+			{
 				for (i = 0; t->input[t->offset + i] &&
-				     (isalpha((unsigned char)t->input[t->offset + i])
-				      ); i++);
+					 (isalpha((unsigned char) t->input[t->offset + i])); i++);
 
-				if (i && t->input[t->offset + i]) {
+				if (i && t->input[t->offset + i])
+				{
 					tid = TK_SRVVARNAME;
 					buffer_copy_string_len(token, t->input + t->offset, i);
 
 					t->offset += i;
 					t->line_pos += i;
-				} else {
-					/* ERROR */
-					log_error_write(srv, __FILE__, __LINE__, "sbsdsds",
-							"source:", t->source,
-							"line:", t->line, "pos:", t->line_pos,
-							"invalid character in condition");
+				} else
+				{
+					/*
+					 * ERROR 
+					 */
+					log_error_write(srv, __FILE__, __LINE__,
+									"sbsdsds", "source:", t->source,
+									"line:", t->line, "pos:",
+									t->line_pos,
+									"invalid character in condition");
 					return -1;
 				}
-			} else if (isdigit((unsigned char)c)) {
-				/* take all digits */
-				for (i = 0; t->input[t->offset + i] && isdigit((unsigned char)t->input[t->offset + i]);  i++);
+			} else if (isdigit((unsigned char) c))
+			{
+				/*
+				 * take all digits 
+				 */
+				for (i = 0; t->input[t->offset + i]
+					 && isdigit((unsigned char) t->input[t->offset + i]); i++);
 
-				/* was there it least a digit ? */
-				if (i) {
+				/*
+				 * was there it least a digit ? 
+				 */
+				if (i)
+				{
 					tid = TK_INTEGER;
 
 					buffer_copy_string_len(token, t->input + t->offset, i);
@@ -768,38 +994,52 @@ static int config_tokenizer(server *srv, tokenizer_t *t, int *token_id, buffer *
 					t->offset += i;
 					t->line_pos += i;
 				}
-			} else {
-				/* the key might consist of [-.0-9a-z] */
-				for (i = 0; t->input[t->offset + i] &&
-				     (isalnum((unsigned char)t->input[t->offset + i]) ||
-				      t->input[t->offset + i] == '.' ||
-				      t->input[t->offset + i] == '_' || /* for env.* */
-				      t->input[t->offset + i] == '-'
-				      ); i++);
+			} else
+			{
+				/*
+				 * the key might consist of [-.0-9a-z] 
+				 */
+				for (i = 0; t->input[t->offset + i] && (isalnum((unsigned char) t->input[t->offset + i]) || t->input[t->offset + i] == '.' || t->input[t->offset + i] == '_' ||	/* for 
+																																												 * env.* 
+																																												 */
+														t->input[t->
+																 offset
+																 + i] ==
+														'-'); i++);
 
-				if (i && t->input[t->offset + i]) {
+				if (i && t->input[t->offset + i])
+				{
 					buffer_copy_string_len(token, t->input + t->offset, i);
 
-					if (strcmp(token->ptr, "include") == 0) {
+					if (strcmp(token->ptr, "include") == 0)
+					{
 						tid = TK_INCLUDE;
-					} else if (strcmp(token->ptr, "include_shell") == 0) {
+					} else if (strcmp(token->ptr, "include_shell") == 0)
+					{
 						tid = TK_INCLUDE_SHELL;
-					} else if (strcmp(token->ptr, "global") == 0) {
+					} else if (strcmp(token->ptr, "global") == 0)
+					{
 						tid = TK_GLOBAL;
-					} else if (strcmp(token->ptr, "else") == 0) {
+					} else if (strcmp(token->ptr, "else") == 0)
+					{
 						tid = TK_ELSE;
-					} else {
+					} else
+					{
 						tid = TK_LKEY;
 					}
 
 					t->offset += i;
 					t->line_pos += i;
-				} else {
-					/* ERROR */
-					log_error_write(srv, __FILE__, __LINE__, "sbsdsds",
-							"source:", t->source,
-							"line:", t->line, "pos:", t->line_pos,
-							"invalid character in variable name");
+				} else
+				{
+					/*
+					 * ERROR 
+					 */
+					log_error_write(srv, __FILE__, __LINE__,
+									"sbsdsds", "source:", t->source,
+									"line:", t->line, "pos:",
+									t->line_pos,
+									"invalid character in variable name");
 					return -1;
 				}
 			}
@@ -807,34 +1047,37 @@ static int config_tokenizer(server *srv, tokenizer_t *t, int *token_id, buffer *
 		}
 	}
 
-	if (tid) {
+	if (tid)
+	{
 		*token_id = tid;
 #if 0
 		log_error_write(srv, __FILE__, __LINE__, "sbsdsdbdd",
-				"source:", t->source,
-				"line:", t->line, "pos:", t->line_pos,
-				token, token->used - 1, tid);
+						"source:", t->source,
+						"line:", t->line, "pos:", t->line_pos,
+						token, token->used - 1, tid);
 #endif
 
 		return 1;
-	} else if (t->offset < t->size) {
-		fprintf(stderr, "%s.%d: %d, %s\n",
-			__FILE__, __LINE__,
-			tid, token->ptr);
+	} else if (t->offset < t->size)
+	{
+		fprintf(stderr, "%s.%d: %d, %s\n", __FILE__, __LINE__, tid, token->ptr);
 	}
 	return 0;
 }
 
-static int config_parse(server *srv, config_t *context, tokenizer_t *t) {
+static int config_parse(server * srv, config_t * context, tokenizer_t * t)
+{
 	void *pParser;
 	int token_id;
 	buffer *token, *lasttoken;
 	int ret;
 
-	pParser = configparserAlloc( malloc );
+	pParser = configparserAlloc(malloc);
 	lasttoken = buffer_init();
 	token = buffer_init();
-	while((1 == (ret = config_tokenizer(srv, t, &token_id, token))) && context->ok) {
+	while ((1 == (ret = config_tokenizer(srv, t, &token_id, token)))
+		   && context->ok)
+	{
 		buffer_copy_string_buffer(lasttoken, token);
 		configparser(pParser, token_id, token, context);
 
@@ -842,23 +1085,29 @@ static int config_parse(server *srv, config_t *context, tokenizer_t *t) {
 	}
 	buffer_free(token);
 
-	if (ret != -1 && context->ok) {
-		/* add an EOL at EOF, better than say sorry */
+	if (ret != -1 && context->ok)
+	{
+		/*
+		 * add an EOL at EOF, better than say sorry 
+		 */
 		configparser(pParser, TK_EOL, buffer_init_string("(EOL)"), context);
-		if (context->ok) {
+		if (context->ok)
+		{
 			configparser(pParser, 0, NULL, context);
 		}
 	}
 	configparserFree(pParser, free);
 
-	if (ret == -1) {
+	if (ret == -1)
+	{
 		log_error_write(srv, __FILE__, __LINE__, "sb",
-				"configfile parser failed at:", lasttoken);
-	} else if (context->ok == 0) {
+						"configfile parser failed at:", lasttoken);
+	} else if (context->ok == 0)
+	{
 		log_error_write(srv, __FILE__, __LINE__, "sbsdsdsb",
-				"source:", t->source,
-				"line:", t->line, "pos:", t->line_pos,
-				"parser failed somehow near here:", lasttoken);
+						"source:", t->source,
+						"line:", t->line, "pos:", t->line_pos,
+						"parser failed somehow near here:", lasttoken);
 		ret = -1;
 	}
 	buffer_free(lasttoken);
@@ -866,7 +1115,10 @@ static int config_parse(server *srv, config_t *context, tokenizer_t *t) {
 	return ret == -1 ? -1 : 0;
 }
 
-static int tokenizer_init(tokenizer_t *t, const buffer *source, const char *input, size_t size) {
+static int
+tokenizer_init(tokenizer_t * t, const buffer * source, const char *input,
+			   size_t size)
+{
 
 	t->source = source;
 	t->input = input;
@@ -881,31 +1133,41 @@ static int tokenizer_init(tokenizer_t *t, const buffer *source, const char *inpu
 	return 0;
 }
 
-int config_parse_file(server *srv, config_t *context, const char *fn) {
+int config_parse_file(server * srv, config_t * context, const char *fn)
+{
 	tokenizer_t t;
 	stream s;
 	int ret;
 	buffer *filename;
 
 	if (buffer_is_empty(context->basedir) ||
-			(fn[0] == '/' || fn[0] == '\\') ||
-			(fn[0] == '.' && (fn[1] == '/' || fn[1] == '\\'))) {
+		(fn[0] == '/' || fn[0] == '\\') ||
+		(fn[0] == '.' && (fn[1] == '/' || fn[1] == '\\')))
+	{
 		filename = buffer_init_string(fn);
-	} else {
+	} else
+	{
 		filename = buffer_init_buffer(context->basedir);
 		buffer_append_string(filename, fn);
 	}
 
-	if (0 != stream_open(&s, filename)) {
-		if (s.size == 0) {
-			/* the file was empty, nothing to parse */
+	if (0 != stream_open(&s, filename))
+	{
+		if (s.size == 0)
+		{
+			/*
+			 * the file was empty, nothing to parse 
+			 */
 			ret = 0;
-		} else {
+		} else
+		{
 			log_error_write(srv, __FILE__, __LINE__, "sbss",
-					"opening configfile ", filename, "failed:", strerror(errno));
+							"opening configfile ", filename, "failed:",
+							strerror(errno));
 			ret = -1;
-		} 
-	} else {
+		}
+	} else
+	{
 		tokenizer_init(&t, filename, s.start, s.size);
 		ret = config_parse(srv, context, &t);
 	}
@@ -915,7 +1177,8 @@ int config_parse_file(server *srv, config_t *context, const char *fn) {
 	return ret;
 }
 
-static char* getCWD() {
+static char *getCWD()
+{
 	char *s, *s1;
 	size_t len;
 #ifdef PATH_MAX
@@ -925,12 +1188,16 @@ static char* getCWD() {
 #endif
 
 	s = malloc(len);
-	if (!s) return NULL;
-	while (NULL == getcwd(s, len)) {
-		if (errno != ERANGE || SSIZE_MAX - len < len) return NULL;
+	if (!s)
+		return NULL;
+	while (NULL == getcwd(s, len))
+	{
+		if (errno != ERANGE || SSIZE_MAX - len < len)
+			return NULL;
 		len *= 2;
 		s1 = realloc(s, len);
-		if (!s1) {
+		if (!s1)
+		{
 			free(s);
 			return NULL;
 		}
@@ -939,7 +1206,8 @@ static char* getCWD() {
 	return s;
 }
 
-int config_parse_cmd(server *srv, config_t *context, const char *cmd) {
+int config_parse_cmd(server * srv, config_t * context, const char *cmd)
+{
 	proc_handler_t proc;
 	tokenizer_t t;
 	int ret;
@@ -947,24 +1215,28 @@ int config_parse_cmd(server *srv, config_t *context, const char *cmd) {
 	buffer *out;
 	char *oldpwd;
 
-	if (NULL == (oldpwd = getCWD())) {
+	if (NULL == (oldpwd = getCWD()))
+	{
 		log_error_write(srv, __FILE__, __LINE__, "s",
-				"cannot get cwd", strerror(errno));
+						"cannot get cwd", strerror(errno));
 		return -1;
 	}
 
 	source = buffer_init_string(cmd);
 	out = buffer_init();
 
-	if (!buffer_is_empty(context->basedir)) {
+	if (!buffer_is_empty(context->basedir))
+	{
 		chdir(context->basedir->ptr);
 	}
 
-	if (0 != proc_open_buffer(&proc, cmd, NULL, out, NULL)) {
+	if (0 != proc_open_buffer(&proc, cmd, NULL, out, NULL))
+	{
 		log_error_write(srv, __FILE__, __LINE__, "sbss",
-				"opening", source, "failed:", strerror(errno));
+						"opening", source, "failed:", strerror(errno));
 		ret = -1;
-	} else {
+	} else
+	{
 		tokenizer_init(&t, source, out->ptr, out->used);
 		ret = config_parse(srv, context, &t);
 	}
@@ -976,7 +1248,8 @@ int config_parse_cmd(server *srv, config_t *context, const char *cmd) {
 	return ret;
 }
 
-static void context_init(server *srv, config_t *context) {
+static void context_init(server * srv, config_t * context)
+{
 	context->srv = srv;
 	context->ok = 1;
 	context->configs_stack = array_init();
@@ -984,12 +1257,14 @@ static void context_init(server *srv, config_t *context) {
 	context->basedir = buffer_init();
 }
 
-static void context_free(config_t *context) {
+static void context_free(config_t * context)
+{
 	array_free(context->configs_stack);
 	buffer_free(context->basedir);
 }
 
-int config_read(server *srv, const char *fn) {
+int config_read(server * srv, const char *fn)
+{
 	config_t context;
 	data_config *dc;
 	data_integer *dpid;
@@ -1003,12 +1278,13 @@ int config_read(server *srv, const char *fn) {
 
 	pos = strrchr(fn,
 #ifdef __WIN32
-			'\\'
+				  '\\'
 #else
-			'/'
+				  '/'
 #endif
-			);
-	if (pos) {
+		);
+	if (pos)
+	{
 		buffer_copy_string_len(context.basedir, fn, pos - fn + 1);
 		fn = pos + 1;
 	}
@@ -1018,163 +1294,204 @@ int config_read(server *srv, const char *fn) {
 
 	assert(context.all_configs->used == 0);
 	dc->context_ndx = context.all_configs->used;
-	array_insert_unique(context.all_configs, (data_unset *)dc);
+	array_insert_unique(context.all_configs, (data_unset *) dc);
 	context.current = dc;
 
-	/* default context */
+	/*
+	 * default context 
+	 */
 	srv->config = dc->value;
 	dpid = data_integer_init();
 	dpid->value = getpid();
 	buffer_copy_string_len(dpid->key, CONST_STR_LEN("var.PID"));
-	array_insert_unique(srv->config, (data_unset *)dpid);
+	array_insert_unique(srv->config, (data_unset *) dpid);
 
 	dcwd = data_string_init();
 	buffer_prepare_copy(dcwd->value, 1024);
-	if (NULL != getcwd(dcwd->value->ptr, dcwd->value->size - 1)) {
+	if (NULL != getcwd(dcwd->value->ptr, dcwd->value->size - 1))
+	{
 		dcwd->value->used = strlen(dcwd->value->ptr) + 1;
 		buffer_copy_string_len(dcwd->key, CONST_STR_LEN("var.CWD"));
-		array_insert_unique(srv->config, (data_unset *)dcwd);
+		array_insert_unique(srv->config, (data_unset *) dcwd);
 	}
 
 	ret = config_parse_file(srv, &context, fn);
 
-	/* remains nothing if parser is ok */
+	/*
+	 * remains nothing if parser is ok 
+	 */
 	assert(!(0 == ret && context.ok && 0 != context.configs_stack->used));
 	context_free(&context);
 
-	if (0 != ret) {
+	if (0 != ret)
+	{
 		return ret;
 	}
 
-	if (NULL != (dc = (data_config *)array_get_element(srv->config_context, "global"))) {
+	if (NULL !=
+		(dc = (data_config *) array_get_element(srv->config_context, "global")))
+	{
 		srv->config = dc->value;
-	} else {
+	} else
+	{
 		return -1;
 	}
 
-	if (NULL != (modules = (data_array *)array_get_element(srv->config, "server.modules"))) {
+	if (NULL !=
+		(modules =
+		 (data_array *) array_get_element(srv->config, "server.modules")))
+	{
 		data_string *ds;
 		data_array *prepends;
 
-		if (modules->type != TYPE_ARRAY) {
+		if (modules->type != TYPE_ARRAY)
+		{
 			fprintf(stderr, "server.modules must be an array");
 			return -1;
 		}
 
 		prepends = data_array_init();
 
-		/* prepend default modules */
-		if (NULL == array_get_element(modules->value, "mod_indexfile")) {
+		/*
+		 * prepend default modules 
+		 */
+		if (NULL == array_get_element(modules->value, "mod_indexfile"))
+		{
 			ds = data_string_init();
 			buffer_copy_string_len(ds->value, CONST_STR_LEN("mod_indexfile"));
-			array_insert_unique(prepends->value, (data_unset *)ds);
+			array_insert_unique(prepends->value, (data_unset *) ds);
 		}
 
-		prepends = (data_array *)configparser_merge_data((data_unset *)prepends, (data_unset *)modules);
+		prepends =
+			(data_array *) configparser_merge_data((data_unset *) prepends,
+												   (data_unset *) modules);
 		buffer_copy_string_buffer(prepends->key, modules->key);
-		array_replace(srv->config, (data_unset *)prepends);
-		modules->free((data_unset *)modules);
+		array_replace(srv->config, (data_unset *) prepends);
+		modules->free((data_unset *) modules);
 		modules = prepends;
 
-		/* append default modules */
-		if (NULL == array_get_element(modules->value, "mod_dirlisting")) {
+		/*
+		 * append default modules 
+		 */
+		if (NULL == array_get_element(modules->value, "mod_dirlisting"))
+		{
 			ds = data_string_init();
 			buffer_copy_string_len(ds->value, CONST_STR_LEN("mod_dirlisting"));
-			array_insert_unique(modules->value, (data_unset *)ds);
+			array_insert_unique(modules->value, (data_unset *) ds);
 		}
 
-		if (NULL == array_get_element(modules->value, "mod_staticfile")) {
+		if (NULL == array_get_element(modules->value, "mod_staticfile"))
+		{
 			ds = data_string_init();
 			buffer_copy_string_len(ds->value, CONST_STR_LEN("mod_staticfile"));
-			array_insert_unique(modules->value, (data_unset *)ds);
+			array_insert_unique(modules->value, (data_unset *) ds);
 		}
-	} else {
+	} else
+	{
 		data_string *ds;
 
 		modules = data_array_init();
 
-		/* server.modules is not set */
+		/*
+		 * server.modules is not set 
+		 */
 		ds = data_string_init();
 		buffer_copy_string_len(ds->value, CONST_STR_LEN("mod_indexfile"));
-		array_insert_unique(modules->value, (data_unset *)ds);
+		array_insert_unique(modules->value, (data_unset *) ds);
 
 		ds = data_string_init();
 		buffer_copy_string_len(ds->value, CONST_STR_LEN("mod_dirlisting"));
-		array_insert_unique(modules->value, (data_unset *)ds);
+		array_insert_unique(modules->value, (data_unset *) ds);
 
 		ds = data_string_init();
 		buffer_copy_string_len(ds->value, CONST_STR_LEN("mod_staticfile"));
-		array_insert_unique(modules->value, (data_unset *)ds);
+		array_insert_unique(modules->value, (data_unset *) ds);
 
 		buffer_copy_string_len(modules->key, CONST_STR_LEN("server.modules"));
-		array_insert_unique(srv->config, (data_unset *)modules);
+		array_insert_unique(srv->config, (data_unset *) modules);
 	}
 
 
-	if (0 != config_insert(srv)) {
+	if (0 != config_insert(srv))
+	{
 		return -1;
 	}
 
 	return 0;
 }
 
-int config_set_defaults(server *srv) {
+int config_set_defaults(server * srv)
+{
 	size_t i;
 	specific_config *s = srv->config_storage[0];
 	struct stat st1, st2;
 
-	struct ev_map { fdevent_handler_t et; const char *name; } event_handlers[] =
+	struct ev_map {
+		fdevent_handler_t et;
+		const char *name;
+	} event_handlers[] =
 	{
-		/* - poll is most reliable
-		 * - select works everywhere
-		 * - linux-* are experimental
+		/*
+		 * - poll is most reliable - select works everywhere - linux-* are
+		 * experimental 
 		 */
 #ifdef USE_POLL
-		{ FDEVENT_HANDLER_POLL,           "poll" },
+		{
+		FDEVENT_HANDLER_POLL, "poll"},
 #endif
 #ifdef USE_SELECT
-		{ FDEVENT_HANDLER_SELECT,         "select" },
+		{
+		FDEVENT_HANDLER_SELECT, "select"},
 #endif
 #ifdef USE_LINUX_EPOLL
-		{ FDEVENT_HANDLER_LINUX_SYSEPOLL, "linux-sysepoll" },
+		{
+		FDEVENT_HANDLER_LINUX_SYSEPOLL, "linux-sysepoll"},
 #endif
 #ifdef USE_LINUX_SIGIO
-		{ FDEVENT_HANDLER_LINUX_RTSIG,    "linux-rtsig" },
+		{
+		FDEVENT_HANDLER_LINUX_RTSIG, "linux-rtsig"},
 #endif
 #ifdef USE_SOLARIS_DEVPOLL
-		{ FDEVENT_HANDLER_SOLARIS_DEVPOLL,"solaris-devpoll" },
+		{
+		FDEVENT_HANDLER_SOLARIS_DEVPOLL, "solaris-devpoll"},
 #endif
 #ifdef USE_FREEBSD_KQUEUE
-		{ FDEVENT_HANDLER_FREEBSD_KQUEUE, "freebsd-kqueue" },
-		{ FDEVENT_HANDLER_FREEBSD_KQUEUE, "kqueue" },
+		{
+		FDEVENT_HANDLER_FREEBSD_KQUEUE, "freebsd-kqueue"},
+		{
+		FDEVENT_HANDLER_FREEBSD_KQUEUE, "kqueue"},
 #endif
-		{ FDEVENT_HANDLER_UNSET,          NULL }
+		{
+		FDEVENT_HANDLER_UNSET, NULL}
 	};
 
 
-	if (buffer_is_empty(s->document_root)) {
+	if (buffer_is_empty(s->document_root))
+	{
 		log_error_write(srv, __FILE__, __LINE__, "s",
-				"a default document-root has to be set");
+						"a default document-root has to be set");
 
 		return -1;
 	}
 
-	if (buffer_is_empty(srv->srvconf.changeroot)) {
-		if (-1 == stat(s->document_root->ptr, &st1)) {
+	if (buffer_is_empty(srv->srvconf.changeroot))
+	{
+		if (-1 == stat(s->document_root->ptr, &st1))
+		{
 			log_error_write(srv, __FILE__, __LINE__, "sb",
-					"base-docroot doesn't exist:",
-					s->document_root);
+							"base-docroot doesn't exist:", s->document_root);
 			return -1;
 		}
 
-	} else {
+	} else
+	{
 		buffer_copy_string_buffer(srv->tmp_buf, srv->srvconf.changeroot);
 		buffer_append_string_buffer(srv->tmp_buf, s->document_root);
 
-		if (-1 == stat(srv->tmp_buf->ptr, &st1)) {
+		if (-1 == stat(srv->tmp_buf->ptr, &st1))
+		{
 			log_error_write(srv, __FILE__, __LINE__, "sb",
-					"base-docroot doesn't exist:",
-					srv->tmp_buf);
+							"base-docroot doesn't exist:", srv->tmp_buf);
 			return -1;
 		}
 
@@ -1184,90 +1501,116 @@ int config_set_defaults(server *srv) {
 
 	buffer_to_lower(srv->tmp_buf);
 
-	if (0 == stat(srv->tmp_buf->ptr, &st1)) {
+	if (0 == stat(srv->tmp_buf->ptr, &st1))
+	{
 		int is_lower = 0;
 
 		is_lower = buffer_is_equal(srv->tmp_buf, s->document_root);
 
-		/* lower-case existed, check upper-case */
+		/*
+		 * lower-case existed, check upper-case 
+		 */
 		buffer_copy_string_buffer(srv->tmp_buf, s->document_root);
 
 		buffer_to_upper(srv->tmp_buf);
 
-		/* we have to handle the special case that upper and lower-casing results in the same filename
-		 * as in server.document-root = "/" or "/12345/" */
+		/*
+		 * we have to handle the special case that upper and lower-casing
+		 * results in the same filename as in server.document-root = "/" or
+		 * "/12345/" 
+		 */
 
-		if (is_lower && buffer_is_equal(srv->tmp_buf, s->document_root)) {
-			/* lower-casing and upper-casing didn't result in
-			 * an other filename, no need to stat(),
-			 * just assume it is case-sensitive. */
+		if (is_lower && buffer_is_equal(srv->tmp_buf, s->document_root))
+		{
+			/*
+			 * lower-casing and upper-casing didn't result in an other
+			 * filename, no need to stat(), just assume it is case-sensitive. 
+			 */
 
 			s->force_lowercase_filenames = 0;
-		} else if (0 == stat(srv->tmp_buf->ptr, &st2)) {
+		} else if (0 == stat(srv->tmp_buf->ptr, &st2))
+		{
 
-			/* upper case exists too, doesn't the FS handle this ? */
+			/*
+			 * upper case exists too, doesn't the FS handle this ? 
+			 */
 
-			/* upper and lower have the same inode -> case-insensitve FS */
+			/*
+			 * upper and lower have the same inode -> case-insensitve FS 
+			 */
 
-			if (st1.st_ino == st2.st_ino) {
-				/* upper and lower have the same inode -> case-insensitve FS */
+			if (st1.st_ino == st2.st_ino)
+			{
+				/*
+				 * upper and lower have the same inode -> case-insensitve FS 
+				 */
 
 				s->force_lowercase_filenames = 1;
 			}
 		}
 	}
 
-	if (srv->srvconf.port == 0) {
+	if (srv->srvconf.port == 0)
+	{
 		srv->srvconf.port = s->is_ssl ? 443 : 80;
 	}
 
-	if (srv->srvconf.event_handler->used == 0) {
-		/* choose a good default
-		 *
-		 * the event_handler list is sorted by 'goodness'
-		 * taking the first available should be the best solution
+	if (srv->srvconf.event_handler->used == 0)
+	{
+		/*
+		 * choose a good default the event_handler list is sorted by
+		 * 'goodness' taking the first available should be the best solution 
 		 */
 		srv->event_handler = event_handlers[0].et;
 
-		if (FDEVENT_HANDLER_UNSET == srv->event_handler) {
+		if (FDEVENT_HANDLER_UNSET == srv->event_handler)
+		{
 			log_error_write(srv, __FILE__, __LINE__, "s",
-					"sorry, there is no event handler for this system");
+							"sorry, there is no event handler for this system");
 
 			return -1;
 		}
-	} else {
+	} else
+	{
 		/*
 		 * User override
 		 */
 
-		for (i = 0; event_handlers[i].name; i++) {
-			if (0 == strcmp(event_handlers[i].name, srv->srvconf.event_handler->ptr)) {
+		for (i = 0; event_handlers[i].name; i++)
+		{
+			if (0 ==
+				strcmp(event_handlers[i].name, srv->srvconf.event_handler->ptr))
+			{
 				srv->event_handler = event_handlers[i].et;
 				break;
 			}
 		}
 
-		if (FDEVENT_HANDLER_UNSET == srv->event_handler) {
+		if (FDEVENT_HANDLER_UNSET == srv->event_handler)
+		{
 			log_error_write(srv, __FILE__, __LINE__, "sb",
-					"the selected event-handler in unknown or not supported:",
-					srv->srvconf.event_handler );
+							"the selected event-handler in unknown or not supported:",
+							srv->srvconf.event_handler);
 
 			return -1;
 		}
 	}
 
-	if (s->is_ssl) {
-		if (buffer_is_empty(s->ssl_pemfile)) {
-			/* PEM file is require */
+	if (s->is_ssl)
+	{
+		if (buffer_is_empty(s->ssl_pemfile))
+		{
+			/*
+			 * PEM file is require 
+			 */
 
 			log_error_write(srv, __FILE__, __LINE__, "s",
-					"ssl.pemfile has to be set");
+							"ssl.pemfile has to be set");
 			return -1;
 		}
-
 #ifndef USE_OPENSSL
 		log_error_write(srv, __FILE__, __LINE__, "s",
-				"ssl support is missing, recompile with --with-openssl");
+						"ssl support is missing, recompile with --with-openssl");
 
 		return -1;
 #endif
