@@ -4,13 +4,15 @@
 #include "buffer.h"
 #include "array.h"
 
-typedef struct chunk {
+typedef struct chunk 
+{
 	enum { UNUSED_CHUNK, MEM_CHUNK, FILE_CHUNK } type;
 
 	buffer *mem;				/* either the storage of the mem-chunk or the
 								 * read-ahead buffer */
 
-	struct {
+	struct 
+	{
 		/*
 		 * filechunk 
 		 */
@@ -37,7 +39,8 @@ typedef struct chunk {
 	struct chunk *next;
 } chunk;
 
-typedef struct {
+typedef struct 
+{
 	chunk *first;
 	chunk *last;
 

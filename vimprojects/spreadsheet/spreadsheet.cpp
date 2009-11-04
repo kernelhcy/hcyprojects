@@ -5,7 +5,7 @@ Spreadsheet::Spreadsheet(QWidget *parent)
 {
     autoRecalc = true;
     rowCount = 150;
-    columnCount = 250;
+    columnCount = 2500;
     setItemPrototype(new Cell);
     setSelectionMode(ContiguousSelection);
     connect(this, SIGNAL(itemChanged(QTableWidgetItem*)), this, SLOT(somethingChanged()));
@@ -50,17 +50,29 @@ void Spreadsheet::clear()
 QString Spreadsheet::getVIndex(int index)
 {
     int val = index;
-    int tmp = 0;
-    QString s_index("");
-    while (true)
+
+    if (val < 26)
     {
+        return QString(QChar('A' + val));
+    }
+
+    int tmp = 26;
+    QString s_index("");
+    int s_len = 1;
+    while (val > tmp)
+    {
+        val -= tmp;
+        ++s_len;
+        tmp *=26;
+    }
+    --val;
+
+    while(s_len > 0)
+    {
+        --s_len;
         tmp = val % 26;
-        s_index.insert(0, QString("%1").arg(QChar('A' + tmp)));
+        s_index = s_index.insert(0, QString("%1").arg(QChar('A' + tmp)));
         val /= 26;
-        if (val <= 0)
-        {
-            break;
-        }
     }
 
     return s_index;

@@ -8,7 +8,12 @@
 
 class Cell;
 class SpreadsheetCompare;
-
+/**
+ * Spreadsheet继承自QTableWidget,是整个程序的核心控件。
+ * 负责处理表格。
+ * 表格的每一个单元格都是一个Cell对象。Cell继承自QTableWidgetItem，用来存放每个单元格中的数据。
+ *
+ */
 class Spreadsheet : public QTableWidget
 {
     Q_OBJECT
@@ -22,9 +27,15 @@ class Spreadsheet : public QTableWidget
         }
         QString currentLocation() const;
         QTableWidgetSelectionRange selectedRange() const;
+        /**
+         * 清空表格，并将其设置为所设定的行数和列数（rowCount,columnCount）
+         */
         void clear();
+
+
         bool readFile(const QString &fileName);
         bool writeFile(const QString &fileName);
+
         void sort(const SpreadsheetCompare &compare);
         QString currentFormula() const;
     public slots:
@@ -47,12 +58,30 @@ class Spreadsheet : public QTableWidget
         {
             MagicNumber = 0x7F51C883,
         };
+
         Cell* cell(int row, int column)const;
         QString text(int row, int column)const;
         QString formula(int row, int column)const;
+        /**
+         * 将列号（index）转换成由字母计数的形式。
+         * 如：
+         *          0   ->  A
+         *          2   ->  C
+         *          25  ->  Z
+         *          26  ->  AA
+         *          52  ->  AZ
+         *          53  ->  BA  等等。
+         */
         QString getVIndex(int index);
+
+        /**
+         * 设置（row，column）单元格的计算公式为formula。
+         */
         void setFormula(int row, int column, const QString &formula);
+
+        //是否自动计算公式的结果。
         bool autoRecalc;
+        //表格当前的行数和列数
         int rowCount;
         int columnCount;
 };

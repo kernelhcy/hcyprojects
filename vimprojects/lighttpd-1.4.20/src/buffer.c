@@ -928,8 +928,10 @@ const char encoded_chars_http_header[] =
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  F0 -  FF */
 };
 
-
-
+/**
+ * 将字符串s以指定的编码方式存入b中。
+ * encoding指定编码的方式。
+ */
 int buffer_append_string_encoded(buffer *b, const char *s, size_t s_len, buffer_encoding_t encoding) 
 {
 	unsigned char *ds, *d;
@@ -938,12 +940,15 @@ int buffer_append_string_encoded(buffer *b, const char *s, size_t s_len, buffer_
 
 	if (!s || !b) return -1;
 
-	if (b->ptr[b->used - 1] != '\0') {
+	//b中存放的不是亦'\0'结尾的字符串。报错。
+	if (b->ptr[b->used - 1] != '\0') 
+	{
 		SEGFAULT();
 	}
 
 	if (s_len == 0) return 0;
 
+	//根据编码方式，选择对应的编码数组，就是上面的那六个数组。
 	switch(encoding) {
 	case ENCODING_REL_URI:
 		map = encoded_chars_rel_uri;
@@ -969,10 +974,17 @@ int buffer_append_string_encoded(buffer *b, const char *s, size_t s_len, buffer_
 
 	assert(map != NULL);
 
-	/* count to-be-encoded-characters */
-	for (ds = (unsigned char *)s, d_len = 0, ndx = 0; ndx < s_len; ds++, ndx++) {
-		if (map[*ds]) {
-			switch(encoding) {
+	/* 
+	 * count to-be-encoded-characters 
+	 * 计算经过编码转换后的字符串s的长度。
+	 * 不同的编码方式，对与不同的字符，其转换后的字符长度不同。
+	 */
+	for (ds = (unsigned char *)s, d_len = 0, ndx = 0; ndx < s_len; ds++, ndx++) 
+	{
+		if (map[*ds]) 
+		{
+			switch(encoding) 
+			{
 			case ENCODING_REL_URI:
 			case ENCODING_REL_URI_PART:
 				d_len += 3;
@@ -988,24 +1000,31 @@ int buffer_append_string_encoded(buffer *b, const char *s, size_t s_len, buffer_
 			case ENCODING_UNSET:
 				break;
 			}
-		} else {
+		} 
+		else //字符不需要转换 
+		{
 			d_len ++;
 		}
 	}
 
 	buffer_prepare_append(b, d_len);
 
-	for (ds = (unsigned char *)s, d = (unsigned char *)b->ptr + b->used - 1, d_len = 0, ndx = 0; ndx < s_len; ds++, ndx++) {
-		if (map[*ds]) {
-			switch(encoding) {
-			case ENCODING_REL_URI:
-			case ENCODING_REL_URI_PART:
+	//下面这个循环就是开始做实际的编码转换工作。
+	//ds指向字符串s中的字符。d指向b的数据去存放字符的位置。
+	for (ds = (unsigned char *)s, d = (unsigned char *)b->ptr + b->used - 1, d_len = 0, ndx = 0; ndx < s_len; ds++, ndx++) 
+	{
+		if (map[*ds]) 
+		{
+			switch(encoding) 
+			{
+			case ENCODING_REL_URI: 			//此编码不需要转换
+			case ENCODING_REL_URI_PART: 	//将字符ASCII码转化成其对应的十六进制的形式，并在前面加上'%'
 				d[d_len++] = '%';
 				d[d_len++] = hex_chars[((*ds) >> 4) & 0x0F];
 				d[d_len++] = hex_chars[(*ds) & 0x0F];
 				break;
-			case ENCODING_HTML:
-			case ENCODING_MINIMAL_XML:
+			case ENCODING_HTML: 			//不需要转换
+			case ENCODING_MINIMAL_XML: 		//也是转换成ASCII编码的十六进制形式，前面要加上"&#x"，尾随一个';'
 				d[d_len++] = '&';
 				d[d_len++] = '#';
 				d[d_len++] = 'x';
@@ -1013,33 +1032,43 @@ int buffer_append_string_encoded(buffer *b, const char *s, size_t s_len, buffer_
 				d[d_len++] = hex_chars[(*ds) & 0x0F];
 				d[d_len++] = ';';
 				break;
-			case ENCODING_HEX:
+			case ENCODING_HEX: 				//直接转换成ASCII码对应的十六进制。
 				d[d_len++] = hex_chars[((*ds) >> 4) & 0x0F];
 				d[d_len++] = hex_chars[(*ds) & 0x0F];
 				break;
-			case ENCODING_HTTP_HEADER:
+			case ENCODING_HTTP_HEADER:    	//这个处理HTTP头中的换行，统一转换成'\n\t'
 				d[d_len++] = *ds;
 				d[d_len++] = '\t';
 				break;
 			case ENCODING_UNSET:
 				break;
 			}
-		} else {
+		} 
+		else 
+		{
 			d[d_len++] = *ds;
 		}
 	}
 
-	/* terminate buffer and calculate new length */
+	/* 
+	 * terminate buffer and calculate new length 
+	 * 在新字符串尾部加上一个'\0' 
+	 */
 	b->ptr[b->used + d_len - 1] = '\0';
 
-	b->used += d_len;
+	b->used += d_len; 		//新的字符串长度。
 
 	return 0;
 }
 
 
-/* decodes url-special-chars inplace.
+/* 
+ * decodes url-special-chars inplace.
  * replaces non-printable characters with '_'
+ * 将rul中存放的特殊编码的字符转换成正常的字符。这里的编码是指上面六种编码中的ENCODING_REL_RUL_PART.
+ * 也就是把ASCII码的16进制表示，转换成正常的ASCII码。转换后的结果直接存放在url中。
+ *
+ * 这个is_query参数的作用仅仅控制是否将字符串中的'+'转换成空格' '。
  */
 
 static int buffer_urldecode_internal(buffer *url, int is_query) 
@@ -1049,30 +1078,40 @@ static int buffer_urldecode_internal(buffer *url, int is_query)
 	char *dst;
 
 	if (!url || !url->ptr) return -1;
-
+	
+	//源字符串和目的字符串是同一个串。
 	src = (const char*) url->ptr;
 	dst = (char*) url->ptr;
 
-	while ((*src) != '\0') {
-		if (is_query && *src == '+') {
+	while ((*src) != '\0') 
+	{
+		if (is_query && *src == '+') 
+		{
 			*dst = ' ';
-		} else if (*src == '%') {
+		} 
+		else if (*src == '%') 
+		{
 			*dst = '%';
-
-			high = hex2int(*(src + 1));
-			if (high != 0xFF) {
-				low = hex2int(*(src + 2));
-				if (low != 0xFF) {
-					high = (high << 4) | low;
-
-					/* map control-characters out */
-					if (high < 32 || high == 127) high = '_';
-
+			//将后面16进制表示的ASCII码转换成正常的ASCII码。
+			high = hex2int(*(src + 1));  		//高四位
+			if (high != 0xFF)   				//0xFF表示转换出错。
+			{
+				low = hex2int(*(src + 2)); 		//低四位
+				if (low != 0xFF) 
+				{
+					high = (high << 4) | low;  	//合并
+					/* map control-characters out  判断是否是控制字符。*/
+					if (high < 32 || high == 127) 
+						high = '_';
 					*dst = high;
-					src += 2;
+					src += 2; 	
+					//这个转换过程中，三个源字符转换成一个目的字符。
+					//虽然是一个字符串，但源字符串遍历的更快，不会冲突。
 				}
 			}
-		} else {
+		} 
+		else 
+		{
 			*dst = *src;
 		}
 
@@ -1080,7 +1119,7 @@ static int buffer_urldecode_internal(buffer *url, int is_query)
 		src++;
 	}
 
-	*dst = '\0';
+	*dst = '\0'; 	//新结尾。
 	url->used = (dst - url->ptr) + 1;
 
 	return 0;
@@ -1105,6 +1144,12 @@ int buffer_urldecode_query(buffer *url)
  *
  * NOTE: src and dest can point to the same buffer, in which case,
  *       the operation is performed in-place.
+ *
+ * 删除路径字符串中的"/../"，"//"和"/./",简化路径，并不是简单的删除。
+ * 对于"/../"在路径中相当与父目录，因此，实际的路径相当于删除"/../"和其前面的一个"/XX/".
+ * 如： /home/test/../foo   ->   /home/foo
+ * 而"//"和"/./"表示当前目录，简单的将其删去就可以了。
+ * NOTE： 源缓冲src和目的缓冲可以指向同一个缓冲，在这种情况下，操作将源缓冲中的数据替换。
  */
 
 int buffer_path_simplify(buffer *dest, buffer *src)
@@ -1112,7 +1157,7 @@ int buffer_path_simplify(buffer *dest, buffer *src)
 	int toklen;
 	char c, pre1;
 	char *start, *slash, *walk, *out;
-	unsigned short pre;
+	unsigned short pre; 	//pre两个字节，char一个字节，pre中可以存放两个字符。
 
 	if (src == NULL || src->ptr == NULL || dest == NULL)
 		return -1;
@@ -1129,48 +1174,61 @@ int buffer_path_simplify(buffer *dest, buffer *src)
 
 
 #if defined(__WIN32) || defined(__CYGWIN__)
-	/* cygwin is treating \ and / the same, so we have to that too
+	/* 
+	 * cygwin is treating \ and / the same, so we have to that too
+	 * cygwin中\和/相同。转化之。
 	 */
 
-	for (walk = src->ptr; *walk; walk++) {
+	for (walk = src->ptr; *walk; walk++) 
+	{
 		if (*walk == '\\') *walk = '/';
 	}
 	walk = src->ptr;
 #endif
-
-	while (*walk == ' ') {
+	//过滤掉开始的空格。
+	while (*walk == ' ') 
+	{
 		walk++;
 	}
 
 	pre1 = *(walk++);
 	c    = *(walk++);
 	pre  = pre1;
-	if (pre1 != '/') {
-		pre = ('/' << 8) | pre1;
+	if (pre1 != '/')  //路径不是以'/'开始，在目的路径中加上'/'
+	{
+		pre = ('/' << 8) | pre1; //将prel指向的字符存放在pre的高八位。
 		*(out++) = '/';
 	}
 	*(out++) = pre1;
 
-	if (pre1 == '\0') {
+	if (pre1 == '\0')  		//转换结束
+	{
 		dest->used = (out - start) + 1;
 		return 0;
 	}
 
-	while (1) {
-		if (c == '/' || c == '\0') {
-			toklen = out - slash;
-			if (toklen == 3 && pre == (('.' << 8) | '.')) {
+	while (1) 
+	{
+		if (c == '/' || c == '\0') 
+		{
+			toklen = out - slash; //slash指向距离c指向的字符前面最近的一个'/'。
+			if (toklen == 3 && pre == (('.' << 8) | '.')) // "/../"
+			{
 				out = slash;
-				if (out > start) {
+				if (out > start) //删除"/../"前面的一层目录"/XX/".
+				{
 					out--;
-					while (out > start && *out != '/') {
+					while (out > start && *out != '/') 
+					{
 						out--;
 					}
 				}
 
 				if (c == '\0')
 					out++;
-			} else if (toklen == 1 || pre == (('/' << 8) | '.')) {
+			} 
+			else if (toklen == 1 || pre == (('/' << 8) | '.')) // "//" 和 "/./"
+			{
 				out = slash;
 				if (c == '\0')
 					out++;
@@ -1183,7 +1241,7 @@ int buffer_path_simplify(buffer *dest, buffer *src)
 			break;
 
 		pre1 = c;
-		pre  = (pre << 8) | pre1;
+		pre  = (pre << 8) | pre1; //pre始终存放的是prel指向的字符和其前一个字符。
 		c    = *walk;
 		*out = pre1;
 
