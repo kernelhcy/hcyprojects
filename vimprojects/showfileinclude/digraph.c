@@ -31,6 +31,7 @@ node *node_init_name(const char *name, size_t name_len)
 	}
 
 	n -> name = (char *)malloc(name_len + 1);
+	
 	assert(n -> name);
 
 	strcpy(n -> name, name);
@@ -126,6 +127,7 @@ digraph *digraph_init()
 	g -> nodes = NULL;
 	g -> link_table = NULL;
 	g -> node_cnt = 0;
+	g -> cnt = 0;
 
 	//log_info("create a digraph.");
 
