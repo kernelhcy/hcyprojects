@@ -1,0 +1,84 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.7	//
+BASE_LENGTH	digraph.h	32;"	d
+BUF_BASE_LEN	out.h	53;"	d
+CPP_T	base.h	/^	CPP_T, 		\/\/c++文件 $/;"	e	enum:__anon1
+CSHARP_T	base.h	/^	CSHARP_T	\/\/C#文件$/;"	e	enum:__anon1
+C_T	base.h	/^	C_T, 		\/\/c文件$/;"	e	enum:__anon1
+ERR	log.h	/^	ERR, INFO, WARNNING, UNKNOWN$/;"	e	enum:_log_t
+INFO	log.h	/^	ERR, INFO, WARNNING, UNKNOWN$/;"	e	enum:_log_t
+JAVA_T	base.h	/^	JAVA_T, 	\/\/Java文件$/;"	e	enum:__anon1
+JPG_T	base.h	/^	JPG_T, 		\/\/jpg图片格式$/;"	e	enum:__anon2
+MAXFILENAMELEN	base.h	25;"	d
+MAXLINE	log.h	11;"	d
+PNG_T	base.h	/^	PNG_T 		\/\/png图片格式$/;"	e	enum:__anon2
+TXT_T	base.h	/^	TXT_T, 		\/\/普通文本格式$/;"	e	enum:__anon2
+UNKNOWN	log.h	/^	ERR, INFO, WARNNING, UNKNOWN$/;"	e	enum:_log_t
+WARNNING	log.h	/^	ERR, INFO, WARNNING, UNKNOWN$/;"	e	enum:_log_t
+_BASE_H	base.h	2;"	d
+_DIGRAPH_H	digraph.h	2;"	d
+_HEADERS_H	headers.h	2;"	d
+_LOG_H	log.h	6;"	d
+_OUT_H	out.h	2;"	d
+_graph	digraph.h	/^typedef struct _graph$/;"	s
+_log_t	log.h	/^typedef enum _log_t$/;"	g
+_node	digraph.h	/^typedef struct _node$/;"	s
+_node_ptr	digraph.h	/^typedef struct _node_ptr$/;"	s
+assert	log.c	/^void assert(void *p)$/;"	f
+buffer	out.h	/^}buffer;$/;"	t	typeref:struct:__anon3
+buffer_append	out.c	/^int buffer_append(buffer *buf, const char *s, size_t s_len)$/;"	f
+buffer_init	out.c	/^buffer* buffer_init()$/;"	f
+buffer_init_n	out.c	/^buffer* buffer_init_n(size_t n)$/;"	f
+cnt	digraph.h	/^	size_t 		cnt; 			\/\/数组nodes和link_table的长度。$/;"	m	struct:_graph
+create_out	out.c	/^int create_out(digraph *dg, type_t t, const char *n)$/;"	f
+create_pic	out.c	/^static int create_pic(digraph *dg)$/;"	f	file:
+create_txt	out.c	/^static int create_txt(digraph *dg)$/;"	f	file:
+digraph	digraph.h	/^}digraph;$/;"	t	typeref:struct:_graph
+digraph_build_edge_node	digraph.c	/^int digraph_build_edge_node(digraph *dg, node *a, node *b)$/;"	f
+digraph_build_edge_string	digraph.c	/^int digraph_build_edge_string(digraph *dg, const char *s1, const char *s2)$/;"	f
+digraph_delete_node	digraph.c	/^void digraph_delete_node(digraph *dg, node *n)$/;"	f
+digraph_free	digraph.c	/^void digraph_free(digraph *dg)$/;"	f
+digraph_init	digraph.c	/^digraph *digraph_init()$/;"	f
+digraph_init_n	digraph.c	/^digraph *digraph_init_n(size_t n)$/;"	f
+digraph_insert_node	digraph.c	/^int digraph_insert_node(digraph *dg, node *n)$/;"	f
+digraph_insert_string	digraph.c	/^int digraph_insert_string(digraph *dg, const char *s)$/;"	f
+digraph_prepare_insert	digraph.c	/^static int digraph_prepare_insert(digraph *dg)$/;"	f	file:
+digraph_search_node	digraph.c	/^static int digraph_search_node(digraph *dg, node *n)$/;"	f	file:
+digraph_show	digraph.c	/^void digraph_show(digraph *dg)$/;"	f
+help_info	main.c	/^char *help_info = "\\n用法： sfi [-h] [-s 源文件类型] [-o 输出文件名称] [-f 输出文件格式] 目录\\n\\n"$/;"	v
+included_cnt	digraph.h	/^	size_t 	included_cnt; 	\/\/被包含的文件数目。$/;"	m	struct:_node
+including_cnt	digraph.h	/^	size_t 	including_cnt; 	\/\/包含的文件数目。$/;"	m	struct:_node
+len	out.h	/^	size_t len;$/;"	m	struct:__anon3
+link_table	digraph.h	/^	node_ptr 	**link_table; 	\/\/链接表$/;"	m	struct:_graph
+log_do	log.c	/^static void log_do(log_t type, const char *fmt, va_list ap)$/;"	f	file:
+log_err	log.c	/^void log_err(const char *f, ...)$/;"	f
+log_info	log.c	/^void log_info(const char *f, ...)$/;"	f
+log_t	log.h	/^}log_t;$/;"	t	typeref:enum:_log_t
+log_warnning	log.c	/^void log_warnning(const char *f, ...)$/;"	f
+main	main.c	/^int main(int argc, char *argv[])$/;"	f
+name	digraph.h	/^	char 	*name; 			\/\/结点的名称。也就是文件名称$/;"	m	struct:_node
+name	out.c	/^static const char *name = NULL;$/;"	v	file:
+name_len	digraph.h	/^	size_t 	name_len; 		\/\/名字的长度。$/;"	m	struct:_node
+next	digraph.h	/^	struct _node_ptr 	*next; 	\/\/指向连表中的下一个结点$/;"	m	struct:_node_ptr	typeref:struct:_node_ptr::_node_ptr
+node	digraph.h	/^}node;$/;"	t	typeref:struct:_node
+node_cnt	digraph.h	/^	size_t 		node_cnt; 		\/\/结点的个数。$/;"	m	struct:_graph
+node_free	digraph.c	/^void node_free(node *n)$/;"	f
+node_init	digraph.c	/^node *node_init()$/;"	f
+node_init_name	digraph.c	/^node *node_init_name(const char *name, size_t name_len)$/;"	f
+node_is_equal	digraph.c	/^int node_is_equal(node *a, node *b)$/;"	f
+node_ptr	digraph.h	/^}node_ptr;$/;"	t	typeref:struct:_node_ptr
+node_ptr_free	digraph.c	/^void node_ptr_free(node_ptr *np)$/;"	f
+node_ptr_init	digraph.c	/^node_ptr *node_ptr_init()$/;"	f
+node_reset	digraph.c	/^void node_reset(node *n)$/;"	f
+nodes	digraph.h	/^	node 		**nodes; 		\/\/结点指针数组，存放所有结点。$/;"	m	struct:_graph
+pic_type	out.c	/^static type_t pic_type;$/;"	v	file:
+ptr	digraph.h	/^	node 				*ptr; 	\/\/指向结点$/;"	m	struct:_node_ptr
+ptr	out.h	/^	char *ptr;$/;"	m	struct:__anon3
+show_help	main.c	/^void show_help()$/;"	f
+src_t	base.h	/^}src_t;$/;"	t	typeref:enum:__anon1
+type_t	base.h	/^}type_t;$/;"	t	typeref:enum:__anon2
+used	out.h	/^	size_t used;$/;"	m	struct:__anon3

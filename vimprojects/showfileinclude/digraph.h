@@ -1,5 +1,7 @@
 #ifndef _DIGRAPH_H
 #define _DIGRAPH_H
+#include "headers.h"
+#include "log.h"
 /*
  * 定义一个有向图接口
  * 有向图采用邻接表的形式保存。
@@ -8,37 +10,66 @@
 /*
  * 定义图的结点
  */
-struct _node
+typedef struct _node
 {
 	char 	*name; 			//结点的名称。也就是文件名称
-	int 	name_len; 		//名字的长度。
+	size_t 	name_len; 		//名字的长度。
 
-	int 	including_cnt; 	//包含的文件数目。
-	int 	included_cnt; 	//被包含的文件数目。
-
-	struct 	_node *next; 	//下一个结点。
+	size_t 	including_cnt; 	//包含的文件数目。
+	size_t 	included_cnt; 	//被包含的文件数目。
 }node;
 
+/**
+ * node指针
+ * 用于有向图中的链接表。
+ */
+typedef struct _node_ptr
+{
+	node 				*ptr; 	//指向结点
+	struct _node_ptr 	*next; 	//指向连表中的下一个结点
+}node_ptr;
+
+#define BASE_LENGTH 16 	//graph中结点数组node和link_table的长度必须为此值的正数倍。
 /*
  * 定义有向图
  */
-struct _graph
+typedef struct _graph
 {
-	node 	*nodes; 		//结点数组，存放所有结点。
-	int 	node_cnt; 		//结点的个数。
+	node 		**nodes; 		//结点指针数组，存放所有结点。
+	node_ptr 	**link_table; 	//链接表
 
+	size_t 		node_cnt; 		//结点的个数。
+	size_t 		cnt; 			//数组nodes和link_table的长度。
 }digraph;
 
 //node的操作函数
 node *node_init();
-node *node_init_name(char *name, int name_len);
+node *node_init_name(const char *name, size_t name_len);
 void node_free(node *n);
 void node_reset(node *n);
+int node_is_equal(node *a, node *b);
+
+//node ptr操作函数
+node_ptr *node_ptr_init();
+void node_ptr_free(node_ptr *np);
 
 //graph的操作函数
 digraph *digraph_init();
+digraph *digraph_init_n(size_t n);
 void digraph_free(digraph *dg);
-void digraph_insert_node(digraph *dg, node *n);
+
+/**
+ * 插入一个结点，并返回其在dg中数组的下标
+ */
+int digraph_insert_node(digraph *dg, node *n);
+int digraph_insert_string(digraph *dg, const char *s);
 void digraph_delete_node(digraph *dg, node *n);
 
+/**
+ * 构造一条从a到b的有向边
+ */
+int digraph_build_edge_node(digraph *dg, node *a, node *b);
+int digraph_build_edge_string(digraph *dg, const char *s1, const char *s2);
+
+void digraph_show(digraph *dg);
 #endif
