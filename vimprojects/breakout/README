@@ -2,3 +2,4 @@ Install:
 	$make
 	$./breakout
 
+一个简单的打砖块游戏。

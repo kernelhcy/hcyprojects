@@ -101,7 +101,12 @@ static int create_pic(digraph *dg)
 	}
 
 	buffer_append(buf, "}\n", strlen("}\n"));
-
+	
+	/*
+	 * 拼接dot所需要的参数。
+	 * 一个是-Ttype
+	 * 一个是-ofilename
+	 */
 	char arg1[100]; 	//-Txxx
 	char arg2[100]; 	//-o xxx.xxx
 	
@@ -118,15 +123,19 @@ static int create_pic(digraph *dg)
 	strcpy(arg1, "-T");
 	strcat(arg1, type_s);
 
-	strcpy(arg2, "-o ");
+	strcpy(arg2, "-o");
 	strcat(arg2, name);
 	strcat(arg2, ".");
 	strcat(arg2, type_s);
 
+	/*
+	 * 从这开始是创建子进程，从子进程中启动dot程序，生成图片。
+	 */
+
 	int 	fd[2];
 	pid_t 	pid;
 
-	if (pipe(fd) < 0)
+	if (pipe(fd) < 0) //创建管道
 	{
 		log_err("pipe error. %s %d", __FILE__, __LINE__);
 		exit(1);
@@ -141,12 +150,14 @@ static int create_pic(digraph *dg)
 	if (pid > 0) 	//parent
 	{
 		close(fd[0]);
+		//父进程中将拼接好的字符串发送给子进程。
 		if (write(fd[1], buf -> ptr, buf -> used) != buf -> used )
 		{
 			log_err("write to pipe error. %s %d", __FILE__, __LINE__);
 			exit(1);
 		}
 		close(fd[1]);
+		//等待子进程运行结束
 		if (waitpid(pid, NULL, 0) < 0)
 		{
 			log_err("waitpid error. %s %d", __FILE__, __LINE__);
@@ -160,6 +171,9 @@ static int create_pic(digraph *dg)
 
 		if (fd[0] != STDIN_FILENO)
 		{
+			/*
+			 * 将子进程的标准输入映射到管道上，以接收来自父进程的数据。
+			 */
 			if (dup2(fd[0], STDIN_FILENO) != STDIN_FILENO)
 			{
 				log_err("dup2 error to stdin");
@@ -168,7 +182,11 @@ static int create_pic(digraph *dg)
 			}
 			close(fd[0]);
 		}
-		
+		/*
+		 * 启动dot。
+		 * 传参的时候，第一个参数是忽略的，这个为什么呢？？？
+		 *
+		 */
 		if (execl("/usr/bin/dot", "", arg1, arg2, (char *)0) < 0)
 		{
 			log_err("execl dot error.");
@@ -177,6 +195,9 @@ static int create_pic(digraph *dg)
 	}
 	exit(0);
 }
+/**
+ * 以下是简易buffer的操作函数。
+ */
 
 buffer* buffer_init()
 {
@@ -220,7 +241,9 @@ buffer* buffer_init_n(size_t n)
 
 	return b;
 }
-
+/**
+ * 向buffer中追加字符串，如果空间不够，重新分配空间
+ */
 int buffer_append(buffer *buf, const char *s, size_t s_len)
 {
 	if (NULL == buf || NULL == s || 0 == s_len)
