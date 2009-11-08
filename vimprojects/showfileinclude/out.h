@@ -3,6 +3,7 @@
 
 #include "headers.h"
 #include "digraph.h"
+#include "buffer.h"
 #include <unistd.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -38,22 +39,5 @@
  * name 为输出的文件名称。
  */
 int create_out(digraph *dg, type_t t, const char *name);
-
-/**
- * 一个简易的buffer
- * 用来拼接字符串。
- */
-typedef struct 
-{
-	char *ptr;
-	size_t len;
-	size_t used;
-}buffer;
-
-#define BUF_BASE_LEN 32 	//buffer的长度必须为其整数倍
-
-buffer *buffer_init();
-buffer *buffer_init_n(size_t n);
-int buffer_append(buffer *buf, const char *s, size_t s_len);
 
 #endif
