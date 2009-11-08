@@ -121,6 +121,7 @@ static int parse_dir(const char *dirpath)
 
 		parse_fun(fullpath, NULL);	
 
+		//计算当前文件的相对路径。也就是删除前面的通过参数传如的路径。
 		int i = strlen(base_path);
 		int j = 0;
 		while(fullpath[j++] = fullpath[i++]);
