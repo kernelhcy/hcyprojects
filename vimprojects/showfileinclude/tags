@@ -5,12 +5,17 @@
 !_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
 !_TAG_PROGRAM_VERSION	5.7	//
 BASE_LENGTH	digraph.h	32;"	d
-BUF_BASE_LEN	out.h	53;"	d
+BUF_BASE_LEN	buffer.h	7;"	d
+CPP_F_T	parser.h	/^	CPP_F_T, 		\/\/*.cpp$/;"	e	enum:__anon5
 CPP_T	base.h	/^	CPP_T, 		\/\/c++文件 $/;"	e	enum:__anon1
 CSHARP_T	base.h	/^	CSHARP_T	\/\/C#文件$/;"	e	enum:__anon1
+CS_F_T	parser.h	/^	CS_F_T,			\/\/*.cs$/;"	e	enum:__anon5
+C_F_T	parser.h	/^	C_F_T, 			\/\/*.c$/;"	e	enum:__anon5
 C_T	base.h	/^	C_T, 		\/\/c文件$/;"	e	enum:__anon1
 ERR	log.h	/^	ERR, INFO, WARNNING, UNKNOWN$/;"	e	enum:_log_t
+H_F_T	parser.h	/^	H_F_T, 			\/\/*.h$/;"	e	enum:__anon5
 INFO	log.h	/^	ERR, INFO, WARNNING, UNKNOWN$/;"	e	enum:_log_t
+JAVA_F_T	parser.h	/^	JAVA_F_T, 		\/\/*.jave$/;"	e	enum:__anon5
 JAVA_T	base.h	/^	JAVA_T, 	\/\/Java文件$/;"	e	enum:__anon1
 JPG_T	base.h	/^	JPG_T, 		\/\/jpg图片格式$/;"	e	enum:__anon2
 MAXFILENAMELEN	base.h	25;"	d
@@ -18,22 +23,48 @@ MAXLINE	log.h	11;"	d
 PNG_T	base.h	/^	PNG_T 		\/\/png图片格式$/;"	e	enum:__anon2
 TXT_T	base.h	/^	TXT_T, 		\/\/普通文本格式$/;"	e	enum:__anon2
 UNKNOWN	log.h	/^	ERR, INFO, WARNNING, UNKNOWN$/;"	e	enum:_log_t
+UNKNOWN_F_T	parser.h	/^	UNKNOWN_F_T 	\/\/unknown$/;"	e	enum:__anon5
 WARNNING	log.h	/^	ERR, INFO, WARNNING, UNKNOWN$/;"	e	enum:_log_t
 _BASE_H	base.h	2;"	d
+_BUFFER_H	buffer.h	2;"	d
 _DIGRAPH_H	digraph.h	2;"	d
 _HEADERS_H	headers.h	2;"	d
 _LOG_H	log.h	6;"	d
 _OUT_H	out.h	2;"	d
+_PARSER_H	parser.h	2;"	d
+_PATH_TREE_H	pathtree.h	2;"	d
+_SFI_PATH_H	path.h	2;"	d
 _graph	digraph.h	/^typedef struct _graph$/;"	s
 _log_t	log.h	/^typedef enum _log_t$/;"	g
 _node	digraph.h	/^typedef struct _node$/;"	s
 _node_ptr	digraph.h	/^typedef struct _node_ptr$/;"	s
+_path_t	path.h	/^typedef struct _path_t$/;"	s
 assert	log.c	/^void assert(void *p)$/;"	f
-buffer	out.h	/^}buffer;$/;"	t	typeref:struct:__anon3
-buffer_append	out.c	/^int buffer_append(buffer *buf, const char *s, size_t s_len)$/;"	f
-buffer_init	out.c	/^buffer* buffer_init()$/;"	f
-buffer_init_n	out.c	/^buffer* buffer_init_n(size_t n)$/;"	f
+base_path	parser.c	/^static const char *base_path;$/;"	v	file:
+buffer	buffer.h	/^}buffer;$/;"	t	typeref:struct:__anon3
+buffer_append	buffer.c	/^int buffer_append(buffer *buf, const char *s, size_t s_len)$/;"	f
+buffer_array	buffer.h	/^}buffer_array;$/;"	t	typeref:struct:__anon4
+buffer_array_append	buffer.c	/^int buffer_array_append(buffer_array* ba, buffer* buf)$/;"	f
+buffer_array_append_string	buffer.c	/^int buffer_array_append_string(buffer_array* ba, const char *s)$/;"	f
+buffer_array_delete	buffer.c	/^int buffer_array_delete(buffer_array* ba, buffer* buf)$/;"	f
+buffer_array_delete_string	buffer.c	/^int buffer_array_delete_string(buffer_array* ba, const char *s)$/;"	f
+buffer_array_free	buffer.c	/^void buffer_array_free(buffer_array* ba)$/;"	f
+buffer_array_init	buffer.c	/^buffer_array* buffer_array_init()$/;"	f
+buffer_array_init_n	buffer.c	/^buffer_array* buffer_array_init_n(size_t n)$/;"	f
+buffer_array_prepare_append	buffer.c	/^static void buffer_array_prepare_append(buffer_array* ba)$/;"	f	file:
+buffer_array_print	buffer.c	/^void buffer_array_print(buffer_array *ba)$/;"	f
+buffer_cmp	buffer.c	/^int buffer_cmp(buffer *a, buffer *b)$/;"	f
+buffer_copy	buffer.c	/^int buffer_copy(buffer *a, buffer *b)$/;"	f
+buffer_free	buffer.c	/^void buffer_free(buffer *buf)$/;"	f
+buffer_init	buffer.c	/^buffer* buffer_init()$/;"	f
+buffer_init_copy	buffer.c	/^buffer* buffer_init_copy(buffer *b)$/;"	f
+buffer_init_n	buffer.c	/^buffer* buffer_init_n(size_t n)$/;"	f
+buffer_init_string	buffer.c	/^buffer* buffer_init_string(const char *s)$/;"	f
+buffer_prepare_n	buffer.c	/^static int buffer_prepare_n(buffer *buf, size_t n)$/;"	f	file:
+children	pathtree.h	/^	struct path_tree_node **children;	\/\/子目录数组$/;"	m	struct:path_tree_node	typeref:struct:path_tree_node::path_tree_node
+children_cnt	pathtree.h	/^	int 	children_cnt;				\/\/子目录个数$/;"	m	struct:path_tree_node
 cnt	digraph.h	/^	size_t 		cnt; 			\/\/数组nodes和link_table的长度。$/;"	m	struct:_graph
+create_digraph	parser.c	/^digraph* create_digraph(const char* dirpath, src_t t)$/;"	f
 create_out	out.c	/^int create_out(digraph *dg, type_t t, const char *n)$/;"	f
 create_pic	out.c	/^static int create_pic(digraph *dg)$/;"	f	file:
 create_txt	out.c	/^static int create_txt(digraph *dg)$/;"	f	file:
@@ -49,10 +80,18 @@ digraph_insert_string	digraph.c	/^int digraph_insert_string(digraph *dg, const c
 digraph_prepare_insert	digraph.c	/^static int digraph_prepare_insert(digraph *dg)$/;"	f	file:
 digraph_search_node	digraph.c	/^static int digraph_search_node(digraph *dg, node *n)$/;"	f	file:
 digraph_show	digraph.c	/^void digraph_show(digraph *dg)$/;"	f
+file_cnt	parser.c	/^static int 		file_cnt = 0; 	\/\/文件的个数，files数组的长度。$/;"	v	file:
+file_t	parser.h	/^}file_t;$/;"	t	typeref:enum:__anon5
+files	parser.c	/^static char 	**files = NULL;$/;"	v	file:
+get_file_type	parser.c	/^static file_t get_file_type(const char *path)$/;"	f	file:
 help_info	main.c	/^char *help_info = "\\n用法： sfi [-h] [-s 源文件类型] [-o 输出文件名称] [-f 输出文件格式] 目录\\n\\n"$/;"	v
 included_cnt	digraph.h	/^	size_t 	included_cnt; 	\/\/被包含的文件数目。$/;"	m	struct:_node
 including_cnt	digraph.h	/^	size_t 	including_cnt; 	\/\/包含的文件数目。$/;"	m	struct:_node
-len	out.h	/^	size_t len;$/;"	m	struct:__anon3
+is_dir	path.h	/^	int is_dir;$/;"	m	struct:_path_t
+is_dir	pathtree.h	/^	int 	is_dir;		\/\/是否是目录。决定其是否有子目录$/;"	m	struct:path_tree_node
+len	buffer.h	/^	size_t 	len;$/;"	m	struct:__anon3
+len	buffer.h	/^	size_t 	len;$/;"	m	struct:__anon4
+len	pathtree.h	/^	int 	len; 						\/\/子目录数组的长度$/;"	m	struct:path_tree_node
 link_table	digraph.h	/^	node_ptr 	**link_table; 	\/\/链接表$/;"	m	struct:_graph
 log_do	log.c	/^static void log_do(log_t type, const char *fmt, va_list ap)$/;"	f	file:
 log_err	log.c	/^void log_err(const char *f, ...)$/;"	f
@@ -62,9 +101,11 @@ log_warnning	log.c	/^void log_warnning(const char *f, ...)$/;"	f
 main	main.c	/^int main(int argc, char *argv[])$/;"	f
 name	digraph.h	/^	char 	*name; 			\/\/结点的名称。也就是文件名称$/;"	m	struct:_node
 name	out.c	/^static const char *name = NULL;$/;"	v	file:
+name	pathtree.h	/^	buffer 	*name;		\/\/结点的名称。目录的名称$/;"	m	struct:path_tree_node
 name_len	digraph.h	/^	size_t 	name_len; 		\/\/名字的长度。$/;"	m	struct:_node
 next	digraph.h	/^	struct _node_ptr 	*next; 	\/\/指向连表中的下一个结点$/;"	m	struct:_node_ptr	typeref:struct:_node_ptr::_node_ptr
 node	digraph.h	/^}node;$/;"	t	typeref:struct:_node
+node	path.h	/^	path_tree_node_t *node;$/;"	m	struct:_path_t
 node_cnt	digraph.h	/^	size_t 		node_cnt; 		\/\/结点的个数。$/;"	m	struct:_graph
 node_free	digraph.c	/^void node_free(node *n)$/;"	f
 node_init	digraph.c	/^node *node_init()$/;"	f
@@ -75,10 +116,52 @@ node_ptr_free	digraph.c	/^void node_ptr_free(node_ptr *np)$/;"	f
 node_ptr_init	digraph.c	/^node_ptr *node_ptr_init()$/;"	f
 node_reset	digraph.c	/^void node_reset(node *n)$/;"	f
 nodes	digraph.h	/^	node 		**nodes; 		\/\/结点指针数组，存放所有结点。$/;"	m	struct:_graph
+parent	pathtree.h	/^	struct path_tree_node *parent;		\/\/父目录$/;"	m	struct:path_tree_node	typeref:struct:path_tree_node::path_tree_node
+parse_c_cpp	parser.c	/^static buffer_array* parse_c_cpp(const char *filepath)$/;"	f	file:
+parse_csharp	parser.c	/^static buffer_array* parse_csharp(const char *filepath)$/;"	f	file:
+parse_dir	parser.c	/^static int parse_dir(const char *dirpath)$/;"	f	file:
+parse_fun	parser.c	/^static parse_fun_p parse_fun = NULL;$/;"	v	file:
+parse_fun_p	parser.c	/^typedef buffer_array* (*parse_fun_p)(const char*);$/;"	t	file:
+parse_java	parser.c	/^static buffer_array* parse_java(const char *filepath)$/;"	f	file:
+path	path.h	/^	buffer *path;$/;"	m	struct:_path_t
+path_cd	path.c	/^int path_cd(path_t *p, const char *path)$/;"	f
+path_file	path.c	/^char* path_file(path_t *p)$/;"	f
+path_free	path.c	/^void path_free(path_t* path)$/;"	f
+path_init	path.c	/^path_t* path_init()$/;"	f
+path_init_string	path.c	/^path_t* path_init_string(const char *s)$/;"	f
+path_parent	path.c	/^int path_parent(path_t *p)$/;"	f
+path_set_base_dir	path.c	/^int path_set_base_dir(path_t *p, const char *s)$/;"	f
+path_t	path.h	/^}path_t;$/;"	t	typeref:struct:_path_t
+path_to_unix	path.c	/^static void path_to_unix(path_t *p)$/;"	f	file:
+path_tree	pathtree.h	/^typedef struct path_tree$/;"	s
+path_tree_add	pathtree.c	/^int path_tree_add(path_tree_t *pt, const char *path)$/;"	f
+path_tree_add_help	pathtree.c	/^static int path_tree_add_help(path_tree_node_t *ptn, buffer_array *ba)$/;"	f	file:
+path_tree_free	pathtree.c	/^void path_tree_free(path_tree_t *pt)$/;"	f
+path_tree_gaps_help	pathtree.c	/^static int path_tree_gaps_help(buffer_array *ba, buffer *b,  path_tree_node_t *ptn)$/;"	f	file:
+path_tree_get_all_paths	pathtree.c	/^buffer_array* path_tree_get_all_paths(path_tree_t *pt)$/;"	f
+path_tree_init	pathtree.c	/^path_tree_t* path_tree_init()$/;"	f
+path_tree_node	pathtree.h	/^typedef struct path_tree_node$/;"	s
+path_tree_node_add_child	pathtree.c	/^path_tree_node_t* path_tree_node_add_child(path_tree_node_t *ptn, path_tree_node_t *chd)$/;"	f
+path_tree_node_free	pathtree.c	/^void path_tree_node_free(path_tree_node_t *ptn)$/;"	f
+path_tree_node_init	pathtree.c	/^path_tree_node_t* path_tree_node_init()$/;"	f
+path_tree_node_init_string	pathtree.c	/^path_tree_node_t* path_tree_node_init_string(const char *s)$/;"	f
+path_tree_node_prepare_add	pathtree.c	/^static int path_tree_node_prepare_add(path_tree_node_t *p)$/;"	f	file:
+path_tree_node_t	pathtree.h	/^}path_tree_node_t;$/;"	t	typeref:struct:path_tree_node
+path_tree_print	pathtree.c	/^void path_tree_print(path_tree_t *pt)$/;"	f
+path_tree_simple_path	pathtree.c	/^buffer* path_tree_simple_path(path_tree_t *pt, const char *path)$/;"	f
+path_tree_t	pathtree.h	/^}path_tree_t;$/;"	t	typeref:struct:path_tree
 pic_type	out.c	/^static type_t pic_type;$/;"	v	file:
+print_help	pathtree.c	/^static int print_help(path_tree_node_t *ptn, int shift)$/;"	f	file:
+pt	parser.c	/^static path_tree_t *pt = NULL;$/;"	v	file:
+ptr	buffer.h	/^	buffer 	**ptr; 			\/\/指针数组！！！$/;"	m	struct:__anon4
+ptr	buffer.h	/^	char 	*ptr;$/;"	m	struct:__anon3
 ptr	digraph.h	/^	node 				*ptr; 	\/\/指向结点$/;"	m	struct:_node_ptr
-ptr	out.h	/^	char *ptr;$/;"	m	struct:__anon3
+root	pathtree.h	/^	path_tree_node_t 	*root;$/;"	m	struct:path_tree
 show_help	main.c	/^void show_help()$/;"	f
+splite_by_slash	buffer.c	/^buffer_array* splite_by_slash(const char *s)$/;"	f
 src_t	base.h	/^}src_t;$/;"	t	typeref:enum:__anon1
+strcmp_n	parser.c	/^int strcmp_n(const char *a, const char *b, int begin, int end)$/;"	f
+strcmp_nn	pathtree.c	/^static int strcmp_nn(const char *s1, int b1, int e1, const char *s2, int b2, int e2)$/;"	f	file:
 type_t	base.h	/^}type_t;$/;"	t	typeref:enum:__anon2
-used	out.h	/^	size_t used;$/;"	m	struct:__anon3
+used	buffer.h	/^	size_t	used;$/;"	m	struct:__anon4
+used	buffer.h	/^	size_t 	used;$/;"	m	struct:__anon3

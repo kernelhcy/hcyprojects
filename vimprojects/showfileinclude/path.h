@@ -4,6 +4,7 @@
 #include "headers.h"
 #include "buffer.h"
 #include "log.h"
+#include "pathtree.h"
 
 /*
  * 定义路径数据类型。
@@ -13,6 +14,8 @@
 typedef struct _path_t
 {
 	buffer *path;
+	path_tree_node_t *node;
+
 	int is_dir;
 	
 }path_t;
@@ -24,17 +27,16 @@ path_t* path_init_string(const char *s);
 void path_free(path_t* path);
 
 //将路径的基目录设置为s
-int path_set_base_dir(const char *s);
+int path_set_base_dir(path_t *p, const char *s);
 
 //将目录调整为path。
 //相对于基目录！！
-int path_cd(const char *path);
+int path_cd(path_t *p, const char *path);
 
 /*
- * 将目录切换为下一级和上一级目录。
+ * 将目录切换为上一级目录。
  * 如果成功，返回1。失败返回0.
  */
-int path_child(path_t *p);
 int path_parent(path_t *p);
 
 /*

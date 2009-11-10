@@ -91,17 +91,21 @@ static int create_pic(digraph *dg)
 		p = dg -> link_table[i] -> next;
 		while(NULL != p)
 		{
-			buffer_append(buf, dg -> link_table[i] -> ptr -> name
-					, dg -> link_table[i] -> ptr -> name_len);
+			buffer_append(buf, "\"", 1);
+			buffer_append(buf, dg -> nodes[i] -> name, dg -> nodes[i] -> name_len);
+			buffer_append(buf, "\"", 1);
 			buffer_append(buf, " -> ", strlen(" -> "));
+			buffer_append(buf, "\"", 1);
 			buffer_append(buf, p -> ptr -> name, p -> ptr -> name_len);
+			buffer_append(buf, "\"", 1);
 			buffer_append(buf, ";\n", strlen(";\n"));
+			//log_info("Create pic insert edge: %s --> %s", dg -> nodes[i] -> name, p -> ptr -> name);
 			p = p -> next;
 		}
 	}
 
 	buffer_append(buf, "}\n", strlen("}\n"));
-	
+	printf("\n%s\n\n\n", buf -> ptr);	
 	/*
 	 * 拼接dot所需要的参数。
 	 * 一个是-Ttype

@@ -2,8 +2,7 @@
 /**
  * 三个辅助函数
  * 用于解析指定文件路径filepath的文件。
- * 解析的结果按照字符串数组的形式存放在result中。
- * 返回的结果是字符串数组result的长度。
+ * 解析的结果按照字符串数组的形式存放在buffer数组中。
  *
  * 三个函数的作用是解析文件中包含的文件。
  * 
@@ -12,9 +11,9 @@
  * csharp中解析 using xx.xx.xx
  *
  */
-static int parse_java(const char *filepath, char **result);
-static int parse_c_cpp(const char *filepath, char **result);
-static int parse_csharp(const char *filepath, char **result);
+static buffer_array* parse_java(const char *filepath);
+static buffer_array* parse_c_cpp(const char *filepath);
+static buffer_array* parse_csharp(const char *filepath);
 
 /*
  * 存储目录下的所有文件的完整路径和名称。
@@ -36,11 +35,18 @@ static file_t get_file_type(const char *path);
 /*
  * 定义源文件解析函数函数指针。
  */
-typedef int (*parse_fun_p)(const char*, char **);
+typedef buffer_array* (*parse_fun_p)(const char*);
 static parse_fun_p parse_fun = NULL;
 
 //工作目录，通过参数传进来的目录
 static const char *base_path;
+
+/*
+ * 目录树。
+ * 用于记录整个目录。方便查询。
+ */
+static path_tree_t *pt = NULL;
+
 /**
  * 根据dirpath指定的路径解析路径目录下的所有文件
  * t指定文件类型。
@@ -65,11 +71,50 @@ digraph* create_digraph(const char* dirpath, src_t t)
 			log_err("Unknown src type. %s %d", __FILE__, __LINE__);
 			exit(1);
 	}
+	
+	//初始化目录树
+	pt = path_tree_init();
+	path_tree_add(pt, dirpath);
+
 	int cnt = parse_dir(dirpath);
-	printf("files cnt %d\n", cnt);
-	return NULL;
+	//path_tree_print(pt);
+	
+	buffer_array *all_paths = path_tree_get_all_paths(pt);
+	buffer_array *include_paths;
+	path_tree_node_t  *including_ptn;
+	buffer *simple_path;
+	digraph *dg = digraph_init();
+
+	size_t i, j;
+	for (i = 0; i < all_paths -> used; ++i)
+	{
+		include_paths = parse_fun(all_paths -> ptr[i] -> ptr);
+		for (j = 0; j < include_paths -> used; ++j)
+		{
+			simple_path = path_tree_simple_path(pt, include_paths -> ptr[j] -> ptr);
+			//log_info("build egde: %s -> %s", all_paths -> ptr[i] -> ptr, include_paths -> ptr[j] -> ptr);
+			if (NULL != simple_path)
+			{
+				digraph_build_edge_string(dg, all_paths -> ptr[i] -> ptr, simple_path -> ptr);
+			}
+			else
+			{
+				digraph_build_edge_string(dg, all_paths -> ptr[i] -> ptr, include_paths -> ptr[j] -> ptr);
+			}
+			buffer_free(simple_path);
+			//digraph_show(dg);
+		}
+		buffer_array_free(include_paths);
+	}
+	buffer_array_free(all_paths);
+	log_info("Return digraph.");
+	return dg;
 }
 
+/**
+ * 解析目录的结构
+ * 构造目录树
+ */
 static int parse_dir(const char *dirpath)
 {
 	DIR 			*dp;
@@ -117,17 +162,8 @@ static int parse_dir(const char *dirpath)
 			continue;
 		}
 
-		printf("%s\n", fullpath);
-
-		parse_fun(fullpath, NULL);	
-
-		//计算当前文件的相对路径。也就是删除前面的通过参数传如的路径。
-		int i = strlen(base_path);
-		int j = 0;
-		while(fullpath[j++] = fullpath[i++]);
-		fullpath[j] = '\0';
-		printf("absulate path: %s\n", fullpath);
-
+		path_tree_add(pt, fullpath);
+		//log_info("Insert path : %s", fullpath);
 		++cnt;
 	}
 
@@ -198,14 +234,31 @@ static file_t get_file_type(const char *path)
 	return UNKNOWN_F_T;
 
 }
-static int parse_java(const char *filepath, char **result)
+static buffer_array* parse_java(const char *filepath)
 {
 	log_info("parse java.");
+	return NULL;
 }
-static int parse_c_cpp(const char *filepath, char **result)
+static buffer_array* parse_c_cpp(const char *filepath)
 {
+	if (NULL == filepath)
+	{
+		return NULL;
+	}
+	
+//	log_info("Parse file : %s", filepath);
+	//获得文件所在的目录的路径。
+	//保存在path中。
+	char 	path[500];
+	size_t 	s_end = strlen(filepath);
+	while(filepath[s_end--] != '/');
+	s_end += 2;
+	strncpy(path, filepath, s_end);
+	path[s_end] = '\0';
+
 	int 	buf_len = 500;
 	char 	buf[500];
+	buffer_array *ba = buffer_array_init();
 
 	FILE 	*fp;
 	if ((fp = fopen(filepath, "r")) == NULL)
@@ -219,8 +272,11 @@ static int parse_c_cpp(const char *filepath, char **result)
 	int 	begin, end;
 	char 	includepath[buf_len];
 	int 	includeindex;
+	int 	is_std; 		//标记包含的文件是否是标准头文件
+	buffer 	*b;
 	while (fgets(buf, buf_len, fp) != NULL)
 	{
+		is_std = 0;
 		read_len = strlen(buf);
 		/*
 		 * 头文件是以#include "" 或者#include <>形式表示的。
@@ -254,18 +310,17 @@ static int parse_c_cpp(const char *filepath, char **result)
 		{
 			++begin;
 		}
+	
+		if(buf[begin] == '<') 		//包含的文件是标准头文件
+		{
+			is_std = 1;
+		}
+
 		++begin;
 		end = begin;
 		while (buf[end] != '"' && buf[end] != '>')
 		{
 			++end;
-		}
-		//remove "../" and "./" at the beginning of the buf
-		while(buf[begin++] == '.');
-		--begin;
-		if(buf[begin] == '/')
-		{
-			++begin;
 		}
 
 		includeindex = 0;
@@ -274,16 +329,24 @@ static int parse_c_cpp(const char *filepath, char **result)
 			includepath[includeindex] = buf[begin];
 		}
 		includepath[includeindex] = '\0';
+		b = buffer_init();	
+		if(!is_std)
+		{
+			buffer_append(b, path, strlen(path));
+		}
+		buffer_append(b, includepath, strlen(includepath));
+		buffer_array_append(ba, b);
 
-		printf("\t%s\n", includepath);
+	//	printf("\t%s\n", b -> ptr);
 	}
  
 	fclose(fp);
-
+	return ba;
 }
-static int parse_csharp(const char *filepath, char **result)
+static buffer_array* parse_csharp(const char *filepath)
 {
 	log_info("parse csharp");
+	return NULL;
 }
 
 

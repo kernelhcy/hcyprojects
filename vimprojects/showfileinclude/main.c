@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
 {
 	if (argc == 1)
 	{
-		//show_help();
+		show_help();
 	}
 	src_t type;
 	type_t out_type = JPG_T;
@@ -100,7 +100,16 @@ int main(int argc, char *argv[])
 				exit(1);
 		}
 	}
-	digraph *dgg = create_digraph("../compiler/", CPP_T);
+
+	//禁止检索根目录。
+	if (strlen(argv[argc - 1]) == 1 && argv[argc - 1][0] == '/')
+	{
+		printf("Wrong dirctory!\n");
+		exit(1);
+	}
+
+	digraph *dg = create_digraph(argv[argc - 1], CPP_T);
+	/*
 	//test	
 	char *test[7] = {"aa", "bb", "cc", "dd", "ee", "ff", "gg"};
 
@@ -119,11 +128,10 @@ int main(int argc, char *argv[])
 	digraph_build_edge_string(dg, test[6], test[4]);
 	digraph_build_edge_string(dg, test[6], test[3]);
 	digraph_build_edge_string(dg, test[6], test[2]);
+	*/
 
-//	digraph_show(dg);
-	
-//	create_out(dg, out_type, out_filename);
-
+//	digraph_show(dg);	
+	create_out(dg, out_type, out_filename);
 	digraph_free(dg);
 	
 

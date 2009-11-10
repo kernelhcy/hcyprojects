@@ -6,6 +6,7 @@
  */
 #include "headers.h"
 #include "digraph.h"
+#include "pathtree.h"
 #include <dirent.h>
 #include <sys/stat.h>
 

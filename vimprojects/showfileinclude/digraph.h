@@ -8,6 +8,13 @@
  */
 
 /*
+ * 限定图的最大纬度！
+ * 由于图中需要处理数据的指针，因此，存储数据的数组不能变更。也就是数组的大小不能变！
+ * 因此，要预先的设定好数组的长度。
+ */
+#define MAX_LEN 1000
+
+/*
  * 定义图的结点
  */
 typedef struct _node
@@ -35,11 +42,10 @@ typedef struct _node_ptr
  */
 typedef struct _graph
 {
-	node 		**nodes; 		//结点指针数组，存放所有结点。
-	node_ptr 	**link_table; 	//链接表
+	node 		*nodes[MAX_LEN]; 		//结点指针数组，存放所有结点。
+	node_ptr 	*link_table[MAX_LEN]; 	//链接表
 
 	size_t 		node_cnt; 		//结点的个数。
-	size_t 		cnt; 			//数组nodes和link_table的长度。
 }digraph;
 
 //node的操作函数
@@ -55,7 +61,6 @@ void node_ptr_free(node_ptr *np);
 
 //graph的操作函数
 digraph *digraph_init();
-digraph *digraph_init_n(size_t n);
 void digraph_free(digraph *dg);
 
 /**
