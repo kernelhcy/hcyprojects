@@ -7,7 +7,6 @@
 #ifndef _FILEACTIONS_H
 #define	_FILEACTIONS_H
 
-#include "FileAction.h"
 #include <stdlib.h>
 #include <iostream>
 

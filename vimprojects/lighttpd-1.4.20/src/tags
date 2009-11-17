@@ -18,15 +18,15 @@ Action_add	lemon.c	/^void Action_add(app, type, sp, arg)$/;"	f
 Action_new	lemon.c	/^struct action *Action_new()$/;"	f
 Action_sort	lemon.c	/^struct action *Action_sort(ap)$/;"	f
 BINPATH	lighttpd-angel.c	22;"	d	file:
-BITSET_BITS	bitset.c	10;"	d	file:
-BITSET_MASK	bitset.c	13;"	d	file:
-BITSET_USED	bitset.c	19;"	d	file:
-BITSET_WORD	bitset.c	16;"	d	file:
-BUFFER_APPEND_SLASH	buffer.h	125;"	d
-BUFFER_APPEND_STRING_CONST	buffer.h	119;"	d
-BUFFER_COPY_STRING_CONST	buffer.h	122;"	d
+BITSET_BITS	bitset.c	12;"	d	file:
+BITSET_MASK	bitset.c	19;"	d	file:
+BITSET_USED	bitset.c	33;"	d	file:
+BITSET_WORD	bitset.c	25;"	d	file:
+BUFFER_APPEND_SLASH	buffer.h	136;"	d
+BUFFER_APPEND_STRING_CONST	buffer.h	130;"	d
+BUFFER_COPY_STRING_CONST	buffer.h	133;"	d
 BUFFER_MAX_REUSE_SIZE	settings.h	15;"	d
-BUFFER_PIECE_SIZE	buffer.c	73;"	d	file:
+BUFFER_PIECE_SIZE	buffer.c	85;"	d	file:
 BV	settings.h	4;"	d
 BZ_NO_STDIO	mod_compress.c	33;"	d	file:
 Bo_FALSE	lemon.c	/^typedef enum { Bo_FALSE = 0, Bo_TRUE } Boolean;$/;"	e	enum:__anon197	file:
@@ -99,9 +99,9 @@ CONNECTION_FUNC	plugin.h	10;"	d
 CONNECTION_OK	mod_fastcgi.c	/^	CONNECTION_OK,$/;"	e	enum:__anon192	file:
 CONNECTION_OVERLOADED	mod_fastcgi.c	/^	CONNECTION_OVERLOADED,		\/* disable for 1 second, take another backend *\/$/;"	e	enum:__anon192	file:
 CONNECTION_UNSET	mod_fastcgi.c	/^	CONNECTION_UNSET,$/;"	e	enum:__anon192	file:
-CONST_BUF_LEN	buffer.h	129;"	d
+CONST_BUF_LEN	buffer.h	140;"	d
 CONST_STRING	mod_ssi.c	261;"	d	file:
-CONST_STR_LEN	buffer.h	128;"	d
+CONST_STR_LEN	buffer.h	139;"	d
 CON_STATE_CLOSE	base.h	/^	CON_STATE_CLOSE$/;"	e	enum:__anon32
 CON_STATE_CONNECT	base.h	/^	CON_STATE_CONNECT,$/;"	e	enum:__anon32
 CON_STATE_ERROR	base.h	/^	CON_STATE_ERROR,$/;"	e	enum:__anon32
@@ -142,7 +142,7 @@ DATA_UNSET	array.h	/^	DATA_UNSET;$/;"	m	struct:_data_config
 DATA_UNSET	array.h	/^	DATA_UNSET;$/;"	m	struct:data_unset
 DATA_UNSET	array.h	47;"	d
 DEBUG	mod_mysql_vhost.c	20;"	d	file:
-DEBUG_ARRAY	array.c	330;"	d	file:
+DEBUG_ARRAY	array.c	332;"	d	file:
 DIRECT	base.h	/^typedef enum { DIRECT, EXTERNAL } connection_type;$/;"	e	enum:__anon20
 DIRLIST_BLOB_SIZE	mod_dirlisting.c	480;"	d	file:
 DIRLIST_ENT_NAME	mod_dirlisting.c	479;"	d	file:
@@ -172,9 +172,9 @@ ERRORLOG_SYSLOG	base.h	/^	enum { ERRORLOG_STDERR, ERRORLOG_FILE, ERRORLOG_SYSLOG
 ERROR_OUT	proc_open.c	478;"	d	file:
 ERROR_OUT	proc_open.c	528;"	d	file:
 ETAG_H	etag.h	2;"	d
-ETAG_USE_INODE	etag.h	/^typedef enum { ETAG_USE_INODE = 1, ETAG_USE_MTIME = 2, ETAG_USE_SIZE = 4$/;"	e	enum:__anon195
-ETAG_USE_MTIME	etag.h	/^typedef enum { ETAG_USE_INODE = 1, ETAG_USE_MTIME = 2, ETAG_USE_SIZE = 4$/;"	e	enum:__anon195
-ETAG_USE_SIZE	etag.h	/^typedef enum { ETAG_USE_INODE = 1, ETAG_USE_MTIME = 2, ETAG_USE_SIZE = 4$/;"	e	enum:__anon195
+ETAG_USE_INODE	etag.h	/^	ETAG_USE_INODE = 1,  	\/\/包含文件的i节点号。$/;"	e	enum:__anon195
+ETAG_USE_MTIME	etag.h	/^	ETAG_USE_MTIME = 2,  	\/\/包含文件最后一次修改的时间。$/;"	e	enum:__anon195
+ETAG_USE_SIZE	etag.h	/^	ETAG_USE_SIZE = 4    	\/\/包含文件的byte数。$/;"	e	enum:__anon195
 EXTERNAL	base.h	/^typedef enum { DIRECT, EXTERNAL } connection_type;$/;"	e	enum:__anon20
 Encode	md5.c	/^static void Encode(output, input, len)$/;"	f	file:
 ErrorMsg	lemon.c	/^void ErrorMsg(const char *filename, int lineno, const char *format, ...)$/;"	f
@@ -465,7 +465,7 @@ LHS_ALIAS_3	lemon.c	/^		LHS_ALIAS_3,$/;"	e	enum:pstate::e_state	file:
 LINESIZE	lemon.c	3492;"	d	file:
 LINEWIDTH	lemon.c	1595;"	d	file:
 LISTSIZE	lemon.c	1956;"	d	file:
-LI_ltostr	buffer.c	/^int LI_ltostr(char *buf, long val) {$/;"	f
+LI_ltostr	buffer.c	/^int LI_ltostr(char *buf, long val) $/;"	f
 LOCAL_SEND_BUFSIZE	network_openssl.c	47;"	d	file:
 MAGNET_CONFIG_PHYSICAL_PATH	mod_magnet.c	24;"	d	file:
 MAGNET_CONFIG_RAW_URL	mod_magnet.c	23;"	d	file:
@@ -760,7 +760,7 @@ SECURITY_CC	proc_open.c	22;"	d	file:
 SECURITY_CC	proc_open.c	59;"	d	file:
 SECURITY_DC	proc_open.c	21;"	d	file:
 SECURITY_DC	proc_open.c	58;"	d	file:
-SEGFAULT	buffer.h	132;"	d
+SEGFAULT	buffer.h	143;"	d
 SERVER_FUNC	mod_mysql_vhost.c	/^SERVER_FUNC(mod_mysql_vhost_cleanup)$/;"	f
 SERVER_FUNC	mod_mysql_vhost.c	/^SERVER_FUNC(mod_mysql_vhost_set_defaults)$/;"	f
 SERVER_FUNC	plugin.h	7;"	d
@@ -934,7 +934,7 @@ UINT4	md5.h	34;"	d
 UIO_MAXIOV	network_freebsd_sendfile.c	32;"	d	file:
 UIO_MAXIOV	network_solaris_sendfilev.c	28;"	d	file:
 UNK	lemon.c	/^		UNK$/;"	e	enum:symbol::e_assoc	file:
-UNUSED	buffer.h	133;"	d
+UNUSED	buffer.h	144;"	d
 UNUSED	lemon.c	26;"	d	file:
 UNUSED	lighttpd-angel.c	31;"	d	file:
 UNUSED_CHUNK	chunk.h	/^	enum { UNUSED_CHUNK, MEM_CHUNK, FILE_CHUNK } type;$/;"	e	enum:chunk::__anon8
@@ -1199,54 +1199,54 @@ bplp	lemon.c	/^	struct plink *bplp;			\/* Follow-set backwards propagation links
 break_scriptfilename_for_php	mod_fastcgi.c	/^	unsigned short break_scriptfilename_for_php;$/;"	m	struct:__anon183	file:
 buffer	buffer.h	/^} buffer;$/;"	t	typeref:struct:__anon88
 buffer	md5.h	/^	unsigned char buffer[64];	\/* input buffer *\/$/;"	m	struct:__anon135
-buffer_append_long	buffer.c	/^int buffer_append_long(buffer *b, long val) {$/;"	f
-buffer_append_long_hex	buffer.c	/^int buffer_append_long_hex(buffer *b, unsigned long value) {$/;"	f
-buffer_append_memory	buffer.c	/^int buffer_append_memory(buffer *b, const char *s, size_t s_len) {$/;"	f
-buffer_append_off_t	buffer.c	/^int buffer_append_off_t(buffer *b, off_t val) {$/;"	f
-buffer_append_off_t	buffer.h	70;"	d
-buffer_append_string	buffer.c	/^int buffer_append_string(buffer *b, const char *s) {$/;"	f
-buffer_append_string_buffer	buffer.c	/^int buffer_append_string_buffer(buffer *b, const buffer *src) {$/;"	f
-buffer_append_string_encoded	buffer.c	/^int buffer_append_string_encoded(buffer *b, const char *s, size_t s_len, buffer_encoding_t encoding) {$/;"	f
-buffer_append_string_len	buffer.c	/^int buffer_append_string_len(buffer *b, const char *s, size_t s_len) {$/;"	f
-buffer_append_string_rfill	buffer.c	/^int buffer_append_string_rfill(buffer *b, const char *s, size_t maxlen) {$/;"	f
+buffer_append_long	buffer.c	/^int buffer_append_long(buffer *b, long val) $/;"	f
+buffer_append_long_hex	buffer.c	/^int buffer_append_long_hex(buffer *b, unsigned long value) $/;"	f
+buffer_append_memory	buffer.c	/^int buffer_append_memory(buffer *b, const char *s, size_t s_len) $/;"	f
+buffer_append_off_t	buffer.c	/^int buffer_append_off_t(buffer *b, off_t val) $/;"	f
+buffer_append_off_t	buffer.h	81;"	d
+buffer_append_string	buffer.c	/^int buffer_append_string(buffer *b, const char *s)$/;"	f
+buffer_append_string_buffer	buffer.c	/^int buffer_append_string_buffer(buffer *b, const buffer *src) $/;"	f
+buffer_append_string_encoded	buffer.c	/^int buffer_append_string_encoded(buffer *b, const char *s, size_t s_len, buffer_encoding_t encoding) $/;"	f
+buffer_append_string_len	buffer.c	/^int buffer_append_string_len(buffer *b, const char *s, size_t s_len) $/;"	f
+buffer_append_string_rfill	buffer.c	/^int buffer_append_string_rfill(buffer *b, const char *s, size_t maxlen) $/;"	f
 buffer_array	buffer.h	/^} buffer_array;$/;"	t	typeref:struct:__anon89
-buffer_array_append_get_buffer	buffer.c	/^buffer *buffer_array_append_get_buffer(buffer_array *b) {$/;"	f
-buffer_array_free	buffer.c	/^void buffer_array_free(buffer_array *b) {$/;"	f
-buffer_array_init	buffer.c	/^buffer_array* buffer_array_init(void) {$/;"	f
-buffer_array_reset	buffer.c	/^void buffer_array_reset(buffer_array *b) {$/;"	f
-buffer_caseless_compare	buffer.c	/^int buffer_caseless_compare(const char *a, size_t a_len, const char *b, size_t b_len) {$/;"	f
+buffer_array_append_get_buffer	buffer.c	/^buffer *buffer_array_append_get_buffer(buffer_array *b) $/;"	f
+buffer_array_free	buffer.c	/^void buffer_array_free(buffer_array *b) $/;"	f
+buffer_array_init	buffer.c	/^buffer_array* buffer_array_init(void) $/;"	f
+buffer_array_reset	buffer.c	/^void buffer_array_reset(buffer_array *b) $/;"	f
+buffer_caseless_compare	buffer.c	/^int buffer_caseless_compare(const char *a, size_t a_len, const char *b, size_t b_len) $/;"	f
 buffer_copy_dirname	stat_cache.c	/^static int buffer_copy_dirname(buffer * dst, buffer * file)$/;"	f	file:
-buffer_copy_long	buffer.c	/^int buffer_copy_long(buffer *b, long val) {$/;"	f
-buffer_copy_memory	buffer.c	/^int buffer_copy_memory(buffer *b, const char *s, size_t s_len) {$/;"	f
+buffer_copy_long	buffer.c	/^int buffer_copy_long(buffer *b, long val) $/;"	f
+buffer_copy_memory	buffer.c	/^int buffer_copy_memory(buffer *b, const char *s, size_t s_len) $/;"	f
 buffer_copy_off_t	buffer.c	/^int buffer_copy_off_t(buffer *b, off_t val) {$/;"	f
-buffer_copy_off_t	buffer.h	69;"	d
+buffer_copy_off_t	buffer.h	80;"	d
 buffer_copy_string	buffer.c	/^int buffer_copy_string(buffer *b, const char *s) {$/;"	f
-buffer_copy_string_buffer	buffer.c	/^int buffer_copy_string_buffer(buffer *b, const buffer *src) {$/;"	f
-buffer_copy_string_hex	buffer.c	/^int buffer_copy_string_hex(buffer *b, const char *in, size_t in_len) {$/;"	f
+buffer_copy_string_buffer	buffer.c	/^int buffer_copy_string_buffer(buffer *b, const buffer *src) $/;"	f
+buffer_copy_string_hex	buffer.c	/^int buffer_copy_string_hex(buffer *b, const char *in, size_t in_len) $/;"	f
 buffer_copy_string_len	buffer.c	/^int buffer_copy_string_len(buffer *b, const char *s, size_t s_len) {$/;"	f
 buffer_encoding_t	buffer.h	/^} buffer_encoding_t;$/;"	t	typeref:enum:__anon91
-buffer_free	buffer.c	/^void buffer_free(buffer *b) {$/;"	f
-buffer_init	buffer.c	/^buffer* buffer_init(void) {$/;"	f
-buffer_init_buffer	buffer.c	/^buffer *buffer_init_buffer(buffer *src) {$/;"	f
-buffer_init_string	buffer.c	/^buffer *buffer_init_string(const char *str) {$/;"	f
+buffer_free	buffer.c	/^void buffer_free(buffer *b) $/;"	f
+buffer_init	buffer.c	/^buffer* buffer_init(void) $/;"	f
+buffer_init_buffer	buffer.c	/^buffer *buffer_init_buffer(buffer *src) $/;"	f
+buffer_init_string	buffer.c	/^buffer *buffer_init_string(const char *str) $/;"	f
 buffer_int	fdevent.h	/^} buffer_int;$/;"	t	typeref:struct:__anon7
-buffer_is_empty	buffer.c	/^int buffer_is_empty(buffer *b) {$/;"	f
-buffer_is_equal	buffer.c	/^int buffer_is_equal(buffer *a, buffer *b) {$/;"	f
-buffer_is_equal_right_len	buffer.c	/^int buffer_is_equal_right_len(buffer *b1, buffer *b2, size_t len) {$/;"	f
-buffer_is_equal_string	buffer.c	/^int buffer_is_equal_string(buffer *a, const char *s, size_t b_len) {$/;"	f
+buffer_is_empty	buffer.c	/^int buffer_is_empty(buffer *b) $/;"	f
+buffer_is_equal	buffer.c	/^int buffer_is_equal(buffer *a, buffer *b) $/;"	f
+buffer_is_equal_right_len	buffer.c	/^int buffer_is_equal_right_len(buffer *b1, buffer *b2, size_t len) $/;"	f
+buffer_is_equal_string	buffer.c	/^int buffer_is_equal_string(buffer *a, const char *s, size_t b_len) $/;"	f
 buffer_path_simplify	buffer.c	/^int buffer_path_simplify(buffer *dest, buffer *src)$/;"	f
 buffer_pid_t	mod_cgi.c	/^} buffer_pid_t;$/;"	t	typeref:struct:__anon111	file:
 buffer_plugin	base.h	/^} buffer_plugin;$/;"	t	typeref:struct:__anon41
-buffer_prepare_append	buffer.c	/^int buffer_prepare_append(buffer *b, size_t size) {$/;"	f
-buffer_prepare_copy	buffer.c	/^int buffer_prepare_copy(buffer *b, size_t size) {$/;"	f
-buffer_reset	buffer.c	/^void buffer_reset(buffer *b) {$/;"	f
-buffer_search_string_len	buffer.c	/^char * buffer_search_string_len(buffer *b, const char *needle, size_t len) {$/;"	f
+buffer_prepare_append	buffer.c	/^int buffer_prepare_append(buffer *b, size_t size) $/;"	f
+buffer_prepare_copy	buffer.c	/^int buffer_prepare_copy(buffer *b, size_t size) $/;"	f
+buffer_reset	buffer.c	/^void buffer_reset(buffer *b) $/;"	f
+buffer_search_string_len	buffer.c	/^char * buffer_search_string_len(buffer *b, const char *needle, size_t len) $/;"	f
 buffer_to_lower	buffer.c	/^int buffer_to_lower(buffer *b) {$/;"	f
 buffer_to_upper	buffer.c	/^int buffer_to_upper(buffer *b) {$/;"	f
 buffer_uint	mod_fastcgi.c	/^} buffer_uint;$/;"	t	typeref:struct:__anon187	file:
-buffer_urldecode_internal	buffer.c	/^static int buffer_urldecode_internal(buffer *url, int is_query) {$/;"	f	file:
-buffer_urldecode_path	buffer.c	/^int buffer_urldecode_path(buffer *url) {$/;"	f
-buffer_urldecode_query	buffer.c	/^int buffer_urldecode_query(buffer *url) {$/;"	f
+buffer_urldecode_internal	buffer.c	/^static int buffer_urldecode_internal(buffer *url, int is_query) $/;"	f	file:
+buffer_urldecode_path	buffer.c	/^int buffer_urldecode_path(buffer *url) $/;"	f
+buffer_urldecode_query	buffer.c	/^int buffer_urldecode_query(buffer *url) $/;"	f
 build_doc_root	mod_simple_vhost.c	/^build_doc_root(server * srv, connection * con, plugin_data * p,$/;"	f	file:
 build_ssi_cgi_vars	mod_ssi.c	/^static int build_ssi_cgi_vars(server * srv, connection * con, plugin_data * p)$/;"	f	file:
 buildshifts	lemon.c	/^PRIVATE void buildshifts(lemp, stp)$/;"	f
@@ -1291,7 +1291,7 @@ check_local	mod_scgi.c	/^	unsigned short check_local;$/;"	m	struct:__anon171	fil
 child	proc_open.h	/^	descriptor_t parent, child;$/;"	m	struct:__anon212
 child	proc_open.h	/^	proc_pid_t child;$/;"	m	struct:__anon213
 childs	array.h	/^	array *childs;$/;"	m	struct:_data_config
-chunk	chunk.h	/^typedef struct chunk {$/;"	s
+chunk	chunk.h	/^typedef struct chunk $/;"	s
 chunk	chunk.h	/^} chunk;$/;"	t	typeref:struct:chunk
 chunk_free	chunk.c	/^static void chunk_free(chunk * c)$/;"	f	file:
 chunk_init	chunk.c	/^static chunk *chunk_init(void)$/;"	f	file:
@@ -1649,12 +1649,12 @@ emsg	lemon.c	/^static char emsg[] = "Command line syntax error: ";$/;"	v	file:
 enable_cores	base.h	/^	unsigned short enable_cores;$/;"	m	struct:__anon42
 enabled	mod_webdav.c	/^	unsigned short enabled;$/;"	m	struct:__anon51	file:
 encode_buf	mod_magnet.c	/^	buffer *encode_buf;$/;"	m	struct:__anon140	file:
-encoded_chars_hex	buffer.c	/^const char encoded_chars_hex[] = {$/;"	v
-encoded_chars_html	buffer.c	/^const char encoded_chars_html[] = {$/;"	v
-encoded_chars_http_header	buffer.c	/^const char encoded_chars_http_header[] = {$/;"	v
-encoded_chars_minimal_xml	buffer.c	/^const char encoded_chars_minimal_xml[] = {$/;"	v
-encoded_chars_rel_uri	buffer.c	/^const char encoded_chars_rel_uri[] = {$/;"	v
-encoded_chars_rel_uri_part	buffer.c	/^const char encoded_chars_rel_uri_part[] = {$/;"	v
+encoded_chars_hex	buffer.c	/^const char encoded_chars_hex[] = $/;"	v
+encoded_chars_html	buffer.c	/^const char encoded_chars_html[] = $/;"	v
+encoded_chars_http_header	buffer.c	/^const char encoded_chars_http_header[] = $/;"	v
+encoded_chars_minimal_xml	buffer.c	/^const char encoded_chars_minimal_xml[] = $/;"	v
+encoded_chars_rel_uri	buffer.c	/^const char encoded_chars_rel_uri[] = $/;"	v
+encoded_chars_rel_uri_part	buffer.c	/^const char encoded_chars_rel_uri_part[] = $/;"	v
 encoding	mod_dirlisting.c	/^	buffer *encoding;$/;"	m	struct:__anon84	file:
 ent	mod_dirlisting.c	/^	dirls_entry_t **ent;$/;"	m	struct:__anon87	file:
 env_add	mod_fastcgi.c	/^env_add(char_array * env, const char *key, size_t key_len, const char *val,$/;"	f	file:
@@ -2004,7 +2004,7 @@ header	fastcgi.h	/^	FCGI_Header header;$/;"	m	struct:__anon122
 header_len	base.h	/^	size_t header_len;$/;"	m	struct:__anon35
 headers	base.h	/^	array *headers;$/;"	m	struct:__anon24
 headers	base.h	/^	array *headers;$/;"	m	struct:__anon25
-hex2int	buffer.c	/^char hex2int(unsigned char hex) {$/;"	f
+hex2int	buffer.c	/^char hex2int(unsigned char hex) $/;"	f
 hex_chars	buffer.c	/^static const char hex_chars[] = "0123456789abcdef";$/;"	v	file:
 hide_dot_files	mod_dirlisting.c	/^	unsigned short hide_dot_files;$/;"	m	struct:__anon84	file:
 hide_header_file	mod_dirlisting.c	/^	unsigned short hide_header_file;$/;"	m	struct:__anon84	file:
@@ -2108,7 +2108,7 @@ init	plugin.h	/^	void *(*init) ();$/;"	m	struct:__anon79
 input	configfile.c	/^	const char *input;$/;"	m	struct:__anon204	file:
 input	configparser.y	/^input:: = metalines.$/;"	l
 input	mod_ssi_expr.c	/^	const char *input;$/;"	m	struct:__anon2	file:
-int2hex	buffer.c	/^char int2hex(char c) {$/;"	f
+int2hex	buffer.c	/^char int2hex(char c) $/;"	f
 ioctl	sys-socket.h	12;"	d
 ipstr_to_sockaddr	mod_extforward.c	/^struct addrinfo *ipstr_to_sockaddr(const char *host)$/;"	f
 ipv4	base.h	/^		struct in_addr ipv4;$/;"	m	union:__anon37::__anon38	typeref:struct:__anon37::__anon38::in_addr
@@ -2702,8 +2702,8 @@ pstate	lemon.c	/^struct pstate {$/;"	s	file:
 ptr	base.h	/^	connection **ptr;$/;"	m	struct:__anon36
 ptr	base.h	/^	server_socket **ptr;$/;"	m	struct:__anon45
 ptr	base.h	/^	void *ptr;$/;"	m	struct:__anon41
-ptr	buffer.h	/^	buffer **ptr;$/;"	m	struct:__anon89
-ptr	buffer.h	/^	char *ptr;$/;"	m	struct:__anon88
+ptr	buffer.h	/^	buffer **ptr; 	\/\/buffer指针数组$/;"	m	struct:__anon89
+ptr	buffer.h	/^	char *ptr; 		\/\/指向存储空间$/;"	m	struct:__anon88
 ptr	buffer.h	/^	char *ptr;$/;"	m	struct:__anon90
 ptr	fdevent.h	/^	fd_conn *ptr;$/;"	m	struct:__anon6
 ptr	fdevent.h	/^	int *ptr;$/;"	m	struct:__anon7
@@ -2917,8 +2917,8 @@ size	array.h	/^	size_t size;$/;"	m	struct:__anon147
 size	base.h	/^	size_t size;$/;"	m	struct:__anon36
 size	base.h	/^	size_t size;$/;"	m	struct:__anon41
 size	base.h	/^	size_t size;$/;"	m	struct:__anon45
-size	buffer.h	/^	size_t size;$/;"	m	struct:__anon88
-size	buffer.h	/^	size_t size;$/;"	m	struct:__anon89
+size	buffer.h	/^	size_t size; 	\/\/buffer数组的大小$/;"	m	struct:__anon89
+size	buffer.h	/^	size_t size; 	\/\/buffer的长度$/;"	m	struct:__anon88
 size	buffer.h	/^	size_t size;$/;"	m	struct:__anon90
 size	configfile.c	/^	size_t size;$/;"	m	struct:__anon204	file:
 size	fdevent.h	/^	size_t size;$/;"	m	struct:__anon6
@@ -3186,8 +3186,8 @@ used	base.h	/^	size_t used;$/;"	m	struct:__anon36
 used	base.h	/^	size_t used;$/;"	m	struct:__anon41
 used	base.h	/^	size_t used;$/;"	m	struct:__anon45
 used	buffer.h	/^	size_t used;				\/* output-pointer *\/$/;"	m	struct:__anon90
-used	buffer.h	/^	size_t used;$/;"	m	struct:__anon88
-used	buffer.h	/^	size_t used;$/;"	m	struct:__anon89
+used	buffer.h	/^	size_t used; 	\/\/buffer中数据的长度$/;"	m	struct:__anon88
+used	buffer.h	/^	size_t used; 	\/\/buffer数组中数据的个数$/;"	m	struct:__anon89
 used	fdevent.h	/^	size_t used;$/;"	m	struct:__anon6
 used	fdevent.h	/^	size_t used;$/;"	m	struct:__anon7
 used	fdevent.h	/^	size_t used;$/;"	m	struct:fdevents

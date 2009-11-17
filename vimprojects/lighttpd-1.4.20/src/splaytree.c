@@ -9,6 +9,11 @@
  * a given rank.  Both of these operations are illustrated in the code below.
  * The remainder of this introduction is taken from top-down-splay.c.
  * 
+ * 扩展了top-down-splay.c。增加了一个size域。用来保存以这个节点为根的子树的节点
+ * 个数。这样就可以有效的计算一个key值的rank。(key值的rank是指这个key值的左面有
+ * 多少个节点，也就是，把所有的节点那key值排序，这个key值的左面有多少个节点。
+ * 伸展树就是排好序的)。也可以通过一个rank值快速的找打那个节点。
+ *
  * "Splay trees", or "self-adjusting search trees" are a simple and efficient
  * data structure for storing an ordered set.  The data structure consists of a 
  * binary tree, with no additional fields.  It allows searching, insertion,
@@ -18,6 +23,11 @@
  * is typically even better.  Splay trees are described in a number of texts
  * and papers [1,2,3,4].
  * 
+ * 伸展树，或者叫自适应查找树是一种用于保存有序集合的简单高效的数据结构。这个数据
+ * 结构有一个二叉树组成。允许查找，插入，删除，删除最小，删除最大，分割，合并等
+ * 许多操作，这些操作都是对数级的。由于伸展树可以适应需求序列，因此他们的性能在实际
+ * 应用中更优秀。
+ *
  * The code here is adapted from simple top-down splay, at the bottom of page
  * 669 of [2].  It can be obtained via anonymous ftp from spade.pc.cs.cmu.edu
  * in directory /usr/sleator/public.
@@ -34,6 +44,17 @@
  * normal binary search for i.  (It's a neighbor of i in the tree.) This allows 
  * many other operations to be easily implemented, as shown below.
  * 
+ * 这里的主要修改是，即使要伸展的节点不在树中，甚至树的根是一个NULL，伸展操作也
+ * 可以顺利执行。因此，语句:
+ *
+ * t = splay(i, t);
+ *
+ * 引起在以t为根的树中查找key值为i的节点。如果存在这个节点，那么把它伸展成根。如果
+ * 不存在，那么，根节点就是距离i最近的节点。(i的邻居)。(直译：根节点就是当为查找i，
+ * 已经搜索完整个二叉树后，在NULL之前的最后一个节点)。这样其他操作就可以很容易的实现。
+ *
+ * 下面是一些关于伸展树的文章。
+ *
  * [1] "Data Structures and Their Algorithms", Lewis and Denenberg, Harper
  * Collins, 1991, pp 243-251. [2] "Self-adjusting Binary Search Trees" Sleator
  * and Tarjan, JACM Volume 32, No 3, July 1985, pp 652-686. [3] "Data Structure 
@@ -62,11 +83,22 @@
  */
 splay_tree *splaytree_splay(splay_tree * t, int i)
 {
+	//N用来存放左树和右树。
+	//由于左树只有右子树，右树只有左子树，因此，左右树可以放在同一个树中。
+	//分别用这棵树的左子树表示右树的左子树，右子树表是左树的右子树。
 	splay_tree N, *l, *r, *y;
+	
+	//comp 		: 	表示比较的结果。
+	//root_size : 	中树的大小
+	//l_size 	: 	左树的大小
+	//r_size 	: 	右树的大小
 	int comp, root_size, l_size, r_size;
 
 	if (t == NULL)
+	{
 		return t;
+	}
+
 	N.left = N.right = NULL;
 	l = r = &N;
 	root_size = node_size(t);
@@ -75,11 +107,14 @@ splay_tree *splaytree_splay(splay_tree * t, int i)
 	for (;;)
 	{
 		comp = compare(i, t->key);
-		if (comp < 0)
+		if (comp < 0)  // i < t -> key
 		{
 			if (t->left == NULL)
+			{
 				break;
-			if (compare(i, t->left->key) < 0)
+			}
+
+			if (compare(i, t->left->key) < 0) // i < t -> left -> key
 			{
 				y = t->left;	/* rotate right */
 				t->left = y->right;
@@ -87,16 +122,21 @@ splay_tree *splaytree_splay(splay_tree * t, int i)
 				t->size = node_size(t->left) + node_size(t->right) + 1;
 				t = y;
 				if (t->left == NULL)
+				{
 					break;
+				}
 			}
 			r->left = t;		/* link right */
 			r = t;
 			t = t->left;
 			r_size += 1 + node_size(r->right);
-		} else if (comp > 0)
+		} 
+		else if (comp > 0)
 		{
 			if (t->right == NULL)
+			{
 				break;
+			}
 			if (compare(i, t->right->key) > 0)
 			{
 				y = t->right;	/* rotate left */
@@ -105,17 +145,21 @@ splay_tree *splaytree_splay(splay_tree * t, int i)
 				t->size = node_size(t->left) + node_size(t->right) + 1;
 				t = y;
 				if (t->right == NULL)
+				{
 					break;
+				}
 			}
 			l->right = t;		/* link left */
 			l = t;
 			t = t->right;
 			l_size += 1 + node_size(l->left);
-		} else
+		} 
+		else
 		{
 			break;
 		}
 	}
+
 	l_size += node_size(t->left);	/* Now l_size and r_size are the sizes of */
 	r_size += node_size(t->right);	/* the left and right trees we just built. */
 	t->size = l_size + r_size + 1;
@@ -173,13 +217,15 @@ splay_tree *splaytree_insert(splay_tree * t, int i, void *data)
 	if (t == NULL)
 	{
 		new->left = new->right = NULL;
-	} else if (compare(i, t->key) < 0)
+	} 
+	else if (compare(i, t->key) < 0)
 	{
 		new->left = t->left;
 		new->right = t;
 		t->left = NULL;
 		t->size = 1 + node_size(t->right);
-	} else
+	} 
+	else
 	{
 		new->right = t->right;
 		new->left = t;
@@ -212,7 +258,8 @@ splay_tree *splaytree_delete(splay_tree * t, int i)
 		if (t->left == NULL)
 		{
 			x = t->right;
-		} else
+		} 
+		else
 		{
 			x = splaytree_splay(t->left, i);
 			x->right = t->right;
@@ -223,7 +270,8 @@ splay_tree *splaytree_delete(splay_tree * t, int i)
 			x->size = tsize - 1;
 		}
 		return x;
-	} else
+	} 
+	else
 	{
 		return t;				/* It wasn't there */
 	}
@@ -252,11 +300,13 @@ splay_tree *find_rank(int r, splay_tree * t)
 		if (r < lsize)
 		{
 			t = t->left;
-		} else if (r > lsize)
+		} 
+		else if (r > lsize)
 		{
 			r = r - lsize - 1;
 			t = t->right;
-		} else
+		} 
+		else
 		{
 			return t;
 		}
