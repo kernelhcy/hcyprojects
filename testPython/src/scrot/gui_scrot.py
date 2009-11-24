@@ -35,7 +35,7 @@ class main_GUI:
         #self.name_add.set_text('screenscrot')#设置默认名称
         self.path_add = gtk.Entry()
         
-        self.path_add.set_text('/home/hcy/screenshots/');#设置默认路径
+        self.path_add.set_text('/home/hcy/');#设置默认路径
         
         self.hbox_name = gtk.HBox()
         self.hbox_name.set_border_width(1)

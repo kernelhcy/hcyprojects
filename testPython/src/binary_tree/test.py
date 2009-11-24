@@ -12,4 +12,18 @@ print 'test1'
 print 'a:%d'%(test1.get_a())
 test1.a=10
 print 'test2'
-print 'a:%d'%(test2.get_a())
+print 'a:%d'%(test1.a)
+
+from BST import BST
+import random
+
+bst=BST()
+bst.insert(int(random.random()*100))
+bst.insert(int(random.random()*100))
+bst.insert(int(random.random()*100))
+bst.insert(int(random.random()*100))
+bst.insert(int(random.random()*100))
+bst.insert(int(random.random()*100))
+bst.insert(int(random.random()*100))
+bst.insert(int(random.random()*100))
+bst.mid_travel()
