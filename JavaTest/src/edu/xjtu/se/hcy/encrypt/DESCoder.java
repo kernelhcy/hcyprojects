@@ -26,6 +26,11 @@ import javax.crypto.spec.DESKeySpec;
  * @author 梁栋
  * @version 1.0
  * @since 1.0
+ * 
+ * DES-Data Encryption Standard,即数据加密算法。是IBM公司于1975年研究成功并公开发表的。
+ * DES算法的入口参数有三个:Key、Data、Mode。其中Key为8个字节共64位,是DES算法的工作密钥;Data也为8个字节64位,
+ * 是要被加密或被解密的数据;Mode为DES的工作方式,有两种:加密或解密。 
+ * DES算法把64位的明文输入块变为64位的密文输出块,它所使用的密钥也是64位。 
  */
 public abstract class DESCoder extends Coder
 {
