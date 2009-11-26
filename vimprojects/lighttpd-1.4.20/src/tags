@@ -1329,7 +1329,7 @@ comp_key	array.h	/^	buffer *comp_key;$/;"	m	struct:_data_config
 comp_key_t	array.h	/^} comp_key_t;$/;"	t	typeref:enum:__anon152
 comp_type	base.h	/^	comp_key_t comp_type;$/;"	m	struct:__anon34
 comp_value	base.h	/^	buffer *comp_value;			\/* just a pointer *\/$/;"	m	struct:__anon34
-compare	splaytree.c	49;"	d	file:
+compare	splaytree.c	70;"	d	file:
 compress	mod_compress.c	/^	array *compress;$/;"	m	struct:__anon92	file:
 compress_cache_dir	mod_compress.c	/^	buffer *compress_cache_dir;$/;"	m	struct:__anon92	file:
 compress_max_filesize	mod_compress.c	/^	off_t compress_max_filesize;$/;"	m	struct:__anon92	file:
@@ -1495,7 +1495,7 @@ contentLengthB1	fastcgi.h	/^	unsigned char contentLengthB1;$/;"	m	struct:__anon1
 content_charset	mod_dirlisting.c	/^	buffer *content_charset;$/;"	m	struct:__anon85	file:
 content_length	base.h	/^	off_t content_length;$/;"	m	struct:__anon25
 content_length	base.h	/^	size_t content_length;		\/* returned by strtoul() *\/$/;"	m	struct:__anon24
-content_type	base.h	/^	buffer *content_type;$/;"	m	struct:__anon29
+content_type	base.h	/^	buffer *content_type; 	\/\/文件类型$/;"	m	struct:__anon29
 context	configparser.y	/^context:: = DOLLAR SRVVARNAME(B)$/;"	l
 context	mod_redirect.c	/^	data_config *context;		\/* to which apply me *\/$/;"	m	struct:__anon98	file:
 context	mod_rewrite.c	/^	data_config *context;		\/* to which apply me *\/$/;"	m	struct:__anon125	file:
@@ -1526,7 +1526,7 @@ data	lemon.c	/^	struct config *data;		\/* The data *\/$/;"	m	struct:s_x4node	typ
 data	lemon.c	/^	struct state *data;			\/* The data *\/$/;"	m	struct:s_x3node	typeref:struct:s_x3node::state	file:
 data	lemon.c	/^	struct symbol *data;		\/* The data *\/$/;"	m	struct:s_x2node	typeref:struct:s_x2node::symbol	file:
 data	plugin.h	/^	void *data;$/;"	m	struct:__anon79
-data	splaytree.h	/^	void *data;$/;"	m	struct:tree_node
+data	splaytree.h	/^	void *data; 	\/\/节点存储的数据。$/;"	m	struct:tree_node
 data_array	array.h	/^} data_array;$/;"	t	typeref:struct:__anon150
 data_array_copy	data_array.c	/^static data_unset *data_array_copy(const data_unset * s)$/;"	f	file:
 data_array_free	data_array.c	/^static void data_array_free(data_unset * d)$/;"	f	file:
@@ -1607,8 +1607,8 @@ devpollfds	fdevent.h	/^	struct pollfd *devpollfds;$/;"	m	struct:fdevents	typeref
 digest_kv	http_auth.c	/^} digest_kv;$/;"	t	typeref:struct:__anon219	file:
 dir_listing	mod_dirlisting.c	/^	unsigned short dir_listing;$/;"	m	struct:__anon84	file:
 dir_name	base.h	/^	buffer *dir_name;			\/* for building the dirname from the filename *\/$/;"	m	struct:__anon30
-dir_ndx	base.h	/^	int dir_ndx;$/;"	m	struct:__anon29
-dir_version	base.h	/^	int dir_version;$/;"	m	struct:__anon29
+dir_ndx	base.h	/^	int dir_ndx; 		\/\/$/;"	m	struct:__anon29
+dir_version	base.h	/^	int dir_version;  	\/\/$/;"	m	struct:__anon29
 dirlist_encoding	base.h	/^	buffer *dirlist_encoding;$/;"	m	struct:__anon31
 dirls_entry_t	mod_dirlisting.c	/^} dirls_entry_t;$/;"	t	typeref:struct:__anon86	file:
 dirls_list_t	mod_dirlisting.c	/^} dirls_list_t;$/;"	t	typeref:struct:__anon87	file:
@@ -1682,8 +1682,8 @@ errorlog_mode	base.h	/^	enum { ERRORLOG_STDERR, ERRORLOG_FILE, ERRORLOG_SYSLOG }
 errorlog_use_syslog	base.h	/^	unsigned short errorlog_use_syslog;$/;"	m	struct:__anon42
 errstream	lemon.c	/^static FILE *errstream;$/;"	v	file:
 errsym	lemon.c	/^	struct symbol *errsym;		\/* The error symbol *\/$/;"	m	struct:lemon	typeref:struct:lemon::symbol	file:
+etag	base.h	/^	buffer *etag; 		\/\/文件的etag$/;"	m	struct:__anon29
 etag	base.h	/^	buffer *etag;$/;"	m	struct:__anon28
-etag	base.h	/^	buffer *etag;$/;"	m	struct:__anon29
 etag	mod_magnet_cache.h	/^	buffer *etag;$/;"	m	struct:__anon155
 etag_create	etag.c	/^int etag_create(buffer * etag, struct stat *st, etag_flags_t flags)$/;"	f
 etag_flags	base.h	/^	etag_flags_t etag_flags;$/;"	m	struct:__anon35
@@ -1901,7 +1901,7 @@ file_open	lemon.c	/^PRIVATE FILE *file_open(lemp, suffix, mode)$/;"	f
 file_started	base.h	/^	int file_started;$/;"	m	struct:__anon35
 filename	lemon.c	/^	char *filename;				\/* Name of the input file *\/$/;"	m	struct:lemon	file:
 filename	lemon.c	/^	char *filename;				\/* Name of the input file *\/$/;"	m	struct:pstate	file:
-files	base.h	/^	splay_tree *files;			\/* the nodes of the tree are stat_cache_entry's $/;"	m	struct:__anon30
+files	base.h	/^	splay_tree *files;			\/* the nodes of the tree are stat_cache_entry's *\/$/;"	m	struct:__anon30
 find_rank	splaytree.c	/^splay_tree *find_rank(int r, splay_tree * t)$/;"	f
 findbreak	lemon.c	/^static int findbreak(msg, min, max)$/;"	f	file:
 first	chunk.h	/^	chunk *first;$/;"	m	struct:__anon11
@@ -2126,7 +2126,7 @@ is_readable	base.h	/^	int is_readable;$/;"	m	struct:__anon35
 is_readonly	mod_webdav.c	/^	unsigned short is_readonly;$/;"	m	struct:__anon51	file:
 is_ssl	base.h	/^	unsigned short is_ssl;$/;"	m	struct:__anon31
 is_ssl	base.h	/^	unsigned short is_ssl;$/;"	m	struct:__anon44
-is_symlink	base.h	/^	char is_symlink;$/;"	m	struct:__anon29
+is_symlink	base.h	/^	char is_symlink; 	\/\/是否是连接文件$/;"	m	struct:__anon29
 is_temp	chunk.h	/^		int is_temp;			\/* file is temporary and will be deleted if $/;"	m	struct:chunk::__anon9
 is_weakref	array.h	/^	int is_weakref;				\/* data is weakref, don't bother the data *\/$/;"	m	struct:__anon147
 is_writable	base.h	/^	int is_writable;$/;"	m	struct:__anon35
@@ -2151,7 +2151,7 @@ key	mod_fastcgi.c	/^	buffer *key;				\/* like .php *\/$/;"	m	struct:__anon184	fi
 key	mod_rewrite.c	/^	pcre *key;$/;"	m	struct:__anon123	file:
 key	mod_scgi.c	/^	buffer *key;				\/* like .php *\/$/;"	m	struct:__anon172	file:
 key	server.h	/^	char *key;$/;"	m	struct:__anon47
-key	splaytree.h	/^	int key;$/;"	m	struct:tree_node
+key	splaytree.h	/^	int key; 							\/\/用于节点比较的key值。$/;"	m	struct:tree_node
 key_extra	keyvalue.h	/^	pcre_extra *key_extra;$/;"	m	struct:__anon161
 key_len	http_auth.c	/^	int key_len;$/;"	m	struct:__anon219	file:
 keyvalue	keyvalue.h	/^KVB(keyvalue);$/;"	v
@@ -2187,7 +2187,7 @@ ldap	http_auth.h	/^	LDAP *ldap;$/;"	m	struct:__anon77
 ldap_filter	http_auth.h	/^	buffer *ldap_filter;$/;"	m	struct:__anon78
 ldap_filter_post	http_auth.h	/^	buffer *ldap_filter_post;$/;"	m	struct:__anon77
 ldap_filter_pre	http_auth.h	/^	buffer *ldap_filter_pre;$/;"	m	struct:__anon77
-left	splaytree.h	/^	struct tree_node *left, *right;$/;"	m	struct:tree_node	typeref:struct:tree_node::tree_node
+left	splaytree.h	/^	struct tree_node *left, *right; 	\/\/指向左右子结点$/;"	m	struct:tree_node	typeref:struct:tree_node::tree_node
 lemon	lemon.c	/^struct lemon {$/;"	s	file:
 len	mod_evhost.c	/^	size_t len;$/;"	m	struct:__anon137	file:
 len	mod_fastcgi.c	/^	size_t len;$/;"	m	struct:__anon193	file:
@@ -2433,7 +2433,7 @@ nLookahead	lemon.c	/^	int nLookahead;				\/* Used slots in aLookahead[] *\/$/;"	
 nLookaheadAlloc	lemon.c	/^	int nLookaheadAlloc;		\/* Slots allocated in aLookahead[] *\/$/;"	m	struct:acttab	file:
 nNtAct	lemon.c	/^	int nTknAct, nNtAct;		\/* Number of actions on terminals and$/;"	m	struct:state	file:
 nTknAct	lemon.c	/^	int nTknAct, nNtAct;		\/* Number of actions on terminals and$/;"	m	struct:state	file:
-name	base.h	/^	buffer *name;$/;"	m	struct:__anon29
+name	base.h	/^	buffer *name; 		\/\/文件名$/;"	m	struct:__anon29
 name	chunk.h	/^		buffer *name;			\/* name of the file *\/$/;"	m	struct:chunk::__anon9
 name	lemon.c	/^	char *name;					\/* Name of the generated parser *\/$/;"	m	struct:lemon	file:
 name	lemon.c	/^	char *name;					\/* Name of the symbol *\/$/;"	m	struct:symbol	file:
@@ -2479,7 +2479,7 @@ next	mod_fastcgi.c	/^	struct fcgi_proc *prev, *next;	\/* see first *\/$/;"	m	str
 next	mod_scgi.c	/^	struct scgi_proc *prev, *next;	\/* see first *\/$/;"	m	struct:scgi_proc	typeref:struct:scgi_proc::	file:
 next_power_of_2	array.h	/^	size_t next_power_of_2;$/;"	m	struct:__anon147
 nextlhs	lemon.c	/^	struct rule *nextlhs;		\/* Next rule with the same LHS *\/$/;"	m	struct:rule	typeref:struct:rule::rule	file:
-node_size	splaytree.c	57;"	d	file:
+node_size	splaytree.c	78;"	d	file:
 note_is_sent	mod_fastcgi.c	/^	int note_is_sent;$/;"	m	struct:__anon184	file:
 note_is_sent	mod_scgi.c	/^	int note_is_sent;$/;"	m	struct:__anon172	file:
 nrhs	configparser.c	/^	unsigned char nrhs;			\/* Number of right-hand side symbols in the$/;"	m	struct:__anon145	file:
@@ -2804,7 +2804,7 @@ rewrite_rule_buffer_init	mod_rewrite.c	/^rewrite_rule_buffer *rewrite_rule_buffe
 rhs	lemon.c	/^	struct symbol **rhs;		\/* The RHS symbols *\/$/;"	m	struct:rule	typeref:struct:rule::symbol	file:
 rhs	lemon.c	/^	struct symbol *rhs[MAXRHS];	\/* RHS symbols *\/$/;"	m	struct:pstate	typeref:struct:pstate::symbol	file:
 rhsalias	lemon.c	/^	char **rhsalias;			\/* An alias for each RHS symbol (NULL if none) *\/$/;"	m	struct:rule	file:
-right	splaytree.h	/^	struct tree_node *left, *right;$/;"	m	struct:tree_node	typeref:struct:tree_node::
+right	splaytree.h	/^	struct tree_node *left, *right; 	\/\/指向左右子结点$/;"	m	struct:tree_node	typeref:struct:tree_node::
 roleB0	fastcgi.h	/^	unsigned char roleB0;$/;"	m	struct:__anon117
 roleB1	fastcgi.h	/^	unsigned char roleB1;$/;"	m	struct:__anon117
 rp	lemon.c	/^		struct rule *rp;		\/* The rule, if a reduce *\/$/;"	m	union:action::__anon200	typeref:struct:action::__anon200::rule	file:
@@ -2945,7 +2945,7 @@ size	mod_scgi.c	/^	size_t size;$/;"	m	struct:__anon173	file:
 size	mod_scgi.c	/^	size_t size;$/;"	m	struct:__anon175	file:
 size	mod_ssi_expr.c	/^	size_t size;$/;"	m	struct:__anon2	file:
 size	mod_webdav.c	/^	size_t size;$/;"	m	struct:__anon54	file:
-size	splaytree.h	/^	int size;					\/* maintained to be the number of nodes rooted$/;"	m	struct:tree_node
+size	splaytree.h	/^	int size;$/;"	m	struct:tree_node
 size	stat_cache.c	/^	size_t size;$/;"	m	struct:__anon134	file:
 size	stream.h	/^	off_t size;$/;"	m	struct:__anon106
 sizefmt	mod_ssi.h	/^	int sizefmt;$/;"	m	struct:__anon168
@@ -2964,7 +2964,7 @@ specific_config	base.h	/^} specific_config;$/;"	t	typeref:struct:__anon31
 splay_tree	splaytree.h	/^} splay_tree;$/;"	t	typeref:struct:tree_node
 splaytree_delete	splaytree.c	/^splay_tree *splaytree_delete(splay_tree * t, int i)$/;"	f
 splaytree_insert	splaytree.c	/^splay_tree *splaytree_insert(splay_tree * t, int i, void *data)$/;"	f
-splaytree_size	splaytree.h	19;"	d
+splaytree_size	splaytree.h	42;"	d
 splaytree_splay	splaytree.c	/^splay_tree *splaytree_splay(splay_tree * t, int i)$/;"	f
 split_get_params	mod_flv_streaming.c	/^static int split_get_params(array * get_params, buffer * qrystr)$/;"	f	file:
 split_vals	base.h	/^	array *split_vals;$/;"	m	struct:server
@@ -3015,7 +3015,7 @@ ssl_pemfile	base.h	/^	buffer *ssl_pemfile;$/;"	m	struct:__anon31
 ssl_pemfile	base.h	/^	buffer *ssl_pemfile;$/;"	m	struct:__anon44
 ssl_use_sslv2	base.h	/^	unsigned short ssl_use_sslv2;$/;"	m	struct:__anon31
 ssl_use_sslv2	base.h	/^	unsigned short ssl_use_sslv2;$/;"	m	struct:__anon44
-st	base.h	/^	struct stat st;$/;"	m	struct:__anon29	typeref:struct:__anon29::stat
+st	base.h	/^	struct stat st; 	\/\/文件的状态结构体$/;"	m	struct:__anon29	typeref:struct:__anon29::stat
 st	mod_cml_lua.c	/^	stream st;$/;"	m	struct:__anon211	file:
 stacksize	lemon.c	/^	char *stacksize;			\/* Size of the parser stack *\/$/;"	m	struct:lemon	file:
 start	chunk.h	/^			char *start;		\/* the start pointer of the mmap'ed area *\/$/;"	m	struct:chunk::__anon9::__anon10
@@ -3040,7 +3040,7 @@ stat_cache_lstat	stat_cache.c	/^static int stat_cache_lstat(server * srv, buffer
 stat_cache_tag_old_entries	stat_cache.c	/^stat_cache_tag_old_entries(server * srv, splay_tree * t, int *keys,$/;"	f	file:
 stat_cache_trigger_cleanup	stat_cache.c	/^int stat_cache_trigger_cleanup(server * srv)$/;"	f
 stat_fn	mod_ssi.h	/^	buffer *stat_fn;$/;"	m	struct:__anon168
-stat_ts	base.h	/^	time_t stat_ts;$/;"	m	struct:__anon29
+stat_ts	base.h	/^	time_t stat_ts; 	\/\/结构体的时间$/;"	m	struct:__anon29
 state	base.h	/^	connection_state_t state;$/;"	m	struct:__anon35
 state	lemon.c	/^	} state;					\/* The state of the parser *\/$/;"	m	struct:pstate	typeref:enum:pstate::e_state	file:
 state	lemon.c	/^struct state {$/;"	s	file:
@@ -3131,7 +3131,7 @@ tplt_xfer	lemon.c	/^PRIVATE void tplt_xfer(name, in, out, lineno)$/;"	f
 traffic_limit_reached	base.h	/^	int traffic_limit_reached;$/;"	m	struct:__anon35
 traffic_out	mod_status.c	/^	double traffic_out;$/;"	m	struct:__anon75	file:
 transfer_encoding	base.h	/^	} transfer_encoding;$/;"	m	struct:__anon25	typeref:enum:__anon25::__anon26
-tree_node	splaytree.h	/^typedef struct tree_node {$/;"	s
+tree_node	splaytree.h	/^typedef struct tree_node $/;"	s
 trigger_handler	mod_cml.h	/^	buffer *trigger_handler;$/;"	m	struct:__anon61
 trigger_regex	mod_trigger_b4_dl.c	/^	pcre *trigger_regex;$/;"	m	struct:__anon62	file:
 trigger_timeout	mod_trigger_b4_dl.c	/^	unsigned short trigger_timeout;$/;"	m	struct:__anon62	file:

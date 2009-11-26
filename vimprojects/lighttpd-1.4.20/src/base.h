@@ -218,29 +218,33 @@ typedef struct {
 	buffer *etag;
 } physical;
 
-typedef struct {
-	buffer *name;
-	buffer *etag;
 
-	struct stat st;
-
-	time_t stat_ts;
-
+/**
+ * 用于缓存文件的信息。
+ */
+typedef struct 
+{
+	buffer *name; 		//文件名
+	buffer *etag; 		//文件的etag
+	struct stat st; 	//文件的状态结构体
+	time_t stat_ts; 	//结构体的时间
 #ifdef HAVE_LSTAT
-	char is_symlink;
+	char is_symlink; 	//是否是连接文件
 #endif
-
 #ifdef HAVE_FAM_H
-	int dir_version;
-	int dir_ndx;
+	int dir_version;  	//
+	int dir_ndx; 		//
 #endif
 
-	buffer *content_type;
+	buffer *content_type; 	//文件类型
 } stat_cache_entry;
 
-typedef struct {
-	splay_tree *files;			/* the nodes of the tree are stat_cache_entry's 
-								 */
+/**
+ * 一棵缓存文件信息的伸展树
+ */
+typedef struct 
+{
+	splay_tree *files;			/* the nodes of the tree are stat_cache_entry's */
 
 	buffer *dir_name;			/* for building the dirname from the filename */
 #ifdef HAVE_FAM_H

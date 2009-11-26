@@ -1,7 +1,20 @@
+/**
+ *
+ * 这个文件定义一些通用的操作，包括初始化等。
+ * 其中大部分的操作都是调用fdevents结构体中的函数指针。
+ * 这样可以忽略到底使用那种多路IO而提供一个统一的操作接口。
+ * 便于扩展和使用。
+ * 
+ * 关于不同的多路IO的各种具体操作，分别包含在文件：
+ * 	fdevent_freebsd_kqueue.c  fdevent_linux_sysepoll.c  fdevent_select.c
+ * 	fdevent_linux_rtsig.c     fdevent_poll.c            fdevent_solaris_devpoll.c
+ * 中。
+ * 在这些文件中，通过函数fdevent_XXX_init函数对fdevent结构体进行赋值。
+ *
+ */
+
 #include <sys/types.h>
-
 #include "settings.h"
-
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,38 +25,41 @@
 #include "fdevent.h"
 #include "buffer.h"
 
+/**
+ * 初始化文件描述符事件数组fdevent
+ */
 fdevents *fdevent_init(size_t maxfds, fdevent_handler_t type)
 {
 	fdevents *ev;
-
+	
+	//内存被初始化为0
 	ev = calloc(1, sizeof(*ev));
+	
+	//分配数组
 	ev->fdarray = calloc(maxfds, sizeof(*ev->fdarray));
 	ev->maxfds = maxfds;
 
+	//根据设定的多路IO的类型进行初始化。
 	switch (type)
 	{
 	case FDEVENT_HANDLER_POLL:
 		if (0 != fdevent_poll_init(ev))
 		{
-			fprintf(stderr, "%s.%d: event-handler poll failed\n",
-					__FILE__, __LINE__);
-
+			fprintf(stderr, "%s.%d: event-handler poll failed\n", __FILE__, __LINE__);
 			return NULL;
 		}
 		break;
 	case FDEVENT_HANDLER_SELECT:
 		if (0 != fdevent_select_init(ev))
 		{
-			fprintf(stderr, "%s.%d: event-handler select failed\n",
-					__FILE__, __LINE__);
+			fprintf(stderr, "%s.%d: event-handler select failed\n", __FILE__, __LINE__);
 			return NULL;
 		}
 		break;
 	case FDEVENT_HANDLER_LINUX_RTSIG:
 		if (0 != fdevent_linux_rtsig_init(ev))
 		{
-			fprintf(stderr,
-					"%s.%d: event-handler linux-rtsig failed, try to set server.event-handler = \"poll\" or \"select\"\n",
+			fprintf(stderr, "%s.%d: event-handler linux-rtsig failed, try to set server.event-handler = \"poll\" or \"select\"\n",
 					__FILE__, __LINE__);
 			return NULL;
 		}
@@ -51,8 +67,7 @@ fdevents *fdevent_init(size_t maxfds, fdevent_handler_t type)
 	case FDEVENT_HANDLER_LINUX_SYSEPOLL:
 		if (0 != fdevent_linux_sysepoll_init(ev))
 		{
-			fprintf(stderr,
-					"%s.%d: event-handler linux-sysepoll failed, try to set server.event-handler = \"poll\" or \"select\"\n",
+			fprintf(stderr, "%s.%d: event-handler linux-sysepoll failed, try to set server.event-handler = \"poll\" or \"select\"\n",
 					__FILE__, __LINE__);
 			return NULL;
 		}
@@ -60,8 +75,7 @@ fdevents *fdevent_init(size_t maxfds, fdevent_handler_t type)
 	case FDEVENT_HANDLER_SOLARIS_DEVPOLL:
 		if (0 != fdevent_solaris_devpoll_init(ev))
 		{
-			fprintf(stderr,
-					"%s.%d: event-handler solaris-devpoll failed, try to set server.event-handler = \"poll\" or \"select\"\n",
+			fprintf(stderr, "%s.%d: event-handler solaris-devpoll failed, try to set server.event-handler = \"poll\" or \"select\"\n",
 					__FILE__, __LINE__);
 			return NULL;
 		}
@@ -69,15 +83,13 @@ fdevents *fdevent_init(size_t maxfds, fdevent_handler_t type)
 	case FDEVENT_HANDLER_FREEBSD_KQUEUE:
 		if (0 != fdevent_freebsd_kqueue_init(ev))
 		{
-			fprintf(stderr,
-					"%s.%d: event-handler freebsd-kqueue failed, try to set server.event-handler = \"poll\" or \"select\"\n",
+			fprintf(stderr, "%s.%d: event-handler freebsd-kqueue failed, try to set server.event-handler = \"poll\" or \"select\"\n",
 					__FILE__, __LINE__);
 			return NULL;
 		}
 		break;
 	default:
-		fprintf(stderr,
-				"%s.%d: event-handler is unknown, try to set server.event-handler = \"poll\" or \"select\"\n",
+		fprintf(stderr, "%s.%d: event-handler is unknown, try to set server.event-handler = \"poll\" or \"select\"\n",
 				__FILE__, __LINE__);
 		return NULL;
 	}
@@ -91,8 +103,9 @@ void fdevent_free(fdevents * ev)
 	if (!ev)
 		return;
 
-	if (ev->free)
-		ev->free(ev);
+	//调用ev中保存的free函数
+	if (ev -> free)
+		ev -> free(ev);
 
 	for (i = 0; i < ev->maxfds; i++)
 	{
@@ -106,6 +119,7 @@ void fdevent_free(fdevents * ev)
 
 int fdevent_reset(fdevents * ev)
 {
+	//调用reset函数
 	if (ev->reset)
 		return ev->reset(ev);
 
@@ -125,7 +139,9 @@ void fdnode_free(fdnode * fdn)
 {
 	free(fdn);
 }
-
+//
+//注册文件描述符fd和处理函数handler。
+//及ctx
 int fdevent_register(fdevents * ev, int fd, fdevent_handler handler, void *ctx)
 {
 	fdnode *fdn;
@@ -135,11 +151,12 @@ int fdevent_register(fdevents * ev, int fd, fdevent_handler handler, void *ctx)
 	fdn->fd = fd;
 	fdn->ctx = ctx;
 
-	ev->fdarray[fd] = fdn;
+	ev->fdarray[fd] = fdn; //使用文件描述符作为数组的下标
 
 	return 0;
 }
 
+//删除文件描述符fd
 int fdevent_unregister(fdevents * ev, int fd)
 {
 	fdnode *fdn;
@@ -222,7 +239,9 @@ void *fdevent_get_context(fdevents * ev, int fd)
 
 	return ev->fdarray[fd]->ctx;
 }
-
+/**
+ * 设置fd的状态
+ */
 int fdevent_fcntl_set(fdevents * ev, int fd)
 {
 #ifdef FD_CLOEXEC

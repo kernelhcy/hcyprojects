@@ -22,6 +22,59 @@
 
 #ifdef HAVE_FAM_H
 # include <fam.h>
+/**
+ * File Alteration Monitor, also known as FAM and sgi_fam, provides a subsystem developed by Silicon Graphics for 
+ * Unix-like operating systems. The FAM subsystem allows applications to watch certain files and be notified when 
+ * they were modified. This greatly aids the applications, because before FAM existed, such applications would have 
+ * to read the disk repeatedly to detect any changes: this resulted in high disk and CPU usage.
+ * For example, a file manager application can detect if some file has changed and can then update a displayed icon and/or filename.
+ *
+ * The FAM system consists of two parts:
+ * 		famd — the FAM Daemon, which provides notifications and listens for requests. Administrators can configure 
+ * 				it by editing the file /etc/fam.conf
+ * 		libfam — the interface to the client
+ * Although FAM may seem unnecessary now that many newer kernels include built-in notification support 
+ * (inotify in Linux, for example), using FAM provides two benefits:
+ * 		Consistently using FAM enables applications to work on a greater variety of platforms, agnostic of the kernel
+ * 		FAM is network aware, and if a monitor is started on an NFS share, it will attempt to contact a FAM server on 
+ * 				the NFS server and have it monitor the file locally, which is more efficient.
+ *
+ * The main problem of FAM is that during the creation of a large amount of files (for example during the first login in 
+ * a desktop environment) it slows down the entire system, using many CPU cycles.
+ *
+ * Usage:
+ *
+ * 1.FAMOpen() connects to the FAM service:
+ * 		FAMOpen( fc ) ;
+ * Call this once per program.
+ *
+ * 2.FAMMonitorFile() registers filenames of interest:
+ * 		FAMMonitorFile( fc , file , fr , NULL ) ;
+ * fc and fr are the FAMConnection and FAMRequest objects defined earlier. file is the filename to register. 
+ * The last parameter is user-defined data included in the event object(store in fe->userdata). 
+ * It's useful in more complex apps that create FAM-related objects in one scope but use them in another. 
+ *
+ * 3.A FAMEvent object encapsulates an event on a watched target. 
+ * Its member variables include the watch target's name, an event code, and the user-data parameter set in FAMMonitorFile(). 
+ * FAMNextEvent() catches FAM events--that is, changes to watch targets--and populates the provided FAMEvent pointer, fe, 
+ * with that information:
+ * 		FAMNextEvent( fc , fe ) ;
+ *
+ * 4.You use FAMPending() to ensure that an event is ready before calling FAMNextEvent(). 
+ * FAMPending() doesn't block, and it returns 1 if there's at least one event to process.
+ *
+ * 5.Calls FAMCancelMonitor() to cancel the FAM monitoring.
+ *  	FAMCancelMonitor( fc , fr )
+ *
+ * 6.Watching a directory means reporting events on its immediate children as well as the directory itself. 
+ * It's very similar to watching files, except that you call FAMMonitorDirectory() instead of FAMMonitorFile(). 
+ * 	Calling FAMMonitorDirectory() on a file doesn't fail. (The same goes for calling FAMMonitorFile() for a directory.) 
+ * FAM will still report some events, though. Have your code stat() or lstat() the target to determine which FAM call to use.
+ *  Registering a directory with FAM will report several FAMExists events: one for the directory itself, 
+ *  plus one for each element contained therein. 
+ *  (This includes hidden elements, except for the special directory entries . and ...) 
+ *  A single FAMEndExist event marks the end of this list.
+ */
 #endif
 
 #include "sys-mmap.h"
@@ -51,20 +104,20 @@
 /*
  * stat-cache
  *
- * we cache the stat() calls in our own storage
- * the directories are cached in FAM
- *
+ * we cache the stat() calls in our own storage, the directories are cached in FAM
+ * 缓存stat()函数获得的文件状态，目录状态由FAM缓存。
  * if we get a change-event from FAM, we increment the version in the FAM->dir mapping
- *
+ * 如果我们从FAM得到了一个状态事件，我们将提高FAM->dir所对应的版本。
  * if the stat()-cache is queried we check if the version id for the directory is the
  * same and return immediatly.
- *
+ * 如果状态缓存被查询，我们将检验目录的版本ID是否形同并立即返回。
  *
  * What we need:
  *
  * - for each stat-cache entry we need a fast indirect lookup on the directory name
  * - for each FAMRequest we have to find the version in the directory cache (index as userdata)
- *
+ * - 对于每一个缓存状态，我们需要一次对目录名称的快速的间接的查询。
+ * - 对于每一个FAMRequest，我们需要在目录缓存中找到版本号。(由useddata索引)
  * stat <<-> directory <-> FAMRequest
  *
  * if file is deleted, directory is dirty, file is rechecked ...
@@ -73,7 +126,9 @@
  * */
 
 #ifdef HAVE_FAM_H
-typedef struct {
+//使用FAM来监控目录的状态，这个结构体就是FAM请求和被监视目录之间的映射。
+typedef struct 
+{
 	FAMRequest *req;
 	FAMConnection *fc;
 
@@ -87,6 +142,8 @@ typedef struct {
  * the directory name is too long to always compare on it - we need a hash -
  * the hash-key is used as sorting criteria for a tree - a splay-tree is used
  * as we can use the caching effect of it 
+ * 目录名称通常过长而无法总是比较它们。因此我们需要一次哈希。哈希值将作为一棵树
+ * 的保存标准。
  */
 
 /*
@@ -94,10 +151,13 @@ typedef struct {
  * entries which are outdated since 30s - remove entries which are fresh but
  * havn't been used since 60s - if we don't have a stat-cache entry for a
  * directory, release it from the monitor 
+ * 我们希望每隔几秒就清理一下状态缓存，比如10秒。删除过期30秒的缓存，删除60秒未被访问的缓存，
+ * 如果我们没有一个目录的状态缓存，则从FAM中释放它。
  */
 
 #ifdef DEBUG_STAT_CACHE
-typedef struct {
+typedef struct 
+{
 	int *ptr;
 
 	size_t used;
@@ -170,7 +230,7 @@ static void fam_dir_entry_free(void *data)
 
 	if (!fam_dir)
 		return;
-
+	//
 	FAMCancelMonitor(fam_dir->fc, fam_dir->req);
 
 	buffer_free(fam_dir->name);
@@ -348,8 +408,7 @@ handler_t stat_cache_handle_fdevent(void *_srv, void *_fce, int revent)
 		 */
 		srv->stat_cache->fam_fcce_ndx = -1;
 
-		fdevent_event_del(srv->ev, &(sc->fam_fcce_ndx),
-						  FAMCONNECTION_GETFD(sc->fam));
+		fdevent_event_del(srv->ev, &(sc->fam_fcce_ndx), FAMCONNECTION_GETFD(sc->fam));
 		fdevent_unregister(srv->ev, FAMCONNECTION_GETFD(sc->fam));
 
 		FAMClose(sc->fam);
@@ -360,7 +419,10 @@ handler_t stat_cache_handle_fdevent(void *_srv, void *_fce, int revent)
 
 	return HANDLER_GO_ON;
 }
-
+/**
+ * 将file的目录路径拷贝到dst中。
+ * 也就是删去file中的文件名。
+ */
 static int buffer_copy_dirname(buffer * dst, buffer * file)
 {
 	size_t i;
@@ -382,6 +444,8 @@ static int buffer_copy_dirname(buffer * dst, buffer * file)
 #endif
 
 #ifdef HAVE_LSTAT
+//判断dname是否是一个链接文件。
+//是:1,否:0
 static int stat_cache_lstat(server * srv, buffer * dname, struct stat *lst)
 {
 	if (lstat(dname->ptr, lst) == 0)
@@ -405,8 +469,7 @@ static int stat_cache_lstat(server * srv, buffer * dname, struct stat *lst)
  *  - HANDLER_ERROR on stat() failed -> see errno for problem
  */
 
-handler_t
-stat_cache_get_entry(server * srv, connection * con, buffer * name,
+handler_t stat_cache_get_entry(server * srv, connection * con, buffer * name,
 					 stat_cache_entry ** ret_sce)
 {
 #ifdef HAVE_FAM_H

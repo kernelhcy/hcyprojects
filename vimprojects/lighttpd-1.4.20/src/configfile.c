@@ -1426,7 +1426,8 @@ int config_set_defaults(server * srv)
 	specific_config *s = srv->config_storage[0];
 	struct stat st1, st2;
 
-	struct ev_map {
+	struct ev_map 
+	{
 		fdevent_handler_t et;
 		const char *name;
 	} event_handlers[] =
@@ -1437,32 +1438,40 @@ int config_set_defaults(server * srv)
 		 */
 #ifdef USE_POLL
 		{
-		FDEVENT_HANDLER_POLL, "poll"},
+			FDEVENT_HANDLER_POLL, "poll"
+		},
 #endif
 #ifdef USE_SELECT
 		{
-		FDEVENT_HANDLER_SELECT, "select"},
+			FDEVENT_HANDLER_SELECT, "select"
+		},
 #endif
 #ifdef USE_LINUX_EPOLL
 		{
-		FDEVENT_HANDLER_LINUX_SYSEPOLL, "linux-sysepoll"},
+			FDEVENT_HANDLER_LINUX_SYSEPOLL, "linux-sysepoll"
+		},
 #endif
 #ifdef USE_LINUX_SIGIO
 		{
-		FDEVENT_HANDLER_LINUX_RTSIG, "linux-rtsig"},
+			FDEVENT_HANDLER_LINUX_RTSIG, "linux-rtsig"
+		},
 #endif
 #ifdef USE_SOLARIS_DEVPOLL
 		{
-		FDEVENT_HANDLER_SOLARIS_DEVPOLL, "solaris-devpoll"},
+			FDEVENT_HANDLER_SOLARIS_DEVPOLL, "solaris-devpoll"
+		},
 #endif
 #ifdef USE_FREEBSD_KQUEUE
 		{
-		FDEVENT_HANDLER_FREEBSD_KQUEUE, "freebsd-kqueue"},
+			FDEVENT_HANDLER_FREEBSD_KQUEUE, "freebsd-kqueue"
+		},
 		{
-		FDEVENT_HANDLER_FREEBSD_KQUEUE, "kqueue"},
+			FDEVENT_HANDLER_FREEBSD_KQUEUE, "kqueue"
+		},
 #endif
 		{
-		FDEVENT_HANDLER_UNSET, NULL}
+			FDEVENT_HANDLER_UNSET, NULL
+		}
 	};
 
 
@@ -1483,7 +1492,8 @@ int config_set_defaults(server * srv)
 			return -1;
 		}
 
-	} else
+	} 
+	else
 	{
 		buffer_copy_string_buffer(srv->tmp_buf, srv->srvconf.changeroot);
 		buffer_append_string_buffer(srv->tmp_buf, s->document_root);
@@ -1528,7 +1538,8 @@ int config_set_defaults(server * srv)
 			 */
 
 			s->force_lowercase_filenames = 0;
-		} else if (0 == stat(srv->tmp_buf->ptr, &st2))
+		}
+		else if (0 == stat(srv->tmp_buf->ptr, &st2))
 		{
 
 			/*
@@ -1570,7 +1581,8 @@ int config_set_defaults(server * srv)
 
 			return -1;
 		}
-	} else
+	} 
+	else
 	{
 		/*
 		 * User override

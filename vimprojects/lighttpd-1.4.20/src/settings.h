@@ -22,7 +22,12 @@
  */
 #define MAX_HTTP_REQUEST_HEADER  (32 * 1024)
 
-typedef enum { HANDLER_UNSET,
+/**
+ * 
+ */
+typedef enum 
+{ 
+	HANDLER_UNSET,
 	HANDLER_GO_ON,
 	HANDLER_FINISHED,
 	HANDLER_COMEBACK,

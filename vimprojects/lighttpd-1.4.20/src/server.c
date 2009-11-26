@@ -67,28 +67,51 @@
  * #define USE_ALARM 
  */
 #endif
-
+/**
+ * sig_atomic_c类型有ISO C标准定义。
+ * 在写这种类型的变量时不会被终端。这意味着在具有虚拟存储器的系统上这种变量不回跨越页边界。
+ * 可以用一条机器指令对其进行访问。
+ * 类型的定义包含在signal.h，定义为tpyedef __sig_atomic_t sig_atomic_t.在文件bits/sigsets.h中
+ * 定义了__sig_atomic_t: typedef int __sig_atomic_t.
+ * 这种类型的变量总是包含ISO类型修饰符volatile，其原因是该变量将由不同的控制线程访问。
+ *
+ * volatile类型修饰符
+ * volatile用于强制某个实现屏蔽可能的优化。例如，对于具有内存映像输入/输出的机器，指向设备寄存器的
+ * 指针可以声明为指向volatile的指针，目的是防止编译器通过指针删除明显多余的引用。
+ * 通常，由于寄存器的访问速度要快于内存，因此为了提高运行速度，编译器会对一些变量进行优化，使得
+ * 减少对内存的访问，这样就可能导致某些变量在内存中的值是过时的（与寄存器中的副本不一样）。当在多
+ * 线程的环境中时，这就可能导致错误。因此，加上volatile修饰符可以保证这个变量的值是最新的，不会出现
+ * 不一致的现象。（volatile本意是易失的。）
+ *
+ * 由于lighttpd采用的是多进程的模型，因此下面的一些变量需要被不同的进程访问，因此要保持其原子性和
+ * 一致性。
+ */
 static volatile sig_atomic_t srv_shutdown = 0;
 static volatile sig_atomic_t graceful_shutdown = 0;
 static volatile sig_atomic_t handle_sig_alarm = 1;
 static volatile sig_atomic_t handle_sig_hup = 0;
-static volatile sig_atomic_t forwarded_sig_hup = 0;
+static volatile sig_atomic_t forwarded_sig_hup = 0; //用于标记是否发送SIGHUP信号。
 
 #if defined(HAVE_SIGACTION) && defined(SA_SIGINFO)
 static volatile siginfo_t last_sigterm_info;
 static volatile siginfo_t last_sighup_info;
-
+/**
+ * 信号处理函数。用于sigaction函数。
+ * @PARM sig 	 : 信号的值 
+ * @PARM si  	 : 包含信号产生原因的有关信息。
+ * @PARM context : 标识信号传递时的进程上下文。可以被强制转换成ucntext_t类型。
+ */
 static void sigaction_handler(int sig, siginfo_t * si, void *context)
 {
 	UNUSED(context);
 
 	switch (sig)
 	{
-	case SIGTERM:
+	case SIGTERM: 	//终止 由kill命令发送的系统默认终止信号
 		srv_shutdown = 1;
 		last_sigterm_info = *si;
 		break;
-	case SIGINT:
+	case SIGINT: 	//终端中断符 Ctrl-C或DELETE
 		if (graceful_shutdown)
 		{
 			srv_shutdown = 1;
@@ -99,16 +122,17 @@ static void sigaction_handler(int sig, siginfo_t * si, void *context)
 		last_sigterm_info = *si;
 
 		break;
-	case SIGALRM:
+	case SIGALRM: 	//超时信号
 		handle_sig_alarm = 1;
 		break;
-	case SIGHUP:
+	case SIGHUP: 	//连接断开信号
 		/** 
 		 * we send the SIGHUP to all procs in the process-group
 		 * this includes ourself
-		 * 
+		 * 发送给所有的进程，包括自己。
 		 * make sure we only send it once and don't create a 
 		 * infinite loop
+		 * 保证只发送一次，防止产生死循环。
 		 */
 		if (!forwarded_sig_hup)
 		{
@@ -119,11 +143,14 @@ static void sigaction_handler(int sig, siginfo_t * si, void *context)
 			forwarded_sig_hup = 0;
 		}
 		break;
-	case SIGCHLD:
+	case SIGCHLD: 	//子进程终止或停止。
 		break;
 	}
 }
 #elif defined(HAVE_SIGNAL) || defined(HAVE_SIGACTION)
+/**
+ * 信号处理函数。用于signal函数。
+ */
 static void signal_handler(int sig)
 {
 	switch (sig)
@@ -189,6 +216,9 @@ static void daemonize(void)
 }
 #endif
 
+/**
+ * 初始化服务器运行环境。
+ */
 static server *server_init(void)
 {
 	int i;
@@ -232,7 +262,8 @@ static server *server_init(void)
 		srv->mtime_cache[i].mtime = (time_t) - 1;
 		srv->mtime_cache[i].str = buffer_init();
 	}
-
+	
+	//设定当前时间和服务器启动时间。
 	srv->cur_ts = time(NULL);
 	srv->startup_ts = srv->cur_ts;
 
@@ -252,6 +283,7 @@ static server *server_init(void)
 
 	/*
 	 * use syslog 
+	 * 默认使用系统的日志系统。
 	 */
 	srv->errorlog_fd = -1;
 	srv->errorlog_mode = ERRORLOG_STDERR;
@@ -261,6 +293,7 @@ static server *server_init(void)
 	return srv;
 }
 
+//清理服务器，释放资源。
 static void server_free(server * srv)
 {
 	size_t i;
@@ -362,6 +395,7 @@ static void server_free(server * srv)
 	free(srv);
 }
 
+//显示服务器版本
 static void show_version(void)
 {
 #ifdef USE_OPENSSL
@@ -377,6 +411,7 @@ static void show_version(void)
 	write(STDOUT_FILENO, b, strlen(b));
 }
 
+//显示特性。
 static void show_features(void)
 {
 	const char features[] = ""
@@ -573,6 +608,7 @@ int main(int argc, char **argv)
 	 */
 
 	srv->srvconf.port = 0;
+	//
 #ifdef HAVE_GETUID
 	i_am_root = (getuid() == 0);
 #else
@@ -580,6 +616,7 @@ int main(int argc, char **argv)
 #endif
 	srv->srvconf.dont_daemonize = 0;
 
+	//处理参数。
 	while (-1 != (o = getopt(argc, argv, "f:m:hvVDpt")))
 	{
 		switch (o)
@@ -644,7 +681,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if (test_config)
+	if (test_config) //没有进行任何测试。。。
 	{
 		printf("Syntax OK\n");
 	}
@@ -657,6 +694,7 @@ int main(int argc, char **argv)
 
 	/*
 	 * close stdin and stdout, as they are not needed 
+	 * 关闭标准输入和标准输出。
 	 */
 	openDevNull(STDIN_FILENO);
 	openDevNull(STDOUT_FILENO);
@@ -767,7 +805,8 @@ int main(int argc, char **argv)
 		 * segfault we add some safety 
 		 */
 		srv->max_fds = FD_SETSIZE - 200;
-	} else
+	} 
+	else
 	{
 		srv->max_fds = 4096;
 	}
@@ -816,7 +855,8 @@ int main(int argc, char **argv)
 			srv->max_fds =
 				rlim.rlim_cur <
 				FD_SETSIZE - 200 ? rlim.rlim_cur : FD_SETSIZE - 200;
-		} else
+		} 
+		else
 		{
 			srv->max_fds = rlim.rlim_cur;
 		}
@@ -1211,7 +1251,7 @@ int main(int argc, char **argv)
 		int child = 0;
 		while (!child && !srv_shutdown && !graceful_shutdown)
 		{
-			if (num_childs > 0)
+			if (num_childs > 0) //继续产生worker
 			{
 				switch (fork())
 				{
@@ -1224,8 +1264,15 @@ int main(int argc, char **argv)
 					num_childs--;
 					break;
 				}
-			} else
+			} 
+			else 		//watcher
 			{
+				/**
+				 * 当产生了足够的worker时，watcher就在这个while中不断的循环。
+				 * 一但发现有worker死亡，立即产生新的worker。
+				 * 如果发生错误并接受到SIGHUP信号，向所有的进程（父进程及其子进程）包括自己发送SIGHUP信号。
+				 * 并退出。
+				 */
 				int status;
 
 				if (-1 != wait(&status))
@@ -1234,7 +1281,8 @@ int main(int argc, char **argv)
 					 * one of our workers went away 
 					 */
 					num_childs++;
-				} else
+				} 
+				else
 				{
 					switch (errno)
 					{
@@ -1251,7 +1299,7 @@ int main(int argc, char **argv)
 
 							/**
 							 * forward to all procs in the process-group
-							 * 
+							 * 向所有进程发送SIGHUP信号。（父进程及其子进程）
 							 * we also send it ourself
 							 */
 							if (!forwarded_sig_hup)
@@ -1270,16 +1318,19 @@ int main(int argc, char **argv)
 
 		/**
 		 * for the parent this is the exit-point 
+		 * 父进程，也就是watcher在这个if语句中就直接退出了。
+		 * 后面是worker执行的代码。
 		 */
 		if (!child)
 		{
 			/** 
-			 * kill all children too 
+			 * kill all children too 。杀死所有的子进程。
 			 */
 			if (graceful_shutdown)
 			{
 				kill(0, SIGINT);
-			} else if (srv_shutdown)
+			} 
+			else if (srv_shutdown)
 			{
 				kill(0, SIGTERM);
 			}
@@ -1368,6 +1419,7 @@ int main(int argc, char **argv)
 
 	/*
 	 * main-loop 
+	 * worker工作的主循环。
 	 */
 	while (!srv_shutdown)
 	{
@@ -1391,12 +1443,12 @@ int main(int argc, char **argv)
 
 			switch (r = plugins_call_handle_sighup(srv))
 			{
-			case HANDLER_GO_ON:
-				break;
-			default:
-				log_error_write(srv, __FILE__, __LINE__, "sd",
+				case HANDLER_GO_ON:
+					break;
+				default:
+					log_error_write(srv, __FILE__, __LINE__, "sd",
 								"sighup-handler return with an error", r);
-				break;
+					break;
 			}
 
 			if (-1 == log_error_cycle(srv))
@@ -1405,7 +1457,8 @@ int main(int argc, char **argv)
 								"cycling errorlog failed, dying");
 
 				return -1;
-			} else
+			} 
+			else
 			{
 #ifdef HAVE_SIGACTION
 				log_error_write(srv, __FILE__, __LINE__, "sdsd",
@@ -1445,15 +1498,15 @@ int main(int argc, char **argv)
 
 				switch (r = plugins_call_handle_trigger(srv))
 				{
-				case HANDLER_GO_ON:
-					break;
-				case HANDLER_ERROR:
-					log_error_write(srv, __FILE__, __LINE__, "s",
+					case HANDLER_GO_ON:
+						break;
+					case HANDLER_ERROR:
+						log_error_write(srv, __FILE__, __LINE__, "s",
 									"one of the triggers failed");
-					break;
-				default:
-					log_error_write(srv, __FILE__, __LINE__, "d", r);
-					break;
+						break;
+					default:
+						log_error_write(srv, __FILE__, __LINE__, "d", r);
+						break;
 				}
 
 				/*
@@ -1497,7 +1550,8 @@ int main(int argc, char **argv)
 								connection_set_state(srv, con, CON_STATE_ERROR);
 								changed = 1;
 							}
-						} else
+						} 
+						else
 						{
 							if (srv->cur_ts - con->read_idle_ts >
 								con->conf.max_keep_alive_idle)
@@ -1625,7 +1679,8 @@ int main(int argc, char **argv)
 
 				srv->sockets_disabled = 0;
 			}
-		} else
+		} 
+		else
 		{
 			if ((srv->cur_fds + srv->want_fds > srv->max_fds * 0.9) ||	/* out
 																		 * of
@@ -1784,7 +1839,8 @@ int main(int argc, char **argv)
 				}
 			}
 			while (--n > 0);
-		} else if (n < 0 && errno != EINTR)
+		} 
+		else if (n < 0 && errno != EINTR)
 		{
 			log_error_write(srv, __FILE__, __LINE__, "ss",
 							"fdevent_poll failed:", strerror(errno));
@@ -1811,7 +1867,10 @@ int main(int argc, char **argv)
 		}
 
 		srv->joblist->used = 0;
-	}
+	} /* end of main loop  */
+	/*
+	 * 主循环的结束
+	 */
 
 	if (srv->srvconf.pid_file->used &&
 		srv->srvconf.changeroot->used == 0 && 0 == graceful_shutdown)

@@ -32,11 +32,18 @@
 #endif
 
 /*
- * Close fd and _try_ to get a /dev/null for it instead. close() alone may
- * trigger some bugs when a process opens another file and gets fd =
- * STDOUT_FILENO or STDERR_FILENO and later tries to just print on
- * stdout/stderr Returns 0 on success and -1 on failure (fd gets closed in all 
- * cases) 
+ * Close fd and _try_ to get a /dev/null for it instead. 
+ * 
+ * close() alone may trigger some bugs when a process opens another file and 
+ * gets fd = STDOUT_FILENO or STDERR_FILENO and later tries to just print on
+ * stdout/stderr 
+ *
+ * Returns 0 on success and -1 on failure (fd gets closed in all cases) 
+ *
+ * 关闭文件描述符fd，同时打开/dev/null并把其设置为fd。
+ * close()函数可能会触发一些bug，如果一个进程打开了其他的文件并且使得文件描述符等于STDOUT_FILENO 
+ * 或者STDERR_FILENO，那么，当这个进程向stdout/stderr写入的时候会出错。
+ * 成功返回0,失败返回-1.
  */
 int openDevNull(int fd)
 {
@@ -52,15 +59,16 @@ int openDevNull(int fd)
 #endif
 	if (tmpfd != -1 && tmpfd != fd)
 	{
-		dup2(tmpfd, fd);
+		dup2(tmpfd, fd); //将/dev/null所打开的文件描述符设置为fd
 		close(tmpfd);
 	}
 	return (tmpfd != -1) ? 0 : -1;
 }
 
 /**
- * open the errorlog
+ * open the errorlog 打开错误日志。
  *
+ * 三种可能的日志。
  * we have 3 possibilities:
  * - stderr (default)
  * - syslog
@@ -80,12 +88,13 @@ int log_error_open(server * srv)
 	 */
 	openlog("lighttpd", LOG_CONS | LOG_PID, LOG_DAEMON);
 #endif
-	srv->errorlog_mode = ERRORLOG_STDERR;
+	srv->errorlog_mode = ERRORLOG_STDERR; 	//默认的日志输出的标准错误输出。
 
-	if (srv->srvconf.errorlog_use_syslog)
+	if (srv->srvconf.errorlog_use_syslog) 	//使用系统的日志函数syslog()
 	{
 		srv->errorlog_mode = ERRORLOG_SYSLOG;
-	} else if (!buffer_is_empty(srv->srvconf.errorlog_file))
+	} 
+	else if (!buffer_is_empty(srv->srvconf.errorlog_file)) 	//使用日志文件。
 	{
 		const char *logfile = srv->srvconf.errorlog_file->ptr;
 
@@ -102,6 +111,7 @@ int log_error_open(server * srv)
 #ifdef FD_CLOEXEC
 		/*
 		 * close fd on exec (cgi) 
+		 * 在运行可执行文件（cgi，也就是子进程）时，关闭日志文件。
 		 */
 		fcntl(srv->errorlog_fd, F_SETFD, FD_CLOEXEC);
 #endif
@@ -113,6 +123,7 @@ int log_error_open(server * srv)
 #ifdef HAVE_VALGRIND_VALGRIND_H
 	/*
 	 * don't close stderr for debugging purposes if run in valgrind 
+	 * 在调试模式下不关闭标准错误输出。
 	 */
 	if (RUNNING_ON_VALGRIND)
 		close_stderr = 0;
@@ -123,12 +134,15 @@ int log_error_open(server * srv)
 		/*
 		 * We can only log to stderr in dont-daemonize mode; if we do daemonize 
 		 * and no errorlog file is specified, we log into /dev/null 
+		 * 在非守护进程模式下，我们只向标准错误输出写日志。如果在守护进程模式下并且没有设定日志文件，
+		 * 则将日志写到/dev/null中。
 		 */
 		close_stderr = 0;
 	}
 
 	/*
 	 * move stderr to /dev/null 
+	 * 将标准错误输出打开到/dev/null上。
 	 */
 	if (close_stderr)
 		openDevNull(STDERR_FILENO);
@@ -136,11 +150,11 @@ int log_error_open(server * srv)
 }
 
 /**
- * open the errorlog
+ * open the errorlog 打开一个新的日志文件。
  *
  * if the open failed, report to the user and die
  * if no filename is given, use syslog instead
- *
+ * 如果打开失败，报告给用户并自杀。如果没有设定日志文件名，则使用系统日志。
  */
 
 int log_error_cycle(server * srv)
@@ -206,9 +220,39 @@ int log_error_close(server * srv)
 
 	return 0;
 }
-
-int
-log_error_write(server * srv, const char *filename, unsigned int line,
+/**
+ * 输出日志.
+ * 日志的格式：
+ * 		2009-11-25 22:31:25: (filename.line) information
+ *
+ * 关于可变参数：
+ * 头文件为strarg.h。由于可变参数的实现和具体的编译器有关，因此这个文件通常保存在编译器自带的include目录中。
+ * 在本机为/usr/lib/gcc/i486-linux-gnu/4.2/include/stdarg.h。
+ * 可变参数的使用：
+ * 通常，可变参数的个数的确定有其他参数的内容决定。如printf函数就由其格式化输出的字符串决定。在本函数中，有fmt
+ * 中的特殊字符的个数决定。
+ * 假设函数f中，lastarg是它的最后一个命名形式的参数。那么，在函数f内部要声明一个va_list的变量ap，它将依次指向
+ * 每个实际的参数：
+ * 			va_list ap;
+ * 在访问任何一个未命名的参数前，必须用va_start宏初始化ap一次：
+ * 			va_start(va_list ap, lastarg);
+ * 此后，每次执行va_arg都将产生一个与下一个为命名的参数具有相同类型和数值的值，他同时还修改ap，以使得下一次执行
+ * va_arg时返回下一个参数：
+ * 			类型 va_arg(va_list ap, 类型);
+ * 在所有的参数处理完毕后，且在退出函数f之前，必须调用宏va_end一次，如下：
+ * 			void va_end(va_list ap);
+ *
+ * 关于处理时间函数:
+ * 	localtime函数:
+ * 			struct tm *localtime(cosnt time_t *tp)
+ * 	将tp所指的日历时间转换为当地时间。
+ *
+ * 	strftime函数：
+ * 			size_t strftime(char *s, size_t smax, const char *fmt, const struct tm *tp)
+ * 	根据fmt中的格式把结构体*tp中的日期与时间信息转换成指定的格式，并存储在s中。返回实际写到s中的字符个数，不包括'\0'.
+ *
+ */
+int log_error_write(server * srv, const char *filename, unsigned int line,
 				const char *fmt, ...)
 {
 	va_list ap;
@@ -219,6 +263,7 @@ log_error_write(server * srv, const char *filename, unsigned int line,
 	case ERRORLOG_STDERR:
 		/*
 		 * cache the generated timestamp 
+		 * 日志文件和标准错误输出要设定日志的事件。
 		 */
 		if (srv->cur_ts != srv->last_generated_debug_ts)
 		{
@@ -246,7 +291,7 @@ log_error_write(server * srv, const char *filename, unsigned int line,
 	buffer_append_long(srv->errorlog_buf, line);
 	buffer_append_string_len(srv->errorlog_buf, CONST_STR_LEN(") "));
 
-
+	//根据字符串fmt来遍历可变参数。
 	for (va_start(ap, fmt); *fmt; fmt++)
 	{
 		int d;

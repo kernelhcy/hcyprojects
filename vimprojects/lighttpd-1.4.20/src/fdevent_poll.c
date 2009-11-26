@@ -1,5 +1,8 @@
+/**
+ * 处理poll函数的多路IO。
+ *
+ */
 #include <sys/types.h>
-
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -7,12 +10,13 @@
 #include <errno.h>
 #include <signal.h>
 #include <fcntl.h>
-
 #include "fdevent.h"
 #include "settings.h"
 #include "buffer.h"
 
 #ifdef USE_POLL
+
+//释放
 static void fdevent_poll_free(fdevents * ev)
 {
 	free(ev->pollfds);
@@ -20,6 +24,9 @@ static void fdevent_poll_free(fdevents * ev)
 		free(ev->unused.ptr);
 }
 
+/**
+ * 删除fde_ndx位置的文件描述符fd。
+ */
 static int fdevent_poll_event_del(fdevents * ev, int fde_ndx, int fd)
 {
 	if (fde_ndx < 0)
@@ -32,6 +39,7 @@ static int fdevent_poll_event_del(fdevents * ev, int fde_ndx, int fd)
 		SEGFAULT();
 	}
 
+	//将ev的pollfd数组中对应的位置设置的fd设置为-1.
 	if (ev->pollfds[fde_ndx].fd == fd)
 	{
 		size_t k = fde_ndx;
@@ -44,21 +52,21 @@ static int fdevent_poll_event_del(fdevents * ev, int fde_ndx, int fd)
 		 * ev->pollfds[k].revents = 0; 
 		 */
 
+		//将位置索引到unused数组中。
 		if (ev->unused.size == 0)
 		{
 			ev->unused.size = 16;
-			ev->unused.ptr =
-				malloc(sizeof(*(ev->unused.ptr)) * ev->unused.size);
-		} else if (ev->unused.size == ev->unused.used)
+			ev->unused.ptr = malloc(sizeof(*(ev->unused.ptr)) * ev->unused.size);
+		} 
+		else if (ev->unused.size == ev->unused.used)
 		{
 			ev->unused.size += 16;
-			ev->unused.ptr =
-				realloc(ev->unused.ptr,
-						sizeof(*(ev->unused.ptr)) * ev->unused.size);
+			ev->unused.ptr = realloc(ev->unused.ptr, sizeof(*(ev->unused.ptr)) * ev->unused.size);
 		}
 
 		ev->unused.ptr[ev->unused.used++] = k;
-	} else
+	} 
+	else
 	{
 		SEGFAULT();
 	}
@@ -67,6 +75,7 @@ static int fdevent_poll_event_del(fdevents * ev, int fde_ndx, int fd)
 }
 
 #if 0
+//由ununsed数组代替其作用
 static int fdevent_poll_event_compress(fdevents * ev)
 {
 	size_t j;
@@ -83,14 +92,18 @@ static int fdevent_poll_event_compress(fdevents * ev)
 }
 #endif
 
-static int
-fdevent_poll_event_add(fdevents * ev, int fde_ndx, int fd, int events)
+
+/**
+ * 将fd和events插入到fde_ndx的位置。
+ * fde_ndx可以是-1,这时由函数决定插入的位置。
+ */
+static int fdevent_poll_event_add(fdevents * ev, int fde_ndx, int fd, int events)
 {
 	/*
 	 * known index 
 	 */
 
-	if (fde_ndx != -1)
+	if (fde_ndx != -1) //fd已经存在，只修改events
 	{
 		if (ev->pollfds[fde_ndx].fd == fd)
 		{
@@ -103,7 +116,7 @@ fdevent_poll_event_add(fdevents * ev, int fde_ndx, int fd, int events)
 		SEGFAULT();
 	}
 
-	if (ev->unused.used > 0)
+	if (ev->unused.used > 0) //有未使用的空档
 	{
 		int k = ev->unused.ptr[--ev->unused.used];
 
@@ -111,7 +124,8 @@ fdevent_poll_event_add(fdevents * ev, int fde_ndx, int fd, int events)
 		ev->pollfds[k].events = events;
 
 		return k;
-	} else
+	} 
+	else //追加到数组后面
 	{
 		if (ev->size == 0)
 		{
@@ -130,6 +144,9 @@ fdevent_poll_event_add(fdevents * ev, int fde_ndx, int fd, int events)
 	}
 }
 
+/**
+ * 启动poll函数
+ */
 static int fdevent_poll_poll(fdevents * ev, int timeout_ms)
 {
 #if 0
@@ -138,6 +155,9 @@ static int fdevent_poll_poll(fdevents * ev, int timeout_ms)
 	return poll(ev->pollfds, ev->used, timeout_ms);
 }
 
+/**
+ * 返回ndx位置的文件描述符的返回的事件状态
+ */
 static int fdevent_poll_event_get_revent(fdevents * ev, size_t ndx)
 {
 	int r, poll_r;
@@ -155,6 +175,7 @@ static int fdevent_poll_event_get_revent(fdevents * ev, size_t ndx)
 	{
 		/*
 		 * should never happen 
+		 * 描述符不引用一个打开文件。
 		 */
 		SEGFAULT();
 	}
@@ -164,6 +185,7 @@ static int fdevent_poll_event_get_revent(fdevents * ev, size_t ndx)
 
 	/*
 	 * map POLL* to FDEVEN_* 
+	 * 获得返回的事件状态
 	 */
 
 	if (poll_r & POLLIN)
@@ -201,9 +223,13 @@ static int fdevent_poll_event_next_fdndx(fdevents * ev, int ndx)
 	return i;
 }
 
+/**
+ * 初始化fdevents结构体。
+ */
 int fdevent_poll_init(fdevents * ev)
 {
 	ev->type = FDEVENT_HANDLER_POLL;
+
 #define SET(x) \
 	ev->x = fdevent_poll_##x;
 
@@ -220,10 +246,10 @@ int fdevent_poll_init(fdevents * ev)
 	return 0;
 }
 
-
-
-
 #else
+
+//系统没有poll函数，
+//直接报错。
 int fdevent_poll_init(fdevents * ev)
 {
 	UNUSED(ev);

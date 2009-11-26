@@ -107,26 +107,33 @@ splay_tree *splaytree_splay(splay_tree * t, int i)
 	for (;;)
 	{
 		comp = compare(i, t->key);
-		if (comp < 0)  // i < t -> key
+		if (comp < 0)  // i < t -> key 所要查找的节点在左子树上。
 		{
-			if (t->left == NULL)
+			if (t->left == NULL) //左子树不存在，则结束循环。
 			{
 				break;
 			}
 
-			if (compare(i, t->left->key) < 0) // i < t -> left -> key
+			if (compare(i, t->left->key) < 0) // i < t -> left -> key 所找节点在左子树的左子树上
 			{
+				//右旋
 				y = t->left;	/* rotate right */
 				t->left = y->right;
 				y->right = t;
+
 				t->size = node_size(t->left) + node_size(t->right) + 1;
 				t = y;
+				//继续查找左子树，为空则结束循环。
 				if (t->left == NULL)
 				{
 					break;
 				}
 			}
+			//右连接
 			r->left = t;		/* link right */
+			//r始终指向右树中最小的节点，也就是后续节点要挂在右树上时的挂点。
+			//l和r相同。
+			//左右树的根不是r、l，而是N的left和right。
 			r = t;
 			t = t->left;
 			r_size += 1 + node_size(r->right);
@@ -160,6 +167,13 @@ splay_tree *splaytree_splay(splay_tree * t, int i)
 		}
 	}
 
+	/**
+	 * 由于最终，中树的所有节点除了所查找的那个，都被挂在了左树和右树上。
+	 * 因此，在这将中树中除了所查找节点的所有节点都算在左树和右树上。
+	 * 注意这个时候还没有进行组合，因此实际这些节点不在左树和右树上。
+	 * 但这不影像程序的运行。
+	 * 提前做这些是为了后面更正左右树中的size值。
+	 */
 	l_size += node_size(t->left);	/* Now l_size and r_size are the sizes of */
 	r_size += node_size(t->right);	/* the left and right trees we just built. */
 	t->size = l_size + r_size + 1;
@@ -168,12 +182,16 @@ splay_tree *splaytree_splay(splay_tree * t, int i)
 
 	/*
 	 * The following two loops correct the size fields of the right path 
-	 */
-	/*
-	 * from the left child of the root and the right path from the left 
-	 */
-	/*
+	 * from the right child of the root and the left path from the left 
 	 * child of the root.  
+	 * 下面的两个循环是更正size域的值。
+	 * 前面的循环中仅仅设置了中树节点的size域。
+	 * 每次挂接的时候，仅仅是挂接点上的节点的size域与实际情况不符合，
+	 * 其他节点的size域和其子结点数依然相同，因此只需修改这些节点的size域。
+	 * 所以沿着右树的右路径，左树的左路径。
+	 */
+	/**
+	 * 这r_size和l_size用反了？？？
 	 */
 	for (y = N.right; y != NULL; y = y->right)
 	{
@@ -186,6 +204,7 @@ splay_tree *splaytree_splay(splay_tree * t, int i)
 		r_size -= 1 + node_size(y->right);
 	}
 
+	//将三棵树组合在一起。
 	l->right = t->left;			/* assemble */
 	r->left = t->right;
 	t->left = N.right;
@@ -198,42 +217,49 @@ splay_tree *splaytree_insert(splay_tree * t, int i, void *data)
 {
 	/*
 	 * Insert key i into the tree t, if it is not already there. 
-	 */
-	/*
 	 * Return a pointer to the resulting tree.  
+	 * 插入一个key值为i的节点到树t中，如果不存在，则返回指向树的指针。
+	 * data为数据。
 	 */
 	splay_tree *new;
 
 	if (t != NULL)
 	{
+		//伸展这棵树
 		t = splaytree_splay(t, i);
 		if (compare(i, t->key) == 0)
 		{
-			return t;			/* it's already there */
+			return t;			/* 找到 */
 		}
 	}
+
+	//树中没有这个节点。
+	//创建一个新的节点。
 	new = (splay_tree *) malloc(sizeof(splay_tree));
 	assert(new);
 	if (t == NULL)
 	{
 		new->left = new->right = NULL;
 	} 
-	else if (compare(i, t->key) < 0)
+	else if (compare(i, t->key) < 0)//i比根节点的key值小。
 	{
+		//将new节点加到树中并作为新的根。
 		new->left = t->left;
 		new->right = t;
 		t->left = NULL;
 		t->size = 1 + node_size(t->right);
 	} 
-	else
+	else //i比根节点的值大
 	{
 		new->right = t->right;
 		new->left = t;
 		t->right = NULL;
 		t->size = 1 + node_size(t->left);
 	}
+
 	new->key = i;
 	new->data = data;
+	//根的size域值
 	new->size = 1 + node_size(new->left) + node_size(new->right);
 	return new;
 }
@@ -242,9 +268,9 @@ splay_tree *splaytree_delete(splay_tree * t, int i)
 {
 	/*
 	 * Deletes i from the tree if it's there.  
-	 */
-	/*
-	 * Return a pointer to the resulting tree.  
+	 * Return a pointer to the resulting tree. 
+	 * 从树t中删除key值为i的节点。
+	 * 如果存在这个节点，返回删除后树的根。
 	 */
 	splay_tree *x;
 	int tsize;
@@ -254,7 +280,10 @@ splay_tree *splaytree_delete(splay_tree * t, int i)
 	tsize = t->size;
 	t = splaytree_splay(t, i);
 	if (compare(i, t->key) == 0)
-	{							/* found it */
+	{   /*
+		 * found it 
+		 * 找到这个节点，此时这个节点为根。
+		 */
 		if (t->left == NULL)
 		{
 			x = t->right;
@@ -262,9 +291,14 @@ splay_tree *splaytree_delete(splay_tree * t, int i)
 		else
 		{
 			x = splaytree_splay(t->left, i);
+			//此时x指向小于i且距离i最近的那个节点。
+			//由于此时i为根，因此对左子树的这个操作将使
+			//左子树中最大的节点变成左子树的根，并且，此时左子树的根没有右子树。
 			x->right = t->right;
 		}
+		//删除节点i
 		free(t);
+
 		if (x != NULL)
 		{
 			x->size = tsize - 1;
@@ -281,15 +315,13 @@ splay_tree *find_rank(int r, splay_tree * t)
 {
 	/*
 	 * Returns a pointer to the node in the tree with the given rank.  
-	 */
-	/*
 	 * Returns NULL if there is no such node.  
-	 */
-	/*
 	 * Does not change the tree.  To guarantee logarithmic behavior, 
-	 */
-	/*
 	 * the node found here should be splayed to the root.  
+	 * 在树中查找rank值为r的节点。
+	 * 如果没有这个节点，返回NULL。不对树产生改变，并在对数时间内完成。
+	 * 所找到的节点将成为树的根。
+	 * 但是在下面的程序中，节点并没有被splay到根。。。
 	 */
 	int lsize;
 	if ((r < 0) || (r >= node_size(t)))
