@@ -614,6 +614,8 @@ int main(int argc, char **argv)
 #else
 	i_am_root = 0;
 #endif
+
+	//程序将被设置为守护进程。
 	srv->srvconf.dont_daemonize = 0;
 
 	//处理参数。
@@ -699,6 +701,7 @@ int main(int argc, char **argv)
 	openDevNull(STDIN_FILENO);
 	openDevNull(STDOUT_FILENO);
 
+	//设置为默认的配置。
 	if (0 != config_set_defaults(srv))
 	{
 		log_error_write(srv, __FILE__, __LINE__, "s",
@@ -711,10 +714,14 @@ int main(int argc, char **argv)
 	 * UID handling 
 	 */
 #ifdef HAVE_GETUID
+	//检查有效用户ID和有效组ID是否是0（root）。
 	if (!i_am_root && (geteuid() == 0 || getegid() == 0))
 	{
 		/*
 		 * we are setuid-root 
+		 * 程序的实际用户ID不是0,也就是程序不是由超级用户运行的，但是程序的有效用户ID
+		 * 或者有效组ID是超级用户（组），因此，程序可以访问任何文件而不受限制！这样很
+		 * 不安全。因此程序退出并提示用户。
 		 */
 
 		log_error_write(srv, __FILE__, __LINE__, "s",
@@ -738,6 +745,8 @@ int main(int argc, char **argv)
 		return -1;
 	}
 
+	//加载插件
+	//以后再说。。。
 	if (plugins_load(srv))
 	{
 		log_error_write(srv, __FILE__, __LINE__, "s",
@@ -751,6 +760,7 @@ int main(int argc, char **argv)
 
 	/*
 	 * open pid file BEFORE chroot 
+	 * 打开pid文件，并将进程号写入pid文件。
 	 */
 	if (srv->srvconf.pid_file->used)
 	{
@@ -759,9 +769,14 @@ int main(int argc, char **argv)
 			 open(srv->srvconf.pid_file->ptr,
 				  O_WRONLY | O_CREAT | O_EXCL | O_TRUNC,
 				  S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)))
+			/**
+			 * O_EXCL和O_CREAT同时使用，测试文件是否存在，如果存在
+			 * 则报错。
+			 */
 		{
+			//pid文件打开失败。。。
 			struct stat st;
-			if (errno != EEXIST)
+			if (errno != EEXIST)  //不是报文件已经存在的错误。
 			{
 				log_error_write(srv, __FILE__, __LINE__, "sbs",
 								"opening pid-file failed:",
@@ -769,6 +784,7 @@ int main(int argc, char **argv)
 				return -1;
 			}
 
+			//pid文件已经存在，测试文件的状态。
 			if (0 != stat(srv->srvconf.pid_file->ptr, &st))
 			{
 				log_error_write(srv, __FILE__, __LINE__, "sbs",
@@ -776,7 +792,7 @@ int main(int argc, char **argv)
 								srv->srvconf.pid_file, strerror(errno));
 			}
 
-			if (!S_ISREG(st.st_mode))
+			if (!S_ISREG(st.st_mode)) //pid文件是普通文件。
 			{
 				log_error_write(srv, __FILE__, __LINE__, "sb",
 								"pid-file exists and isn't regular file:",
@@ -784,6 +800,8 @@ int main(int argc, char **argv)
 				return -1;
 			}
 
+			//重新打开pid文件。
+			//这里不在使用O_EXCL参数，由于pid文件已经存在且是普通文件，则覆盖原先的文件。
 			if (-1 ==
 				(pid_fd =
 				 open(srv->srvconf.pid_file->ptr,
@@ -801,8 +819,9 @@ int main(int argc, char **argv)
 	if (srv->event_handler == FDEVENT_HANDLER_SELECT)
 	{
 		/*
-		 * select limits itself as it is a hard limit and will lead to a
-		 * segfault we add some safety 
+		 * select limits itself as it is a hard limit and will lead to a segfault 
+		 * we add some safety 
+		 * select的硬限制。减去200是为了增加安全性，防止出现段错误。
 		 */
 		srv->max_fds = FD_SETSIZE - 200;
 	} 
@@ -811,6 +830,7 @@ int main(int argc, char **argv)
 		srv->max_fds = 4096;
 	}
 
+	//程序是在超级用户模式下运行的。
 	if (i_am_root)
 	{
 		struct group *grp = NULL;
@@ -823,38 +843,58 @@ int main(int argc, char **argv)
 #endif
 
 #ifdef HAVE_GETRLIMIT
-		if (0 != getrlimit(RLIMIT_NOFILE, &rlim))
+		/**
+		 * getrlimit和setrlimit函数用于查询和修改进程的资源限制。
+		 *
+		 * include <sys/resource.h>
+		 * int getrlimit(int resource, struct rlimit *rlim);
+		 * int setrlimit(int resource, const struct rlimit *rlim);
+		 * 	返回：若成功为0，出错为非0
+		 *
+		 * 对这两个函数的每一次调用都指定一个资源以及一个指向下列结构的指针。
+		 *
+		 * struct rlimit
+		 * {
+		 * 		rlim_t rlim_cur; 	//软限制：当前限制
+		 * 		rlim_t rlim_max; 	//硬限制：rlimcur的最大值
+		 * }；
+		 *
+		 * 这两个函数不属于POSIX.1，但SVR4和4.3+BSD提供它们。SVR4在上面的结构中使用基本系统数据类型rlim_t。
+		 * 其它系统则将这两个成员定义为整型或长整型。
+		 *
+		 * 程序中使用的参数RLIMIT_NOFILE：Specifies a value one greater than the maximum  file  descriptor
+		 * number  that  can be opened by this process. 设置最大的文件打开数，且实际打开的文件数要比这个数
+		 * 小一。
+		 *
+		 * 详细使用：man getrlimit
+		 */
+		if (0 != getrlimit(RLIMIT_NOFILE, &rlim)) //获得当前的文件打开数限制。
 		{
 			log_error_write(srv, __FILE__, __LINE__,
-							"ss", "couldn't get 'max filedescriptors'",
-							strerror(errno));
+							"ss", "couldn't get 'max filedescriptors'", strerror(errno));
 			return -1;
 		}
 
 		if (use_rlimit && srv->srvconf.max_fds)
 		{
 			/*
-			 * set rlimits 
+			 * set rlimits. 设置限制。
 			 */
-
-			rlim.rlim_cur = srv->srvconf.max_fds;
-			rlim.rlim_max = srv->srvconf.max_fds;
+			rlim.rlim_cur = srv->srvconf.max_fds; //软限制。
+			rlim.rlim_max = srv->srvconf.max_fds; //硬限制。
 
 			if (0 != setrlimit(RLIMIT_NOFILE, &rlim))
 			{
 				log_error_write(srv, __FILE__, __LINE__,
-								"ss",
-								"couldn't set 'max filedescriptors'",
-								strerror(errno));
+								"ss", "couldn't set 'max filedescriptors'", strerror(errno));
 				return -1;
 			}
 		}
 
+		//根据实际设置情况，重新设置max_fds。
 		if (srv->event_handler == FDEVENT_HANDLER_SELECT)
 		{
-			srv->max_fds =
-				rlim.rlim_cur <
-				FD_SETSIZE - 200 ? rlim.rlim_cur : FD_SETSIZE - 200;
+			srv->max_fds = rlim.rlim_cur < FD_SETSIZE - 200 ? rlim.rlim_cur : FD_SETSIZE - 200;
 		} 
 		else
 		{
@@ -863,6 +903,7 @@ int main(int argc, char **argv)
 
 		/*
 		 * set core file rlimit, if enable_cores is set 
+		 * 设置core文件的限制。如果设置了enable_cores。
 		 */
 		if (use_rlimit && srv->srvconf.enable_cores
 			&& getrlimit(RLIMIT_CORE, &rlim) == 0)
@@ -887,43 +928,42 @@ int main(int argc, char **argv)
 		}
 #ifdef HAVE_PWD_H
 		/*
-		 * set user and group 
+		 * set user and group 设置用户和组。
 		 */
 		if (srv->srvconf.username->used)
 		{
+			//根据配置中的用户名获取用户信息。
 			if (NULL == (pwd = getpwnam(srv->srvconf.username->ptr)))
 			{
-				log_error_write(srv, __FILE__, __LINE__, "sb",
-								"can't find username", srv->srvconf.username);
+				log_error_write(srv, __FILE__, __LINE__, "sb", "can't find username", srv->srvconf.username);
 				return -1;
 			}
 
-			if (pwd->pw_uid == 0)
+			if (pwd->pw_uid == 0) 
 			{
-				log_error_write(srv, __FILE__, __LINE__, "s",
-								"I will not set uid to 0\n");
+				log_error_write(srv, __FILE__, __LINE__, "s", "I will not set uid to 0\n");
 				return -1;
 			}
 		}
 
 		if (srv->srvconf.groupname->used)
 		{
+			//根据上面得到的用户所在的组的组名，获得组的信息。
 			if (NULL == (grp = getgrnam(srv->srvconf.groupname->ptr)))
 			{
-				log_error_write(srv, __FILE__, __LINE__, "sb",
-								"can't find groupname", srv->srvconf.groupname);
+				log_error_write(srv, __FILE__, __LINE__, "sb", "can't find groupname", srv->srvconf.groupname);
 				return -1;
 			}
 			if (grp->gr_gid == 0)
 			{
-				log_error_write(srv, __FILE__, __LINE__, "s",
-								"I will not set gid to 0\n");
+				log_error_write(srv, __FILE__, __LINE__, "s", "I will not set gid to 0\n");
 				return -1;
 			}
 		}
 #endif
 		/*
 		 * we need root-perms for port < 1024 
+		 * 使用超级用户模式获得小于1024的端口。初始化网络。
 		 */
 		if (0 != network_init(srv))
 		{
@@ -940,9 +980,11 @@ int main(int argc, char **argv)
 		if (srv->srvconf.groupname->used)
 		{
 			setgid(grp->gr_gid);
-			setgroups(0, NULL);
+			setgroups(0, NULL); //返回用户组的数目。
 			if (srv->srvconf.username->used)
 			{
+				//Initialize the group access list by reading the group database /etc/group and using all groups of which
+				//user is a member.  The additional group group is also added to the list.
 				initgroups(srv->srvconf.username->ptr, grp->gr_gid);
 			}
 		}
@@ -950,25 +992,36 @@ int main(int argc, char **argv)
 #ifdef HAVE_CHROOT
 		if (srv->srvconf.changeroot->used)
 		{
+			//The tzset() function initializes the tzname variable from the TZ environment variable.  
+			//This function is automatically called by the other time conversion functions that depend on the time zone.  
+			//In a SysV-like environment it will also set the variables  time-zone  (seconds  West  of GMT) and daylight 
+			//(0 if this time zone does not have any daylight saving time rules, nonzero if there is a
+			//time during the year when daylight saving time applies).
 			tzset();
 
+			//设置程序所参考的根目录，将被所有的子进程继承。
+			//也就是对于本程序而言，"/"并不是系统的根目录，而是这设置的目录。
 			if (-1 == chroot(srv->srvconf.changeroot->ptr))
 			{
-				log_error_write(srv, __FILE__, __LINE__, "ss",
-								"chroot failed: ", strerror(errno));
+				log_error_write(srv, __FILE__, __LINE__, "ss", "chroot failed: ", strerror(errno));
 				return -1;
 			}
+			//修改工作目录.
+			/*
+			 * 注意：
+			 * 		由于前面已经设置了根目录。因此这里将工作目录切换到"/"并不是系统的根目录，而是
+			 * 		上面通过函数chroot设置的根目录。
+			 */
 			if (-1 == chdir("/"))
 			{
-				log_error_write(srv, __FILE__, __LINE__, "ss",
-								"chdir failed: ", strerror(errno));
+				log_error_write(srv, __FILE__, __LINE__, "ss", "chdir failed: ", strerror(errno));
 				return -1;
 			}
 		}
 #endif
 #ifdef HAVE_PWD_H
 		/*
-		 * drop root privs 
+		 * drop root privs 放弃超级管理员权限。
 		 */
 		if (srv->srvconf.username->used)
 		{
@@ -984,7 +1037,11 @@ int main(int argc, char **argv)
 			prctl(PR_SET_DUMPABLE, 1, 0, 0, 0);
 		}
 #endif
-	} else
+	} 
+	/*
+	 * 下面的是程序在非root用户下执行的设置。
+	 */
+	else
 	{
 
 #ifdef HAVE_GETRLIMIT
@@ -998,6 +1055,7 @@ int main(int argc, char **argv)
 
 		/**
 		 * we are not root can can't increase the fd-limit, but we can reduce it
+		 * 我们不是root，不能增加fd-limit，但我们可以减少。
 		 */
 		if (srv->srvconf.max_fds && srv->srvconf.max_fds < rlim.rlim_cur)
 		{
@@ -1005,13 +1063,12 @@ int main(int argc, char **argv)
 			 * set rlimits 
 			 */
 
-			rlim.rlim_cur = srv->srvconf.max_fds;
+			rlim.rlim_cur = srv->srvconf.max_fds; //只能设置软限制。
 
 			if (0 != setrlimit(RLIMIT_NOFILE, &rlim))
 			{
 				log_error_write(srv, __FILE__, __LINE__,
-								"ss",
-								"couldn't set 'max filedescriptors'",
+								"ss", "couldn't set 'max filedescriptors'",
 								strerror(errno));
 				return -1;
 			}
@@ -1019,10 +1076,9 @@ int main(int argc, char **argv)
 
 		if (srv->event_handler == FDEVENT_HANDLER_SELECT)
 		{
-			srv->max_fds =
-				rlim.rlim_cur <
-				FD_SETSIZE - 200 ? rlim.rlim_cur : FD_SETSIZE - 200;
-		} else
+			srv->max_fds = rlim.rlim_cur < FD_SETSIZE - 200 ? rlim.rlim_cur : FD_SETSIZE - 200;
+		} 
+		else
 		{
 			srv->max_fds = rlim.rlim_cur;
 		}
@@ -1044,8 +1100,7 @@ int main(int argc, char **argv)
 			if (srv->max_fds > FD_SETSIZE - 200)
 			{
 				log_error_write(srv, __FILE__, __LINE__, "sd",
-								"can't raise max filedescriptors above",
-								FD_SETSIZE - 200,
+								"can't raise max filedescriptors above", FD_SETSIZE - 200,
 								"if event-handler is 'select'. Use 'poll' or something else or reduce server.max-fds.");
 				return -1;
 			}
@@ -1061,29 +1116,33 @@ int main(int argc, char **argv)
 	}
 
 	/*
-	 * set max-conns 
+	 * set max-conns 设置最大连接数。
 	 */
 	if (srv->srvconf.max_conns > srv->max_fds)
 	{
 		/*
 		 * we can't have more connections than max-fds 
+		 * 最大连接数要小于最大文件打开数(max-fds)
 		 */
 		srv->max_conns = srv->max_fds;
-	} else if (srv->srvconf.max_conns)
+	}  
+	else if (srv->srvconf.max_conns)
 	{
 		/*
 		 * otherwise respect the wishes of the user 
+		 * 根据用户设置。
 		 */
 		srv->max_conns = srv->srvconf.max_conns;
-	} else
+	} 
+	else
 	{
 		/*
-		 * or use the default 
+		 * or use the default  默认。
 		 */
 		srv->max_conns = srv->max_fds;
 	}
 
-	if (HANDLER_GO_ON != plugins_call_init(srv))
+	if (HANDLER_GO_ON != plugins_call_init(srv)) //初始化插件。
 	{
 		log_error_write(srv, __FILE__, __LINE__, "s",
 						"Initialization of plugins failed. Going down.");
@@ -1097,6 +1156,7 @@ int main(int argc, char **argv)
 #ifdef HAVE_FORK
 	/*
 	 * network is up, let's deamonize ourself 
+	 * 设置为守护进程。
 	 */
 	if (srv->srvconf.dont_daemonize == 0)
 		daemonize();
@@ -1106,7 +1166,7 @@ int main(int argc, char **argv)
 	srv->uid = getuid();
 
 	/*
-	 * write pid file 
+	 * write pid file 写pid文件。
 	 */
 	if (pid_fd != -1)
 	{
@@ -1120,6 +1180,7 @@ int main(int argc, char **argv)
 	/*
 	 * Close stderr ASAP in the child process to make sure that nothing is
 	 * being written to that fd which may not be valid anymore. 
+	 * 关闭向标准输出的输出，打开日志文件。
 	 */
 	if (-1 == log_error_open(srv))
 	{
@@ -1193,6 +1254,9 @@ int main(int argc, char **argv)
 
 		return -1;
 	}
+
+//设置一些信号的处理方法。
+//SIGPIPE:在写管道时，读管道的进程终止，产生此信号。
 #ifdef HAVE_SIGACTION
 	memset(&act, 0, sizeof(act));
 	act.sa_handler = SIG_IGN;
@@ -1231,6 +1295,31 @@ int main(int argc, char **argv)
 
 	/*
 	 * setup periodic timer (1 second) 
+	 *  The  system provides each process with three interval timers, each decrementing in a distinct time domain.  
+	 *  When any timer expires a signal is sent to the process, and the timer (potentially) restarts.
+	 *
+	 *     ITIMER_REAL    decrements in real time, and delivers SIGALRM upon expiration.
+	 *     ITIMER_VIRTUAL decrements only when the process is executing, and delivers SIGVTALRM upon expiration.
+	 *     ITIMER_PROF    decrements both when the process executes and when the system is executing on behalf of the process.   
+	 *     				  Coupled with ITIMER_VIRTUAL,  this  timer  is usually used to profile the time spent 
+	 *     				  by the application in user and kernel space.
+	 *  SIGPROF is delivered upon expiration.
+	 *  Timer values are defined by the following structures:
+	 *  struct itimerval 
+	 *  {
+	 *    	struct timeval it_interval; //next value
+	 *    	struct timeval it_value;    //current value
+	 *  };
+	 *  struct timeval 
+	 *  {
+	 *  	long tv_sec;                // seconds 
+	 *  	long tv_usec;               //microseconds
+	 *  };
+	 *  The function getitimer() fills the structure indicated by value with the current setting for the timer 
+	 *  indicated by which  (one  of ITIMER_REAL, ITIMER_VIRTUAL, or ITIMER_PROF).  The element it_value is 
+	 *  set to the amount of time remaining on the timer, or zero ifthe timer is disabled.  
+	 *  Similarly, it_interval is set to the reset value.  The function setitimer() sets the indicated timer to the
+	 *  value in value.  If ovalue is nonzero, the old value of the timer is stored there.
 	 */
 	if (setitimer(ITIMER_REAL, &interval, NULL))
 	{
@@ -1243,9 +1332,15 @@ int main(int argc, char **argv)
 
 #ifdef HAVE_FORK
 	/*
-	 * start watcher and workers 
+	 * *************************
+	 * start watcher and workers
+	 * *************************
+	 *
+	 * 下面程序将产生多个子进程。这些子进程成为worker，也就是用于接受处理用户的连接的进程。而当前的主进程将
+	 * 成为watcher，主要工作就是监视workers的工作状态，当有worker因为意外而退出时，产生新的worker。
+	 * 在程序退出时，watcher负责停止所有的workers并清理资源。
 	 */
-	num_childs = srv->srvconf.max_worker;
+	num_childs = srv->srvconf.max_worker;//最大worker数。
 	if (num_childs > 0)
 	{
 		int child = 0;
@@ -1269,7 +1364,7 @@ int main(int argc, char **argv)
 			{
 				/**
 				 * 当产生了足够的worker时，watcher就在这个while中不断的循环。
-				 * 一但发现有worker死亡，立即产生新的worker。
+				 * 一但发现有worker退出（进程死亡），立即产生新的worker。
 				 * 如果发生错误并接受到SIGHUP信号，向所有的进程（父进程及其子进程）包括自己发送SIGHUP信号。
 				 * 并退出。
 				 */
@@ -1318,8 +1413,10 @@ int main(int argc, char **argv)
 
 		/**
 		 * for the parent this is the exit-point 
-		 * 父进程，也就是watcher在这个if语句中就直接退出了。
+		 * *****************************************************
+		 * 父进程，也就是watcher在执行完这个if语句中就直接退出了。
 		 * 后面是worker执行的代码。
+		 * *****************************************************
 		 */
 		if (!child)
 		{
@@ -1345,6 +1442,13 @@ int main(int argc, char **argv)
 	}
 #endif
 
+	/* 
+	 * **************************
+	 * 从这开始是worker执行的代码。
+	 * **************************
+	 */
+
+	
 	if (NULL == (srv->ev = fdevent_init(srv->max_fds + 1, srv->event_handler)))
 	{
 		log_error_write(srv, __FILE__, __LINE__, "s", "fdevent_init failed");
@@ -1353,7 +1457,7 @@ int main(int argc, char **argv)
 	/*
 	 * kqueue() is called here, select resets its internals,
 	 * all server sockets get their handlers
-	 *
+	 * 以后再说。。。
 	 * */
 	if (0 != network_register_fdevents(srv))
 	{
@@ -1366,6 +1470,7 @@ int main(int argc, char **argv)
 
 	/*
 	 * might fail if user is using fam (not gamin) and famd isn't running 
+	 * famd没有运行，则运行失败。。。
 	 */
 	if (NULL == (srv->stat_cache = stat_cache_init()))
 	{
@@ -1375,7 +1480,7 @@ int main(int argc, char **argv)
 	}
 #ifdef HAVE_FAM_H
 	/*
-	 * setup FAM 
+	 * setup FAM 设置FAM。
 	 */
 	if (srv->srvconf.stat_cache_engine == STAT_CACHE_ENGINE_FAM)
 	{
@@ -1401,7 +1506,7 @@ int main(int argc, char **argv)
 
 
 	/*
-	 * get the current number of FDs 
+	 * get the current number of FDs 获得当前可用的fd值
 	 */
 	srv->cur_fds = open("/dev/null", O_RDONLY);
 	close(srv->cur_fds);
@@ -1409,6 +1514,9 @@ int main(int argc, char **argv)
 	for (i = 0; i < srv->srv_sockets.used; i++)
 	{
 		server_socket *srv_socket = srv->srv_sockets.ptr[i];
+	 	/*
+		 * close fd on exec (cgi) 
+		 */
 		if (-1 == fdevent_fcntl_set(srv->ev, srv_socket->fd))
 		{
 			log_error_write(srv, __FILE__, __LINE__, "ss",
@@ -1419,7 +1527,12 @@ int main(int argc, char **argv)
 
 	/*
 	 * main-loop 
+	 * *******************
 	 * worker工作的主循环。
+	 * *******************
+	 *
+	 *
+	 * here............
 	 */
 	while (!srv_shutdown)
 	{
@@ -1436,7 +1549,6 @@ int main(int argc, char **argv)
 			 */
 			handle_sig_hup = 0;
 
-
 			/*
 			 * cycle logfiles 
 			 */
@@ -1446,28 +1558,23 @@ int main(int argc, char **argv)
 				case HANDLER_GO_ON:
 					break;
 				default:
-					log_error_write(srv, __FILE__, __LINE__, "sd",
-								"sighup-handler return with an error", r);
+					log_error_write(srv, __FILE__, __LINE__, "sd", "sighup-handler return with an error", r);
 					break;
 			}
 
 			if (-1 == log_error_cycle(srv))
 			{
-				log_error_write(srv, __FILE__, __LINE__, "s",
-								"cycling errorlog failed, dying");
+				log_error_write(srv, __FILE__, __LINE__, "s", "cycling errorlog failed, dying");
 
 				return -1;
 			} 
 			else
 			{
 #ifdef HAVE_SIGACTION
-				log_error_write(srv, __FILE__, __LINE__, "sdsd",
-								"logfiles cycled UID =",
-								last_sighup_info.si_uid,
-								"PID =", last_sighup_info.si_pid);
+				log_error_write(srv, __FILE__, __LINE__, "sdsd", "logfiles cycled UID =",
+								last_sighup_info.si_uid, "PID =", last_sighup_info.si_pid);
 #else
-				log_error_write(srv, __FILE__, __LINE__, "s",
-								"logfiles cycled");
+				log_error_write(srv, __FILE__, __LINE__, "s", "logfiles cycled");
 #endif
 			}
 		}
