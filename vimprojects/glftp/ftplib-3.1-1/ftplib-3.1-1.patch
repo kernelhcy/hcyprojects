@@ -1,0 +1,283 @@
+*** ../../ftplib-3.1/linux/ftplib.c	Tue Jun 23 16:39:52 1998
+--- ftplib.c	Sat Sep 16 13:13:25 2000
+***************
+*** 1,7 ****
+  /***************************************************************************/
+  /*									   */
+  /* ftplib.c - callable ftp access routines				   */
+! /* Copyright (C) 1996, 1997, 1998 Thomas Pfau, pfau@cnj.digex.net	   */
+  /*	73 Catherine Street, South Bound Brook, NJ, 08880		   */
+  /*									   */
+  /* This library is free software; you can redistribute it and/or	   */
+--- 1,7 ----
+  /***************************************************************************/
+  /*									   */
+  /* ftplib.c - callable ftp access routines				   */
+! /* Copyright (C) 1996-2000 Thomas Pfau, pfau@cnj.digex.net		   */
+  /*	73 Catherine Street, South Bound Brook, NJ, 08880		   */
+  /*									   */
+  /* This library is free software; you can redistribute it and/or	   */
+***************
+*** 76,81 ****
+--- 76,82 ----
+      char *buf;
+      int dir;
+      netbuf *ctrl;
++     netbuf *data;    
+      int cmode;
+      struct timeval idletime;
+      FtpCallback idlecb;
+***************
+*** 87,93 ****
+  };
+  
+  static char *version =
+!     "ftplib Release 3.1 6/xx/98, copyright 1996, 1997, 1998 Thomas Pfau";
+  
+  GLOBALDEF int ftplib_debug = 0;
+  
+--- 88,94 ----
+  };
+  
+  static char *version =
+!     "ftplib Release 3.1-1 9/16/00, copyright 1996-2000 Thomas Pfau";
+  
+  GLOBALDEF int ftplib_debug = 0;
+  
+***************
+*** 704,716 ****
+      }
+      ctrl->handle = sData;
+      ctrl->dir = dir;
+-     ctrl->ctrl = (nControl->cmode == FTPLIB_PASSIVE) ? nControl : NULL;
+      ctrl->idletime = nControl->idletime;
+      ctrl->idlearg = nControl->idlearg;
+      ctrl->xfered = 0;
+      ctrl->xfered1 = 0;
+      ctrl->cbbytes = nControl->cbbytes;
+!     if (ctrl->idletime.tv_sec | ctrl->idletime.tv_usec)
+  	ctrl->idlecb = nControl->idlecb;
+      else
+  	ctrl->idlecb = NULL;
+--- 705,716 ----
+      }
+      ctrl->handle = sData;
+      ctrl->dir = dir;
+      ctrl->idletime = nControl->idletime;
+      ctrl->idlearg = nControl->idlearg;
+      ctrl->xfered = 0;
+      ctrl->xfered1 = 0;
+      ctrl->cbbytes = nControl->cbbytes;
+!     if (ctrl->idletime.tv_sec || ctrl->idletime.tv_usec || ctrl->cbbytes)
+  	ctrl->idlecb = nControl->idlecb;
+      else
+  	ctrl->idlecb = NULL;
+***************
+*** 769,775 ****
+  	    {
+  		rv = 1;
+  		nData->handle = sData;
+-                 nData->ctrl = nControl;
+  	    }
+  	    else
+  	    {
+--- 769,774 ----
+***************
+*** 848,859 ****
+--- 847,861 ----
+  	*nData = NULL;
+  	return 0;
+      }
++     (*nData)->ctrl = nControl;
++     nControl->data = *nData;
+      if (nControl->cmode == FTPLIB_PORT)
+      {
+  	if (!FtpAcceptConnection(*nData,nControl))
+  	{
+  	    FtpClose(*nData);
+  	    *nData = NULL;
++ 	    nControl->data = NULL;
+  	    return 0;
+  	}
+      }
+***************
+*** 872,887 ****
+          i = readline(buf, max, nData);
+      else
+      {
+!         socket_wait(nData);
+          i = net_read(nData->handle, buf, max);
+      }
+      nData->xfered += i;
+      if (nData->idlecb && nData->cbbytes)
+      {
+          nData->xfered1 += i;
+          if (nData->xfered1 > nData->cbbytes)
+          {
+!             nData->idlecb(nData, nData->xfered, nData->idlearg);
+              nData->xfered1 = 0;
+          }
+      }
+--- 874,894 ----
+          i = readline(buf, max, nData);
+      else
+      {
+!         i = socket_wait(nData);
+! 	if (i != 1)
+! 	    return 0;
+          i = net_read(nData->handle, buf, max);
+      }
++     if (i == -1)
++ 	return 0;
+      nData->xfered += i;
+      if (nData->idlecb && nData->cbbytes)
+      {
+          nData->xfered1 += i;
+          if (nData->xfered1 > nData->cbbytes)
+          {
+! 	    if (nData->idlecb(nData, nData->xfered, nData->idlearg) == 0)
+! 		return 0;
+              nData->xfered1 = 0;
+          }
+      }
+***************
+*** 903,908 ****
+--- 910,917 ----
+          socket_wait(nData);
+          i = net_write(nData->handle, buf, len);
+      }
++     if (i == -1)
++ 	return 0;
+      nData->xfered += i;
+      if (nData->idlecb && nData->cbbytes)
+      {
+***************
+*** 922,942 ****
+  GLOBALDEF int FtpClose(netbuf *nData)
+  {
+      netbuf *ctrl;
+!     if (nData->dir == FTPLIB_WRITE)
+      {
+  	if (nData->buf != NULL)
+  	    writeline(NULL, 0, nData);
+!     }
+!     else if (nData->dir != FTPLIB_READ)
+  	return 0;
+!     if (nData->buf)
+!     	free(nData->buf);
+!     shutdown(nData->handle,2);
+!     net_close(nData->handle);
+!     ctrl = nData->ctrl;
+!     free(nData);
+!     if (ctrl)
+!         return(readresp('2', ctrl));
+      return 1;
+  }
+  
+--- 931,965 ----
+  GLOBALDEF int FtpClose(netbuf *nData)
+  {
+      netbuf *ctrl;
+!     switch (nData->dir)
+      {
++       case FTPLIB_WRITE:
++ 	/* potential problem - if buffer flush fails, how to notify user? */
+  	if (nData->buf != NULL)
+  	    writeline(NULL, 0, nData);
+!       case FTPLIB_READ:
+! 	if (nData->buf)
+! 	    free(nData->buf);
+! 	shutdown(nData->handle,2);
+! 	net_close(nData->handle);
+! 	ctrl = nData->ctrl;
+! 	free(nData);
+! 	if (ctrl)
+! 	{
+! 	    ctrl->data = NULL;
+! 	    return(readresp('2', ctrl));
+! 	}
+! 	return 1;
+!       case FTPLIB_CONTROL:
+! 	if (nData->data)
+! 	{
+! 	    nData->ctrl = NULL;
+! 	    FtpClose(nData);
+! 	}
+! 	net_close(nData->handle);
+! 	free(nData);
+  	return 0;
+!     }
+      return 1;
+  }
+  
+***************
+*** 1077,1086 ****
+      char *dbuf;
+      FILE *local = NULL;
+      netbuf *nData;
+  
+      if (localfile != NULL)
+      {
+! 	local = fopen(localfile, (typ == FTPLIB_FILE_WRITE) ? "r" : "w");
+  	if (local == NULL)
+  	{
+  	    strncpy(nControl->response, strerror(errno),
+--- 1100,1115 ----
+      char *dbuf;
+      FILE *local = NULL;
+      netbuf *nData;
++     int rv=1;
+  
+      if (localfile != NULL)
+      {
+! 	char ac[4] = "w";
+! 	if (typ == FTPLIB_FILE_WRITE)
+! 	    ac[0] = 'r';
+! 	if (mode == FTPLIB_IMAGE)
+! 	    ac[1] = 'b';
+! 	local = fopen(localfile, ac);
+  	if (local == NULL)
+  	{
+  	    strncpy(nControl->response, strerror(errno),
+***************
+*** 1097,1103 ****
+--- 1126,1136 ----
+      {
+  	while ((l = fread(dbuf, 1, FTPLIB_BUFSIZ, local)) > 0)
+  	    if ((c = FtpWrite(dbuf, l, nData)) < l)
++ 	    {
+  		printf("short write: passed %d, wrote %d\n", l, c);
++ 		rv = 0;
++ 		break;
++ 	    }
+      }
+      else
+      {
+***************
+*** 1105,1110 ****
+--- 1138,1144 ----
+  	    if (fwrite(dbuf, 1, l, local) <= 0)
+  	    {
+  		perror("localfile write");
++ 		rv = 0;
+  		break;
+  	    }
+      }
+***************
+*** 1112,1118 ****
+      fflush(local);
+      if (localfile != NULL)
+  	fclose(local);
+!     return FtpClose(nData);
+  }
+  
+  /*
+--- 1146,1153 ----
+      fflush(local);
+      if (localfile != NULL)
+  	fclose(local);
+!     FtpClose(nData);
+!     return rv;
+  }
+  
+  /*

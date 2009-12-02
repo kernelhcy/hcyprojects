@@ -1,0 +1,103 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.7	//
+ACCEPT_TIMEOUT	ftp.c	41;"	d	file:
+ERR	log.c	/^	ERR, INFO, WARNNING, UNKNOWN$/;"	e	enum:_log_t	file:
+FTPLIB_ASCII	ftp.h	34;"	d
+FTPLIB_BINARY	ftp.h	37;"	d
+FTPLIB_BUFSIZ	ftp.c	40;"	d	file:
+FTPLIB_CALLBACK	ftp.h	45;"	d
+FTPLIB_CALLBACKARG	ftp.h	47;"	d
+FTPLIB_CALLBACKBYTES	ftp.h	48;"	d
+FTPLIB_CONNMODE	ftp.h	44;"	d
+FTPLIB_CONTROL	ftp.c	43;"	d	file:
+FTPLIB_DEFMODE	ftp.c	48;"	d	file:
+FTPLIB_DIR	ftp.h	28;"	d
+FTPLIB_DIR_VERBOSE	ftp.h	29;"	d
+FTPLIB_FILE_READ	ftp.h	30;"	d
+FTPLIB_FILE_WRITE	ftp.h	31;"	d
+FTPLIB_IDLETIME	ftp.h	46;"	d
+FTPLIB_IMAGE	ftp.h	35;"	d
+FTPLIB_PASSIVE	ftp.h	40;"	d
+FTPLIB_PORT	ftp.h	41;"	d
+FTPLIB_READ	ftp.c	44;"	d	file:
+FTPLIB_TEXT	ftp.h	36;"	d
+FTPLIB_WRITE	ftp.c	45;"	d	file:
+INFO	log.c	/^	ERR, INFO, WARNNING, UNKNOWN$/;"	e	enum:_log_t	file:
+MAXLINE	log.h	12;"	d
+UNKNOWN	log.c	/^	ERR, INFO, WARNNING, UNKNOWN$/;"	e	enum:_log_t	file:
+WARNNING	log.c	/^	ERR, INFO, WARNNING, UNKNOWN$/;"	e	enum:_log_t	file:
+_FTP_LOG_H	log.h	6;"	d
+__FTPLIB_H	ftp.h	25;"	d
+_log_t	log.c	/^typedef enum _log_t$/;"	g	file:
+_netbuf	ftp.c	/^struct _netbuf$/;"	s	file:
+assert	log.c	/^void assert(void *p)$/;"	f
+buf	ftp.c	/^  	char *buf; 					\/\/数据缓存。$/;"	m	struct:_netbuf	file:
+cavail	ftp.c	/^  	int cavail; 				\/\/cput中数据的长度。$/;"	m	struct:_netbuf	file:
+cbbytes	ftp.c	/^  	int cbbytes;$/;"	m	struct:_netbuf	file:
+cget	ftp.c	/^ 	char *cget; 				\/\/$/;"	m	struct:_netbuf	file:
+cleft	ftp.c	/^	int cleft; 					\/\/cput中空闲的空间的长度。$/;"	m	struct:_netbuf	file:
+cmode	ftp.c	/^  	int cmode;$/;"	m	struct:_netbuf	file:
+cput	ftp.c	/^	char *cput; 				\/\/cput用来作为从socket读取数据用的临时缓存。$/;"	m	struct:_netbuf	file:
+ctrl	ftp.c	/^  	netbuf *ctrl;$/;"	m	struct:_netbuf	file:
+data	ftp.c	/^  	netbuf *data;$/;"	m	struct:_netbuf	file:
+dir	ftp.c	/^  	int dir;$/;"	m	struct:_netbuf	file:
+ftp_accept_connection	ftp.c	/^static int ftp_accept_connection(netbuf * n_data, netbuf * n_control)$/;"	f	file:
+ftp_access	ftp.c	/^int ftp_access(const char *path, int typ, int mode, netbuf * n_control, netbuf ** n_data)$/;"	f
+ftp_callback	ftp.h	/^typedef int (*ftp_callback)(netbuf *n_control, int xfered, void *arg);$/;"	t
+ftp_cdup	ftp.c	/^int ftp_cdup(netbuf * n_control)$/;"	f
+ftp_chdir	ftp.c	/^int ftp_chdir(const char *path, netbuf * n_control)$/;"	f
+ftp_connect	ftp.c	/^int ftp_connect(const char *host, netbuf ** n_control)$/;"	f
+ftp_data_close	ftp.c	/^int ftp_data_close(netbuf * n_data)$/;"	f
+ftp_data_read	ftp.c	/^int ftp_data_read(void *buf, int max, netbuf * n_data)$/;"	f
+ftp_data_write	ftp.c	/^int ftp_data_write(void *buf, int len, netbuf * n_data)$/;"	f
+ftp_delete	ftp.c	/^int ftp_delete(const char *fnm, netbuf * n_control)$/;"	f
+ftp_dir	ftp.c	/^int ftp_dir(const char *outputfile, const char *path, netbuf * n_control)$/;"	f
+ftp_get	ftp.c	/^int ftp_get(const char *outputfile, const char *path,$/;"	f
+ftp_init	ftp.c	/^void ftp_init(void)$/;"	f
+ftp_last_response	ftp.c	/^char * ftp_last_response(netbuf * n_control)$/;"	f
+ftp_login	ftp.c	/^int ftp_login(const char *user, const char *pass, netbuf * n_control)$/;"	f
+ftp_ls	ftp.c	/^int ftp_ls(const char *outputfile, const char *path, netbuf * n_control)$/;"	f
+ftp_mkdir	ftp.c	/^int ftp_mkdir(const char *path, netbuf * n_control)$/;"	f
+ftp_moddate	ftp.c	/^int ftp_moddate(const char *path, char *dt, int max, netbuf * n_control)$/;"	f
+ftp_open_port	ftp.c	/^static int ftp_open_port(netbuf * n_control, netbuf ** n_data, int mode, int dir)$/;"	f	file:
+ftp_options	ftp.c	/^int ftp_options(int opt, long val, netbuf * n_control)$/;"	f
+ftp_put	ftp.c	/^int ftp_put(const char *inputfile, const char *path, char mode, netbuf * n_control)$/;"	f
+ftp_pwd	ftp.c	/^int ftp_pwd(char *path, int max, netbuf * n_control)$/;"	f
+ftp_quit	ftp.c	/^void ftp_quit(netbuf * n_control)$/;"	f
+ftp_rename	ftp.c	/^int ftp_rename(const char *src, const char *dst, netbuf * n_control)$/;"	f
+ftp_rmdir	ftp.c	/^int ftp_rmdir(const char *path, netbuf * n_control)$/;"	f
+ftp_send_cmd	ftp.c	/^static int ftp_send_cmd(const char *cmd, char expresp, netbuf * n_control)$/;"	f	file:
+ftp_site	ftp.c	/^int ftp_site(const char *cmd, netbuf * n_control)$/;"	f
+ftp_size	ftp.c	/^int ftp_size(const char *path, int *size, char mode, netbuf * n_control)$/;"	f
+ftp_systype	ftp.c	/^int ftp_systype(char *buf, int max, netbuf * n_control)$/;"	f
+ftp_xfer	ftp.c	/^static int ftp_xfer(const char *localfile, const char *path,$/;"	f	file:
+ftplib_debug	ftp.c	/^int ftplib_debug = 0;$/;"	v
+ftplib_debug	ftp.h	/^int ftplib_debug;$/;"	v
+handle	ftp.c	/^  	int handle; 				\/\/控制连接的socket描述符$/;"	m	struct:_netbuf	file:
+idlearg	ftp.c	/^  	void *idlearg;$/;"	m	struct:_netbuf	file:
+idlecb	ftp.c	/^  	ftp_callback idlecb;$/;"	m	struct:_netbuf	file:
+idletime	ftp.c	/^  	struct timeval idletime;$/;"	m	struct:_netbuf	typeref:struct:_netbuf::timeval	file:
+log_do	log.c	/^static void log_do(log_t type, const char *fmt, va_list ap)$/;"	f	file:
+log_err	log.c	/^void log_err(const char *f, ...)$/;"	f
+log_info	log.c	/^void log_info(const char *f, ...)$/;"	f
+log_t	log.c	/^}log_t;$/;"	t	typeref:enum:_log_t	file:
+log_warnning	log.c	/^void log_warnning(const char *f, ...)$/;"	f
+main	test.c	/^int main(int argc, char *argv[])$/;"	f
+memccpy	ftp.c	/^void *memccpy(void *dest, const void *src, int c, size_t n)$/;"	f
+net_close	ftp.c	83;"	d	file:
+net_read	ftp.c	81;"	d	file:
+net_write	ftp.c	82;"	d	file:
+netbuf	ftp.h	/^typedef struct _netbuf netbuf;$/;"	t	typeref:struct:_netbuf
+readline	ftp.c	/^static int readline(char *buf, int max, netbuf * ctl)$/;"	f	file:
+readresp	ftp.c	/^static int readresp(char c, netbuf * n_control)$/;"	f	file:
+response	ftp.c	/^  	char response[256]; 		\/\/用来存放从服务器返回的信息。$/;"	m	struct:_netbuf	file:
+socket_wait	ftp.c	/^static int socket_wait(netbuf * ctl)$/;"	f	file:
+strdup	ftp.c	/^char *strdup(const char *src)$/;"	f
+version	ftp.c	/^static char *version = "ftplib Release 3.1-1 9\/16\/00, copyright 1996-2000 Thomas Pfau";$/;"	v	file:
+writeline	ftp.c	/^writeline(char *buf, int len, netbuf * n_data)$/;"	f	file:
+xfered	ftp.c	/^  	int xfered;$/;"	m	struct:_netbuf	file:
+xfered1	ftp.c	/^  	int xfered1;$/;"	m	struct:_netbuf	file:
