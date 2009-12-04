@@ -1,25 +1,27 @@
-/***************************************************************************/
-/*									   */
-/* ftplib.c - callable ftp access routines				   */
-/* Copyright(C) 1996-2001 Thomas Pfau, pfau@eclipse.net		   */
-/*	1407 Thomas Ave, North Brunswick, NJ, 08902			   */
-/*									   */
-/* This library is free software; you can redistribute it and/or	   */
-/* modify it under the terms of the GNU Library General Public		   */
-/* License as published by the Free Software Foundation; either		   */
-/* version 2 of the License, or(at your option) any later version.	   */
-/* 									   */
-/* This library is distributed in the hope that it will be useful,	   */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of	   */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU	   */
-/* Library General Public License for more details.			   */
-/* 									   */
-/* You should have received a copy of the GNU Library General Public	   */
-/* License along with this progam; if not, write to the			   */
-/* Free Software Foundation, Inc., 59 Temple Place - Suite 330,		   */
-/* Boston, MA 02111-1307, USA.						   */
-/* 									   */
-/***************************************************************************/
+/*
+ ***************************************************************************
+ *									   
+ * ftplib.c - callable ftp access routines				   
+ * Copyright(C) 1996-2001 Thomas Pfau, pfau@eclipse.net		   
+ *	1407 Thomas Ave, North Brunswick, NJ, 08902			   
+ *									   
+ * This library is free software; you can redistribute it and/or	   
+ * modify it under the terms of the GNU Library General Public		   
+ * License as published by the Free Software Foundation; either		   
+ * version 2 of the License, or(at your option) any later version.	   
+ * 									   
+ * This library is distributed in the hope that it will be useful,	   
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of	   
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU	   
+ * Library General Public License for more details.			   
+ * 									   
+ * You should have received a copy of the GNU Library General Public	   
+ * License along with this progam; if not, write to the			   
+ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,		   
+ * Boston, MA 02111-1307, USA.						   
+ * 									   
+ ***************************************************************************
+ */
 
 #include <unistd.h>
 #include <stdio.h>
@@ -60,6 +62,13 @@ struct _netbuf
   	int cavail; 				//cput中数据的长度。
 	int cleft; 					//cput中空闲的空间的长度。
   	char *buf; 					//数据缓存。
+
+	char *host; 				//ftp服务器地址。
+	int port;  					//端口号
+	char *root_dir; 				//用户登录时的起始目录
+	char *user; 				//用户名
+	char *passwd; 				//用户密码
+	
   	int dir;
   	netbuf *ctrl;
   	netbuf *data;
@@ -72,6 +81,17 @@ struct _netbuf
   	int xfered1;
   	char response[256]; 		//用来存放从服务器返回的信息。
 };
+
+static void netbuf_free(netbuf *b)
+{
+#define CLEAN(x) free(b -> x)
+	CLEAN(buf);
+	CLEAN(user);
+	CLEAN(passwd);
+	CLEAN(host);
+	CLEAN(root_dir);
+#undef CLEAN
+}
 
 static char *version = "ftplib Release 3.1-1 9/16/00, copyright 1996-2000 Thomas Pfau";
 
@@ -112,6 +132,27 @@ char *strdup(const char *src)
 		dst[len] = '\0';
   	}
   	return dst;
+}
+
+/**
+ * 从src中拷贝n个字符到dest中。
+ * 若成成功则返回dest，否则NULL 。 
+ */
+static char *strcpyn(char *dest, const char *src, int n)
+{
+	if (NULL == dest || NULL == src)
+	{
+		return NULL;
+	}
+
+	while (--n >= 0)
+	{
+		*dest = *src;
+		++dest;
+		++src;
+	}
+
+	return dest - n;
 }
 
 /*
@@ -158,7 +199,7 @@ static int socket_wait(netbuf * ctl)
  *
  * return -1 on error or bytecount
  */
-static int readline(char *buf, int max, netbuf * ctl)
+static int read_line(char *buf, int max, netbuf * ctl)
 {
   	int x, retval = 0;
   	char *end, *bp = buf;
@@ -211,14 +252,16 @@ static int readline(char *buf, int max, netbuf * ctl)
 	    		retval = -1;
 	  		break;
 		}
+
       	if(!socket_wait(ctl))
 			return retval;
       	if((x = net_read(ctl->handle, ctl->cput, ctl->cleft)) == -1)
 		{
-	 	 	perror("read");
+	 	 	log_err("read");
 	  		retval = -1;
 	  		break;
 		}
+		
       	if(x == 0)
 			eof = 1;
       	ctl->cleft -= x;
@@ -234,8 +277,7 @@ static int readline(char *buf, int max, netbuf * ctl)
  *
  * return -1 on error or bytecount
  */
-static int
-writeline(char *buf, int len, netbuf * n_data)
+static int write_line(char *buf, int len, netbuf * n_data)
 {
   int x, nb = 0, w;
   char *ubp = buf, *nbp;
@@ -301,9 +343,9 @@ static int readresp(char c, netbuf * n_control)
   	char match[5];
 
 	//从服务器读取数据
-  	if(readline(n_control->response, 256, n_control) == -1)
+  	if(read_line(n_control->response, 256, n_control) == -1)
     {
-      	perror("Control socket read failed");
+      	log_err("Control socket read failed");
       	return 0;
     }
   	if(ftplib_debug > 1)
@@ -316,9 +358,9 @@ static int readresp(char c, netbuf * n_control)
       	match[4] = '\0';
       	do
 		{
-	  		if(readline(n_control->response, 256, n_control) == -1)
+	  		if(read_line(n_control->response, 256, n_control) == -1)
 	    	{
-	      		perror("Control socket read failed");
+	      		log_err("Control socket read failed");
 	      		return 0;
 	    	}
 	  		if(ftplib_debug > 1)
@@ -331,13 +373,6 @@ static int readresp(char c, netbuf * n_control)
   	return 0;
 }
 
-/*
- * ftp_Init for stupid operating systems that require it(Windows NT)
- */
-void ftp_init(void)
-{
-	//Linux does need it.
-}
 
 /*
  * ftp_LastResponse - return a pointer to the last response received
@@ -349,6 +384,139 @@ char * ftp_last_response(netbuf * n_control)
   	return NULL;
 }
 
+/**
+ * 解析用户输入的主机地址。
+ * 主机地址可能含有用户名密码和端口号，以及起始目录。
+ * 如: hcy:123456@192.168.1.1:21/hcy/home/ftp
+ *
+ * 解析的结果存储在ctrl中的
+ * root_dir 	: 起始目录
+ * user 	: 用户名
+ * passwd 	: 密码
+ * host 	: 主机地址
+ * port 	: 端口号
+ */
+static  int ftp_parse_host(const char *host, netbuf *ctrl)
+{
+	if (NULL == host || NULL == ctrl)
+	{
+		log_err("ftp_parse_host: host NULL, or ctrl NULL. %s %d", __FILE__, __LINE__);
+		return -1;
+	}
+
+	int begin = 0, end = 0;
+	int len = 0;
+	int ndx = 0;
+	
+	for (; host[begin] != '\0' && host[begin] != '@'; ++begin);
+	
+	if (host[begin] == '\0') //没有设置用户名和密码
+	{
+		begin = 0;
+	}
+	else //提取用户名和密码
+	{
+		ndx = -1;
+		while (host[++ndx] != ':');
+		ctrl -> user = (char *)calloc(1, sizeof(char) * (ndx + 1));
+		if (ctrl -> user == NULL)
+		{
+			log_err("ftp_parse_host: ctrl -> user NULL. %s %d", __FILE__, __LINE__);
+			return -1;
+		}
+		strcpyn(ctrl -> user, host, ndx);
+		log_info("ftp_parse_host: user %s", ctrl -> user);
+
+		ctrl -> passwd = (char *)calloc(1, sizeof(char) * (begin - ndx));
+		if (ctrl -> passwd == NULL)
+		{
+			log_err("ftp_parse_host: ctrl -> passwd NULL. %s %d", __FILE__, __LINE__);
+			return -1;
+		}
+		strcpyn(ctrl -> passwd, host + ndx + 1, begin - ndx - 1);
+	}
+
+	//提取主机名
+	end = (begin == 0 ? 0 : begin + 1);
+	while (host[++begin] != ':' && host[begin] != '/' && host[begin] != '\0');
+	ctrl -> host = (char *)calloc(1, sizeof(char) * (begin - end + 1));
+	if (NULL == ctrl -> host)
+	{
+		log_err("ftp_parse_host: ctrl -> host NULL. %s %d", __FILE__, __LINE__);
+		return -1;
+	}
+	strcpyn(ctrl -> host, host + end, begin - end);
+
+	//提取端口号
+	end = begin + 1;
+	if (host[begin] == ':')
+	{
+		while (host[++begin] != '/' && host[begin] != '\0');
+		
+	}
+
+	//提取起始地址
+	end = begin;
+	if (host[begin] == '/')
+	{
+		begin = strlen(host);
+		ctrl -> root_dir = (char *)calloc(1, sizeof(char) * (begin - end + 1));
+		if (NULL == ctrl -> root_dir)
+		{
+			log_err("ftp_parse_host: ctrl -> root_dir NULL. %s %d", __FILE__, __LINE__);
+			return -1;
+		}
+		strcpyn(ctrl -> root_dir, host + end, begin - end);
+	}
+
+	return 1;
+}
+
+/*
+ * 初始化
+ */
+static netbuf* ftp_init(const char *host)
+{
+	//所有的数据被初始化为0
+  	netbuf *ctrl = calloc(1, sizeof(netbuf));
+  	if(ctrl == NULL)
+    {
+		log_err("ftp_init: calloc error. %s %d", __FILE__, __LINE__);
+      	return NULL;
+    }
+  	ctrl->buf = malloc(FTPLIB_BUFSIZ);
+  	if(ctrl->buf == NULL)
+    {
+		log_err("ftp_init: calloc error. %s %d", __FILE__, __LINE__);
+      	netbuf_free(ctrl);
+      	return NULL;
+    }
+	
+	//对控制信息进行初始化
+  	ctrl->dir = FTPLIB_CONTROL;
+  	ctrl->ctrl = NULL;
+  	ctrl->cmode = FTPLIB_DEFMODE;
+  	ctrl->idlecb = NULL;
+  	ctrl->idletime.tv_sec = ctrl->idletime.tv_usec = 0;
+  	ctrl->idlearg = NULL;
+  	ctrl->xfered = 0;
+  	ctrl->xfered1 = 0;
+  	ctrl->cbbytes = 0;
+
+	if (host != NULL && ftp_parse_host(host, ctrl) < 0)
+	{
+		return NULL;
+	}
+	printf("user: %s\npasswd: %s\nhost: %s\nroot_dir: %s\n"
+			, ctrl -> user == NULL ? "NULL" : ctrl -> user 
+			, ctrl -> passwd == NULL ? "NULL" : ctrl -> passwd
+			, ctrl -> host == NULL ? "NULL" : ctrl -> host
+			, ctrl -> root_dir == NULL ? "NULL" : ctrl -> root_dir
+			);
+
+	return ctrl;
+
+}
 /*
  * ftp_Connect - connect to remote server
  *
@@ -356,18 +524,25 @@ char * ftp_last_response(netbuf * n_control)
  */
 int ftp_connect(const char *host, netbuf ** n_control)
 {
+
   	int s_control;
   	struct sockaddr_in sin;
   	struct hostent *phe;
   	struct servent *pse;
   	int on = 1; //设置重用bind中的地址。
-  	netbuf *ctrl;
+  	
+	netbuf *ctrl = ftp_init(host);
+	if (NULL == ctrl)
+	{
+		return 0;
+	}
+
   	char *lhost;
  	char *pnum;
 
   	memset(&sin, 0, sizeof(sin));
   	sin.sin_family = AF_INET;
-  	lhost = strdup(host);
+  	lhost = strdup(ctrl -> host);
 	//确定可能存在的端口号的位置。如:192.168.1.1:21
   	pnum = strchr(lhost, ':');
 	
@@ -388,7 +563,7 @@ int ftp_connect(const char *host, netbuf ** n_control)
 		 */
     	if((pse = getservbyname("ftp", "tcp")) == NULL)
 		{
-	  		perror("getservbyname");
+	  		log_err("getservbyname");
 	  		return 0;
 		}
       	sin.sin_port = pse->s_port;
@@ -435,7 +610,7 @@ int ftp_connect(const char *host, netbuf ** n_control)
 		 */
       	if((phe = gethostbyname(lhost)) == NULL)
 		{
-	  		perror("gethostbyname");
+	  		log_err("gethostbyname");
 	  		return 0;
 		}
       	memcpy((char *)&sin.sin_addr, phe -> h_addr, phe -> h_length);
@@ -465,11 +640,13 @@ int ftp_connect(const char *host, netbuf ** n_control)
 	/*
 	 * 建立一个TCP Socket。
 	 */
+	log_info("create a socket...");
 	s_control = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	ctrl -> handle = s_control;
   	
 	if(s_control == -1)
     {
-      	perror("socket");
+      	log_err("socket");
       	return 0;
     }
 	/*
@@ -477,58 +654,55 @@ int ftp_connect(const char *host, netbuf ** n_control)
 	 */
   	if(setsockopt(s_control, SOL_SOCKET, SO_REUSEADDR,(void *)&on, sizeof(on)) == -1)
     {
-      	perror("setsockopt");
+      	log_err("setsockopt");
       	net_close(s_control);
       	return 0;
     }
 
+	log_info("connect to %s...", ctrl -> host);
 	//建立连接
   	if(connect(s_control,(struct sockaddr *)&sin, sizeof(sin)) == -1)
     {
-      	perror("connect");
+      	log_err("connect");
       	net_close(s_control);
       	return 0;
     }
-	
-	//所有的数据被初始化为0
-  	ctrl = calloc(1, sizeof(netbuf));
-  	if(ctrl == NULL)
-    {
-      	perror("calloc");
-      	net_close(s_control);
-      	return 0;
-    }
-  	ctrl->buf = malloc(FTPLIB_BUFSIZ);
-  	if(ctrl->buf == NULL)
-    {
-      	perror("calloc");
-      	net_close(s_control);
-      	free(ctrl);
-      	return 0;
-    }
-	
-	//对控制信息进行初始化
-  	ctrl->handle = s_control;
-  	ctrl->dir = FTPLIB_CONTROL;
-  	ctrl->ctrl = NULL;
-  	ctrl->cmode = FTPLIB_DEFMODE;
-  	ctrl->idlecb = NULL;
-  	ctrl->idletime.tv_sec = ctrl->idletime.tv_usec = 0;
-  	ctrl->idlearg = NULL;
-  	ctrl->xfered = 0;
-  	ctrl->xfered1 = 0;
-  	ctrl->cbbytes = 0;
+	log_info("server info: %s", ctrl -> response);
 
 	//读取连接信息
   	if(readresp('2', ctrl) == 0)
     {
       	net_close(s_control);
-      	free(ctrl->buf);
-      	free(ctrl);
+      	netbuf_free(ctrl);
       	return 0;
     }
+	log_info("server info: %s", ctrl -> response);
+
+	//login
+	if (NULL != ctrl -> user && NULL != ctrl -> passwd)
+	{
+		log_info("login...");
+		if (ftp_login(ctrl -> user, ctrl -> passwd, ctrl) == 0)
+		{
+			log_err("ftp_connect: login error. %s %d", __FILE__, __LINE__);
+			net_close(s_control);
+			netbuf_free(ctrl);
+			return 0;
+		}
+		log_info("server info: %s", ctrl -> response);
+	}
+	
+	//切换目录
+	if (ftp_chdir(ctrl -> root_dir, ctrl) <= 0)
+	{
+		log_err("ftp_connect: chdir error. %s %d", __FILE__, __LINE__);
+	}
+	log_info("server info: %s", ctrl -> response);
+
   	*n_control = ctrl;
-  	return 1;
+
+	return 1;
+
 }
 
 /*
@@ -588,7 +762,7 @@ static int ftp_send_cmd(const char *cmd, char expresp, netbuf * n_control)
   	sprintf(buf, "%s\r\n", cmd);
   	if(net_write(n_control->handle, buf, strlen(buf)) <= 0)
     {
-      	perror("write");
+      	log_err("write");
       	return 0;
     }
   	return readresp(expresp, n_control);
@@ -675,25 +849,25 @@ static int ftp_open_port(netbuf * n_control, netbuf ** n_data, int mode, int dir
     {
       	if(getsockname(n_control->handle, &sin.sa, &l) < 0)
 		{
-	  		perror("getsockname");
+	  		log_err("getsockname");
 	  		return 0;
 		}
     }
   	sData = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
   	if(sData == -1)
     {
-      	perror("socket");
+      	log_err("socket");
       	return -1;
     }
   	if(setsockopt(sData, SOL_SOCKET, SO_REUSEADDR,(void *)& on, sizeof(on)) == -1)
     {
-      	perror("setsockopt");
+      	log_err("setsockopt");
       	net_close(sData);
       	return -1;
     }
   	if(setsockopt(sData, SOL_SOCKET, SO_LINGER,(void *)&lng, sizeof(lng)) == -1)
     {
-      	perror("setsockopt");
+      	log_err("setsockopt");
       	net_close(sData);
       	return -1;
     }
@@ -701,7 +875,7 @@ static int ftp_open_port(netbuf * n_control, netbuf ** n_data, int mode, int dir
     {
       	if(connect(sData, &sin.sa, sizeof(sin.sa)) == -1)
 		{
-	  		perror("connect");
+	  		log_err("connect");
 	  		net_close(sData);
 	  		return -1;
 		}
@@ -711,13 +885,13 @@ static int ftp_open_port(netbuf * n_control, netbuf ** n_data, int mode, int dir
      	 sin.in.sin_port = 0;
       	if(bind(sData, &sin.sa, sizeof(sin)) == -1)
 		{
-	  		perror("bind");
+	  		log_err("bind");
 	  		net_close(sData);
 	  		return 0;
 		}
       	if(listen(sData, 1) < 0)
 		{
-			perror("listen");
+			log_err("listen");
 	  		net_close(sData);
 	  		return 0;
 		}
@@ -739,15 +913,15 @@ static int ftp_open_port(netbuf * n_control, netbuf ** n_data, int mode, int dir
   	ctrl = calloc(1, sizeof(netbuf));
   	if(ctrl == NULL)
     {
-      	perror("calloc");
+      	log_err("calloc");
       	net_close(sData);
       	return -1;
     }
   	if((mode == 'A') &&((ctrl->buf = malloc(FTPLIB_BUFSIZ)) == NULL))
     {
-      	perror("calloc");
+      	log_err("calloc");
       	net_close(sData);
-     	 free(ctrl);
+     	netbuf_free(ctrl);
       	return -1;
     }
   	ctrl->handle = sData;
@@ -919,7 +1093,7 @@ int ftp_data_read(void *buf, int max, netbuf * n_data)
   if(n_data->dir != FTPLIB_READ)
     return 0;
   if(n_data->buf)
-    i = readline(buf, max, n_data);
+    i = read_line(buf, max, n_data);
   else
     {
       i = socket_wait(n_data);
@@ -952,7 +1126,7 @@ int ftp_data_write(void *buf, int len, netbuf * n_data)
   if(n_data->dir != FTPLIB_WRITE)
     return 0;
   if(n_data->buf)
-    i = writeline(buf, len, n_data);
+    i = write_line(buf, len, n_data);
   else
     {
       socket_wait(n_data);
@@ -984,7 +1158,7 @@ int ftp_data_close(netbuf * n_data)
     case FTPLIB_WRITE:
       /* potential problem - if buffer flush fails, how to notify user? */
       if(n_data->buf != NULL)
-	writeline(NULL, 0, n_data);
+	write_line(NULL, 0, n_data);
     case FTPLIB_READ:
       if(n_data->buf)
 	free(n_data->buf);
@@ -1075,14 +1249,14 @@ int ftp_mkdir(const char *path, netbuf * n_control)
  */
 int ftp_chdir(const char *path, netbuf * n_control)
 {
-  char buf[256];
+  	char buf[256];
 
-  if((strlen(path) + 6) > sizeof(buf))
-    return 0;
-  sprintf(buf, "CWD %s", path);
-  if(!ftp_send_cmd(buf, '2', n_control))
-    return 0;
-  return 1;
+  	if((strlen(path) + 6) > sizeof(buf))
+    	return 0;
+  	sprintf(buf, "CWD %s", path);
+  	if(!ftp_send_cmd(buf, '2', n_control))
+    	return 0;
+  	return 1;
 }
 
 /*
@@ -1121,23 +1295,36 @@ int ftp_rmdir(const char *path, netbuf * n_control)
  */
 int ftp_pwd(char *path, int max, netbuf * n_control)
 {
-  int l = max;
-  char *b = path;
-  char *s;
-  if(!ftp_send_cmd("PWD", '2', n_control))
-    return 0;
-  s = strchr(n_control->response, '"');
-  if(s == NULL)
-    return 0;
-  s++;
-  while((--l) &&(*s) &&(*s != '"'))
-    *b++ = *s++;
-  *b++ = '\0';
-  return 1;
+  	int l = max;
+  	char *b = path;
+  	char *s;
+  	if(!ftp_send_cmd("PWD", '2', n_control))
+    	return 0;
+  	s = strchr(n_control->response, '"');
+  	if(s == NULL)
+    	return 0;
+  	s++;
+  	while((--l) &&(*s) &&(*s != '"'))
+    	*b++ = *s++;
+  	*b++ = '\0';
+  	return 1;
 }
 
 /*
- * ftp_xfer - issue a command and transfer data
+ * ftp_xfer - 运行一个命令并传输数据。
+ *
+ * @parm localfile
+ * 		 本地文件名。如从服务器获取文件时，本地保存的文件名，或上传到服务器的本地文件的文件名。
+ * 		 对于一些获取信息的命令，如获取文件列表，这个文件名指定了获取的信息存放的文件名。
+ * 		 如果为NULL，则设置为标准输出或标准输入
+ * @parm path
+ * 	 	 运行的命令所对应的服务器中的文件路径。
+ * @parm n_control
+ *  	 连接控制信息。
+ * @parm typ
+ *  	 所要运行的命令的类型。
+ * @parm mode
+ *  	 对于一些传输的命令，用于区分是按ASCII传输还是按流传输。
  *
  * return 1 if successful, 0 otherwise
  */
@@ -1166,12 +1353,13 @@ static int ftp_xfer(const char *localfile, const char *path,
     }
   	if(local == NULL)
     	local =(typ == FTPLIB_FILE_WRITE) ? stdin : stdout;
+
   	if(!ftp_access(path, typ, mode, n_control, &n_data))
     	return 0;
   	
 	dbuf = malloc(FTPLIB_BUFSIZ);
   	
-	if(typ == FTPLIB_FILE_WRITE)
+	if(typ == FTPLIB_FILE_WRITE) //向服务器发送数据
     {
       	while((l = fread(dbuf, 1, FTPLIB_BUFSIZ, local)) > 0)
 		{
@@ -1183,13 +1371,13 @@ static int ftp_xfer(const char *localfile, const char *path,
 	  		}
 		}
     }
-  	else
+  	else //从服务器读取数据
     {
       	while((l = ftp_data_read(dbuf, FTPLIB_BUFSIZ, n_data)) > 0)
 		{
 			if(fwrite(dbuf, 1, l, local) <= 0)
 	  		{
-	    		perror("localfile write");
+	    		log_err("localfile write");
 	    		rv = 0;
 	    		break;
 	  		}
@@ -1212,7 +1400,15 @@ static int ftp_xfer(const char *localfile, const char *path,
  */
 int ftp_dir(const char *outputfile, const char *path, netbuf * n_control)
 {
-  return ftp_xfer(outputfile, path, n_control, FTPLIB_DIR, FTPLIB_ASCII);
+	char p[1000];
+	if (ftp_pwd(p, 1000, n_control) <= 0)
+	{
+		log_err("ftp_dir: get pwd error. %s %d", __FILE__, __LINE__);
+		return 0;
+	}
+	printf("%s\n", p);
+  	return ftp_xfer(outputfile, path == NULL ? "." : path
+			, n_control, FTPLIB_DIR, FTPLIB_ASCII);
 }
 
 /*
@@ -1222,7 +1418,15 @@ int ftp_dir(const char *outputfile, const char *path, netbuf * n_control)
  */
 int ftp_ls(const char *outputfile, const char *path, netbuf * n_control)
 {
-  return ftp_xfer(outputfile, path, n_control, FTPLIB_DIR_VERBOSE, FTPLIB_ASCII);
+	char p[1000];
+	if (ftp_pwd(p, 1000, n_control) <= 0)
+	{
+		log_err("ftp_dir: get pwd error. %s %d", __FILE__, __LINE__);
+		return 0;
+	}
+	printf("%s\n", p);
+  	return ftp_xfer(outputfile, path == NULL ? "." : path
+			, n_control, FTPLIB_DIR_VERBOSE, FTPLIB_ASCII);
 }
 
 /*
@@ -1278,10 +1482,9 @@ int ftp_moddate(const char *path, char *dt, int max, netbuf * n_control)
  *
  * return 1 if successful, 0 otherwise
  */
-int ftp_get(const char *outputfile, const char *path,
-	char mode, netbuf * n_control)
+int ftp_get(const char *outputfile, const char *path, char mode, netbuf * n_control)
 {
-  return ftp_xfer(outputfile, path, n_control, FTPLIB_FILE_READ, mode);
+  	return ftp_xfer(outputfile, path, n_control, FTPLIB_FILE_READ, mode);
 }
 
 /*
@@ -1339,10 +1542,9 @@ int ftp_delete(const char *fnm, netbuf * n_control)
  */
 void ftp_quit(netbuf * n_control)
 {
-  if(n_control->dir != FTPLIB_CONTROL)
-    return;
-  ftp_send_cmd("QUIT", '2', n_control);
-  net_close(n_control->handle);
-  free(n_control->buf);
-  free(n_control);
+  	if(n_control->dir != FTPLIB_CONTROL)
+    	return;
+  	ftp_send_cmd("QUIT", '2', n_control);
+  	net_close(n_control->handle);
+  	netbuf_free(n_control);
 }

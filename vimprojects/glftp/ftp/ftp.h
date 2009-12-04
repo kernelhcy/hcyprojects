@@ -1,32 +1,34 @@
-/***************************************************************************/
-/*									   */
-/* ftplib.h - header file for callable ftp access routines                 */
-/* Copyright (C) 1996, 1997 Thomas Pfau, pfau@cnj.digex.net                */
-/*	73 Catherine Street, South Bound Brook, NJ, 08880		   */
-/*									   */
-/* This library is free software; you can redistribute it and/or	   */
-/* modify it under the terms of the GNU Library General Public		   */
-/* License as published by the Free Software Foundation; either		   */
-/* version 2 of the License, or (at your option) any later version.	   */
-/* 									   */
-/* This library is distributed in the hope that it will be useful,	   */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of	   */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU	   */
-/* Library General Public License for more details.			   */
-/* 									   */
-/* You should have received a copy of the GNU Library General Public	   */
-/* License along with this progam; if not, write to the			   */
-/* Free Software Foundation, Inc., 59 Temple Place - Suite 330,		   */
-/* Boston, MA 02111-1307, USA.						   */
-/*									   */
-/***************************************************************************/
+/*
+ ***************************************************************************
+ *									   
+ * ftplib.c - callable ftp access routines				   
+ * Copyright(C) 1996-2001 Thomas Pfau, pfau@eclipse.net		   
+ *	1407 Thomas Ave, North Brunswick, NJ, 08902			   
+ *									   
+ * This library is free software; you can redistribute it and/or	   
+ * modify it under the terms of the GNU Library General Public		   
+ * License as published by the Free Software Foundation; either		   
+ * version 2 of the License, or(at your option) any later version.	   
+ * 									   
+ * This library is distributed in the hope that it will be useful,	   
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of	   
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU	   
+ * Library General Public License for more details.			   
+ * 									   
+ * You should have received a copy of the GNU Library General Public	   
+ * License along with this progam; if not, write to the			   
+ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,		   
+ * Boston, MA 02111-1307, USA.						   
+ * 									   
+ ***************************************************************************
+ */
 
 #ifndef __FTPLIB_H
 #define __FTPLIB_H
 
 /* ftp_access() type codes */
-#define FTPLIB_DIR 1 			//
-#define FTPLIB_DIR_VERBOSE 2 	//
+#define FTPLIB_DIR 1 			//列出当前目录中的文件，只显示文件名
+#define FTPLIB_DIR_VERBOSE 2 	//相当于ls -l。以长格式显示文件信息
 #define FTPLIB_FILE_READ 3 		//
 #define FTPLIB_FILE_WRITE 4 	//
 
@@ -52,7 +54,6 @@ typedef int (*ftp_callback)(netbuf *n_control, int xfered, void *arg);
 
 int ftplib_debug;
 /*
- * ftp_init() - Initialize the library
  * ftp_site() - Send a 'SITE' command
  * ftp_last_response() - Retrieve last server response
  * ftp_systype() - Determine remote system type <ftplib V3.1>
@@ -82,7 +83,6 @@ int ftplib_debug;
  * ftp_data_write() - Write to remote file
  * ftp_data_close() - Close data connection
  */
-void ftp_init(void);
 char *ftp_last_response(netbuf *n_control);
 int ftp_connect(const char *host, netbuf **n_control);
 int ftp_options(int opt, long val, netbuf *n_control);
