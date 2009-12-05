@@ -22,7 +22,10 @@ int main(int argc, char *argv[])
 		log_err("List error.");
 		return -1;
 	}
-	ftp_get("gmp-4.3.1.tar.gz", "gmp-4.3.1.tar.gz", FTPLIB_IMAGE, ctrl );
+	//ftp_get("gmp-4.3.1.tar.gz", "gmp-4.3.1.tar.gz", FTPLIB_IMAGE, ctrl );
+
+	ftp_put("Makefile", "Makefile", FTPLIB_IMAGE, ctrl );
+
 	ftp_quit(ctrl);
 
 	return 0;
