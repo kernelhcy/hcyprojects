@@ -1,5 +1,7 @@
-test: test.o ftp.o log.o  ftp.h
-	gcc test.o ftp.o log.o  -o test
+objects = test.o ftp.o log.o  
+
+test: $(objects) ftp.h
+	gcc $(objects) -o test
 test.o: test.c ftp.h log.h
 	gcc -c test.c -o test.o
 ftp.o: ftp.c ftp.h log.h
