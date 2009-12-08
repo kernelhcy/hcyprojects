@@ -24,7 +24,7 @@ void base64_encoder(const char *input,size_t len,char** out_str)
 {
 	//simple new buf length.
 	size_t new_buf_len = len+len/3;
-		   new_buf_len+=new_buf_len/76+2;
+    new_buf_len+=new_buf_len/76+2;
 	char tmp_out[new_buf_len];
 	size_t i=0;
 	size_t o=0;
