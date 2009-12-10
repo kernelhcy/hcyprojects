@@ -13,7 +13,7 @@ void swap(char *, char *);
 void init(const char *key)
 {
 	keylen = strlen(key);
-	printf("Init...\nThe length of the key is %d\n", keylen);
+	//printf("初始化。\n密钥长度为:%d\n", keylen);
 
 	memset(K, 0, sizeof(K));
 	strcpy(K, key);
@@ -79,24 +79,25 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	printf("Data: %s\nkey: %s\n", data, key);
+	printf("\n原文: %s\n密钥: %s\n", data, key);
 	init(key);
 	
-	printf("Encrypting...\n");
+	//printf("Encrypting...\n");
 	crypt(data, len);
-	printf("After encrypt.\nData is %s \n", data);
-	printf("Show data in unsigned integer.\n");
+	printf("\n加密后: \n");
+	printf("%s \n", data);
+	printf("以无符号byte类型显示加密数据:\n");
 	int i;
 	for (i = 0; i < len; ++i)
 	{
 		printf("%u ", (unsigned char)data[i]);
 	}
-	printf("\n");
+	printf("\n\n");
 
 	init(key);
-	printf("Decrypt...\n");
+	//printf("Decrypt...\n");
 	crypt(data, len);
-	printf("After decrypt.\nData is %s\n", data);
+	printf("解密后: %s\n\n", data);
 	
 	return 0;
 }
