@@ -9,23 +9,10 @@ import javax.crypto.spec.SecretKeySpec;
 import sun.misc.BASE64Decoder;
 import sun.misc.BASE64Encoder;
 
-/**
- * 基础加密组件
- * 
- */
 public class Coder
-{
-	public static final String KEY_SHA = "SHA";
-	public static final String KEY_MD5 = "MD5";
-	
+{	
 	/**
 	 * MAC算法可选以下多种算法
-	 * 
-	 * HmacMD5 
-	 * HmacSHA1 
-	 * HmacSHA256 
-	 * HmacSHA384 
-	 * HmacSHA512
 	 */
 	public static final String KEY_MAC = "HmacMD5";
 	
@@ -63,7 +50,7 @@ public class Coder
 	public byte[] encryptMD5(byte[] data) throws Exception
 	{
 		
-		MessageDigest md5 = MessageDigest.getInstance(KEY_MD5);
+		MessageDigest md5 = MessageDigest.getInstance("MD5");
 		md5.update(data);
 		return md5.digest();
 		
@@ -79,7 +66,7 @@ public class Coder
 	public byte[] encryptSHA(byte[] data) throws Exception
 	{
 		
-		MessageDigest sha = MessageDigest.getInstance(KEY_SHA);
+		MessageDigest sha = MessageDigest.getInstance("SHA");
 		sha.update(data);
 		return sha.digest();
 		
@@ -93,7 +80,7 @@ public class Coder
 	 */
 	public byte[] initMacKey() throws Exception
 	{
-		KeyGenerator keyGenerator = KeyGenerator.getInstance(KEY_MAC);
+		KeyGenerator keyGenerator = KeyGenerator.getInstance("HmacMD5");
 		
 		SecretKey secretKey = keyGenerator.generateKey();
 		return secretKey.getEncoded();
@@ -110,7 +97,7 @@ public class Coder
 	public byte[] encryptHMAC(byte[] data, byte[] key) throws Exception
 	{
 		
-		SecretKey secretKey = new SecretKeySpec(key, KEY_MAC);
+		SecretKey secretKey = new SecretKeySpec(key, "HmacMD5");
 		Mac mac = Mac.getInstance(secretKey.getAlgorithm());
 		mac.init(secretKey);
 		

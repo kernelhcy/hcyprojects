@@ -48,10 +48,9 @@ public class RSACoderTest
 	private void setUp() throws Exception
 	{
 		rsa = new RSACoder();
-		Map<String, Object> keyMap = rsa.initKey();
-		
-		publicKey = rsa.getPublicKey(keyMap);
-		privateKey = rsa.getPrivateKey(keyMap);
+		rsa.initKey();
+		publicKey = rsa.getPublicKey();
+		privateKey = rsa.getPrivateKey();
 		System.out.print("公钥: "); print(publicKey);
 		System.out.print("密钥: "); print(privateKey);
 	}
