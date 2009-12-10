@@ -1,13 +1,9 @@
 package edu.xjtu.se.hcy.encrypt;
 
+import java.math.BigInteger;
 import java.util.Map;
 
 /**
- * 
- * @author 梁栋
- * @version 1.0
- * @since 1.0
- * 
  * 流程分析： 
  * 1.甲方构建密钥对儿，将公钥公布给乙方，将私钥保留。
  * 2.甲方使用私钥加密数据，然后用私钥对加密后的数据签名，发送给乙方签名以及加密后的数据；
@@ -16,11 +12,14 @@ import java.util.Map;
  */
 public class RSACoderTest
 {
-	private String publicKey;
-	private String privateKey;
+	private byte[] publicKey;
+	private byte[] privateKey;
+	private RSACoder rsa = null;
+	private String inputStr = "黄丛宇06161032";
 	
-	public RSACoderTest()
+	public RSACoderTest(String input)
 	{
+		this.inputStr = input;
 		try
 		{
 			setUp();
@@ -31,48 +30,63 @@ public class RSACoderTest
 		}
 	}
 	
-	private void setUp() throws Exception
+	/**
+	 * 以16进制的形式打印数据
+	 * @param data
+	 * @return
+	 */
+	private void print(byte[] data)
 	{
-		Map<String, Object> keyMap = RSACoder.initKey();
-		
-		publicKey = RSACoder.getPublicKey(keyMap);
-		privateKey = RSACoder.getPrivateKey(keyMap);
-		System.out.println("公钥: \n\r" + publicKey);
-		System.out.println("私钥： \n\r" + privateKey);
+		if (null == data)
+		{
+			return;
+		}
+		System.out.println(new BigInteger(data).toString(16));
+		return;
 	}
 	
-	public void test() throws Exception
+	private void setUp() throws Exception
 	{
-		System.out.println("公钥加密——私钥解密");
-		String inputStr = "黄丛宇06161032";
+		rsa = new RSACoder();
+		Map<String, Object> keyMap = rsa.initKey();
+		
+		publicKey = rsa.getPublicKey(keyMap);
+		privateKey = rsa.getPrivateKey(keyMap);
+		System.out.print("公钥: "); print(publicKey);
+		System.out.print("密钥: "); print(privateKey);
+	}
+	
+	public void testEncrypt() throws Exception
+	{
+		System.out.println("\n公钥加密——私钥解密:");
 		byte[] data = inputStr.getBytes();
-		byte[] encodedData = RSACoder.encryptByPublicKey(data, publicKey);
-		byte[] decodedData = RSACoder.decryptByPrivateKey(encodedData, privateKey);
+		byte[] encodedData = rsa.encryptByPublicKey(data, publicKey);
+		System.out.print("加密后: "); print(encodedData);
 		
+		byte[] decodedData = rsa.decryptByPrivateKey(encodedData, privateKey);
 		String outputStr = new String(decodedData);
-		System.out.println("加密前: " + inputStr + "\n\r" + "解密后: " + outputStr);
+		System.out.println("解密后: " + outputStr);
 		
+		System.out.println("\n私钥加密——共钥解密:");
+		encodedData = rsa.encryptByPrivateKey(data, privateKey);
+		System.out.print("加密后: "); print(encodedData);
+		
+		decodedData = rsa.decryptByPublicKey(encodedData, publicKey);
+		outputStr = new String(decodedData);
+		System.out.println("解密后: " + outputStr);
 	}
 	
 	public void testSign() throws Exception
 	{
-		System.out.println("私钥加密——公钥解密");
-		String inputStr = "黄丛宇06161032";
-		byte[] data = inputStr.getBytes();
-		byte[] encodedData = RSACoder.encryptByPrivateKey(data, privateKey);
-		byte[] decodedData = RSACoder.decryptByPublicKey(encodedData, publicKey);
-		
-		String outputStr = new String(decodedData);
-		System.out.println("加密前: " + inputStr + "\n\r" + "解密后: " + outputStr);
-		
-		System.out.println("私钥签名——公钥验证签名");
+		System.out.println("\n私钥签名——公钥验证签名");
+		byte[] encodedData = rsa.encryptByPrivateKey(inputStr.getBytes(), privateKey);
 		// 产生签名
-		String sign = RSACoder.sign(encodedData, privateKey);
-		System.out.println("签名:\r" + sign);
+		byte[] sign = rsa.sign(encodedData, privateKey);
+		System.out.print("签名:"); print(sign);
 		
 		// 验证签名
-		boolean status = RSACoder.verify(encodedData, publicKey, sign);
-		System.out.println("状态:\r" + status);
+		boolean status = rsa.verify(encodedData, publicKey, sign);
+		System.out.println("验证状态:" + status);
 		
 	}
 	

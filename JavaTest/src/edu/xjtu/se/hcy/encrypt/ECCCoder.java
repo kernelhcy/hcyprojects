@@ -52,10 +52,10 @@ public abstract class ECCCoder extends Coder
 	 * @return
 	 * @throws Exception
 	 */
-	public static byte[] decrypt(byte[] data, String key) throws Exception
+	public static byte[] decrypt(byte[] data, byte[] key) throws Exception
 	{
 		// 对密钥解密
-		byte[] keyBytes = decryptBASE64(key);
+		byte[] keyBytes = key;
 		
 		// 取得私钥
 		PKCS8EncodedKeySpec pkcs8KeySpec = new PKCS8EncodedKeySpec(keyBytes);
@@ -83,10 +83,10 @@ public abstract class ECCCoder extends Coder
 	 * @return
 	 * @throws Exception
 	 */
-	public static byte[] encrypt(byte[] data, String privateKey) throws Exception
+	public static byte[] encrypt(byte[] data, byte[] privateKey) throws Exception
 	{
 		// 对公钥解密
-		byte[] keyBytes = decryptBASE64(privateKey);
+		byte[] keyBytes = privateKey;
 		
 		// 取得公钥
 		X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(keyBytes);
@@ -112,11 +112,11 @@ public abstract class ECCCoder extends Coder
 	 * @return
 	 * @throws Exception
 	 */
-	public static String getPrivateKey(Map<String, Object> keyMap) throws Exception
+	public static byte[] getPrivateKey(Map<String, Object> keyMap) throws Exception
 	{
 		Key key = (Key) keyMap.get(PRIVATE_KEY);
 		
-		return encryptBASE64(key.getEncoded());
+		return key.getEncoded();
 	}
 	
 	/**
@@ -126,11 +126,11 @@ public abstract class ECCCoder extends Coder
 	 * @return
 	 * @throws Exception
 	 */
-	public static String getPublicKey(Map<String, Object> keyMap) throws Exception
+	public static byte[] getPublicKey(Map<String, Object> keyMap) throws Exception
 	{
 		Key key = (Key) keyMap.get(PUBLIC_KEY);
 		
-		return encryptBASE64(key.getEncoded());
+		return key.getEncoded();
 	}
 	
 	/**

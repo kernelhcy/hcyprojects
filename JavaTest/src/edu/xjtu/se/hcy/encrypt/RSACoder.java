@@ -20,16 +20,12 @@ import javax.crypto.Cipher;
 /**
  * RSA安全编码组件
  * 
- * @author 梁栋
- * @version 1.0
- * @since 1.0
- * 
  * 数字信封 : 数字信封用加密技术来保证只有特定的收信人才能阅读信的内容。 
  * 流程： 
  * 信息发送方采用对称密钥来加密信息，然后再用接收方的公钥来加密此对称密钥（这部分称为数字信封），
  * 再将它和信息一起发送给接收方；接收方先用相应的私钥打开数字信封，得到对称密钥，然后使用对称密钥再解开信息。 
  */
-public abstract class RSACoder extends Coder
+public class RSACoder extends Coder
 {
 	public static final String KEY_ALGORITHM = "RSA";
 	public static final String SIGNATURE_ALGORITHM = "MD5withRSA";
@@ -40,18 +36,14 @@ public abstract class RSACoder extends Coder
 	/**
 	 * 用私钥对信息生成数字签名
 	 * 
-	 * @param data
-	 *            加密数据
-	 * @param privateKey
-	 *            私钥
-	 * 
+	 * @param data 加密数据
+	 * @param privateKey 私钥
 	 * @return
 	 * @throws Exception
 	 */
-	public static String sign(byte[] data, String privateKey) throws Exception
+	public byte[] sign(byte[] data, byte[] privateKey) throws Exception
 	{
-		// 解密由base64编码的私钥
-		byte[] keyBytes = decryptBASE64(privateKey);
+		byte[] keyBytes = privateKey;
 		
 		// 构造PKCS8EncodedKeySpec对象
 		PKCS8EncodedKeySpec pkcs8KeySpec = new PKCS8EncodedKeySpec(keyBytes);
@@ -67,28 +59,23 @@ public abstract class RSACoder extends Coder
 		signature.initSign(priKey);
 		signature.update(data);
 		
-		return encryptBASE64(signature.sign());
+		return signature.sign();
 	}
 	
 	/**
 	 * 校验数字签名
 	 * 
-	 * @param data
-	 *            加密数据
-	 * @param publicKey
-	 *            公钥
-	 * @param sign
-	 *            数字签名
-	 * 
+	 * @param data 加密数据
+	 * @param publicKey 公钥
+	 * @param sign 数字签名
 	 * @return 校验成功返回true 失败返回false
 	 * @throws Exception
 	 * 
 	 */
-	public static boolean verify(byte[] data, String publicKey, String sign) throws Exception
+	public boolean verify(byte[] data, byte[] publicKey, byte[] sign) throws Exception
 	{
 		
-		// 解密由base64编码的公钥
-		byte[] keyBytes = decryptBASE64(publicKey);
+		byte[] keyBytes = publicKey;
 		
 		// 构造X509EncodedKeySpec对象
 		X509EncodedKeySpec keySpec = new X509EncodedKeySpec(keyBytes);
@@ -104,7 +91,7 @@ public abstract class RSACoder extends Coder
 		signature.update(data);
 		
 		// 验证签名是否正常
-		return signature.verify(decryptBASE64(sign));
+		return signature.verify(sign);
 	}
 	
 	/**
@@ -116,10 +103,10 @@ public abstract class RSACoder extends Coder
 	 * @return
 	 * @throws Exception
 	 */
-	public static byte[] decryptByPrivateKey(byte[] data, String key) throws Exception
+	public byte[] decryptByPrivateKey(byte[] data, byte[] key) throws Exception
 	{
 		// 对密钥解密
-		byte[] keyBytes = decryptBASE64(key);
+		byte[] keyBytes = key;
 		
 		// 取得私钥
 		PKCS8EncodedKeySpec pkcs8KeySpec = new PKCS8EncodedKeySpec(keyBytes);
@@ -135,17 +122,17 @@ public abstract class RSACoder extends Coder
 	
 	/**
 	 * 解密<br>
-	 * 用私钥解密
+	 * 用公钥解密
 	 * 
 	 * @param data
 	 * @param key
 	 * @return
 	 * @throws Exception
 	 */
-	public static byte[] decryptByPublicKey(byte[] data, String key) throws Exception
+	public byte[] decryptByPublicKey(byte[] data, byte[] key) throws Exception
 	{
 		// 对密钥解密
-		byte[] keyBytes = decryptBASE64(key);
+		byte[] keyBytes = key;
 		
 		// 取得公钥
 		X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(keyBytes);
@@ -168,10 +155,10 @@ public abstract class RSACoder extends Coder
 	 * @return
 	 * @throws Exception
 	 */
-	public static byte[] encryptByPublicKey(byte[] data, String key) throws Exception
+	public byte[] encryptByPublicKey(byte[] data, byte[] key) throws Exception
 	{
 		// 对公钥解密
-		byte[] keyBytes = decryptBASE64(key);
+		byte[] keyBytes = key;
 		
 		// 取得公钥
 		X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(keyBytes);
@@ -194,10 +181,10 @@ public abstract class RSACoder extends Coder
 	 * @return
 	 * @throws Exception
 	 */
-	public static byte[] encryptByPrivateKey(byte[] data, String key) throws Exception
+	public byte[] encryptByPrivateKey(byte[] data, byte[] key) throws Exception
 	{
 		// 对密钥解密
-		byte[] keyBytes = decryptBASE64(key);
+		byte[] keyBytes = key;
 		
 		// 取得私钥
 		PKCS8EncodedKeySpec pkcs8KeySpec = new PKCS8EncodedKeySpec(keyBytes);
@@ -218,11 +205,11 @@ public abstract class RSACoder extends Coder
 	 * @return
 	 * @throws Exception
 	 */
-	public static String getPrivateKey(Map<String, Object> keyMap) throws Exception
+	public byte[] getPrivateKey(Map<String, Object> keyMap) throws Exception
 	{
 		Key key = (Key) keyMap.get(PRIVATE_KEY);
 		
-		return encryptBASE64(key.getEncoded());
+		return key.getEncoded();
 	}
 	
 	/**
@@ -232,11 +219,11 @@ public abstract class RSACoder extends Coder
 	 * @return
 	 * @throws Exception
 	 */
-	public static String getPublicKey(Map<String, Object> keyMap) throws Exception
+	public byte[] getPublicKey(Map<String, Object> keyMap) throws Exception
 	{
 		Key key = (Key) keyMap.get(PUBLIC_KEY);
 		
-		return encryptBASE64(key.getEncoded());
+		return key.getEncoded();
 	}
 	
 	/**
@@ -245,11 +232,10 @@ public abstract class RSACoder extends Coder
 	 * @return
 	 * @throws Exception
 	 */
-	public static Map<String, Object> initKey() throws Exception
+	public Map<String, Object> initKey() throws Exception
 	{
 		KeyPairGenerator keyPairGen = KeyPairGenerator.getInstance(KEY_ALGORITHM);
 		keyPairGen.initialize(1024);
-		
 		KeyPair keyPair = keyPairGen.generateKeyPair();
 		
 		// 公钥

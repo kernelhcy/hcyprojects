@@ -20,14 +20,14 @@ public class DSACoderTest
 		Map<String, Object> keyMap = DSACoder.initKey();
 		
 		// 获得密钥
-		String publicKey = DSACoder.getPublicKey(keyMap);
-		String privateKey = DSACoder.getPrivateKey(keyMap);
+		byte[] publicKey = DSACoder.getPublicKey(keyMap);
+		byte[] privateKey = DSACoder.getPrivateKey(keyMap);
 		
 		System.out.println("公钥:\r" + publicKey);
 		System.out.println("私钥:\r" + privateKey);
 		
 		// 产生签名
-		String sign = DSACoder.sign(data, privateKey);
+		byte[] sign = DSACoder.sign(data, privateKey);
 		System.out.println("签名:\r" + sign);
 		
 		// 验证签名

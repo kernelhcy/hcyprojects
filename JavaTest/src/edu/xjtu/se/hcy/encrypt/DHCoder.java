@@ -91,10 +91,10 @@ public abstract class DHCoder extends Coder
 	 * @return
 	 * @throws Exception
 	 */
-	public static Map<String, Object> initKey(String key) throws Exception
+	public static Map<String, Object> initKey(byte[] key) throws Exception
 	{
 		// 解析甲方公钥
-		byte[] keyBytes = decryptBASE64(key);
+		byte[] keyBytes = key;
 		X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(keyBytes);
 		KeyFactory keyFactory = KeyFactory.getInstance(ALGORITHM);
 		PublicKey pubKey = keyFactory.generatePublic(x509KeySpec);
@@ -133,7 +133,7 @@ public abstract class DHCoder extends Coder
 	 * @return
 	 * @throws Exception
 	 */
-	public static byte[] encrypt(byte[] data, String publicKey, String privateKey) throws Exception
+	public static byte[] encrypt(byte[] data, byte[] publicKey, byte[] privateKey) throws Exception
 	{
 		
 		// 生成本地密钥
@@ -158,7 +158,7 @@ public abstract class DHCoder extends Coder
 	 * @return
 	 * @throws Exception
 	 */
-	public static byte[] decrypt(byte[] data, String publicKey, String privateKey) throws Exception
+	public static byte[] decrypt(byte[] data, byte[] publicKey, byte[] privateKey) throws Exception
 	{
 		
 		// 生成本地密钥
@@ -180,17 +180,17 @@ public abstract class DHCoder extends Coder
 	 * @return
 	 * @throws Exception
 	 */
-	private static SecretKey getSecretKey(String publicKey, String privateKey) throws Exception
+	private static SecretKey getSecretKey(byte[] publicKey, byte[] privateKey) throws Exception
 	{
 		// 初始化公钥
-		byte[] pubKeyBytes = decryptBASE64(publicKey);
+		byte[] pubKeyBytes = publicKey;
 		
 		KeyFactory keyFactory = KeyFactory.getInstance(ALGORITHM);
 		X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(pubKeyBytes);
 		PublicKey pubKey = keyFactory.generatePublic(x509KeySpec);
 		
 		// 初始化私钥
-		byte[] priKeyBytes = decryptBASE64(privateKey);
+		byte[] priKeyBytes = privateKey;
 		
 		PKCS8EncodedKeySpec pkcs8KeySpec = new PKCS8EncodedKeySpec(priKeyBytes);
 		Key priKey = keyFactory.generatePrivate(pkcs8KeySpec);
@@ -212,11 +212,11 @@ public abstract class DHCoder extends Coder
 	 * @return
 	 * @throws Exception
 	 */
-	public static String getPrivateKey(Map<String, Object> keyMap) throws Exception
+	public static byte[] getPrivateKey(Map<String, Object> keyMap) throws Exception
 	{
 		Key key = (Key) keyMap.get(PRIVATE_KEY);
 		
-		return encryptBASE64(key.getEncoded());
+		return key.getEncoded();
 	}
 	
 	/**
@@ -226,10 +226,10 @@ public abstract class DHCoder extends Coder
 	 * @return
 	 * @throws Exception
 	 */
-	public static String getPublicKey(Map<String, Object> keyMap) throws Exception
+	public static byte[] getPublicKey(Map<String, Object> keyMap) throws Exception
 	{
 		Key key = (Key) keyMap.get(PUBLIC_KEY);
 		
-		return encryptBASE64(key.getEncoded());
+		return key.getEncoded();
 	}
 }

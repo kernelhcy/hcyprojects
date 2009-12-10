@@ -66,10 +66,10 @@ public abstract class DSACoder extends Coder
 	 * @return
 	 * @throws Exception
 	 */
-	public static String sign(byte[] data, String privateKey) throws Exception
+	public static byte[] sign(byte[] data, byte[] privateKey) throws Exception
 	{
 		// 解密由base64编码的私钥
-		byte[] keyBytes = decryptBASE64(privateKey);
+		byte[] keyBytes = privateKey;
 		
 		// 构造PKCS8EncodedKeySpec对象
 		PKCS8EncodedKeySpec pkcs8KeySpec = new PKCS8EncodedKeySpec(keyBytes);
@@ -85,7 +85,7 @@ public abstract class DSACoder extends Coder
 		signature.initSign(priKey);
 		signature.update(data);
 		
-		return encryptBASE64(signature.sign());
+		return signature.sign();
 	}
 	
 	/**
@@ -102,11 +102,11 @@ public abstract class DSACoder extends Coder
 	 * @throws Exception
 	 * 
 	 */
-	public static boolean verify(byte[] data, String publicKey, String sign) throws Exception
+	public static boolean verify(byte[] data, byte[] publicKey, byte[] sign) throws Exception
 	{
 		
 		// 解密由base64编码的公钥
-		byte[] keyBytes = decryptBASE64(publicKey);
+		byte[] keyBytes = publicKey;
 		
 		// 构造X509EncodedKeySpec对象
 		X509EncodedKeySpec keySpec = new X509EncodedKeySpec(keyBytes);
@@ -122,7 +122,7 @@ public abstract class DSACoder extends Coder
 		signature.update(data);
 		
 		// 验证签名是否正常
-		return signature.verify(decryptBASE64(sign));
+		return signature.verify(sign);
 	}
 	
 	/**
@@ -171,11 +171,11 @@ public abstract class DSACoder extends Coder
 	 * @return
 	 * @throws Exception
 	 */
-	public static String getPrivateKey(Map<String, Object> keyMap) throws Exception
+	public static byte[] getPrivateKey(Map<String, Object> keyMap) throws Exception
 	{
 		Key key = (Key) keyMap.get(PRIVATE_KEY);
 		
-		return encryptBASE64(key.getEncoded());
+		return key.getEncoded();
 	}
 	
 	/**
@@ -185,10 +185,10 @@ public abstract class DSACoder extends Coder
 	 * @return
 	 * @throws Exception
 	 */
-	public static String getPublicKey(Map<String, Object> keyMap) throws Exception
+	public static byte[] getPublicKey(Map<String, Object> keyMap) throws Exception
 	{
 		Key key = (Key) keyMap.get(PUBLIC_KEY);
 		
-		return encryptBASE64(key.getEncoded());
+		return key.getEncoded();
 	}
 }

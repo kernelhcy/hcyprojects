@@ -76,7 +76,7 @@ public class CertificateCoderTest
 		
 		System.out.println("私钥签名——公钥验证签名");
 		// 产生签名
-		String sign = CertificateCoder.sign(encodedData, keyStorePath, alias, password);
+		byte[] sign = CertificateCoder.sign(encodedData, keyStorePath, alias, password);
 		System.out.println("签名:\r" + sign);
 		
 		// 验证签名

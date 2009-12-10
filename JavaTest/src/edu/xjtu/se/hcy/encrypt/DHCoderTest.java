@@ -22,16 +22,16 @@ public class DHCoderTest
 	{
 		// 生成甲方密钥对儿
 		Map<String, Object> aKeyMap = DHCoder.initKey();
-		String aPublicKey = DHCoder.getPublicKey(aKeyMap);
-		String aPrivateKey = DHCoder.getPrivateKey(aKeyMap);
+		byte[] aPublicKey = DHCoder.getPublicKey(aKeyMap);
+		byte[] aPrivateKey = DHCoder.getPrivateKey(aKeyMap);
 		
 		System.out.println("甲方公钥:\r" + aPublicKey);
 		System.out.println("甲方私钥:\r" + aPrivateKey);
 		
 		// 由甲方公钥产生本地密钥对儿
 		Map<String, Object> bKeyMap = DHCoder.initKey(aPublicKey);
-		String bPublicKey = DHCoder.getPublicKey(bKeyMap);
-		String bPrivateKey = DHCoder.getPrivateKey(bKeyMap);
+		byte[] bPublicKey = DHCoder.getPublicKey(bKeyMap);
+		byte[] bPrivateKey = DHCoder.getPrivateKey(bKeyMap);
 		
 		System.out.println("乙方公钥:\r" + bPublicKey);
 		System.out.println("乙方私钥:\r" + bPrivateKey);

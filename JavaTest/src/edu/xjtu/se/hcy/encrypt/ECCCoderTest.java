@@ -17,8 +17,8 @@ public class ECCCoderTest
 		
 		Map<String, Object> keyMap = ECCCoder.initKey();
 		
-		String publicKey = ECCCoder.getPublicKey(keyMap);
-		String privateKey = ECCCoder.getPrivateKey(keyMap);
+		byte[] publicKey = ECCCoder.getPublicKey(keyMap);
+		byte[] privateKey = ECCCoder.getPrivateKey(keyMap);
 		System.out.println("公钥: \n" + publicKey);
 		System.out.println("私钥： \n" + privateKey);
 		

@@ -268,7 +268,7 @@ public abstract class CertificateCoder extends Coder
 	 * @return
 	 * @throws Exception
 	 */
-	public static String sign(byte[] sign, String keyStorePath, String alias, String password) throws Exception
+	public static byte[] sign(byte[] sign, String keyStorePath, String alias, String password) throws Exception
 	{
 		// 获得证书
 		X509Certificate x509Certificate = (X509Certificate) getCertificate(keyStorePath, alias, password);
@@ -281,7 +281,7 @@ public abstract class CertificateCoder extends Coder
 		Signature signature = Signature.getInstance(x509Certificate.getSigAlgName());
 		signature.initSign(privateKey);
 		signature.update(sign);
-		return encryptBASE64(signature.sign());
+		return signature.sign();
 	}
 	
 	/**
@@ -293,7 +293,7 @@ public abstract class CertificateCoder extends Coder
 	 * @return
 	 * @throws Exception
 	 */
-	public static boolean verify(byte[] data, String sign, String certificatePath) throws Exception
+	public static boolean verify(byte[] data, byte[] sign, String certificatePath) throws Exception
 	{
 		// 获得证书
 		X509Certificate x509Certificate = (X509Certificate) getCertificate(certificatePath);
@@ -304,7 +304,7 @@ public abstract class CertificateCoder extends Coder
 		signature.initVerify(publicKey);
 		signature.update(data);
 		
-		return signature.verify(decryptBASE64(sign));
+		return signature.verify(sign);
 		
 	}
 	
