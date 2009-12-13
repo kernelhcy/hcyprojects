@@ -19,4 +19,21 @@ typedef struct html_entry_
 html_entry* html_init();
 int html_close(html_entry *html);
 
+int begin_head(html_entry *);
+int end_head(html_entry *);
+
+int i_title(html_entry *, const char *);
+
+int begin_body(html_entry *);
+int end_body(html_entry *);
+
+int begin_p(html_entry *);
+int end_p(html_entry*);
+
+int i_br(html_entry*);
+int i_a(html_entry*, const char *text, const char *url);
+int i_font(html_entry*, const char *text, const char *font, int size, const char *color);
+
+
+
 #endif

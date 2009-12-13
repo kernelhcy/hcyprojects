@@ -25,7 +25,7 @@ void email_entry_free(email_entry * mail)
 		return;
 	}
 
-	free(mail -> from);
+	//free(mail -> from);
 
 	free(mail);
 	return;

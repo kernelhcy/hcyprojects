@@ -35,7 +35,16 @@ buffer* buffer_init_copy(buffer *b);
 //用字符串s初始化buffer的数据
 buffer* buffer_init_string(const char *s);
 
-int buffer_append(buffer *buf, const char *s, size_t s_len);
+//向buffer中追加字符串s
+int buffer_append(buffer *buf, const char *s);
+//最多追加len个
+int buffer_append_n(buffer *buf, const char *s, size_t len);
+
+//向buffer中追加数字
+int buffer_append_int(buffer *buf, int n);
+int buffer_append_long(buffer *buf, long n);
+int buffer_append_float(buffer *buf, float n, const char *fmt);
+int buffer_append_double(buffer *buf, double n, const char *fmt);
 
 /*
  * 将buf的内容复制到a中。
@@ -63,9 +72,4 @@ int buffer_array_delete(buffer_array* ba, buffer* buf);
 int buffer_array_delete_string(buffer_array* ba, const char *s);
 
 void buffer_array_print(buffer_array *ba);
-/*
- * 将字符串以"/"为分割符进行分割。
- * 将分割的结果保存在buffer数组中返回。
- */
-buffer_array* splite_by_slash(const char *s);
 #endif

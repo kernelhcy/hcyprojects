@@ -143,23 +143,86 @@ int buffer_copy(buffer *a, buffer *b)
 
 /**
  * 向buffer中追加字符串，如果空间不够，重新分配空间
+ * 最多追加len个字符
  */
-int buffer_append(buffer *buf, const char *s, size_t s_len)
+int buffer_append_n(buffer *buf, const char *s, size_t len)
 {
-	if (NULL == buf || NULL == s || 0 == s_len)
+	if (NULL == buf || NULL == s || 0 == len)
 	{
 		return 0;
 	}
 	//log_info("Buffer append : %d %s %d", buf, s, s_len);
-	buffer_prepare_n(buf, s_len);
+	buffer_prepare_n(buf, len);
 
 	char * start_pos = buf -> ptr + buf -> used;
-	memcpy(start_pos, s, s_len);
-	buf -> used += s_len;
+	memcpy(start_pos, s, len);
+	buf -> used += len;
 	buf -> ptr[buf -> used] = '\0';
 
-	return s_len;
+	return len;
 }
+
+int buffer_append(buffer *buf, const char *s)
+{
+	if (NULL == buf || NULL == s)
+	{
+		return 0;
+	}
+	return buffer_append_n(buf, s, strlen(s));
+}
+
+int buffer_append_int(buffer *buf, int n)
+{
+	if (NULL == buf)
+	{
+		return 0;
+	}
+
+	char tmp[50];
+	sprintf(tmp, "%d", n);
+	
+	return buffer_append(buf, tmp);
+}
+
+int buffer_append_long(buffer *buf, long n)
+{
+	if (NULL == buf)
+	{
+		return 0;
+	}
+
+	char tmp[50];
+	sprintf(tmp, "%ld", n);
+	
+	return buffer_append(buf, tmp);
+}
+
+int buffer_append_float(buffer *buf, float n, const char *fmt)
+{
+	if (NULL == buf)
+	{
+		return 0;
+	}
+
+	char tmp[50];
+	sprintf(tmp, (NULL == fmt ? "%f" : fmt), n);
+	
+	return buffer_append(buf, tmp);
+}
+
+int buffer_append_double(buffer *buf, double n, const char *fmt)
+{
+	if (NULL == buf)
+	{
+		return 0;
+	}
+
+	char tmp[50];
+	sprintf(tmp, (NULL == fmt ? "%lf" : fmt), n);
+	
+	return buffer_append(buf, tmp);
+}
+
 
 int buffer_cmp(buffer *a, buffer *b)
 {
@@ -335,11 +398,11 @@ buffer_array* splite_by_slash(const char *s)
 			buf = buffer_init();
 			if (s[begin] == '/')
 			{
-				buffer_append(buf, s + begin + 1, end - begin - 1);
+				buffer_append_n(buf, s + begin + 1, end - begin - 1);
 			}
 			else 
 			{
-				buffer_append(buf, s + begin, end - begin);
+				buffer_append_n(buf, s + begin, end - begin);
 			}
 			buffer_array_append(ba, buf);
 
@@ -354,11 +417,11 @@ buffer_array* splite_by_slash(const char *s)
 		buf = buffer_init();
 		if (s[begin] == '/')
 		{
-			buffer_append(buf, s + begin + 1, end - begin - 1);
+			buffer_append_n(buf, s + begin + 1, end - begin - 1);
 		}
 		else 
 		{
-			buffer_append(buf, s + begin, end - begin);
+			buffer_append_n(buf, s + begin, end - begin);
 		}
 		buffer_array_append(ba, buf);
 	}
