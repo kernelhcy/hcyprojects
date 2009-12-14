@@ -1,0 +1,302 @@
+Zimbu - the programming language
+
+  usage.txt  - how to use the program
+  syntax.txt - Zimbu syntax (this file)
+  design.txt - decisions made when creating the language
+
+
+RESERVED WORDS
+
+Words with all capital letters are reserved for language use.
+The user can use words with capitals and an "_" or digits:
+
+        IF WHILE ELSE TRUE NULL   reserved words
+        IF_NOT MAX12              non-reserved words
+
+Class and Module names of the system start with a capital letter:
+
+        string  file  array  list
+
+The user can use these, with the effect of the system Class and/or Module to
+be hidden.  A warning will be generated.
+
+It is not allowed to use "__" in identifiers.
+
+
+COMMENT
+
+A comment starts with a '#' character and continues until the end of the line.
+
+	# this is a comment
+	a = 2  # this is also a comment
+
+Comments can appear nearly everywhere, but not inside a string.
+
+
+CODE BLOCK
+
+Text between ">>>" and "<<<" is copied as-is to the generated C file.
+
+>>>
+   #include "stdio.h"
+<<<
+
+Both the "<<<" and the ">>>" must appear at the start of the line without any
+preceding white space.  They can not appear halfway a statement.
+
+        string x =
+        >>>
+          "This does not work!";
+        <<<
+
+Comments are allowed after ">>>" and "<<<":
+
+>>>  # debug code
+   printf("hello\n");
+<<<    # end of debug code
+
+
+STANDARD TYPES
+
+string            currently like char * in C, will be something else
+int               32 bit integer
+bool              TRUE or FALSE
+status            FAIL or OK
+list<Type>        ordered list of items
+dict<Type, Type>  dictionary
+IO.File           file for reading and writing
+IO.Stat           file status info
+
+
+METHOD REFERENCES
+
+Func<Type>(Type, Type) func      # reference to function
+Proc(Type, Type) proc            # reference to procedure
+r = func(arg, arg)               # call function by reference
+proc(arg, arg)                   # call procedure by reference
+
+
+ASSIGNMENT STATEMENT
+
+lhs = expr                # normal assignment
+lhs += expr               # add expr to lhs (numbers only)
+lhs -= expr               # subtract expr from lhs (numbers only)
+lhs ..= expr              # concatenate expr to lhs (strings only)
+
+
+STRING MANIPULATION
+        string a = "x" + "y"   # concatenation
+        Int x = 48
+        string s = x.toChar()  # conversion int -> character
+        Int n = s.toInt()      # conversion string -> Int
+        Int x = s.hexToInt()   # conversion hex string -> Int
+        Int x = s.binToInt()   # conversion bin string -> Int
+        Int n = s.quotedToInt()    # conversion string with quotes -> Int
+        Int x = s.quotedHexToInt() # conversion hex string with quotes -> Int
+        Int x = s.quotedBinToInt() # conversion bin string with quotes -> Int
+        string b = s.slice(1, 3)   # part of a string, from s[1] to s[3]
+                                   # (inclusive, counting utf-8 characters)
+        string b = s.byteSlice(1, 3)  # part of a string, from s[1] to s[3]
+                                      # (inclusive, counting bytes)
+        Int first = s.index('x')   # first position of 'x'
+        Int last = s.rindex('y')   # last position of 'y'
+        string l = s.toLower()     # string lower cased
+        string l = s.toUpper()     # string upper cased
+        Int i = s.find(x)          # position of sub-string, -1 if not found
+        Bool b = s.startsWith(foo) # TRUE if "s" starts with "foo"
+        Bool b = s.endsWith(foo)   # TRUE if "s" ends with "foo"
+
+        slice(0, -1)        # from s[0] to s[SIZE], whole string
+        slice(0, -2)        # from s[0] to s[SIZE - 1], whole string except
+                            # last character
+        slice(-1, -1)       # last character
+        SIZE()              # size of string in utf-8 characters
+
+Operations not yet implemented:
+        byteSize()          # size of string in bytes
+        part(idx, len)      # similar to slice() but uses length instead of
+                            # second index
+
+Note: There is automatic int -> String conversion for "+" and List items, but
+not for function arguments.  It would be confusing for Polymorphism.
+
+Argments
+        ARG.name                    # name of the program, argv[0]
+        ARG.SIZE()                  # number of non-flag arguments
+        ARG.args                    # array with non-flag arguments
+        ARG.get(i)                  # get one non-flag argument with bounds
+                                                                      checking
+        ARG.getClean()              # get list with non-flag arguments
+        ARG.getAll()                # get list with all arguments
+
+FILE IO
+
+        IO.write(s)                 # short for IO.stdout.write(s)
+        IO.writeLine(s)             # does write() and appends a '\n'
+        IO.stderr.write(s)          # writes to stderr  NOT YET
+        IO.delete(fname)            # delete file "fname"
+        Stat st = IO.stat(fname)    # get status of "fname"
+
+        int c = IO.getchar()        # short for IO.stdin.getchar()
+        string s = IO.readline()    # short for IO.stdin.readline()
+
+        File rf = File.fileReader(name)
+        rf.setBuffered(true)        # read chunks at a time
+        Int c = rf.readchar()
+        IF c == File.eof             # end-of-file marker
+        }
+        string s = rf.readline()
+        rf.close()
+
+        File wf = File.fileWriter(name)
+        wf.setBuffered(true)        # collect output in buffer
+        wf.writechar(c)
+        wf.flush()                  # flush buffer
+        wf.writeline(s)
+        wf.close()
+
+        File wf = File.fileAppender(name)
+
+
+SYSTEM MODULE
+
+        Int result = SYS.shell(command)
+        string buf = SYS.malloc(size)
+        string newbuf = SYS.realloc(oldbuf, size)
+        SYS.sleep(microSeconds)
+        SYS.sleepSec(seconds)
+
+
+ENUM
+
+Example:
+        ENUM Color
+          red
+          blue
+          green
+        }
+
+The enum type name must start with an upper case character and cannot be all
+upper case.
+
+The value names can be any ID, but not all upper case.
+
+To get the name of a value use the name() method:
+        Color color = Color.blue
+        IO.write(color.name())   # results in "blue"
+
+
+LIST
+
+Declaration:
+        List<Type> mylist          # mylist is NIL
+        List<Type> mylist = NIL
+        List<Type> mylist = NEW()
+
+Operations implemented:
+        item = mylist[i]           # when out of range returns NIL, 0, FALSE
+        n = mylist.SIZE()
+        newlist = mylist.COPY()
+        mylist.toString()          # printable representation of mylist
+        mylist.clear()             # removes all items, returns mylist
+
+        mylist.add(item)           # add at end, returns mylist
+        mylist.add(item, i)        # add after mylist[i], returns mylist
+                                   # when i < 0 and before list prepend
+                                   # when i is too big exception (TODO)
+        mylist.insert(item)        # insert before mylist[0], returns mylist
+        mylist.insert(item, i)     # insert before mylist[i], returns mylist
+                                   # when i < 0 and before list prepend
+                                   # when i is too big append
+        mylist.extend(otherlist)   # apped items from otherlist, returns mylist
+        mylist.pop()               # removes mylist[-1] and returns it
+        mylist.pop(i)              # removes mylist[i] and returns it
+        mylist.pop(i, j)           # removes mylist[i:j] and returns List
+        newlist = mylist.slice(i, j)  # slice items i to j (inclusive)
+Operations not yet implemented:
+        newlist = mylist.part(idx, len) # similar to slice() but uses length
+        mylist += item
+        mylist[i] = item           # exception when i is out of range
+        newlist = mylist + item + item
+        mylist.remove()            # removes mylist[-1] and returns mylist
+        mylist.remove(i)           # removes mylist[i] and returns mylist
+        mylist.remove(i, j)        # removes mylist[i:j] and returns mylist
+        mylist.find(item)          # return index of first item where value
+                                   # equals item
+        mylist.find(item, i)       # return index of first item at or after
+                                   # index i where value equals item
+        n = mylist.count(item)     # nr of times mylist[i] == item
+        n = mylist.index(item)     # lowest i where mylist[i] == item
+        item = mylist.min()        # item with minimum value, uses COMPARE
+        item = mylist.max()        # item with maximum value, uses COMPARE
+
+        mylist.reverse()           # returns mylist
+        mylist.sort()              # returns mylist
+        mylist.setCompare(func)    # set compare function (syntax?)
+                                   #  NIL = use COMPARE on object
+        mylist.keepSorted(flag)    # keep list always sorted
+
+DICT
+
+Declaration:
+        dict<KeyType, ValueType> dict          # dict is NIL
+        dict<KeyType, Valuetype> dict = NIL
+        dict<KeyType, ValueType> dict = NEW()
+        For KeyType currently only Int and string can be used.
+
+Operations implemented:
+        value = dict[key]         # get value, thows exception when not present
+        dict[key] = value         # adds or overwrites "key" entry
+        dict.add(key, value)      # exception when "key" already exists
+        n = dict.SIZE()
+        newdict = dict.COPY()
+        dict.toString()           # printable representation of dict
+        dict.clear()              # removes all items, returns dict
+        dict.remove(key)          # removes item, returns dict, throws
+                                  # exception when not present
+        dict.get(key)             # just like dict[key]
+        dict.get(key, default)    # get value, default if key not present
+        dict.has(key)             # TRUE if item with key exists
+        dict.keys()               # returns List with all keys
+
+Operations not yet implemented:
+        NEW(minItems)             # reserve space for minItems items
+        dict.add(key, value)      # like dict[key] = value but exception when
+                                  # key already present
+        dict.pop(key)             # removes item, returns value of removed
+                                  # item, throws exception when not present
+        dict.pop(key, value)      # removes item, returns value of removed
+                                  # item or value if not present
+        dict.popitem()            # remove and return key-value pair
+
+        dict.setdefault(key, default)
+                                  # if key is not present add it with value
+                                  # "default"
+        dict.update(other)        # update (overwrite) key-value pairs from
+                                  # "other" (dict or list of tuples)
+        dict.merge(other)         # merge in (no overwrite) key-value pairs
+                                  # from "other" (dict or list of tuples)
+
+        value = dict.min()        # item with minimum value, uses COMPARE
+        value = dict.max()        # item with maximum value, uses COMPARE
+
+        dict.iter()               # returns iterator over all the keys
+        dict.iterkeys()           # returns iterator over all the keys
+        dict.itervalues()         # returns iterator over all the values
+        dict.iteritems()          # returns iterator over all the key-value
+        dict.values()             # returns List with all values
+        dict.items()              # returns List with Tuple<key, value>
+
+
+FUNC Stat IO.stat(string fname)
+        returns info about file:
+	Int Stat.size  Size of the file in bytes
+        Int Stat.time  Last modification time of the file in seconds
+        When the call fails (e.g. fname doesn't exist) values are zero
+        TODO: throw exception when info can't be obtained.
+
+Comparing Strings: s1 == s2
+        When s1 and s2 are both NIL evaluates to TRUE
+        When s1 or s2 is NIL evaluates to FALSE
+
+vim: set tw=78 et :

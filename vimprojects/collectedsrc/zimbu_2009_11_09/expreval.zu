@@ -1,0 +1,66 @@
+#
+# The Zimbu compiler written in Zimbu
+#
+# Expr Eval module: Compile time evaluation of an expression.
+#
+# Copyright 2009 Bram Moolenaar
+# Licensed under the Apache License, Version 2.0.  See the LICENSE file or
+# obtain a copy at: http://www.apache.org/licenses/LICENSE-2.0
+#
+
+IMPORT "node.zu"
+IMPORT "scontext.zu"
+
+MODULE ExprEval
+
+  # Evaluate to a boolean result: ||, &&, ==, !=, etc.
+  FUNC bool evalBool(Node node, SContext ctx)
+    SWITCH node.n_type
+      CASE Node.Type.op_equal
+      CASE Node.Type.op_notequal
+        string left = evalString(node.n_left, ctx)
+        string right = evalString(node.n_right, ctx)
+        RETURN (left == right) == (node.n_type == Node.Type.op_equal)
+
+      CASE Node.Type.op_or
+      CASE Node.Type.op_and
+        bool left = evalBool(node.n_left, ctx)
+        IF left == (node.n_type == Node.Type.op_or)
+          # false for (false && any), true for (true || any)
+          RETURN node.n_type == Node.Type.op_or
+        }
+        # true for (true && true) and (false || true)
+        RETURN evalBool(node.n_right, ctx)
+
+      CASE Node.Type.bool
+          RETURN node.n_int != 0
+
+      DEFAULT
+        node.error("Not supported here: " .. node.n_type.name())
+    }
+    RETURN TRUE
+  }
+
+  # Evaluate to a boolean result: "string", lang, permu
+  FUNC string evalString(Node node, SContext ctx)
+    SWITCH node.n_type
+      CASE Node.Type.id
+        IF node.n_string == "lang"
+          RETURN ctx.gen.getLangName()
+        ELSEIF node.n_string == "permu"
+          RETURN ctx.gen.permuName
+        ELSE
+          node.error("Expected 'lang' or 'permu', found '"
+                                                      .. node.n_string .. "'")
+        }
+
+      CASE Node.Type.string
+        RETURN node.n_string
+
+      DEFAULT
+        node.error("Not supported here: " .. node.n_type.name())
+    }
+    RETURN ""
+  }
+
+}

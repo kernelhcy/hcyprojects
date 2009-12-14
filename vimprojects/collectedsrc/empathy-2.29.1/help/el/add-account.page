@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<page xmlns="http://projectmallard.org/1.0/" xmlns:e="http://projectmallard.org/experimental/" type="topic" style="task" id="add-account">
+
+  <info>
+    <link type="guide" xref="index#accounts"/>
+    <link type="seealso" xref="remove-account"/>
+    <desc>Προσθήκη νέου λογαριασμού στο <app>Empathy</app>.</desc>
+    <revision pkgversion="2.28" version="0.1" date="2009-06-24" status="draft"/>
+    <revision pkgversion="2.28" version="0.1" date="2009-08-10" status="review"/>
+    <revision pkgversion="2.28" version="0.2" date="2009-08-27" status="review">
+      <!--
+      <e:review by="shaunm@gnome.org" date="2009-08-31" status="done"/>
+      -->
+    </revision>
+    <credit type="author">
+      <name>Milo Casagrande</name>
+      <email>milo@ubuntu.com</email>
+    </credit>
+    <credit type="author">
+      <name>Shaun McCance</name>
+      <email>shaunm@gnome.org</email>
+    </credit>
+<!--
+    <copyright>
+      <year>2009</year>
+      <name>GNOME Documentation Project</name>
+    </copyright>
+-->
+    <include xmlns="http://www.w3.org/2001/XInclude" href="legal.xml"/>
+  </info>
+
+  <title>Προσθήκη νέου λογαριασμού</title>
+
+  <p>Μπορείτε να προσθέτετε λογαριασμούς άμεσων μηνυμάτων για όλες τις υποστηριζόμενες υπηρεσίες. Έτσι, θα μπορείτε να επικοινωνείτε με όλες τις επαφές σας μέσω του <app>Empathy</app>. Τα παρακάτω βήματα σας επιτρέπουν να δημιουργήσετε λογαριασμούς σε ορισμένους παρόχους λογαριασμών. Για περισσότερες λεπτομέρειες, δείτε την <link xref="create-account"/>.</p>
+
+  <steps>
+    <item>
+      <p>Από το παράθυρο <gui>Λίστα επαφών</gui>, επιλέξτε <guiseq><gui>Επεξεργασία</gui><gui>Λογαριασμοί</gui></guiseq>, ή πατήστε <key>F4</key>.</p>
+    </item>
+    <item>
+      <p>Πατήστε το κουμπί <gui style="button">Προσθήκη</gui>.</p>
+    </item>
+    <item>
+      <p>Από την αναπτυσσόμενη λίστα <gui>Προσθήκη νέου</gui>, επιλέξτε τον τύπο του λογαριασμού που θέλετε να προσθέσετε.</p>
+    </item>
+    <item>
+      <p>Αν δε διαθέτετε ήδη λογαριασμό αυτού του τύπου, επιλέξτε <gui>Δημιουργία νέου λογαριασμού</gui>. Αυτή η λειτουργία δεν είναι διαθέσιμη για όλους τους τύπους λογαριασμών, και ενδεχομένως να μη λειτουργήσει για ορισμένους παρόχους. Δείτε την <link xref="create-account"/> για περισσότερες λεπτομέρειες.</p>
+    </item>
+    <item>
+      <p>Πατήστε <gui>Δημιουργία</gui>.</p>
+    </item>
+    <item>
+      <p>Εισάγετε τις απαιτούμενες πληροφορίες. Για τους περισσότερους τύπους λογαριασμών, αρκούν το όνομα χρήστη και το συνθηματικό. Ωστόσο, ορισμένοι τύποι μπορεί να απαιτούν και επιπλέον στοιχεία. Δείτε την <link xref="accounts-window#details"/> για περισσότερες πληροφορίες.</p>
+    </item>
+    <item>
+      <p>Πατήστε <gui style="button">Σύνδεση</gui> για να ενεργοποιήσετε το νέο λογαριασμό.</p>
+
+      <!-- TODO: check if it's a bug or what. In case, this part needs to
+      be removed or we must signal it as a bug! -->
+
+      <note style="warning">
+        <p>Αν κλείσετε το παράθυρο <gui>Λογαριασμοί</gui> χωρίς να πατήσετε <gui>Σύνδεση</gui>, θα χαθούν όλα τα στοιχεία του λογαριασμού, και θα χρειαστεί να τον δημιουργήσετε ξανά.</p>
+        <p>Αν επιλέξετε άλλο λογαριασμό χωρίς να πατήσετε <gui>Σύνδεση</gui>, θα χαθούν όλα τα στοιχεία που είχατε εισάγει.</p>
+      </note>
+    </item>
+  </steps>
+
+  <note style="tip">
+    <p>Για να αλλάξετε το όνομα που χρησιμοποιείται για το λογαριασμό στο παράθυρο <gui>Λογαριασμοί</gui>, επιλέξτε το λογαριασμό από τη λίστα στα αριστερά, και μετά κάνετε κλικ στο όνομα ή πατήστε διάστημα. Αλλάξτε το όνομα του λογαριασμού και πατήστε <key>Enter</key>.</p>
+  </note>
+
+</page>

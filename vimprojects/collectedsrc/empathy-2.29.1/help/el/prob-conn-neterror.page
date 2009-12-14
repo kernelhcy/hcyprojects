@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<page xmlns="http://projectmallard.org/1.0/" type="topic" id="prob-conn-neterror">
+
+  <info>
+    <link type="guide" xref="prob-conn"/>
+    <desc>Στο κύριο παράθυρο εμφανίζεται το μήνυμα λάθους "<gui>Σφάλμα δικτύου</gui>".</desc>
+    <revision pkgversion="2.28" version="0.1" date="2009-06-17" status="draft"/>
+    <revision pkgversion="2.28" version="0.2" date="2009-08-14" status="review"/>
+    <credit type="author">
+      <name>Phil Bull</name>
+      <email>philbull@gmail.com</email>
+    </credit>
+    <credit type="author">
+      <name>Milo Casagrande</name>
+      <email>milo@ubuntu.com</email>
+    </credit>
+<!--
+    <copyright>
+      <year>2009</year>
+      <name>GNOME Documentation Project</name>
+    </copyright>
+-->
+    <include xmlns="http://www.w3.org/2001/XInclude" href="legal.xml"/>
+  </info>
+
+  <title>Λαμβάνω το μήνυμα "Σφάλμα σύνδεσης στο δίκτυο"</title>
+
+  <comment>
+    <cite date="2009-08-27">shaunm</cite>
+    <p>Empathy no longer allows you to create an IRC account without a valid nick. I've removed the guide link. Remove the text.</p>
+  </comment>
+
+  <p>Αυτό το σφάλμα εμφανίζεται όταν, για οποιονδήποτε λόγο, το <app>Empathy</app> αδυνατεί να επικοινωνήσει με την υπηρεσία άμεσων μηνυμάτων.</p>
+  <p>Επίσης, αυτό το σφάλμα εμφανίζεται αν προσπαθείτε να χρησιμοποιήσετε λογαριασμό IRC χωρίς να έχετε επιλέξει ψευδώνυμο.</p>
+
+  <steps>
+    <item>
+      <p>Βεβαιωθείτε ότι είστε συνδεδεμένοι στο διαδίκτυο ή στο τοπικό δίκτυο.</p>
+    </item>
+    <item>
+      <p>Πατήστε το κουμπί <gui>Επεξεργασία λογαριασμού</gui> στο μήνυμα σφάλματος.</p>
+    </item>
+    <item>
+      <list>
+        <item>
+          <p>Στην ενότητα <gui>Για προχωρημένους</gui>, ελέγξτε ότι όλα τα στοιχεία είναι σωστά. Τα στοιχεία θα πρέπει να είναι διαθέσιμα στον ιστότοπο της υπηρεσίας άμεσων μηνυμάτων.</p>
+        </item>
+        <item>
+          <p>Αν πρόκειται για λογαριασμό IRC, εισάγετε το ψευδώνυμό σας στο πεδίο <gui>Ψευδώνυμο</gui>.</p>
+        </item>
+      </list>
+    </item>
+    <item>
+      <p>Αποεπιλέξτε το <gui>Ενεργός</gui> δίπλα στο όνομα του λογαριασμού σας. Μετά, επιλέξτε το ξανά, για να γίνει νέα προσπάθεια σύνδεσης στην υπηρεσία.</p>
+    </item>
+  </steps>
+
+</page>

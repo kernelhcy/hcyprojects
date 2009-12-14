@@ -1,0 +1,87 @@
+# List of source files containing translatable strings.
+# Please keep this file sorted alphabetically.
+
+data/empathy.desktop.in.in
+data/empathy.schemas.in
+
+libempathy/empathy-account.c
+libempathy/empathy-ft-handler.c
+libempathy/empathy-tp-contact-list.c
+libempathy/empathy-tp-file.c
+libempathy/empathy-utils.c
+libempathy/empathy-time.c
+
+libempathy-gtk/empathy-account-chooser.c
+libempathy-gtk/empathy-account-widget.c
+[type: gettext/glade]libempathy-gtk/empathy-account-widget-aim.ui
+[type: gettext/glade]libempathy-gtk/empathy-account-widget-generic.ui
+[type: gettext/glade]libempathy-gtk/empathy-account-widget-groupwise.ui
+[type: gettext/glade]libempathy-gtk/empathy-account-widget-icq.ui
+libempathy-gtk/empathy-account-widget-irc.c
+[type: gettext/glade]libempathy-gtk/empathy-account-widget-irc.ui
+[type: gettext/glade]libempathy-gtk/empathy-account-widget-jabber.ui
+[type: gettext/glade]libempathy-gtk/empathy-account-widget-msn.ui
+[type: gettext/glade]libempathy-gtk/empathy-account-widget-local-xmpp.ui
+[type: gettext/glade]libempathy-gtk/empathy-account-widget-sip.ui
+[type: gettext/glade]libempathy-gtk/empathy-account-widget-yahoo.ui
+libempathy-gtk/empathy-avatar-chooser.c
+libempathy-gtk/empathy-avatar-image.c
+libempathy-gtk/empathy-chat.c
+[type: gettext/glade]libempathy-gtk/empathy-chat.ui
+libempathy-gtk/empathy-chat-text-view.c
+libempathy-gtk/empathy-contact-dialogs.c
+[type: gettext/glade]libempathy-gtk/empathy-contact-dialogs.ui
+libempathy-gtk/empathy-contact-list-view.c
+libempathy-gtk/empathy-contact-menu.c
+libempathy-gtk/empathy-contact-selector.c
+libempathy-gtk/empathy-contact-widget.c
+[type: gettext/glade]libempathy-gtk/empathy-contact-widget.ui
+libempathy-gtk/empathy-irc-network-dialog.c
+libempathy-gtk/empathy-log-window.c
+[type: gettext/glade]libempathy-gtk/empathy-log-window.ui
+[type: gettext/glade]libempathy-gtk/empathy-new-message-dialog.ui
+libempathy-gtk/empathy-presence-chooser.c
+libempathy-gtk/empathy-sound.c
+libempathy-gtk/empathy-status-preset-dialog.c
+[type: gettext/glade]libempathy-gtk/empathy-status-preset-dialog.ui
+libempathy-gtk/empathy-theme-adium.c
+libempathy-gtk/empathy-theme-boxes.c
+libempathy-gtk/empathy-theme-irc.c
+libempathy-gtk/empathy-theme-manager.c
+libempathy-gtk/empathy-ui-utils.c
+libempathy-gtk/totem-subtitle-encoding.c
+
+nautilus-sendto-plugin/empathy-nautilus-sendto.c
+
+src/empathy.c
+src/empathy-about-dialog.c
+src/empathy-account-assistant.c
+src/empathy-accounts-dialog.c
+[type: gettext/glade]src/empathy-accounts-dialog.ui
+src/empathy-call-window.c
+[type: gettext/glade]src/empathy-call-window.ui
+src/empathy-chat-window.c
+[type: gettext/glade]src/empathy-chat-window.ui
+src/empathy-chatrooms-window.c
+[type: gettext/glade]src/empathy-chatrooms-window.ui
+src/empathy-event-manager.c
+src/empathy-ft-manager.c
+[type: gettext/glade]src/empathy-ft-manager.ui
+src/empathy-import-dialog.c
+src/empathy-import-widget.c
+[type: gettext/glade]src/empathy-import-dialog.ui
+src/empathy-import-widget.c
+src/empathy-import-mc4-accounts.c
+src/empathy-main-window.c
+[type: gettext/glade]src/empathy-main-window.ui
+src/empathy-new-chatroom-dialog.c
+[type: gettext/glade]src/empathy-new-chatroom-dialog.ui
+src/empathy-preferences.c
+[type: gettext/glade]src/empathy-preferences.ui
+src/empathy-status-icon.c
+[type: gettext/glade]src/empathy-status-icon.ui
+src/empathy-tube-dispatch.c
+[type: gettext/glade]src/empathy-call-window-fullscreen.ui
+src/empathy-map-view.c
+[type: gettext/glade]src/empathy-map-view.ui
+src/empathy-debug-window.c

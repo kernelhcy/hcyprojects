@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<page xmlns="http://projectmallard.org/1.0/" xmlns:e="http://projectmallard.org/experimental/" type="topic" style="task" id="audio-call">
+
+  <info>
+    <link type="guide" xref="index#audio-video"/>
+    <link type="seealso" xref="audio-video"/>
+    <desc>Ihre Kontakte über das Internet anrufen.</desc>
+    <revision pkgversion="2.28" version="0.1" date="2009-08-02" status="stub"/>
+    <revision pkgversion="2.28" version="0.2" date="2009-08-07" status="review">
+      <!--
+      <e:review by="shaunm@gnome.org" date="2009-09-04" status="done"/>
+      -->
+    </revision>
+    <credit type="author">
+      <name>Milo Casagrande</name>
+      <email>milo@ubuntu.com</email>
+    </credit>
+<!--
+    <copyright>
+      <year>2009</year>
+      <name>GNOME Documentation Project</name>
+    </copyright>
+-->
+    <include xmlns="http://www.w3.org/2001/XInclude" href="legal.xml"/>
+  </info>
+
+  <title>Eine Audio-Unterhaltung starten</title>
+
+  <p>Sie können Ihre Kontakte anrufen und eine Audio-Unterhaltung mit ihnen führen. Dieses Funktionsmerkmal unterstützt verschiedene Kontentypen. Weiterhin ist es erforderlich, dass die anzurufende Person über eine Anwendung verfügt, die Audio-Anrufe unterstützt.</p>
+
+  <comment>
+    <cite date="2009-09-02">Shaun McCance</cite>
+    <p>Link to A/V support matrix</p>
+  </comment>
+
+  <steps>
+    <item>
+      <p>Klicken Sie im <gui>Kontaktlisten</gui>-Fenster auf das <media type="image" mime="image/png" src="figures/audio-input-microphone.png">Audioanruf</media>-Symbol neben dem Namen des Kontakts, den Sie anrufen wollen. Alternativ klicken Sie mit der rechten Maustaste auf den Kontakt und wählen Sie <gui>Audioanruf</gui>.</p>
+    </item>
+    <item>
+      <p>Ein neues Fenster wird geöffnet. Sobald die Verbindung aufgebaut wurde, sehen Sie am unteren Rand des Fensters <gui>Verbunden</gui> und die Gesamtzeit der Unterhaltung.</p>
+    </item>
+    <item>
+      <p>Um eine Unterhaltung zu beenden, wählen Sie <guiseq><gui>Anruf</gui><gui>Auflegen</gui></guiseq>.</p>
+    </item>
+  </steps>
+  <note style="tip">
+    <p>Um eine Audio-Unterhaltung in eine Video-Unterhaltung umzuwandeln, wählen Sie <guiseq><gui>Anruf</gui><gui>Video senden</gui></guiseq> oder klicken Sie auf den <media type="image" mime="image/png" src="figures/camera-web.png">Videoanruf</media>-Knopf in der Werkzeugleiste, um dies auszuwählen.</p>
+  </note>
+
+</page>

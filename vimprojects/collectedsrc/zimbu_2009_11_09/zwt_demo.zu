@@ -1,0 +1,25 @@
+# Simplistic demo for GWT.
+
+IMPORT.ZWT "zwtDemoPage.zu"   # this will be produced as Javascript
+
+MAIN()
+  int portNr = 8888
+  string pageName = "demo.html"
+
+  HTTP.Server server = NEW(portNr)
+  server.fileRoot = "ZUDIR"  # TODO: make this configurable
+
+  ZWT.createPage(server, pageName, ZwtDemoPage.INFO())
+
+  server.start()
+  IO.writeLine("Server started; point your browser to http://localhost:"
+                                                 .. portNr .. "/" .. pageName)
+  WHILE TRUE
+    SYS.sleepSec(10)
+    IO.writeLine("Still running...")
+  }
+
+
+  # SYS.openInBrowser(server, pageName)
+  # ZWT.waitForClose()
+}

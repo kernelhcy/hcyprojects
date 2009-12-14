@@ -1,0 +1,31 @@
+# Trying out the SHARED section
+
+CLASS Date
+  string month
+  int day
+  int year
+
+  FUNC string toString()
+    RETURN year .. "-" .. month .. "-" .. day
+  }
+
+  SHARED
+    int asdf
+
+    FUNC Date fromString(string s)
+      Date d = NEW()
+      d.year = 2009
+      d.month = s
+      d.day = 1
+      RETURN d
+    }
+
+    PROC testje()
+      Date d = fromString("May 9 2009")
+      asdf = 5
+      IO.writeLine(d.toString() .. asdf)
+    }
+  }
+
+  # comment
+}

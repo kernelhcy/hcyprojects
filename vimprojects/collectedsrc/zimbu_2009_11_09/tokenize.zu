@@ -1,0 +1,442 @@
+#
+# The Zimbu compiler written in Zimbu
+#
+# Tokenize module: Reads input and produces a stream of tokens.
+#
+# Copyright 2009 Bram Moolenaar
+# Licensed under the Apache License, Version 2.0.  See the LICENSE file or
+# obtain a copy at: http://www.apache.org/licenses/LICENSE-2.0
+#
+
+IMPORT "error.zu"
+IMPORT "input.zu"
+IMPORT "token.zu"
+IMPORT "pos.zu"
+IMPORT "parse.zu"
+
+MODULE Tokenize
+
+  FUNC bool isIdChar(int c)
+    RETURN (c >= 'a' && c <= 'z')
+        || (c >= 'A' && c <= 'Z')
+        || (c >= '0' && c <= '9')
+        || c == '_'
+  }
+
+  dict<string, Token.Type> threeChar = {
+      "..=": Token.Type.stringassign,
+      "<<=": Token.Type.lshiftassign,
+      ">>=": Token.Type.rshiftassign,
+      ">>>": Token.Type.copy_start,  # <<< is recognized in copyCode()
+  }
+
+  dict<string, Token.Type> twoChar = {
+      "!=": Token.Type.notequal,
+      "--": Token.Type.minmin,
+      "-=": Token.Type.minassign,
+      "++": Token.Type.plusplus,
+      "+=": Token.Type.plusassign,
+      "*=": Token.Type.multassign,
+      "/=": Token.Type.divassign,
+      "%=": Token.Type.percentassign,
+      "~=": Token.Type.tildeassign,
+      "&=": Token.Type.andassign,
+      "|=": Token.Type.orassign,
+      "^=": Token.Type.xorassign,
+      "==": Token.Type.isis,
+      "<<": Token.Type.lshift,
+      ">>": Token.Type.rshift,
+      "<=": Token.Type.lte,
+      ">=": Token.Type.gte,
+      "&&": Token.Type.and,
+      "||": Token.Type.or,
+      "..": Token.Type.concat,
+      "R\"": Token.Type.rawstring,
+  }
+
+  dict<int, Token.Type> oneChar = {
+      IO.eof: Token.Type.eof,
+      '{': Token.Type.c_open,
+      '}': Token.Type.c_close,
+      '(': Token.Type.p_open,
+      ')': Token.Type.p_close,
+      '[': Token.Type.sq_open,
+      ']': Token.Type.sq_close,
+      ',': Token.Type.comma,
+      '.': Token.Type.dot,
+      '~': Token.Type.tilde,
+      '/': Token.Type.slash,
+      '*': Token.Type.star,
+      '%': Token.Type.percent,
+      ';': Token.Type.semicolon,
+      '?': Token.Type.question,
+      ':': Token.Type.colon,
+      '^': Token.Type.bit_xor,
+      '-': Token.Type.minus,
+      '+': Token.Type.plus,
+      '=': Token.Type.assign,
+      '<': Token.Type.lt,
+      '>': Token.Type.gt,
+      '!': Token.Type.not,
+      '&': Token.Type.amp,
+      '|': Token.Type.bit_or,
+  }
+
+  dict<string, Token.Type> keywords = {
+      "AND": Token.Type.and,
+      "ANY": Token.Type.any,
+      "ARG": Token.Type.id,
+      "BITS": Token.Type.bits,
+      "BREAK": Token.Type.break,
+      "CASE": Token.Type.case,
+      "C": Token.Type.c,
+      "CLASS": Token.Type.class,
+      "CONTINUE": Token.Type.continue,
+      "COPY": Token.Type.copy,
+      "DEFAULT": Token.Type.default,
+      "DEFINE": Token.Type.define,
+      "DO": Token.Type.do,
+      "ELSE": Token.Type.else,
+      "ELSEIF": Token.Type.elseif,
+      "ENUM": Token.Type.enum,
+      "EQUAL": Token.Type.equal,
+      "EXIT": Token.Type.exit,
+      "EXTENDS": Token.Type.extends,
+      "FAIL": Token.Type.fail,
+      "FALSE": Token.Type.false,
+      "FOR": Token.Type.for,
+      "FUNC": Token.Type.func,
+      "GENERATE_IF": Token.Type.gen_if,
+      "GENERATE_ELSEIF": Token.Type.gen_elseif,
+      "GENERATE_ELSE": Token.Type.gen_else,
+      "HTTP": Token.Type.id,
+      "I": Token.Type.i,
+      "IF": Token.Type.if,
+      "IMPLEMENTS": Token.Type.implements,
+      "IMPORT": Token.Type.import,
+      "IN": Token.Type.in,
+      "INFO": Token.Type.id,
+      "INTERFACE": Token.Type.interface,
+      "IO": Token.Type.id,
+      "IS": Token.Type.is,
+      "ISA": Token.Type.isa,
+      "ISNOT": Token.Type.isnot,
+      "ISNOTA": Token.Type.isnota,
+      "JS": Token.Type.js,
+      "MAIN": Token.Type.main,
+      "MIXIN": Token.Type.mixin,
+      "MODULE": Token.Type.module,
+      "NEW": Token.Type.new,
+      "NIL": Token.Type.nil,
+      "OK": Token.Type.ok,
+      "OR": Token.Type.or,
+      "PARENT": Token.Type.parent,
+      "PROC": Token.Type.proc,
+      "PROCEED": Token.Type.proceed,
+      "REPLACE": Token.Type.replace,
+      "RETURN": Token.Type.return,
+      "SHARED": Token.Type.shared,
+      "SIZE": Token.Type.size,
+      "SWITCH": Token.Type.switch,
+      "SYS": Token.Type.id,
+      "THIS": Token.Type.this,
+      "TRUE": Token.Type.true,
+      "UNTIL": Token.Type.until,
+      "VAR": Token.Type.var,
+      "WHILE": Token.Type.while,
+      "ZWT": Token.Type.id,
+  }
+
+  # Returns the next token from |in|.
+  # Skips comments.
+  # Returns Token.Type.eof when nothing more to read.
+  FUNC Token get(Input in)
+    int    i = 0
+    int    c
+    string p
+    Token  res = NEW()
+
+    # Skip white space, line breaks and comments.
+    res.startPos = in.pos.copy()
+    skipWhite(in, res)
+    IF TRUE
+      IF res.type != Token.Type.empty
+        res.endPos = in.pos.copy()
+        RETURN res
+      }
+    }
+
+    res.startPos = in.pos.copy()
+    int    len = 300
+    string buffer = SYS.malloc(len)
+
+    # (1) check for a three-character token in "threeChar".
+    buffer[0] = in.get()
+    buffer[1] = in.get()
+    buffer[2] = in.get()
+    buffer[3] = 0
+    res.type = threeChar.get(buffer, Token.Type.unknown)
+
+    IF res.type == Token.Type.unknown
+      # (2) check for a two-character token in "twoChar".
+      in.push(buffer[2])
+      buffer[2] = 0
+      res.type = twoChar.get(buffer, Token.Type.unknown)
+
+      IF res.type == Token.Type.rawstring
+        # Special handling for R"raw string"
+        getRawString(in, &buffer, len)
+        res.type = Token.Type.string
+      ELSEIF res.type == Token.Type.unknown
+        # (3) check for the first character in "oneChar"
+        in.push(buffer[1])
+        buffer[1] = 0
+        res.type = oneChar.get(buffer[0], Token.Type.unknown)
+
+        IF res.type == Token.Type.unknown
+          SWITCH buffer[0]
+            CASE '"'
+              # double quoted string
+              res.type = Token.Type.string
+              WHILE TRUE
+                c = in.get()
+                IF c == '"'
+                  BREAK
+                }
+                IF c == '\n' || c == IO.eof
+                  in.push(c)
+                  Parse.error("missing double quote", in)
+                  BREAK
+                }
+                IF i + 3 >= len
+                  len += 300
+                  buffer = SYS.realloc(buffer, len)
+                }
+                IF c == '\\'
+                  c = in.get()
+                  IF c == '\n' || c == IO.eof
+                    Parse.error("missing double quote", in)
+                    BREAK
+                  }
+                  IF c == 'n'
+                    buffer[i++] = '\n'
+                  ELSEIF c == 't'
+                    buffer[i++] = '\t'
+                  ELSEIF c == 'r'
+                    buffer[i++] = '\r'
+                  ELSE
+                    buffer[i++] = c
+                  }
+                ELSE
+                  buffer[i++] = c
+                }
+              }
+              buffer[i] = 0
+
+            CASE '\''
+              # single quoted character or triple quoted string
+              c = in.get()
+              IF c == '\''
+                c = in.get()
+                IF c == '\''
+                  #  '''very long string'''
+                  res.type = Token.Type.string
+                  WHILE TRUE
+                    c = in.get()
+                    IF c == '\''
+                      c = in.get()
+                      IF c == '\''
+                        c = in.get()
+                        IF c == '\''
+                          BREAK
+                        }
+                        in.push(c)
+                        c = '\''
+                      }
+                      in.push(c)
+                      c = '\''
+                    }
+                    IF c == IO.eof
+                      Parse.error("missing end of ''' string", in)
+                      BREAK
+                    }
+                    IF i + 3 >= len
+                      len += 300
+                      buffer = SYS.realloc(buffer, len)
+                    }
+                    buffer[i++] = c
+                  }
+                  buffer[i] = 0
+                  BREAK
+                ELSE
+                  in.push(c)
+                  c = '\''
+                }
+              }
+              res.type = Token.Type.char
+              IF c == '\\'
+                c = in.get()
+                SWITCH c
+                  CASE 'n'
+                    c = '\n'
+                  CASE 'r'
+                    c = '\r'
+                  CASE 't'
+                    c = '\t'
+                }
+              }
+              buffer[0] = c
+              buffer[1] = 0
+              c = in.get()
+              IF c != '\''
+                Parse.error("missing single quote", in)
+              }
+
+            DEFAULT
+              # Should find an identifier or keyword.
+              c = buffer[0]
+              IF !isIdChar(c)
+                Parse.error("Unrecognized character: '"
+                                                     .. c.toChar() .. "'", in)
+                i = 1
+              ELSE
+                int quot
+                IF c >= '0' && c <= '9'
+                  quot = '\''  # allow ' inside numbers as separator
+                }
+                WHILE i < len - 2 && (isIdChar(c) || c == quot)
+                  buffer[i++] = c
+                  c = in.get()
+                }
+                in.push(c)
+              }
+              buffer[i] = 0
+
+              res.type = keywords.get(buffer, Token.Type.unknown)
+              IF res.type != Token.Type.unknown
+                IF res.type == Token.Type.id && !in.usedIdKeywords.has(buffer)
+                  in.usedIdKeywords[buffer] = TRUE
+                }
+              ELSE
+                bool allUpper = TRUE
+                bool doubleUnderscore = FALSE
+                i = 0
+                c = buffer[i]
+                WHILE c != 0
+                  IF (c < 'A' || c > 'Z') && c != '_'
+                    allUpper = FALSE
+                  }
+                  IF c == '_' && buffer[i + 1] == '_'
+                    doubleUnderscore = TRUE
+                  }
+                  c = buffer[++i]
+                }
+                IF allUpper
+                  res.error("Unrecognized keyword: '" .. buffer .. "'")
+                }
+                IF doubleUnderscore
+                  res.error("'__' is illegal in identifier: '" .. buffer .. "'")
+                }
+                res.type = Token.Type.id
+              }
+          }
+        }
+      }
+    }
+    res.value = buffer
+    res.endPos = in.pos.copy()
+
+    RETURN res
+  }
+
+  PROC getRawString(Input in, string &buffer, int initLen)
+    int i
+    int len = initLen
+    WHILE TRUE
+      int c = in.get()
+      IF c == '"'
+        c = in.get()
+        IF c != '"'
+          # Single double quote ends the string.
+          in.push(c)
+          BREAK
+        }
+        # Two double quotes results in one double quote
+      }
+      IF c == '\n' || c == IO.eof
+        in.push(c)
+        Parse.error("missing double quote", in)
+        BREAK
+      }
+      IF i + 3 >= len
+        len += 300
+        buffer = SYS.realloc(buffer, len)
+      }
+      buffer[i++] = c
+    }
+    buffer[i] = 0
+  }
+
+  #
+  # Skip white space, line breaks and comments.
+  #
+  PROC skipWhite(Input in, Token res)
+    int    len
+    int    idx
+    string buffer
+    bool   isSep
+    bool   hasLineBreak
+    bool   hasComment
+
+    int c = in.get()
+    IF c == ' ' || c == '\n'
+      # A separator must start with a space or NL, not a comment.
+      isSep = TRUE
+    }
+    WHILE c == '#' || c == ' ' || c == '\n'
+      IF len == 0
+        len = 100
+        buffer = SYS.malloc(len)
+      ELSEIF idx + 3 >= len
+        len += 200
+        buffer = SYS.realloc(buffer, len)
+      }
+      buffer[idx++] = c
+      IF c == '\n'
+        hasLineBreak = TRUE
+      ELSEIF c == '#'
+        hasComment = TRUE
+        DO
+          c = in.get()
+          IF idx + 3 >= len
+            len += 200
+            buffer = SYS.realloc(buffer, len)
+          }
+          buffer[idx++] = c
+        UNTIL c == IO.eof || c == '\n'
+      }
+      c = in.get()
+    }
+    in.push(c)
+
+    IF isSep
+      IF hasLineBreak || hasComment
+        # Starts with space or NL and contains NL.
+        res.type = Token.Type.line_sep
+      ELSE
+        # Starts with space or NL.
+        res.type = Token.Type.sep
+      }
+    ELSEIF hasComment
+      # Starts with comment, no predecing space or NL.
+      res.type = Token.Type.comment
+    ELSE
+      res.type = Token.Type.empty
+    }
+    IF buffer != NIL
+      buffer[idx] = 0
+      res.value = buffer
+    }
+  }
+
+}

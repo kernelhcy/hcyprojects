@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<page xmlns="http://projectmallard.org/1.0/" type="topic" id="favorite-rooms">
+
+  <info>
+    <link type="guide" xref="index#text-conv"/>
+    <link type="guide" xref="irc-manage#manage"/>
+    <link type="seealso" xref="irc-join-room"/>
+    <link type="seealso" xref="group-conversations"/>
+    <desc>Ορισμός, είσοδος και διαχείριση αγαπημένων δωματίων.</desc>
+    <revision pkgversion="2.28" version="0.1" date="2009-08-21" status="draft"/>
+    <credit type="author">
+      <name>Milo Casagrande</name>
+      <email>milo@ubuntu.com</email>
+    </credit>
+<!--
+    <copyright>
+      <year>2009</year>
+      <name>GNOME Documentation Project</name>
+    </copyright>
+-->
+    <include xmlns="http://www.w3.org/2001/XInclude" href="legal.xml"/>
+  </info>
+
+  <title>Αγαπημένα δωμάτια</title>
+
+  <section id="set-favorite">
+  <title>Ορισμός ενός δωματίου ως αγαπημένου</title>
+  <steps>
+    <item>
+      <p>Μπείτε στο δωμάτιο.</p>
+      <list>
+        <item>
+          <p>Δείτε την <link xref="irc-join-room"/> για περισσότερες πληροφορίες σχετικά με την είσοδο σε δωμάτια IRC.</p>
+        </item>
+        <item>
+          <p>Δείτε την <link xref="group-conversations"/> για περισσότερες πληροφορίες σχετικά με την έναρξη ομαδικών συζητήσεων ή την είσοδο σε αυτές.</p>
+        </item>
+      </list>
+    </item>
+    <item>
+      <p>Από το παράθυρο της συζήτησης, επιλέξτε <guiseq><gui>Συζήτηση</gui><gui>Αγαπημένο δωμάτιο συζήτησης</gui></guiseq>.</p>
+    </item>
+  </steps>
+  </section>
+
+  <section id="join-favorite">
+  <title>Είσοδος στα αγαπημένα σας δωμάτια</title>
+  <steps>
+    <item>
+      <p>Από το παράθυρο <gui>Λίστα επαφών</gui>, κάνετε ένα από τα ακόλουθα:</p>
+      <list>
+        <item>
+          <p>Πατήστε <key>F5</key>.</p>
+        </item>
+        <item>
+          <p>Επιλέξτε <guiseq><gui>Δωμάτιο</gui><gui>Είσοδος στα αγαπημένα</gui></guiseq> για να μπείτε σε όλα τα αγαπημένα σας δωμάτια.</p>
+        </item>
+        <item>
+          <p>Επιλέξτε πρώτα <gui>Δωμάτιο</gui>, και στη συνέχεια το αγαπημένο δωμάτιο στο οποίο θέλετε να μπείτε.</p>
+        </item>
+      </list>
+    </item>
+  </steps>
+  <note>
+    <p>Για να μπείτε σε ένα αγαπημένο δωμάτιο, πρέπει να έχετε συνδεθεί στο διαδίκτυο, καθώς και στο λογαριασμό σας.</p>
+  </note>
+  </section>
+
+  <section id="manage-favorite">
+  <title>Διαχείριση αγαπημένων δωματίων</title>
+  <steps>
+    <item>
+      <p>Από το παράθυρο <gui>Λίστα επαφών</gui>, επιλέξτε <guiseq><gui>Δωμάτιο</gui><gui>Διαχείριση αγαπημένων</gui></guiseq>.</p>
+    </item>
+    <item>
+      <p>Από την αναπτυσσόμενη λίστα <gui>Λογαριασμός</gui>, επιλέξτε το λογαριασμό του οποίου τα αγαπημένα δωμάτια θέλετε να διαχειριστείτε.</p>
+      <p>Επιλέξτε <gui>Όλα</gui> για να δείτε όλα τα αγαπημένα σας δωμάτια.</p>
+    </item>
+    <item>
+      <p>Επιλέξτε το αγαπημένο δωμάτιο το οποίο θέλετε να διαχειριστείτε:</p>
+      <list>
+        <item>
+          <p>Σημειώστε την επιλογή <gui>Αυτόματη σύνδεση</gui>, για να μπαίνετε αυτόματα στο δωμάτιο κάθε φορά που συνδέεστε στο λογαριασμό σας.</p>
+        </item>
+        <item>
+          <p>Πατήστε <gui>Διαγραφή</gui> για να αφαιρέσετε το δωμάτιο από τα αγαπημένα σας.</p>
+        </item>
+      </list>
+    </item>
+    <item>
+      <p>Όταν τελειώσετε, κάντε κλικ στο κουμπί <gui>Κλείσιμο</gui>.</p>
+    </item>
+  </steps>
+  </section>
+
+</page>

@@ -1,0 +1,445 @@
+# Test file for classes, interfaces, inheritance, etc.
+
+MODULE Inherit
+
+  PROC test()
+    test1()
+    test2()
+    test3()
+    test4()
+    test5()
+    test6()
+    test7()
+  }
+
+  ###############################################################
+
+  CLASS Toppy
+    string name
+    int number
+    FUNC.default string getName()
+      RETURN name
+    }
+    FUNC.default int getNumber()
+      RETURN number
+    }
+    PROC setName(string _name)
+      name = _name
+    }
+
+    SHARED
+      PROC asdf()
+      }
+      int asdfasdfasd
+    }
+  }
+
+  CLASS Childy EXTENDS Toppy
+    int nothing
+    REPLACE FUNC int getNumber()
+      RETURN number + 1
+    }
+    PROC.default doNothing()
+    }
+  }
+
+  CLASS Leafy EXTENDS Childy
+    int final
+    REPLACE FUNC string getName()
+      RETURN name .. "!"
+    }
+    PROC setSomething(string x)
+      name = x
+    }
+    REPLACE PROC doNothing()
+    }
+  }
+
+  PROC test1()
+    Toppy t = NEW()
+    t.name = "t"
+    t.number = 11
+    Childy c = NEW()
+    c.name = "c"
+    c.number = 22
+    c.nothing = 2
+    Leafy l = NEW()
+    l.name = "l"
+    l.number = 33
+    l.final = 42
+
+    IO.writeLine("Top name: " .. t.name .. "/" .. t.getName())
+    IO.writeLine("Top number: " .. t.number .. "/" .. t.getNumber())
+    IO.writeLine("Child name: " .. c.name .. "/" .. c.getName())
+    IO.writeLine("Child number: " .. c.number .. "/" .. c.getNumber())
+    IO.writeLine("Leaf name: " .. l.name .. "/" .. l.getName())
+    IO.writeLine("Leaf number: " .. l.number .. "/" .. l.getNumber())
+
+    Toppy.I i = t
+    IO.writeLine("Top name: " .. i.name .. "/" .. i.getName())
+    IO.writeLine("Top number: " .. i.number .. "/" .. i.getNumber())
+    i.name = "top name"
+    i.number = 111
+    IO.writeLine("Top name: " .. i.name .. "/" .. i.getName())
+    IO.writeLine("Top number: " .. i.number .. "/" .. i.getNumber())
+
+    i = c
+    IO.writeLine("Child name: " .. i.name .. "/" .. i.getName())
+    IO.writeLine("Child number: " .. i.number .. "/" .. i.getNumber())
+    i.name = "child name"
+    i.number = 222
+    IO.writeLine("Child name: " .. i.name .. "/" .. i.getName())
+    IO.writeLine("Child number: " .. i.number .. "/" .. i.getNumber())
+
+    i = l
+    IO.writeLine("Leaf name: " .. i.name .. "/" .. i.getName())
+    IO.writeLine("Leaf number: " .. i.number .. "/" .. i.getNumber())
+    i.name = "leaf name"
+    i.number = 333
+    IO.writeLine("Leaf name: " .. i.name .. "/" .. i.getName())
+    IO.writeLine("Leaf number: " .. i.number .. "/" .. i.getNumber())
+
+    # Childy.I xi = t  # should not work
+    Childy.I ci = c
+    IO.writeLine("Childy name: " .. ci.name .. "/" .. ci.getName())
+    IO.writeLine("Childy number: " .. ci.number .. "/" .. ci.getNumber())
+    ci = l
+    IO.writeLine("Leafy name: " .. ci.name .. "/" .. ci.getName())
+    IO.writeLine("Leafy number: " .. ci.number .. "/" .. ci.getNumber())
+    ci.nothing = 1234
+  }
+
+  #####################################################################
+
+  CLASS.abstract Abby
+    string text
+    FUNC string getText()
+      RETURN text
+    }
+    PROC.abstract setText(string s)
+  }
+
+  CLASS Impl EXTENDS Abby
+    DEFINE PROC setText(string s)
+     text = s
+    }
+  }
+
+  PROC test2()
+    # Abby noab     # error
+    Impl im = NEW()
+    Abby.I ab
+    # ab = NEW()    # error
+    ab = im
+    ab.text = "nothing"
+    ab.setText("something")
+    IO.writeLine("got " .. ab.getText())
+  }
+
+  #####################################################################
+  #
+  # Example for virtual method from Wikipedia
+  #
+  CLASS Animal
+    PROC.default eat()
+      IO.writeLine("I eat like a generic Animal.")
+    }
+  }
+   
+  CLASS Wolf EXTENDS Animal
+    REPLACE PROC eat()
+      IO.writeLine("I eat like a wolf!")
+    }
+  }
+   
+  CLASS Fish EXTENDS Animal
+    REPLACE PROC.default eat()
+      IO.writeLine("I eat like a fish!")
+    }
+  }
+   
+  CLASS.final GoldFish EXTENDS Fish
+    REPLACE PROC eat()
+      IO.writeLine("I eat like a goldfish!")
+    }
+  }
+   
+  CLASS OtherAnimal EXTENDS Animal
+  }
+   
+  # This fails, GoldFish is final
+  #CLASS BadFish EXTENDS GoldFish
+  #}
+
+  PROC test3()
+    list<Animal.I> animals = NEW()
+    animals.add(Animal.NEW())
+    animals.add(Wolf.NEW())
+    animals.add(Fish.NEW())
+    animals.add(GoldFish.NEW())
+    animals.add(OtherAnimal.NEW())
+   
+    FOR animal IN animals
+      animal.eat()
+    }
+
+    dict<string, Animal.I> zoo = NEW()
+    zoo["animal"] = Animal.NEW()
+    zoo["wolf"] = Wolf.NEW()
+    zoo["fish"] = Fish.NEW()
+    zoo["goldfish"] = GoldFish.NEW()
+    zoo["other"] = OtherAnimal.NEW()
+    # todo: use zoo.keys() or zoo.iterkeys()
+    FOR name IN ["animal", "wolf", "fish", "goldfish", "other"]
+      zoo[name].eat()
+    }
+  }
+
+  ######################################################################
+  #
+  # Test polymorphism
+  #
+  CLASS.abstract BaseN
+    string name
+    FUNC.abstract string getName()
+  }
+
+  CLASS ChildOne EXTENDS BaseN
+    DEFINE FUNC string getName()
+      RETURN "One " .. name
+    }
+  }
+
+  CLASS ChildTwo EXTENDS BaseN
+    DEFINE FUNC string getName()
+      RETURN "Two " .. name
+    }
+  }
+
+  CLASS ChildThree EXTENDS BaseN
+    DEFINE FUNC string getName()
+      RETURN "Three " .. name
+    }
+  }
+
+  CLASS Nanny
+    FUNC string getName(ChildOne child)
+      RETURN "One Nanny " .. child.getName()
+    }
+    FUNC string getName(ChildTwo child)
+      RETURN "Two Nanny " .. child.getName()
+    }
+    # No method for ChildThree.
+    FUNC string getName(BaseN.I child)
+      RETURN "Generic Nanny " .. child.getName()
+    }
+  }
+
+  CLASS Daddy
+    FUNC string getName(ChildOne child)
+      RETURN "One Daddy " .. child.getName()
+    }
+    FUNC string getName(ChildTwo child)
+      RETURN "Two Daddy " .. child.getName()
+    }
+    FUNC string getName(ChildThree child)
+      RETURN "Three Daddy " .. child.getName()
+    }
+    # No method for BaseN.I.
+  }
+
+  PROC test4()
+    BaseN.I child
+    Nanny nanny = NEW()
+    Daddy daddy = NEW()
+    child = ChildOne.NEW()
+    child.name = "one"
+    IO.writeLine(nanny.getName(child))
+    IO.writeLine(daddy.getName(child))
+    child = ChildTwo.NEW()
+    child.name = "two"
+    IO.writeLine(nanny.getName(child))
+    IO.writeLine(daddy.getName(child))
+    child = ChildThree.NEW()
+    child.name = "three"
+    IO.writeLine(nanny.getName(child))  # will use Generic Nanny
+    IO.writeLine(daddy.getName(child))  # will use Three Daddy
+  }
+
+  #####################################################################
+  #  Using class as an interface
+  CLASS One
+    FUNC int getNr()
+      RETURN 1
+    }
+    SHARED
+      int asdfx
+      PROC doSome()
+      }
+    }
+  }
+
+  CLASS Two IMPLEMENTS One.I
+    DEFINE FUNC int getNr()
+      RETURN 2
+    }
+  }
+
+  PROC test5()
+    One.I oneOrTwo = One.NEW()
+    IO.writeLine("One: " .. oneOrTwo.getNr())
+    oneOrTwo = Two.NEW()
+    IO.writeLine("Two: " .. oneOrTwo.getNr())
+  }
+
+  ######################################################################
+  #
+  # Visitor pattern from wikipedia
+  #
+
+  INTERFACE CarElementVisitor
+    PROC visit(Wheel wheel)
+    PROC visit(Engine engine)
+    PROC visit(Body body)
+    PROC visit(Car car)
+  }
+
+  INTERFACE CarElement
+    PROC accept(CarElementVisitor visitor)
+  }
+
+  CLASS Wheel IMPLEMENTS CarElement
+    string name
+    NEW(string _name)
+      name = _name
+    }
+    FUNC string getName()
+      RETURN name
+    }
+    DEFINE PROC accept(CarElementVisitor visitor)
+      visitor.visit(THIS)
+    }
+  }
+   
+  CLASS Engine IMPLEMENTS CarElement
+    DEFINE PROC accept(CarElementVisitor visitor)
+      visitor.visit(THIS)
+    }
+  }
+   
+  CLASS Body IMPLEMENTS CarElement
+    DEFINE PROC accept(CarElementVisitor visitor)
+      visitor.visit(THIS)
+    }
+  }
+   
+  CLASS Car IMPLEMENTS CarElement
+    list<CarElement> elements
+    FUNC list<CarElement> getElements()
+      RETURN elements
+    }
+    NEW()
+      elements = NEW()
+      elements.add(Wheel.NEW("front left"))
+      elements.add(Wheel.NEW("front right"))
+      elements.add(Wheel.NEW("back left"))
+      elements.add(Wheel.NEW("back right"))
+      elements.add(Body.NEW())
+      elements.add(Engine.NEW())
+    }
+    DEFINE PROC accept(CarElementVisitor visitor)
+      visitor.visit(THIS)
+    }
+  }
+   
+  CLASS CarElementPrintVisitor IMPLEMENTS CarElementVisitor
+    DEFINE PROC visit(Wheel wheel)
+      IO.writeLine("Visiting " .. wheel.getName() .. " wheel")
+    }
+    DEFINE PROC visit(Engine engine)
+      IO.writeLine("Visiting engine")
+    }
+    DEFINE PROC visit(Body body)
+      IO.writeLine("Visiting body")
+    }
+ 
+    DEFINE PROC visit(Car car)
+      IO.writeLine("Visiting car")
+      FOR element IN car.getElements()
+        element.accept(THIS)
+      }
+      IO.writeLine("Visited car")
+    }
+  }
+   
+  CLASS CarElementDoVisitor IMPLEMENTS CarElementVisitor
+    DEFINE PROC visit(Wheel wheel)
+      IO.writeLine("Kicking my " .. wheel.getName() .. " wheel")
+    }
+    DEFINE PROC visit(Engine engine)
+      IO.writeLine("Starting my engine")
+    }
+    DEFINE PROC visit(Body body)
+      IO.writeLine("Moving my body")
+    }
+    DEFINE PROC visit(Car car)
+      IO.writeLine("Starting my car")
+      FOR carElement IN car.getElements()
+        carElement.accept(THIS)
+      }
+      IO.writeLine("Started car")
+    }
+  }
+   
+  PROC test6()
+    Car car = NEW()
+    car.accept(CarElementPrintVisitor.NEW())
+    car.accept(CarElementDoVisitor.NEW())
+  }
+
+  ######################################################################
+
+  INTERFACE Iter
+    FUNC bool hasNext()
+    FUNC string getNext()   # TODO: use template
+  }
+
+  INTERFACE HasSize
+    FUNC int getSize()
+  }
+
+  CLASS SomeList IMPLEMENTS Iter, HasSize
+    list<string> theList
+    int idx = -1  # TODO: does not work
+    NEW(list<string> list)
+      theList = list
+      idx = -1  # TODO should not be needed
+    }
+    FUNC bool hasNext()
+      RETURN idx + 1 < theList.SIZE()
+    }
+    FUNC string getNext()
+      idx++
+      RETURN theList[idx]
+    }
+    PROC reset()
+      idx = -1
+    }
+    FUNC int getSize()
+      RETURN theList.SIZE()
+    }
+  }
+
+  PROC test7()
+    SomeList sl = NEW(["one", "two", "three"])
+    WHILE sl.hasNext()
+      IO.writeLine(sl.getNext())
+    }
+    sl.reset()
+    Iter it = sl
+    WHILE it.hasNext()
+      IO.writeLine(it.getNext())
+    }
+  }
+
+}

@@ -1,0 +1,962 @@
+#
+# The Zimbu compiler written in Zimbu
+#
+# Stuff for List.
+# Both the C and JS generation code.
+#
+# Copyright 2009 Bram Moolenaar
+# Licensed under the Apache License, Version 2.0.  See the LICENSE file or
+# obtain a copy at: http://www.apache.org/licenses/LICENSE-2.0
+#
+
+IMPORT "error.zu"
+IMPORT "generate.zu"
+IMPORT "node.zu"
+IMPORT "output.zu"
+IMPORT "resolve.zu"
+IMPORT "scontext.zu"
+IMPORT "scope.zu"
+IMPORT "symbol.zu"
+
+MODULE ListStuff
+
+  FUNC Symbol generateMethodCall(Symbol sp, Node m_node, SContext ctx,
+                                                               Symbol destSym)
+    Node node = m_node.n_left
+    Node arg_node = m_node.n_right
+    Node var_node = node.n_left
+    string method = node.n_string
+    Symbol ret = NEW(Node.Type.unknown)
+    m_node.n_undefined = 0
+    bool doJS = (ctx.gen.targetLang == Resolve.TargetLang.js)
+
+    IF method == "toString"
+      IF Error.checkArgCount(arg_node, 0, 0, method) == FAIL
+        m_node.n_undefined = 3
+      ELSE
+        ctx.scope.addUsedItem("int2string")
+        ctx.scope.addUsedItem("garray")
+        ctx.scope.addUsedItem("listToString")
+        ctx.out.write("ZListToString(")
+        generateVarname(var_node, ctx, sp)
+        m_node.n_undefined = var_node.n_undefined
+        ctx.out.write(")")
+        ret.type = Node.Type.string
+      }
+    ELSEIF method == "add" || method == "insert"
+      # For C:
+      # numberList.add(item)  ->  ZListAdd(numberList, -1, item, NULL, 0)
+      # numberList.add(item, i)  ->  ZListAdd(numberList, i, item, NULL, 0)
+      # pointerList.add(item)  ->  ZListAdd(pointerList, -1, 0, item, 1)
+      # pointerList.add(item, i)  ->  ZListAdd(pointerList, i, 0, item, 1)
+      # numberList.insert(item) -> ZListInsert(numberList, 0, item, NULL, 0)
+      # numberList.insert(item, i) -> ZListInsert(numberList, i, item, NULL, 0)
+      # pointerList.insert(item) -> ZListInsert(pointerList, 0, 0, item, 1)
+      # pointerList.insert(item, i) -> ZListInsert(pointerList, i, 0, item, 1)
+      #
+      # For JS there is no difference between number and pointer:
+      # list.add(item)       -> ZListAdd(list, -1, item)
+      # list.add(item, i)    -> ZListAdd(list, i, item)
+      # list.insert(item)    -> ZListInsert(list, 0, item)
+      # list.insert(item, i) -> ZListInsert(list, i, item)
+      IF Error.checkArgCount(arg_node, 1, 2, method) == FAIL
+        m_node.n_undefined = 7
+      ELSE
+        IF method == "add"
+          ctx.scope.addUsedItem("listAdd")
+          ctx.out.write("ZListAdd(")
+        ELSE
+          ctx.scope.addUsedItem("listInsert")
+          ctx.out.write("ZListInsert(")
+        }
+        generateVarname(var_node, ctx, sp)
+        m_node.n_undefined = var_node.n_undefined
+        ctx.out.write(", ")
+
+        # generate the index argument
+        Node itemNode
+        IF arg_node.n_type == Node.Type.op_comma
+          genExpr(arg_node.n_right, ctx, Symbol.int)
+          itemNode = arg_node.n_left
+          m_node.n_undefined += arg_node.n_right.n_undefined
+        ELSE
+          IF method == "add"
+            ctx.out.write("-1")  # add(item) appends to end of the list
+          ELSE
+            ctx.out.write("0")   # insert(item) inserts before start of the list
+          }
+          itemNode = arg_node
+        }
+        ctx.out.write(", ")
+
+        # generate the pointer or integer value
+        IF sp.returnSymbol != NIL
+          IF doJS
+            genExpr(itemNode, ctx, sp.returnSymbol)
+            m_node.n_undefined += itemNode.n_undefined
+          ELSE
+            # First write to tmpCtx.out, so that we know where to put
+            # arguments.
+            SContext tmpCtx = ctx.copyNewOut()
+            Symbol sym = genExpr(itemNode, tmpCtx, sp.returnSymbol)
+            m_node.n_undefined += itemNode.n_undefined
+
+            IF sp.returnSymbol.type == Node.Type.i_object && sym != NIL
+                                               && sp.returnSymbol.class != NIL
+              IF sym != NIL && sym.type == Node.Type.i_object
+                # TODO: check it's the same i_object type
+                ctx.out.write("0, ")
+                ctx.out.append(tmpCtx.out)
+                ctx.out.write(", 1")
+              ELSEIF sym.class != NIL
+                int idx = sp.returnSymbol.class.childIndex(sym.class)
+                IF idx < 0 && ctx.out.writing
+                  itemNode.error("Type mismatch")
+                }
+                ctx.scope.addUsedItem("allocZoref")
+                ctx.out.write("0 , ZallocZoref(")
+                ctx.out.append(tmpCtx.out)
+                ctx.out.write(", " .. idx .. "), 1")
+              }
+            ELSE
+              IF sp.returnSymbol.isPointerType()
+                  ctx.out.write("0, ")
+              }
+              ctx.out.append(tmpCtx.out)
+              IF sp.returnSymbol.isPointerType()
+                ctx.out.write(", 1")
+              ELSE
+                ctx.out.write(", NULL, 0")
+              }
+            }
+          }
+        ELSE
+          m_node.n_undefined += 5
+        }
+
+        # finish up
+        ctx.out.write(")")
+      }
+      ret.type = Node.Type.list
+      ret.returnSymbol = sp.returnSymbol
+    ELSEIF method == "extend"
+      # List.extend(list)
+      IF Error.checkArgCount(arg_node, 1, 1, method) == FAIL
+        m_node.n_undefined = 3
+      ELSE
+        ctx.scope.addUsedItem("listExtend")
+        ctx.out.write("ZListExtend(")
+        generateVarname(var_node, ctx, sp)
+        ctx.out.write(", ")
+        # type of both lists should be equal
+        genExpr(arg_node, ctx, sp)
+        ctx.out.write(")")
+        m_node.n_undefined = var_node.n_undefined + arg_node.n_undefined
+      }
+      ret.type = Node.Type.list
+      ret.returnSymbol = sp.returnSymbol
+    ELSEIF method == "clear"
+      IF Error.checkArgCount(arg_node, 0, 0, method) == FAIL
+        m_node.n_undefined = 3
+      ELSE
+        ctx.scope.addUsedItem("listClear")
+        ctx.out.write("ZListClear(")
+        generateVarname(var_node, ctx, sp)
+        m_node.n_undefined = var_node.n_undefined
+        ctx.out.write(")")
+        ret.type = Node.Type.list
+        ret.returnSymbol = sp.returnSymbol
+      }
+    ELSEIF method == "pop"
+      IF Error.checkArgCount(arg_node, 0, 2, method) == FAIL
+        m_node.n_undefined = 3
+      ELSE
+        bool popItem
+        bool hasArg
+
+        IF arg_node == NIL || arg_node.n_type == Node.Type.unknown
+          # mylist.pop()
+          popItem = TRUE
+        ELSEIF arg_node.n_type != Node.Type.op_comma
+          # mylist.pop(index)
+          popItem = TRUE
+          hasArg = TRUE
+        }
+
+        IF popItem
+          # mylist.pop() or mylist.pop(index)
+          ctx.scope.addUsedItem("listPopItem")
+          IF doJS
+            ctx.out.write("ZListPopItem(")
+          ELSEIF sp.returnSymbol.isPointerType()
+            ctx.scope.addUsedItem("listPopPtrItem")
+            ctx.out.write("ZListPopPtrItem(")
+          ELSE
+            ctx.scope.addUsedItem("listPopIntItem")
+            ctx.out.write("ZListPopIntItem(")
+          }
+          generateVarname(var_node, ctx, sp)
+          m_node.n_undefined = var_node.n_undefined
+          ctx.out.write(", ")
+          IF hasArg
+            genExpr(arg_node, ctx, Symbol.int)
+            m_node.n_undefined += arg_node.n_undefined
+          ELSE
+            ctx.out.write("-1")
+          }
+          ctx.out.write(")")
+          ret = sp.returnSymbol
+        ELSE
+          # mylist.pop(start, end)
+          ctx.scope.addUsedItem("listPopList")
+          ctx.out.write("ZListPopList(")
+          generateVarname(var_node, ctx, sp)
+          ctx.out.write(", ")
+          genExpr(arg_node.n_left, ctx, Symbol.int)
+          ctx.out.write(", ")
+          genExpr(arg_node.n_right, ctx, Symbol.int)
+          ctx.out.write(")")
+          ret.type = Node.Type.list
+          ret.returnSymbol = sp.returnSymbol
+          m_node.n_undefined = var_node.n_undefined
+                               + arg_node.n_left.n_undefined
+                               + arg_node.n_right.n_undefined
+        }
+      }
+    ELSEIF method == "slice"
+      IF Error.checkArgCount(arg_node, 2, 2, method) == FAIL
+        m_node.n_undefined = 3
+      ELSE
+        # mylist.slice(start, end)
+        ctx.scope.addUsedItem("listSlice")
+        ctx.out.write("ZListSlice(")
+        generateVarname(var_node, ctx, sp)
+        ctx.out.write(", ")
+        genExpr(arg_node.n_left, ctx, Symbol.int)
+        ctx.out.write(", ")
+        genExpr(arg_node.n_right, ctx, Symbol.int)
+        ctx.out.write(")")
+        ret.type = Node.Type.list
+        ret.returnSymbol = sp.returnSymbol
+        m_node.n_undefined = var_node.n_undefined
+                             + arg_node.n_left.n_undefined
+                             + arg_node.n_right.n_undefined
+      }
+    ELSEIF method == "COPY"
+      IF Error.checkArgCount(arg_node, 0, 0, method) == FAIL
+        m_node.n_undefined = 3
+      ELSE
+        ctx.scope.addUsedItem("listCopy")
+        IF doJS
+          generateVarname(var_node, ctx, sp)
+          ctx.out.write(".slice()")
+          m_node.n_undefined = var_node.n_undefined
+        ELSE
+          ctx.out.write("ZListCopy(")
+          generateVarname(var_node, ctx, sp)
+          m_node.n_undefined = var_node.n_undefined
+          ctx.out.write(")")
+        }
+        ret.type = Node.Type.list
+        ret.returnSymbol = sp.returnSymbol
+      }
+    ELSEIF method == "SIZE"
+      IF Error.checkArgCount(arg_node, 0, 0, method) == FAIL
+        m_node.n_undefined = 3
+      ELSEIF doJS
+        generateVarname(var_node, ctx, sp)
+        m_node.n_undefined = var_node.n_undefined
+        ctx.out.write(".length")
+      ELSE
+        generateVarname(var_node, ctx, sp)
+        m_node.n_undefined = var_node.n_undefined
+        ctx.out.write("->itemCount")
+      }
+      ret.type = Node.Type.int
+    ELSE
+      m_node.n_undefined = 5
+      IF Generate.doError(ctx.out)
+        node.error("Method " .. method .. "() not supported for List")
+      }
+    }
+    RETURN ret
+  }
+
+  FUNC Symbol generateSubscript(Symbol sym, Node node, bool lvalue,
+                                                 SContext ctx, Symbol destSym)
+    ctx.scope.addUsedItem("listGet")
+    IF ctx.gen.targetLang == Resolve.TargetLang.js
+      # Only used when actually writing.
+      ctx.out.write("ZListGet(")
+      genExpr(node.n_left, ctx, NIL)
+      ctx.out.write(", ")
+      genExpr(node.n_right, ctx, Symbol.int)
+      ctx.out.write(")")
+    ELSE
+      string close = ")"
+      IF sym.returnSymbol != NIL && sym.returnSymbol.isPointerType()
+        ctx.scope.addUsedItem("listGetPtr")
+        # TODO: move to Symbol.typeCast(), also handle string
+        # TODO: remove class
+        IF sym.returnSymbol.type == Node.Type.class
+                                    || sym.returnSymbol.type == Node.Type.object
+          ctx.out.write("((" .. sym.returnSymbol.cName .. " *)")
+          close = "))"
+        }
+        ctx.out.write("ZListGetPtr(")
+      ELSEIF lvalue
+        ctx.scope.addUsedItem("listGetIntP")
+        ctx.out.write("*ZListGetIntP(")
+      ELSE
+        ctx.scope.addUsedItem("listGetInt")
+        ctx.out.write("ZListGetInt(")
+      }
+      genExpr(node.n_left, ctx, NIL)
+      ctx.out.write(", ")
+      genExpr(node.n_right, ctx, Symbol.int)
+      node.n_undefined = node.n_left.n_undefined + node.n_right.n_undefined
+      ctx.out.write(close)
+    }
+    IF sym.returnSymbol != NIL
+      RETURN sym.returnSymbol
+    }
+    node.n_undefined++
+    RETURN destSym
+  }
+
+  FUNC Symbol generateVarname(Node node, SContext ctx, Symbol destSym)
+    RETURN Generate.generateVarname(node, ctx, destSym)
+  }
+
+  FUNC Symbol genExpr(Node node, SContext ctx, Symbol destSym)
+    RETURN Generate.genExpr(node, ctx, destSym)
+  }
+
+  #############################
+  # C implementation
+  #############################
+
+  # [item1, item2]  ->  ZListAdd(ZListAdd(Zalloc(CListHead), item1) item2)
+  # TODO: make this more efficient.
+  # |destSym| is the type of a list item (may be NIL).
+  FUNC Symbol generateListPart_C(Node node, SContext ctx, Symbol destSym)
+    ctx.scope.addUsedItem("list")
+    Symbol sym = NIL
+    Node argNode = NIL
+    IF node.n_type == Node.Type.unknown  # empty list
+      sym = destSym
+      ctx.gen.writeAlloc("CListHead", ctx)
+    ELSE
+      ctx.scope.addUsedItem("listAdd")
+      ctx.out.write("ZListAdd(")
+      IF node.n_type == Node.Type.op_comma
+        sym = generateListPart_C(node.n_left, ctx, destSym)
+        node.n_undefined = node.n_left.n_undefined
+        argNode = node.n_right
+      ELSE
+        ctx.gen.writeAlloc("CListHead", ctx)
+        sym = genExpr(node, ctx.copyNoOut(), destSym)
+        argNode = node
+        node.n_undefined = 0
+      }
+      ctx.out.write(", -1, ")
+      IF sym != NIL && sym.isPointerType()
+        ctx.out.write("0, ")
+      }
+      genExpr(argNode, ctx, sym)
+      node.n_undefined += argNode.n_undefined
+      IF sym == NIL || !sym.isPointerType()
+        ctx.out.write(", NULL, 0")
+      ELSE
+        ctx.out.write(", 1")
+      }
+      ctx.out.write(")")
+    }
+    RETURN sym
+  }
+
+  PROC writeTypedefs_C(Scope topScope, IO.File fd)
+    IF topScope.usedItems.has("list")
+      fd.write('''
+typedef struct CListHead__S CListHead;
+typedef struct CListItem__S CListItem;
+''')
+    }
+  }
+
+  PROC writeDecl_C(Scope topScope, IO.File fd)
+    IF topScope.usedItems.has("list")
+      # Basic list definitions.
+      fd.write('''
+struct CListHead__S {
+  CListItem *first;
+  CListItem *last;
+  int itemCount;
+};
+struct CListItem__S {
+  CListItem *next;
+  CListItem *prev;
+  union {
+    int Ival;
+    void *Pval;
+  };
+  int type;
+};
+''')
+    }
+  }
+
+  PROC writeBody_C(Scope topScope, IO.File fd)
+    IF topScope.usedItems.has("listAdd")
+       || topScope.usedItems.has("listGet")
+       || topScope.usedItems.has("listInsert")
+       || topScope.usedItems.has("listPopIntItem")
+       || topScope.usedItems.has("listPopPtrItem")
+       || topScope.usedItems.has("listPopList")
+       || topScope.usedItems.has("listSlice")
+      fd.write('''
+CListItem *ZListFind(CListHead *head, int idx) {
+  if (head == NULL) Zerror("Attempt to search in NIL list");
+  CListItem *item;
+  int n;
+  if (idx < 0) {
+    item = head->last;
+    n = -idx;
+    while (--n > 0 && item != NULL)
+      item = item->prev;
+  } else {
+    item = head->first;
+    n = idx;
+    while (--n >= 0 && item != NULL)
+      item = item->next;
+  }
+  return item;
+}
+''')
+    }
+
+    IF topScope.usedItems.has("listToString")
+      # TODO: when not a string, invoke toString() on the item
+      fd.write('''
+void *ZListToString(CListHead *head) {
+  if (head == NULL) Zerror("Attempt to get string of NIL list");
+  CListItem *item = head->first;
+  garray_T *ga = Zalloc(sizeof(garray_T));
+  ga_append(ga, "[");
+  while (item != NULL) {
+    if (item->type == 1) {
+      ga_append(ga, "\"");
+      ga_append(ga, item->Pval);
+      ga_append(ga, "\"");
+    } else
+      ga_append(ga, Zint2string(item->Ival));
+    item = item->next;
+    if (item != NULL ) ga_append(ga, ", ");
+  }
+  ga_append(ga, "]");
+  return ga->data;
+}
+''')
+    }
+
+    IF topScope.usedItems.has("listExtend")
+      fd.write('''
+CListHead *ZListExtend(CListHead *head, CListHead *head2) {
+  if (head == NULL) Zerror("Attempt to extend NIL list");
+  if (head2 == NULL) return head;  /* TODO: throw exception? */
+  CListItem *item = head2->first;
+  while (item != NULL) {
+    CListItem *newitem = Zalloc(sizeof(CListItem));
+    if (item->type == 1) {
+      newitem->Pval = item->Pval;
+      newitem->type = 1;
+    } else
+      newitem->Ival = item->Ival;
+    if (head->last == NULL) {
+      head->first = newitem;
+      head->last = newitem;
+    } else {
+      newitem->prev = head->last;
+      newitem->prev->next = newitem;
+      head->last = newitem;
+    }
+    ++head->itemCount;
+    item = item->next;
+  }
+  return head;
+}
+''')
+    }
+
+    IF topScope.usedItems.has("listAdd") || topScope.usedItems.has("listInsert")
+      fd.write('''
+CListHead *ZListAdd(CListHead *head, int after, int nr, void *ptr, int type) {
+  if (head == NULL) Zerror("Attempt to append to NIL list");
+  CListItem *item = Zalloc(sizeof(CListItem));
+  if (type == 0)
+    item->Ival = nr;
+  else
+    item->Pval = ptr;
+  item->type = type;
+  if (head->last == NULL) {
+    head->first = item;
+    head->last = item;
+  } else {
+    CListItem *afterItem = NULL;
+    if (after != -1) {
+      afterItem = ZListFind(head, after);
+    }
+    if (afterItem == NULL || afterItem == head->last) {
+      item->prev = head->last;
+      item->prev->next = item;
+      head->last = item;
+    } else {
+      item->next = afterItem->next;
+      item->next->prev = item;
+      item->prev = afterItem;
+      afterItem->next = item;
+    }
+  }
+  ++head->itemCount;
+  return head;
+}
+''')
+    }
+
+    IF topScope.usedItems.has("listInsert")
+      fd.write('''
+CListHead *ZListInsert(CListHead *head, int before, int nr, void *ptr, int type) {
+  if (head == NULL) Zerror("Attempt to insert in NIL list");
+  CListItem *item;
+  CListItem *iitem;
+  if (head->first == NULL)
+    return ZListAdd(head, -1, nr, ptr, type);
+  iitem = ZListFind(head, before);
+  if (iitem == NULL) {
+    if (before >= 0)
+      return ZListAdd(head, -1, nr, ptr, type);
+    iitem = head->first;
+  }
+  item = Zalloc(sizeof(CListItem));
+  if (type == 0)
+    item->Ival = nr;
+  else
+    item->Pval = ptr;
+  item->type = type;
+  item->prev = iitem->prev;
+  item->next = iitem;
+  if (item->prev == NULL)
+    head->first = item;
+  else
+    item->prev->next = item;
+  item->next->prev = item;
+  ++head->itemCount;
+  return head;
+}
+''')
+    }
+
+    IF topScope.usedItems.has("listClear")
+      fd.write('''
+CListHead *ZListClear(CListHead *head) {
+  if (head == NULL) Zerror("Attempt to clear NIL list");
+  head->first = NULL;  /* TODO: free items */
+  head->last = NULL;
+  head->itemCount = 0;
+  return head;
+}
+''')
+    }
+
+    IF topScope.usedItems.has("listCopy")
+      fd.write('''
+CListHead *ZListCopy(CListHead *head) {
+  if (head == NULL) Zerror("Attempt to copy NIL list");
+  CListHead *newhead = Zalloc(sizeof(CListHead));
+  CListItem *prev = NULL;
+  CListItem *item = head->first;
+  while (item != NULL) {
+    CListItem *newitem = Zalloc(sizeof(CListItem));
+    if (item->type == 1) {
+      newitem->Pval = item->Pval;
+      newitem->type = 1;
+    } else
+      newitem->Ival = item->Ival;
+    newitem->prev = prev;
+    if (prev == NULL)
+      newhead->first = newitem;
+    else
+      prev->next = newitem;
+    prev = newitem;
+    item = item->next;
+  }
+  if (prev != NULL)
+    prev->next = NULL;
+  newhead->last = prev;
+  newhead->itemCount = head->itemCount;
+  return newhead;
+}
+''')
+    }
+
+    IF topScope.usedItems.has("listGetInt")
+      fd.write('''
+int ZListGetInt(CListHead *head, int idx) {
+  CListItem *item = ZListFind(head, idx);
+  if (item != NULL)
+    return item->Ival;
+  return 0;
+}
+''')
+    }
+
+    IF topScope.usedItems.has("listGetIntP")
+      fd.write('''
+int *ZListGetIntP(CListHead *head, int idx) {
+  CListItem *item = ZListFind(head, idx);
+  if (item != NULL)
+    return &item->Ival;
+  return NULL;
+}
+''')
+    }
+
+    IF topScope.usedItems.has("listGetPtr")
+      fd.write('''
+void *ZListGetPtr(CListHead *head, int idx) {
+  CListItem *item = ZListFind(head, idx);
+  if (item != NULL)
+    return item->Pval;
+  return NULL;
+}
+''')
+    }
+
+    IF topScope.usedItems.has("listPopIntItem")
+      fd.write('''
+int ZListPopIntItem(CListHead *head, int idx) {
+  CListItem *item = ZListFind(head, idx);
+  if (item != NULL) {
+    int v = item->Ival;
+    if (item->prev == NULL)
+      head->first = item->next;
+    else
+      item->prev->next = item->next;
+    if (item->next == NULL)
+      head->last = item->prev;
+    else
+      item->next->prev = item->prev;
+    /* TODO: free *item */
+    head->itemCount--;
+    return v;
+  }
+  return 0;
+}
+''')
+    }
+
+    IF topScope.usedItems.has("listPopPtrItem")
+      fd.write('''
+void *ZListPopPtrItem(CListHead *head, int idx) {
+  CListItem *item = ZListFind(head, idx);
+  if (item != NULL) {
+    void *p = item->Pval;
+    if (item->prev == NULL)
+      head->first = item->next;
+    else
+      item->prev->next = item->next;
+    if (item->next == NULL)
+      head->last = item->prev;
+    else
+      item->next->prev = item->prev;
+    /* TODO: free *item */
+    head->itemCount--;
+    return p;
+  }
+  return NULL;
+}
+''')
+    }
+
+    IF topScope.usedItems.has("listPopList")
+      fd.write('''
+CListHead *ZListPopList(CListHead *head, int i1, int i2) {
+  if (head == NULL) Zerror("Attempt to pop from NIL list");
+  CListHead *newhead = Zalloc(sizeof(CListHead));
+  CListItem *item, *nitem;
+  int n;
+  int ai1 = i1 >= 0 ? i1 : head->itemCount + i1;
+  int ai2 = i2 >= 0 ? i2 : head->itemCount + i2;
+  if (ai1 >= head->itemCount || ai1 > ai2)
+    return newhead;
+  if (ai2 >= head->itemCount)
+    ai2 = head->itemCount - 1;
+  item = ZListFind(head, ai1);
+  for (n = ai1; n <= ai2; ++n) {
+    nitem = item->next;
+    if (item->prev == NULL)
+      head->first = item->next;
+    else
+      item->prev->next = item->next;
+    if (item->next == NULL)
+      head->last = item->prev;
+    else
+      item->next->prev = item->prev;
+    head->itemCount--;
+    if (newhead->last == NULL) {
+      newhead->first = item;
+      newhead->last = item;
+    } else {
+      item->prev = newhead->last;
+      item->prev->next = item;
+      newhead->last = item;
+    }
+    ++newhead->itemCount;
+    item = nitem;
+  }
+  return newhead;
+}
+''')
+    }
+
+    IF topScope.usedItems.has("listSlice")
+      fd.write('''
+CListHead *ZListSlice(CListHead *head, int i1, int i2) {
+  if (head == NULL) Zerror("Attempt to slice NIL list");
+  CListHead *newhead = Zalloc(sizeof(CListHead));
+  CListItem *item;
+  int n;
+  int ai1 = i1 >= 0 ? i1 : head->itemCount + i1;
+  int ai2 = i2 >= 0 ? i2 : head->itemCount + i2;
+  if (ai1 < 0) ai1 = 0;
+  if (ai1 >= head->itemCount || ai1 > ai2)
+    return newhead;
+  if (ai2 >= head->itemCount)
+    ai2 = head->itemCount - 1;
+  item = ZListFind(head, ai1);
+  CListItem *prev = NULL;
+  for (n = ai1; n <= ai2; ++n) {
+    CListItem *newitem = Zalloc(sizeof(CListItem));
+    if (item->type == 1) {
+      newitem->Pval = item->Pval;
+      newitem->type = 1;
+    } else
+      newitem->Ival = item->Ival;
+    newitem->prev = prev;
+    if (prev == NULL)
+      newhead->first = newitem;
+    else
+      prev->next = newitem;
+    prev = newitem;
+    item = item->next;
+    ++newhead->itemCount;
+  }
+  return newhead;
+}
+''')
+    }
+
+  }
+
+  #############################
+  # JS implementation
+  #############################
+
+  # [item1, item2]  ->  [item1, item2]
+  # |destSym| is the type of a list item (may be NIL).
+  # Only called when actually generating code
+  FUNC Symbol generateListPart_JS(Node node, SContext ctx, Symbol destSym)
+    ctx.scope.addUsedItem("list")
+    ctx.out.write("[")
+    Symbol sym
+    IF node.n_type == Node.Type.unknown  # empty list
+      sym = destSym
+    ELSE
+      sym = oneListPart_JS(node, ctx, destSym)
+    }
+    ctx.out.write("]")
+    RETURN sym
+  }
+
+  FUNC Symbol oneListPart_JS(Node node, SContext ctx, Symbol destSym)
+    Symbol sym
+    IF node.n_type == Node.Type.op_comma
+      sym = oneListPart_JS(node.n_left, ctx, destSym)
+      ctx.out.write(", ")
+      genExpr(node.n_right, ctx, sym)
+      node.n_undefined = node.n_left.n_undefined + node.n_right.n_undefined
+    ELSE
+      sym = genExpr(node, ctx, destSym)
+    }
+    RETURN sym
+  }
+
+  PROC writeBody_JS(Scope topScope, IO.File fd)
+    IF topScope.usedItems.has("listAdd")
+      # TODO: Normal append could be optimized.
+      fd.write('''
+function ZListAdd(head, after, val) {
+  if (head == null) Zerror("Attempt to append to NIL list");
+  if (after == -1 || after >= head.length) {
+    head.push(val);
+  } else {
+    if (after < 0) {
+      var before = head.length + after + 1;
+      if (before < 0) {
+        before = 0;
+      }
+      head.splice(before, 0, val);
+    } else {
+      head.splice(after + 1, 0, val);
+    }
+  }
+  return head;
+}
+''')
+    }
+
+    IF topScope.usedItems.has("listInsert")
+      fd.write('''
+function ZListInsert(head, before, val) {
+  if (head == null) Zerror("Attempt to insert in NIL list");
+  if (before >= 0) {
+    if (before > head.length) {
+      head.push(val);
+    } else {
+      head.splice(before, 0, val);
+    }
+  } else {
+    var idx = head.length + before;
+    if (idx < 0) {
+      idx = 0;
+    }
+    head.splice(idx, 0, val);
+  }
+  return head;
+}
+''')
+    }
+
+    IF topScope.usedItems.has("listGet")
+      fd.write('''
+function ZListGet(head, idx) {
+  if (idx >= 0) {
+    if (idx >= head.length) return null;
+    return head[idx];
+  }
+  var i = head.length + idx;
+  if (i < 0) return null;
+  return head[i];
+}
+''')
+    }
+
+    IF topScope.usedItems.has("listToString")
+      fd.write('''
+function ZListToString(head) {
+  if (head == null) Zerror("Attempt to get string of NIL list");
+  var result = "[";
+  var comma = "";
+  var i;
+  for (i = 0; i < head.length; ++i) {
+    var item = head[i];
+    if (typeof item == "string") {
+      result = result + comma + '"' + item + '"';
+    } else {
+      result = result + comma + item;
+    }
+    comma = ", ";
+  }
+  return result + "]";
+}
+''')
+    }
+
+    IF topScope.usedItems.has("listExtend")
+      fd.write('''
+function ZListExtend(head, head2) {
+  if (head == null) Zerror("Attempt to extend NIL list");
+  if (head2 == null) return head;
+  for (var i in head2) {
+    head.push(head2[i]);
+  }
+  return head;
+}
+''')
+    }
+
+    IF topScope.usedItems.has("listClear")
+      fd.write('''
+function ZListClear(head) {
+  if (head == null) Zerror("Attempt to clear NIL list");
+  head.length = 0;
+  return head;
+}
+''')
+    }
+
+    IF topScope.usedItems.has("listPopItem")
+      fd.write('''
+function ZListPopItem(head, idx) {
+  if (head == null) Zerror("Attempt to pop from a NIL list");
+  if (head.length == 0) return null;
+  if (idx == -1) return head.pop();
+  var i = idx;
+  if (idx < 0) {
+    i = head.length + idx;
+  }
+  if (i >= 0 && i < head.length) {
+    var a = head.splice(i, 1);
+    return a[0];
+  }
+  return null;
+}
+''')
+    }
+
+    IF topScope.usedItems.has("listPopList")
+      fd.write('''
+function ZListPopList(head, i1, i2) {
+  if (head == null) Zerror("Attempt to pop from NIL list");
+  var idx1 = i1;
+  var idx2 = i2;
+  if (i1 < 0) {
+    idx1 = head.length + i1;
+  }
+  if (idx1 < 0) idx1 = 0;
+  if (idx1 >= head.length) idx1 = head.length - 1;
+  if (i2 < 0) {
+    idx2 = head.length + i2;
+  }
+  if (idx2 < 0) idx2 = 0;
+  if (idx2 >= head.length) idx2 = head.length - 1;
+  if (idx1 > idx2) return [];
+  return head.splice(idx1, idx2 - idx1 + 1);
+}
+''')
+    }
+
+    IF topScope.usedItems.has("listSlice")
+      fd.write('''
+function ZListSlice(head, i1, i2) {
+  if (head == null) Zerror("Attempt to slice NIL list");
+  var idx1 = i1;
+  var idx2 = i2;
+  if (i1 < 0) {
+    idx1 = head.length + i1;
+  }
+  if (idx1 < 0) idx1 = 0;
+  if (idx1 >= head.length) idx1 = head.length - 1;
+  if (i2 < 0) {
+    idx2 = head.length + i2;
+  }
+  if (idx2 < 0) idx2 = 0;
+  if (idx2 >= head.length) idx2 = head.length - 1;
+  if (idx1 > idx2) return [];
+  return head.slice(idx1, idx2 + 1);
+}
+''')
+    }
+  }
+
+}

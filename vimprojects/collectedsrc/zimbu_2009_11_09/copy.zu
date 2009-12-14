@@ -1,0 +1,12 @@
+# Zimbu Example program: primitive form of copy.
+
+MAIN()
+  WHILE TRUE
+    int c = IO.readByte()
+    IF c == IO.eof
+      BREAK
+    }
+    IO.writeByte(c)
+  }
+}
+

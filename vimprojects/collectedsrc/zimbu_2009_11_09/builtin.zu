@@ -1,0 +1,140 @@
+#
+# The Zimbu compiler written in Zimbu
+#
+# module to handle builtin modules
+#
+# Copyright 2009 Bram Moolenaar
+# Licensed under the Apache License, Version 2.0.  See the LICENSE file or
+# obtain a copy at: http://www.apache.org/licenses/LICENSE-2.0
+#
+
+IMPORT "config.zu"
+IMPORT "error.zu"
+IMPORT "generate.zu"
+IMPORT "output.zu"
+IMPORT "parse.zu"
+IMPORT "scope.zu"
+IMPORT "resolve.zu"
+IMPORT "symbol.zu"
+IMPORT "tokenize.zu"
+IMPORT "zimbufile.zu"
+IMPORT "usedfile.zu"
+
+IMPORT "lib/httploader.zu"
+IMPORT "lib/infoloader.zu"
+IMPORT "lib/zwtloader.zu"
+
+# Builtin contains info about a builtin module.
+# When used |zimbuFile| will be set.
+CLASS Builtin
+  string    moduleName    # module name, such as HTTPmodule
+  string    fileName      # name of the file to parse below the lib dir.
+  UsedFile  usedFile      # used to import the builtin module, NIL when not
+                          # parsed yet
+  proc<Builtin> setup     # to be called when the module has been imported
+
+  # Add all members of the zimbuFile to |moduleSymbol|
+  PROC addAllMembers(Symbol moduleSymbol)
+    Scope scope = usedFile.zimbuFile.topScope
+    IF scope != NIL && scope.memberList != NIL
+      IF scope.memberList.SIZE() != 1
+        Error.report("INTERNAL: found " .. scope.memberList.SIZE()
+                                                .. " symbols in " .. fileName)
+      ELSE
+        Symbol sym = scope.memberList[0]
+        IF sym.memberList != NIL
+          FOR m IN sym.memberList
+            Error.verbose2Msg("Adding " .. moduleSymbol.name
+                                                      .. "." .. m.name .. "\n")
+            moduleSymbol.addMember(m)
+          }
+        }
+      }
+    }
+  }
+
+  SHARED
+
+    dict<string, Builtin> availableModules
+
+    # Called at the start: prepare to handle builtin modules.
+    # This is the only place to add a new builtin module.
+    PROC prepare()
+      availableModules = NEW()
+      availableModules["HTTP"] = HTTPloader.prepare()
+      availableModules["ZWT"] = ZWTloader.prepare()
+      availableModules["INFO"] = INFOloader.prepare()
+    }
+
+    # After parsing a file we need to check if it is using any built-in
+    # modules.  As soon as we find a new one we add it to the top scope.  It
+    # will result in the module to be imported when calling resolve() next
+    # time.
+    PROC checkBuiltin(UsedFile _usedFile)
+      UsedFile mainFile = _usedFile.findTopFile()
+      IF mainFile != NIL
+        Scope scope = _usedFile.zimbuFile.topScope
+        IF scope.usedIdKeywords != NIL
+          FOR id IN scope.usedIdKeywords.keys()
+            IF !mainFile.usedBuiltins.has(id)
+              mainFile.usedBuiltins[id] = availableModules.get(id, NIL)
+            }
+          }
+        }
+      }
+    }
+
+    # Process builtin modules.  Only invoked for the main file scope.
+    # Return the number of undefined symbols.
+    FUNC int generateBuiltins(UsedFile usedFile, Resolve.I gen,
+                                                            Output.Group outs)
+      Scope scope = usedFile.scope()
+      int undef
+      IF usedFile.usedBuiltins != NIL
+        # TODO: use .values()
+        FOR id IN usedFile.usedBuiltins.keys()
+          Builtin builtin = usedFile.usedBuiltins.get(id)
+          IF builtin != NIL
+            ZimbuFile zimbuFile
+            IF builtin.usedFile != NIL
+              zimbuFile = builtin.usedFile.zimbuFile
+            ELSE
+              # Newly added, need to parse the module.
+              string name = Config.libPath .. "/" .. builtin.fileName
+              zimbuFile = NEW(name)
+              builtin.usedFile = NEW(zimbuFile, FALSE, FALSE)
+              IF builtin.usedFile.parse("  ") == FAIL
+                Error.report("Cannot open file for reading: " .. name)
+              ELSEIF zimbuFile.topScope.topNode != NIL
+                # Set to some number so that processImport() will do its work.
+                zimbuFile.topScope.topNode.n_undefined = 99
+              }
+              zimbuFile.dirName = Config.libPath
+            }
+
+            # When the builtin is used in a file for which C code is produced,
+            # produce C code for the builtin as well.
+            # Same for JS code.
+            zimbuFile.usedAsZimbu = usedFile.zimbuFile.usedAsZimbu
+            zimbuFile.usedAsZwt = usedFile.zimbuFile.usedAsZwt
+
+            IF builtin.usedFile != NIL
+              # Resolve symbols and/or generate code and includes.
+              undef += Generate.processImport(builtin.usedFile, gen,
+                                                                  scope, outs)
+
+              IF builtin.setup != NIL
+                builtin.setup(builtin)
+              }
+            }
+          }
+        }
+      }
+
+      RETURN undef
+    }
+
+  }
+
+}
+

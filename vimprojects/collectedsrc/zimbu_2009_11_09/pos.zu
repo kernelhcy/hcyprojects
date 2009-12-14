@@ -1,0 +1,38 @@
+#
+# The Zimbu compiler written in Zimbu
+#
+# Pos class.
+#
+# Copyright 2009 Bram Moolenaar
+# Licensed under the Apache License, Version 2.0.  See the LICENSE file or
+# obtain a copy at: http://www.apache.org/licenses/LICENSE-2.0
+#
+
+# Position in the source file
+CLASS Pos
+  string   fname
+  int      lnum     # first line is 1
+  int      col      # first column is 1
+
+  NEW(string _fname)
+    fname = _fname
+    lnum = 1
+    col = 1
+  }
+
+  FUNC Pos copy()
+    Pos p = NEW(fname)
+    p.lnum = lnum
+    p.col = col
+    RETURN p
+  }
+
+  PROC nextLine()
+    lnum++
+    col = 1
+  }
+
+  FUNC string toString()
+    RETURN fname .. " line " .. lnum .. " col " .. col
+  }
+}

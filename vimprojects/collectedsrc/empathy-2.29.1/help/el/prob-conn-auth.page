@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<page xmlns="http://projectmallard.org/1.0/" type="topic" id="prob-conn-auth">
+
+  <info>
+    <link type="guide" xref="prob-conn"/>
+    <link type="seealso" xref="create-account"/>
+    <desc>Στο κύριο παράθυρο εμφανίζεται το μήνυμα λάθους "<gui>Η πιστοποίηση απέτυχε</gui>".</desc>
+    <revision pkgversion="2.28" version="0.1" date="2009-06-17" status="draft"/>
+    <revision pkgversion="2.28" version="0.2" date="2009-07-23" status="draft"/>
+    <revision pkgversion="2.28" version="0.3" date="2009-08-14" status="review"/>
+    <credit type="author">
+      <name>Phil Bull</name>
+      <email>philbull@gmail.com</email>
+    </credit>
+    <credit type="author">
+      <name>Milo Casagrande</name>
+      <email>milo@ubuntu.com</email>
+    </credit>
+<!--
+    <copyright>
+      <year>2009</year>
+      <name>GNOME Documentation Project</name>
+    </copyright>
+-->
+    <include xmlns="http://www.w3.org/2001/XInclude" href="legal.xml"/>
+  </info>
+
+  <title>Λαμβάνω το μήνυμα "Η πιστοποίηση απέτυχε"</title>
+
+  <p>Αυτό το σφάλμα εμφανίζεται όταν η υπηρεσία άμεσων μηνυμάτων δε σας επιτρέπει να συνδεθείτε, επειδή, για οποιονδήποτε λόγο, δεν αναγνωρίζει το όνομα χρήστη ή το συνθηματικό σας.</p>
+
+  <steps>
+    <item>
+      <p>Βεβαιωθείτε ότι είστε συνδεδεμένοι στο διαδίκτυο ή στο τοπικό δίκτυο.</p>
+    </item>
+    <item>
+      <p>Βεβαιωθείτε ότι διαθέτετε λογαριασμό στη συγκεκριμένη υπηρεσία. Οι περισσότερες υπηρεσίες άμεσων μηνυμάτων δε θα σας επιτρέψουν να συνδεθείτε χωρίς λογαριασμό.</p>
+    </item>
+    <item>
+      <p>Πατήστε το κουμπί <gui>Επεξεργασία λογαριασμού</gui> στο μήνυμα σφάλματος.</p>
+    </item>
+    <item>
+      <p>Εισάγετε ξανά το όνομα χρήστη και το συνθηματικό σας, για να βεβαιωθείτε ότι τα είχατε πληκτρολογήσει σωστά.</p>
+    </item>
+    <item>
+      <p>Αποεπιλέξτε το <gui>Ενεργός</gui> δίπλα στο όνομα του λογαριασμού σας. Μετά, επιλέξτε το ξανά, για να γίνει νέα προσπάθεια σύνδεσης στην υπηρεσία.</p>
+    </item>
+  </steps>
+</page>

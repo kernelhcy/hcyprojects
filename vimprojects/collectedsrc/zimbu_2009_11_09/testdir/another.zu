@@ -1,0 +1,14 @@
+# Recursive import
+
+IMPORT "something.zu"
+
+MODULE Another
+
+  Something.Barbar bar
+
+  PROC testRecurse()
+    Something.Foobar foo = NEW(101)
+    foo.next = bar
+  }
+
+}

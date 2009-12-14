@@ -1,0 +1,1548 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>SwingLabs SwingX Release Notes</title>
+<link rel="stylesheet" type="text/css" href="swinglabs.css" />
+</head>
+<body>
+<div id="container">
+<div id="stitch-hack">
+                <div id="banner">
+                </div>
+                <div id="menu">
+                    <img class="menu-left" src="images/menu-left.png" alt="" /><a href="ReleaseNotes.html">Release Notes</a><img class="menu-right" src="images/menu-right.png" alt="" />
+                    <img class="menu-left" src="images/menu-left.png" alt="" /><a href="README.html">Readme</a><img class="menu-right" src="images/menu-right.png" alt="" />
+                    <img class="menu-left" src="images/menu-left.png" alt="" /><a href="docs/api/index.html">JavaDoc</a><img class="menu-right" src="images/menu-right.png" alt="" />
+                    <img class="menu-left" src="images/menu-left.png" alt="" /><a href="http://swinglabs.org/">Main Website</a><img class="menu-right" src="images/menu-right.png" alt="" />
+                </div>
+<div id="content">
+<div id="section">
+<p><h2><center>Release Notes</center></h2>
+<h4 align="right">Release Date: 1. November 2009<br/>
+This is the 1.6 release</h4></p>
+<h2>Project: SwingX</h2>
+  <p>Just 5 months after the 1.0 release, SwingX team is pleased to announce yet another release. This release signifies the big step in the project. This releave version number signifies abandoning the compatibility with Java 5 and aligning the base line with the Java 6.   
+  The release contains bug fixes, introduces full Nimbus Look and Feel support and removes all dependencies on Java 5 related libraries and code changes.</p>
+
+<h5>Nimbus LAF support</h5>
+
+            <p>Making SwingX 1.6 compatible with Java 6 allowed for introduction of full Nimbus support.</p>
+
+<h5>JXTable, JXTree, JXTreeTable</h5>
+
+            <p>Alligned sorting and filtering APIs with the JAva 6 implementation of the same.</p>
+
+<h5>JXLabel</h5>
+
+            <p>Removed antialiasing tweeks no loner required with Java 6.</p>
+
+<h5>JXHyperlink</h5>
+
+            <p>Use Desktop class to streamline linking functionality.</p>
+
+<h5>Resolved Issues</h5>
+<p>Following list of 98 items contains all the issues and improvements 
+included in release 1.6.</p>
+<p>We would also like to thank to all who actively contributed to this release, namely:</p>
+<ul>
+<li>Karl Schaefer (kschaefe)</li>
+<li>Jeanette Winzenburg (kleopatra)</li>
+<li>Luan O'Carroll (luano)</li>
+<li>Jonathan Giles (jogiles)</li>
+<li>Jan Haderka (rah003)</li>
+</ul>
+<p></p>
+     <table width="100%">
+        <tbody><tr>
+        <th colspan="6">Mon Nov  2 10:16:57 +0000 2009</th>
+        </tr>
+        <tr>
+<th>ID</th>
+<th>Type</th>
+<th>Pri</th>
+<th>Component</th>
+<th>Votes</th>
+<th>Summary</th>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1168">1168</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P1</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">Regression: JXTreeTable expansion control broken in RToL</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1186">1186</a>
+	</td>
+	<td><span class="issue_type">TASK</span>
+	</td>
+	<td><span class="priority">P1</span>
+	</td>
+	<td><span class="component">swingx</span>
+	</td>
+	<td><span class="votes">0</span>
+	</td>
+	<td><span class="summary">Regression: remove dependencies from sun.* packages</span>
+	</td>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1102">1102</a>
+	</td>
+	<td><span class="issue_type">TASK</span>
+	</td>
+	<td><span class="priority">P1</span>
+	</td>
+	<td><span class="component">swingx</span>
+	</td>
+	<td><span class="votes">0</span>
+	</td>
+	<td><span class="summary">Remove backport jars</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1114">1114</a>
+	</td>
+	<td><span class="issue_type">TASK</span>
+	</td>
+	<td><span class="priority">P1</span>
+	</td>
+	<td><span class="component">swingx</span>
+	</td>
+	<td><span class="votes">0</span>
+	</td>
+	<td><span class="summary">Remove SwingX-style sorting/filtering</span>
+	</td>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1178">1178</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P2</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">Nimbus/SwingX Renderer: strange color effects</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=6">6</a>
+	</td>
+	<td class="purple"><span class="issue_type">ENHANC</span>
+	</td>
+	<td class="purple"><span class="priority">P2</span>
+	</td>
+	<td class="purple"><span class="component">swingx</span>
+	</td>
+	<td class="purple"><span class="votes">0</span>
+	</td>
+	<td class="purple"><span class="summary">JXHyperLink: automatic execution of an URL property</span>
+	</td>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=859">859</a>
+	</td>
+	<td class="purple"><span class="issue_type">ENHANC</span>
+	</td>
+	<td class="purple"><span class="priority">P2</span>
+	</td>
+	<td class="purple"><span class="component">swingx</span>
+	</td>
+	<td class="purple"><span class="votes">0</span>
+	</td>
+	<td class="purple"><span class="summary">jxtable called ALL cell renderer on update ?</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1180">1180</a>
+	</td>
+	<td><span class="issue_type">TASK</span>
+	</td>
+	<td><span class="priority">P2</span>
+	</td>
+	<td><span class="component">swingx</span>
+	</td>
+	<td><span class="votes">0</span>
+	</td>
+	<td><span class="summary">Nimbus: default table striping collides with Highlighter</span>
+	</td>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1130">1130</a>
+	</td>
+	<td class="green"><span class="issue_type">PATCH</span>
+	</td>
+	<td class="green"><span class="priority">P2</span>
+	</td>
+	<td class="green"><span class="component">swingx</span>
+	</td>
+	<td class="green"><span class="votes">0</span>
+	</td>
+	<td class="green"><span class="summary">Nimbus TaskPane support</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=921">921</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">All components: fix antialiased behaviour</span>
+	</td>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1056">1056</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">Clicking cancel on Colour Picker for JXColorChooser does not</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1194">1194</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">ColumnControl exceeds display resolution</span>
+	</td>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1123">1123</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">ColumnControlButton#isVisibilityChange() doesn't work correc</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=620">620</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">ColumnHeaderRenderer: Vista border hack not reset</span>
+	</td>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1144">1144</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">DateFormatter extended from javax.swing.text.DateFormatter c</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=474">474</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">double-clicking table cell does not start edit and triggers </span>
+	</td>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=561">561</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">editing on key pressed in the hierarchical column of JXTreeT</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1100">1100</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">getAncestor method results in infinite loop</span>
+	</td>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=737">737</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">in jxtreetable, select on a treenode sometimes highlights se</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1087">1087</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">1</span>
+	</td>
+	<td class="red"><span class="summary">Invisible JXCollapsible pane children components get focus.</span>
+	</td>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1076">1076</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">JXCollapsiblePane does not resize when setAnimated(false)</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1017">1017</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">JXDialog is missing status bar methods</span>
+	</td>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1016">1016</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">JXDialog should use JXRootPane by default</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1164">1164</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">JXLabel - must not interfere with core anti-alias handling</span>
+	</td>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1162">1162</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">JXList: getNextMatch incorrect if sorted</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1125">1125</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">JXMonthView 'today' can be incorrect (not updated in addNoti</span>
+	</td>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1143">1143</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">JXMonthView: NPE after setTimeZone/setModel</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1071">1071</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">JXStatusBar colour when running under Windows Vista</span>
+	</td>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=946">946</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">JXStatusBar is not displayed in Mattisse in NB 6.1</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=444">444</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">19</span>
+	</td>
+	<td class="red"><span class="summary">JXTable interfere's with Mustang sorting</span>
+	</td>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=370">370</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">JXTable selection issues</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=856">856</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">JXTable: filters is not a bound property</span>
+	</td>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=373">373</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">JXTable: must respect column's sortable property always</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1131">1131</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">JXTable: must respect column's sortable property always - re</span>
+	</td>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1091">1091</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">JXTaskPane &amp; Nimbus</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=157">157</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">JXTitledPanel: not fully bidi compliant</span>
+	</td>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=875">875</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">JXTreeTable cell selection colour bug</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1073">1073</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">JXTreeTable doesn't get focus on first mouse click</span>
+	</td>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=223">223</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">JXTreeTable: icons not shown while editing node (in RToL)</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1111">1111</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">ListComboBoxModel uses incorrect upper bound for UPDATE</span>
+	</td>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1151">1151</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">ListRenderer: Nimbus border (?) not used</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=948">948</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">ListSelectionListeners on a JXTable get incorrect results fr</span>
+	</td>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1197">1197</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">MattePainter does not respect provideShape</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1136">1136</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">Move PainterIcon to icon package</span>
+	</td>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=982">982</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">No selection shows the 1st element from the list</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=920">920</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">Not possible to use desktop-consistent text rendering on hea</span>
+	</td>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=211">211</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">problem ColumnHeaderRenderer with Synth l&amp;f</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1110">1110</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">Reference to the Calendar component</span>
+	</td>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1160">1160</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">Regression: JXList - selection must be cleared after dataCha</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1161">1161</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">Regression: JXList not completely updated on notification fr</span>
+	</td>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1156">1156</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">Regression: JXTable must use Comparable (if available)</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1120">1120</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">Regression: JXTableHeader - click in resize area must not so</span>
+	</td>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1204">1204</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">Regression: JXTableHeader in Metal: header squeezed</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1121">1121</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">Regression: JXTreeTable must not be sortable</span>
+	</td>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1084">1084</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">Remove ComponentAdapter.setValueAt</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=995">995</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">Remove JXLoginDialog</span>
+	</td>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1193">1193</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">RolloverProducer: not updated on scrolling</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=471">471</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">1</span>
+	</td>
+	<td class="red"><span class="summary">Selection ignored in the hierarchical column of a treetable</span>
+	</td>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1065">1065</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">Table Sorting: RowSorters destroy view</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1066">1066</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">table: sort order arrows hidden</span>
+	</td>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1133">1133</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">TableSortController: setSortOrderCycle does nothing</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1005">1005</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">TaskPane does not show the rollup/unroll icon under Nimbus</span>
+	</td>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1149">1149</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">Test failures (ListRenderer/Table) on Mac</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1181">1181</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">1</span>
+	</td>
+	<td class="red"><span class="summary">Tree.scrollPathToVisible() doesn't always work in JXTaskPane</span>
+	</td>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=516">516</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">treenode/cell not being selected on a single click</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=224">224</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">TreeTableEditor: position not bidi-compliant</span>
+	</td>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=462">462</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">11</span>
+	</td>
+	<td class="red"><span class="summary">TreeTableHack breaks drag operation</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=484">484</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P3</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">[Java6] DropMode.ON DropLocation don't show off</span>
+	</td>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=961">961</a>
+	</td>
+	<td class="purple"><span class="issue_type">ENHANC</span>
+	</td>
+	<td class="purple"><span class="priority">P3</span>
+	</td>
+	<td class="purple"><span class="component">swingx</span>
+	</td>
+	<td class="purple"><span class="votes">0</span>
+	</td>
+	<td class="purple"><span class="summary">JXTable api change createDefaultColumnsFromModel to final</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=310">310</a>
+	</td>
+	<td class="purple"><span class="issue_type">ENHANC</span>
+	</td>
+	<td class="purple"><span class="priority">P3</span>
+	</td>
+	<td class="purple"><span class="component">swingx</span>
+	</td>
+	<td class="purple"><span class="votes">0</span>
+	</td>
+	<td class="purple"><span class="summary">JXTable: toggleSortOrder vs. setSortOrder</span>
+	</td>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1134">1134</a>
+	</td>
+	<td class="purple"><span class="issue_type">ENHANC</span>
+	</td>
+	<td class="purple"><span class="priority">P3</span>
+	</td>
+	<td class="purple"><span class="component">swingx</span>
+	</td>
+	<td class="purple"><span class="votes">0</span>
+	</td>
+	<td class="purple"><span class="summary">OpenBrowserAction should use Desktop.browse</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1106">1106</a>
+	</td>
+	<td class="purple"><span class="issue_type">ENHANC</span>
+	</td>
+	<td class="purple"><span class="priority">P3</span>
+	</td>
+	<td class="purple"><span class="component">swingx</span>
+	</td>
+	<td class="purple"><span class="votes">0</span>
+	</td>
+	<td class="purple"><span class="summary">Supporting of Time (hours, minutes, seconds, millis) in Date</span>
+	</td>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1029">1029</a>
+	</td>
+	<td class="blue"><span class="issue_type">FEATUR</span>
+	</td>
+	<td class="blue"><span class="priority">P3</span>
+	</td>
+	<td class="blue"><span class="component">swingx</span>
+	</td>
+	<td class="blue"><span class="votes">0</span>
+	</td>
+	<td class="blue"><span class="summary">Adding new JXMaskTextField and XMaskFormatter components</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=872">872</a>
+	</td>
+	<td class="blue"><span class="issue_type">FEATUR</span>
+	</td>
+	<td class="blue"><span class="priority">P3</span>
+	</td>
+	<td class="blue"><span class="component">swingx</span>
+	</td>
+	<td class="blue"><span class="votes">1</span>
+	</td>
+	<td class="blue"><span class="summary">Include JXButtonPanel from SwingHelper project into SwingX l</span>
+	</td>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1171">1171</a>
+	</td>
+	<td class="blue"><span class="issue_type">FEATUR</span>
+	</td>
+	<td class="blue"><span class="priority">P3</span>
+	</td>
+	<td class="blue"><span class="component">swingx</span>
+	</td>
+	<td class="blue"><span class="votes">0</span>
+	</td>
+	<td class="blue"><span class="summary">JXDatePicker : Add support for popupMenuListener</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1173">1173</a>
+	</td>
+	<td class="blue"><span class="issue_type">FEATUR</span>
+	</td>
+	<td class="blue"><span class="priority">P3</span>
+	</td>
+	<td class="blue"><span class="component">swingx</span>
+	</td>
+	<td class="blue"><span class="votes">0</span>
+	</td>
+	<td class="blue"><span class="summary">JXTable/JXList: support option to not configure sorter</span>
+	</td>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=881">881</a>
+	</td>
+	<td class="blue"><span class="issue_type">FEATUR</span>
+	</td>
+	<td class="blue"><span class="priority">P3</span>
+	</td>
+	<td class="blue"><span class="component">swingx</span>
+	</td>
+	<td class="blue"><span class="votes">0</span>
+	</td>
+	<td class="blue"><span class="summary">JXTable: disable sorting</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1118">1118</a>
+	</td>
+	<td class="blue"><span class="issue_type">FEATUR</span>
+	</td>
+	<td class="blue"><span class="priority">P3</span>
+	</td>
+	<td class="blue"><span class="component">swingx</span>
+	</td>
+	<td class="blue"><span class="votes">0</span>
+	</td>
+	<td class="blue"><span class="summary">JXTable: use factory method for default rowSorter</span>
+	</td>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1119">1119</a>
+	</td>
+	<td class="blue"><span class="issue_type">FEATUR</span>
+	</td>
+	<td class="blue"><span class="priority">P3</span>
+	</td>
+	<td class="blue"><span class="component">swingx</span>
+	</td>
+	<td class="blue"><span class="votes">0</span>
+	</td>
+	<td class="blue"><span class="summary">Regression: JXTableHeader - double-click in resize area shou</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=722">722</a>
+	</td>
+	<td class="blue"><span class="issue_type">FEATUR</span>
+	</td>
+	<td class="blue"><span class="priority">P3</span>
+	</td>
+	<td class="blue"><span class="component">swingx</span>
+	</td>
+	<td class="blue"><span class="votes">0</span>
+	</td>
+	<td class="blue"><span class="summary">Support methods to update ui for all windows of an applicati</span>
+	</td>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1147">1147</a>
+	</td>
+	<td><span class="issue_type">TASK</span>
+	</td>
+	<td><span class="priority">P3</span>
+	</td>
+	<td><span class="component">swingx</span>
+	</td>
+	<td><span class="votes">0</span>
+	</td>
+	<td><span class="summary">Add factory for RegExFilter with matchflags</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1159">1159</a>
+	</td>
+	<td><span class="issue_type">TASK</span>
+	</td>
+	<td><span class="priority">P3</span>
+	</td>
+	<td><span class="component">swingx</span>
+	</td>
+	<td><span class="votes">0</span>
+	</td>
+	<td><span class="summary">All sortable comps: delegate methods to SortController</span>
+	</td>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=907">907</a>
+	</td>
+	<td><span class="issue_type">TASK</span>
+	</td>
+	<td><span class="priority">P3</span>
+	</td>
+	<td><span class="component">swingx</span>
+	</td>
+	<td><span class="votes">0</span>
+	</td>
+	<td><span class="summary">All: check use of updateComponentTreeUI in updateUI</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1153">1153</a>
+	</td>
+	<td><span class="issue_type">TASK</span>
+	</td>
+	<td><span class="priority">P3</span>
+	</td>
+	<td><span class="component">swingx</span>
+	</td>
+	<td><span class="votes">0</span>
+	</td>
+	<td><span class="summary">JXList: implement custom UI-delegate to support filtering/so</span>
+	</td>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=377">377</a>
+	</td>
+	<td><span class="issue_type">TASK</span>
+	</td>
+	<td><span class="priority">P3</span>
+	</td>
+	<td><span class="component">swingx</span>
+	</td>
+	<td><span class="votes">0</span>
+	</td>
+	<td><span class="summary">JXList: model fires incorrect events if filters enabled</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1152">1152</a>
+	</td>
+	<td><span class="issue_type">TASK</span>
+	</td>
+	<td><span class="priority">P3</span>
+	</td>
+	<td><span class="component">swingx</span>
+	</td>
+	<td><span class="votes">0</span>
+	</td>
+	<td><span class="summary">JXList: re-enable sorting/filtering support</span>
+	</td>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1132">1132</a>
+	</td>
+	<td><span class="issue_type">TASK</span>
+	</td>
+	<td><span class="priority">P3</span>
+	</td>
+	<td><span class="component">swingx</span>
+	</td>
+	<td><span class="votes">0</span>
+	</td>
+	<td><span class="summary">JXTable - define and implement behaviour on remove sorted co</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1145">1145</a>
+	</td>
+	<td><span class="issue_type">TASK</span>
+	</td>
+	<td><span class="priority">P3</span>
+	</td>
+	<td><span class="component">swingx</span>
+	</td>
+	<td><span class="votes">0</span>
+	</td>
+	<td><span class="summary">JXTable - re-enable filtering with single-string-representat</span>
+	</td>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=11">11</a>
+	</td>
+	<td><span class="issue_type">TASK</span>
+	</td>
+	<td><span class="priority">P3</span>
+	</td>
+	<td><span class="component">swingx</span>
+	</td>
+	<td><span class="votes">0</span>
+	</td>
+	<td><span class="summary">JXTable: add api to sort programmatically</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1122">1122</a>
+	</td>
+	<td><span class="issue_type">TASK</span>
+	</td>
+	<td><span class="priority">P3</span>
+	</td>
+	<td><span class="component">swingx</span>
+	</td>
+	<td><span class="votes">0</span>
+	</td>
+	<td><span class="summary">JXTable: re-enable sort api</span>
+	</td>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1117">1117</a>
+	</td>
+	<td><span class="issue_type">TASK</span>
+	</td>
+	<td><span class="priority">P3</span>
+	</td>
+	<td><span class="component">swingx</span>
+	</td>
+	<td><span class="votes">0</span>
+	</td>
+	<td><span class="summary">JXTable: review api and remove jdk6 duplicates</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1169">1169</a>
+	</td>
+	<td><span class="issue_type">TASK</span>
+	</td>
+	<td><span class="priority">P3</span>
+	</td>
+	<td><span class="component">swingx</span>
+	</td>
+	<td><span class="votes">0</span>
+	</td>
+	<td><span class="summary">JXTreeTable: check hack around dnd</span>
+	</td>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1155">1155</a>
+	</td>
+	<td><span class="issue_type">TASK</span>
+	</td>
+	<td><span class="priority">P3</span>
+	</td>
+	<td><span class="component">swingx</span>
+	</td>
+	<td><span class="votes">0</span>
+	</td>
+	<td><span class="summary">Move SortController impl to a common ancestor for list/table</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1116">1116</a>
+	</td>
+	<td><span class="issue_type">TASK</span>
+	</td>
+	<td><span class="priority">P3</span>
+	</td>
+	<td><span class="component">swingx</span>
+	</td>
+	<td><span class="votes">0</span>
+	</td>
+	<td><span class="summary">Re-introduce SwingX sorting/filtering features</span>
+	</td>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1135">1135</a>
+	</td>
+	<td><span class="issue_type">TASK</span>
+	</td>
+	<td><span class="priority">P3</span>
+	</td>
+	<td><span class="component">swingx</span>
+	</td>
+	<td><span class="votes">0</span>
+	</td>
+	<td><span class="summary">Remove SortArrowIcon</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1103">1103</a>
+	</td>
+	<td><span class="issue_type">TASK</span>
+	</td>
+	<td><span class="priority">P3</span>
+	</td>
+	<td><span class="component">swingx</span>
+	</td>
+	<td><span class="votes">0</span>
+	</td>
+	<td><span class="summary">Update/remove JMock</span>
+	</td>
+</tr>
+<tr class="b">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=1108">1108</a>
+	</td>
+	<td class="red"><span class="issue_type">DEFECT</span>
+	</td>
+	<td class="red"><span class="priority">P4</span>
+	</td>
+	<td class="red"><span class="component">swingx</span>
+	</td>
+	<td class="red"><span class="votes">0</span>
+	</td>
+	<td class="red"><span class="summary">Mouse Action performed on JXTaskPane</span>
+	</td>
+</tr>
+<tr class="a">
+	<td>
+ 	<a href="https://swingx.dev.java.net/issues/show_bug.cgi?id=876">876</a>
+	</td>
+	<td class="purple"><span class="issue_type">ENHANC</span>
+	</td>
+	<td class="purple"><span class="priority">P4</span>
+	</td>
+	<td class="purple"><span class="component">swingx</span>
+	</td>
+	<td class="purple"><span class="votes">0</span>
+	</td>
+	<td class="purple"><span class="summary">JXTreeTable: Support for listening to Tree expansion/collaps</span>
+	</td>
+</tr>
+	</tbody></table>
+<p>
+</p>
+</div>
+</div>
+<div id="footer">
+</div>
+</div>
+</div>
+</body>
+</html>

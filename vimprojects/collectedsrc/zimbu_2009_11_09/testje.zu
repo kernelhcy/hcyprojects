@@ -1,0 +1,12 @@
+MAIN()
+  int c = 1
+  IF c == 1
+    IO.writeLine("hello")
+  }
+  bool a
+  bool b
+  IF (a       &&     b)  ||   c     ==     0
+  }
+  IF (a       AND     b)  OR   c     ==     0
+  }
+}

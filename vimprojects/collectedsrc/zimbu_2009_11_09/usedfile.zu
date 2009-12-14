@@ -1,0 +1,105 @@
+#
+# The Zimbu compiler written in Zimbu
+#
+# UsedFile class: values for an imported or main file.
+#
+# Copyright 2009 Bram Moolenaar
+# Licensed under the Apache License, Version 2.0.  See the LICENSE file or
+# obtain a copy at: http://www.apache.org/licenses/LICENSE-2.0
+#
+
+IMPORT "builtin.zu"
+IMPORT "scope.zu"
+IMPORT "zimbufile.zu"
+
+CLASS UsedFile
+  bool      isMainFile   # TRUE for main file; contains MAIN()
+  bool      isTopFile    # TRUE for main file, code generate for it
+  bool      zwtFile      # TRUE if IMPORT.ZWT was used
+  UsedFile  parent       # Imported from here; NIL for toplevel file
+  ZimbuFile zimbuFile    # Info about the imported file not related to where
+                         # it's imported from.
+
+  # At the toplevel keep a list of imported files.  Once included we don't
+  # need to process is again.
+  dict<string, ZimbuFile> usedImports
+
+  # At the toplevel keep a list of builtin modules used in this file or in an
+  # imported file.
+  dict<string, Builtin> usedBuiltins
+
+  BITS Flags
+    bool  isMainFile
+    bool  isTopFile
+    bool  zwtFile
+  }
+
+  NEW(string fileName, Flags flags)
+    zimbuFile = NEW(fileName)
+    isMainFile = flags.isMainFile
+    isTopFile = flags.isTopFile
+    IF isTopFile
+      usedImports = NEW()
+    }
+    IF flags.zwtFile
+      zimbuFile.usedAsZwt = TRUE
+    ELSE
+      zimbuFile.usedAsZimbu = TRUE
+    }
+  }
+
+  NEW(ZimbuFile _zimbuFile, bool _isMainFile, bool _isTopFile)
+    zimbuFile = _zimbuFile
+    isMainFile = _isMainFile
+    isTopFile = _isTopFile
+    IF isTopFile
+      usedImports = NEW()
+    }
+  }
+
+  FUNC status parse(string indent)
+    status ret = zimbuFile.parse(indent, THIS)
+
+    # Check for built-in modules that are used.
+    # Import nodes are prepended for these at the top file scope.
+    IF zimbuFile.topScope != NIL
+      IF isTopFile
+        usedBuiltins = NEW()
+      }
+      Builtin.checkBuiltin(THIS)
+    }
+
+    RETURN ret
+  }
+
+  FUNC Scope scope()
+    RETURN zimbuFile.topScope
+  }
+
+  FUNC UsedFile findTopFile()
+    IF isTopFile
+      RETURN THIS
+    }
+    IF parent != NIL
+      RETURN parent.findTopFile()
+    }
+    RETURN NIL
+  }
+
+  # Check if we encountered import |name| before in the current tree of
+  # imports below the top file.  If not, return TRUE and add the import.
+  FUNC bool isNewImport(ZimbuFile zf)
+    UsedFile top = findTopFile()
+    IF top == NIL
+      IO.writeLine("INTERNAL: can't find top UsedFile")
+      RETURN TRUE
+    }
+    ZimbuFile existing = top.usedImports.get(zf.filename, NIL)
+    IF existing == NIL
+      top.usedImports[zf.filename] = zf
+      RETURN TRUE
+    }
+    RETURN FALSE
+  }
+
+}

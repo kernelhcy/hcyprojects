@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<page xmlns="http://projectmallard.org/1.0/" xmlns:e="http://projectmallard.org/experimental/" type="guide" id="index">
+
+  <info>
+    <revision pkgversion="2.28" version="0.1" date="2009-06-14" status="incomplete"/>
+    <revision pkgversion="2.28" version="0.1" date="2009-08-14" status="review">
+      <!--
+      <e:review by="shaunm@gnome.org" date="2009-08-31" status="done"/>
+      -->
+    </revision>
+    <revision pkgversion="2.28" version="0.2" date="2009-09-05" status="review"/>
+    <credit type="author">
+      <name>Milo Casagrande</name>
+      <email>milo@ubuntu.com</email>
+    </credit>
+<!--
+    <copyright>
+      <year>2009</year>
+      <name>GNOME Documentation Project</name>
+    </copyright>
+-->
+    <include xmlns="http://www.w3.org/2001/XInclude" href="legal.xml"/>
+  </info>
+
+  <title>Empathy Instant Messenger</title>
+
+  <section id="text-conv" style="2column">
+    <title>Text Conversations</title>
+  </section>
+
+  <section id="audio-video" style="2column">
+    <title>Audio and Video Conversations</title>
+  </section>
+  
+  <section id="contacts" style="2column">
+    <title>Contact Management</title>
+  </section>
+
+  <section id="accounts" style="2column">
+    <title>Account Management</title>
+  </section>
+
+  <section id="advanced" style="2column">
+    <title>Advanced Actions</title>
+  </section>
+
+  <section id="problems">
+    <title>Common Problems</title>
+  </section>
+
+</page>

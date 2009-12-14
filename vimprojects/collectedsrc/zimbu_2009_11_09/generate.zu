@@ -1,0 +1,4910 @@
+#
+# The Zimbu compiler written in Zimbu
+#
+# Generate module: everything related to generating C code.
+# This includes collecting symbols.
+#
+# Copyright 2009 Bram Moolenaar
+# Licensed under the Apache License, Version 2.0.  See the LICENSE file or
+# obtain a copy at: http://www.apache.org/licenses/LICENSE-2.0
+#
+# Characters prepended to symbols:
+# V   variable or member
+# M   module
+# F   function or method
+# C   class
+# E   array of enum names
+# GC  Zimbu internal functions
+#
+
+IMPORT "builtin.zu"
+IMPORT "config.zu"
+IMPORT "conversion.zu"
+IMPORT "dictstuff.zu"
+IMPORT "error.zu"
+IMPORT "expreval.zu"
+IMPORT "input.zu"
+IMPORT "liststuff.zu"
+IMPORT "node.zu"
+IMPORT "output.zu"
+IMPORT "parse.zu"
+IMPORT "resolve.zu"
+IMPORT "scontext.zu"
+IMPORT "scope.zu"
+IMPORT "symbol.zu"
+IMPORT "usedfile.zu"
+IMPORT "write_c.zu"
+IMPORT "write_js.zu"
+IMPORT "zimbufile.zu"
+IMPORT "lib/zwtvalues.zu"
+
+MODULE Generate
+
+  # Every block that doesn't have a name gets a number, so that items defined
+  # inside it can have a unique name.
+  int scopeNumber = 1
+
+  # Errors involving forward declarations are only given in the final round.
+  bool showErrors
+
+  # Output used when no output is to be made, only for figuring out.
+  Output noOut = NEW(NIL)
+
+  # For debugging: Set to FALSE to enter all scopes even when there were no
+  # undefined symbols in a previous pass.
+  bool skip_zero_undefined = TRUE
+
+  FUNC bool doError(Output out)
+    RETURN showErrors && out.writing
+  }
+
+  # Call resolve() for |usedFile|.  Used at toplevel.
+  FUNC bool resolve(UsedFile usedFile)
+    usedFile.zimbuFile.startedPass++
+    RETURN resolve(usedFile, "")
+  }
+
+  # Go through the node tree of a file to resolve symbols.
+  # |indent| is used for progress messages.
+  #
+  # Return TRUE if another pass is needed.
+  #
+  FUNC bool resolve(UsedFile usedFile, string indent)
+    string leader = indent .. usedFile.zimbuFile.filename
+    Scope topScope = usedFile.scope()
+
+    IF topScope.topNode == NIL
+      Error.verboseMsg(leader .. ": Empty file\n")
+      RETURN FALSE
+    }
+
+    int previousUndef = topScope.topNode.n_undefined
+    Output.Group dummy = NEW()
+    dummy.setHeads(NEW())
+
+    # Use a Resolve object.
+    Resolve.I gen = Resolve.NEW()
+
+    # This may recursively call back for IMPORT statements.
+    Error.verboseMsg(leader .. ": Check imports...\n")
+    int undef = generateImports(usedFile, gen, dummy)
+
+    # No need to resolve symbols when already done this pass level.
+    # This happens when we want to check the imports.
+    IF topScope.pass > usedFile.zimbuFile.startedPass
+      RETURN topScope.topNode.n_undefined > 0
+    }
+
+    Error.verboseMsg(leader .. ": Pass " .. topScope.pass .. "...\n")
+
+    undef += generate(topScope.topNode, topScope, gen, dummy)
+    IF topScope.topNode != NIL
+      topScope.topNode.n_undefined = undef
+    }
+
+    Error.verboseMsg(leader .. ": Pass " .. topScope.pass .. " done.")
+    IF topScope.topNode.n_undefined > 0
+      Error.verboseMsg(" (" .. topScope.topNode.n_undefined
+                                                      .. " undefined symbols)")
+    }
+    Error.verboseMsg("\n")
+    topScope.pass++
+
+    # We need another pass when there are undefined symbols.
+    # However, if no symbols were resolved there might be an error, so don't
+    # do another pass then.
+    RETURN topScope.topNode.n_undefined > 0
+       && (topScope.pass == 2 || topScope.topNode.n_undefined < previousUndef)
+  }
+
+  #
+  # Write C code for |usedFile|.
+  #
+  PROC write(UsedFile usedFile, Output.Group outputs)
+    write(usedFile, Write_C.NEW(), outputs)
+  }
+
+  #
+  # Write the code (C or JS) in |outputs|.
+  #
+  PROC write(UsedFile usedFile, Resolve.I gen, Output.Group outputs)
+    string inFileName = usedFile.zimbuFile.filename
+    Scope topScope = usedFile.scope()
+    string leader = topScope.importIndent .. inFileName
+    string name = gen.getLangName()
+    IF gen.permuName != NIL
+      name = gen.permuName .. " " .. name
+    }
+    Error.verboseMsg(leader .. ": Generating " .. name .. " code...\n")
+    showErrors = TRUE
+
+    outputs.startWriting()
+    generateImports(usedFile, gen, outputs)
+    generate(topScope.topNode, topScope, gen, outputs)
+
+    Error.verboseMsg(leader .. ": Done.\n")
+  }
+
+  #
+  # The generation function handling imports only: Resolve symbols and
+  # generate code when writing.
+  # Returns the number of undefined symbols in the imports.
+  #
+  FUNC int generateImports(UsedFile usedFile, Resolve.I gen, Output.Group outs)
+    Scope scope = usedFile.scope()
+
+    # Process any builtin module imports.  Only happens for the top file
+    # scope.
+    int undef = Builtin.generateBuiltins(usedFile, gen, outs)
+
+    # Go through the IMPORT nodes of this scope.
+    Node node = scope.topNode
+    WHILE node != NIL && node.n_type == Node.Type.import
+      undef += generateImport(usedFile, node, gen, outs)
+      node = node.n_next
+    }
+
+    RETURN undef
+  }
+
+  #
+  # The main generation function: go through the node tree, resolve symbols
+  # and generate code when writing.
+  # Skips over imports.
+  # Returns the number of undefined symbols.
+  #
+  FUNC int generate(Node startNode, Scope scope, Resolve.I gen,
+                                                            Output.Group outs)
+    int undef = generateNode(startNode, scope, gen, outs)
+
+    IF startNode != NIL
+      # Store the undefined count, so that we know if we need to resolve this
+      # node another time.
+      startNode.n_undefined = undef
+
+      IF outs.out.writing && scope.memberList != NIL
+                                     && gen.targetLang == Resolve.TargetLang.c
+        # The offset table depends on children, produce it at the end of the
+        # scope.
+        FOR sym IN scope.memberList
+          IF !sym.noGenerate && (sym.type == Node.Type.class
+                                           || sym.type == Node.Type.interface)
+            generateClassOffTable(sym, NEW(scope, gen, outs.declOut))
+          }
+        }
+
+        # Append the functions for virtual methods.
+        outs.declOut.append(virtualOut)
+        virtualOut.clear()
+      }
+    }
+
+    RETURN undef
+  }
+
+  # Inner part of generate().
+  FUNC int generateNode(Node startNode, Scope scope, Resolve.I gen,
+                                                          Output.Group outs)
+    SContext ctx = NEW(scope, gen, outs.out)
+
+    # Go through the nodes of this scope.
+    int undef
+    Node node = startNode
+    WHILE node != NIL
+      IF node.n_type != Node.Type.import
+        undef += generateOneNode(&node, ctx, outs)
+      }
+      node = node.n_next
+    }
+    RETURN undef
+  }
+
+  # Handle one node.  Return the number of undefined items.
+  # If more than one node is used |ref| is advanced to the last one used.
+  FUNC int generateOneNode(Node &ref, SContext ctx, Output.Group outs)
+    Output out = ctx.out             # normal generate output
+    Node node = ref
+    int undef
+    Resolve.I gen = ctx.gen
+    Scope scope = ctx.scope
+
+    IF Error.debug
+      IF scope.importIndent != NIL
+        IO.write(scope.importIndent)
+      }
+      IO.write("generateOneNode() ")
+      IO.write(node.n_type.name() .. " node")
+      IF node.n_string != NIL
+        IO.write(" \"" .. node.n_string .. "\"")
+      }
+      IO.write("\n")
+    }
+
+    #
+    # Handle nodes that may appear at the toplevel.
+    #
+    SWITCH node.n_type
+      CASE Node.Type.copydirect
+        # Copy text from >>> until <<<
+        ctx.out.write(node.n_string)
+        RETURN 0
+
+      CASE Node.Type.cfunc
+        # Call C function.
+        out.writeIndent(scope.depth)
+        out.write(node.n_string)
+        out.write(";\n")
+        RETURN 0
+
+      CASE Node.Type.import
+        # imports should have been handled by generateImport().
+        Error.report("INTERNAL: unexpected IMPORT")
+        RETURN 0
+
+      CASE Node.Type.main
+        RETURN generateMain(node, ctx, outs)
+
+      CASE Node.Type.module
+        RETURN generateModule(node, ctx, outs)
+
+      CASE Node.Type.class
+      CASE Node.Type.interface
+        RETURN generateClass(node, ctx, outs)
+
+      CASE Node.Type.shared
+        RETURN generateShared(node, ctx, outs)
+
+      CASE Node.Type.bits_decl
+        RETURN generateBits(node, ctx, outs)
+
+      CASE Node.Type.enum_decl
+        RETURN generateEnum(node, ctx, outs)
+
+      CASE Node.Type.equal_def
+      CASE Node.Type.new_def
+      CASE Node.Type.proc_def
+      CASE Node.Type.func_def
+        RETURN generateMethod(node, ctx, outs)
+
+      CASE Node.Type.declare
+        RETURN generateDeclare(node, ctx, outs)
+
+      CASE Node.Type.gen_if
+        RETURN generateGenerateIf(node, ctx, outs)
+    }
+
+    #
+    # Handle nodes that cannot appear at the toplevel.
+    #
+    IF !scope.statements
+      node.error("Item not allowed at top level")
+      RETURN undef
+    }
+
+    SWITCH node.n_type
+      CASE Node.Type.block
+        RETURN generateScope(node.n_left, ctx, node.n_nodeType, NIL, outs)
+
+      CASE Node.Type.if
+        out.writeIndent(scope.depth)
+        out.write("if (")
+        genExpr(node.n_cond, ctx, Symbol.bool)
+        out.write(")\n")
+        undef = node.n_cond.n_undefined
+
+      CASE Node.Type.elseif
+        out.writeIndent(scope.depth - 1)
+        out.write("else if (")
+        genExpr(node.n_cond, ctx, Symbol.bool)
+        out.write(")\n")
+        undef = node.n_cond.n_undefined
+
+      CASE Node.Type.else
+        out.writeIndent(scope.depth - 1)
+        out.write("else\n")
+
+      CASE Node.Type.while
+        out.writeIndent(scope.depth)
+        out.write("while (")
+        genExpr(node.n_cond, ctx, Symbol.bool)
+        out.write(")\n")
+        undef = node.n_cond.n_undefined
+        undef += generateScope(node.n_right, ctx, Node.Type.while, NIL, outs)
+
+      CASE Node.Type.do
+        out.writeIndent(scope.depth)
+        out.write("do\n")
+
+      CASE Node.Type.until
+        out.writeIndent(scope.depth)
+        out.write("  while (!(")
+        genExpr(node.n_cond, ctx, Symbol.bool)
+        out.write("));\n")
+        undef = node.n_cond.n_undefined
+
+      CASE Node.Type.for
+        undef = generateFor(node, ctx, outs)
+
+      CASE Node.Type.return
+      CASE Node.Type.exit
+        undef = generateReturnExit(node, ctx, outs)
+
+      CASE Node.Type.break
+        # check we are inside a scope where BREAK is allowed
+        checkScope(node, scope, TRUE)
+        out.writeIndent(scope.depth)
+        out.write("break;\n")
+
+      CASE Node.Type.continue
+        # check we are inside a scope where CONTINUE is allowed
+        checkScope(node, scope, FALSE)
+        out.writeIndent(scope.depth)
+        out.write("continue;\n")
+
+      CASE Node.Type.proceed
+        node.error("PROCEED not allowed here")
+
+      CASE Node.Type.switch
+        undef = generateSwitch(node, ctx, outs)
+
+      CASE Node.Type.case
+      CASE Node.Type.default
+        undef = generateCase(ref, ctx, outs)
+
+      CASE Node.Type.function
+        # "func(arg)", "class.method(arg)", "module.func(arg)", etc.
+        out.writeIndent(scope.depth)
+        generateCall(node.n_left, ctx, NIL, FALSE)
+        undef = node.n_left.n_undefined
+        out.write(";\n")
+
+      CASE Node.Type.plusplus
+      CASE Node.Type.minmin
+        undef = generateIncDec(node, ctx, outs)
+
+      CASE Node.Type.assign
+      CASE Node.Type.minassign
+      CASE Node.Type.plusassign
+      CASE Node.Type.stringassign
+        undef = generateAssign(node, ctx, outs)
+
+      DEFAULT
+        error("INTERNAL: generate(): Node type \"" .. node.n_type.name()
+                                                   .. "\" not supported", node)
+    }
+    RETURN undef
+  }
+
+  # Generate MAIN()
+  FUNC int generateMain(Node node, SContext ctx, Output.Group outs)
+    Resolve.I gen = ctx.gen
+    Scope scope = ctx.scope
+
+    IF scope.outer != NIL || scope.scopeName != NIL
+      error("MAIN not at toplevel", node)
+    }
+    IF skip_zero_undefined && !doError(ctx.out)
+                                && scope.pass > 1 && node.n_undefined == 0
+      # No need to process this node again
+      RETURN 0
+    }
+
+    gen.mainHead(ctx)
+
+    # Create the scope for the main function and generate its body.
+    Scope mainScope = Scope.newScope(scope, FALSE)
+    mainScope.returnSymbol = NEW(Node.Type.int)
+    mainScope.scopeName = "FMAIN"
+    mainScope.nodeType = Node.Type.proc_def
+    Output.Group newOuts = outs.copy()
+    newOuts.varOut = newOuts.out.copy()  # varOut appends to "out"
+    mainScope.topNode = node.n_left
+    node.n_undefined = generate(mainScope.topNode, mainScope, gen, newOuts)
+
+    gen.mainEnd(node, ctx)
+
+    RETURN node.n_undefined
+  }
+
+  # Generate a MODULE.
+  FUNC int generateModule(Node node, SContext ctx, Output.Group outs)
+    Output out = ctx.out             # normal generate output
+    Scope scope = ctx.scope
+    int undef
+
+    IF scope.scopeName != NIL && scope.scopeName[0] != 'M'
+      node.error("MODULE can only be defined inside a MODULE")
+    }
+    node.checkTypeName("module")
+
+    Symbol scopeSym = NIL
+    IF scope.pass <= 1
+      scopeSym = scope.addSymbol(node.n_string, Node.Type.module,
+                                                              node, FALSE)
+      IF scope.pass == 1
+        node.n_symbol = scopeSym
+      }
+      IF scope.scopeName == NIL
+        node.n_scopeName = "M" .. node.n_string
+      ELSE
+        node.n_scopeName = scope.scopeName .. "__M" .. node.n_string
+      }
+      scopeSym.cName = node.n_scopeName
+      scopeSym.scope = scope
+    ELSE
+      # Second round, re-use the symbol created in the first round.
+      IF node.n_symbol == NIL
+        node.error("INTERNAL: module n_symbol is NIL")
+        RETURN 0
+      }
+      scopeSym = node.n_symbol
+      IF !scope.forwardDeclare
+        # Not re-using the scope, need to define the module again
+        scope.addMember(scopeSym)
+      }
+      IF skip_zero_undefined && !doError(out) && node.n_undefined == 0
+        # No need to parse this module again.
+        RETURN 0
+      }
+    }
+
+    Output.Group newOuts = outs
+    # Write the module code when used.
+    # TODO: also for JS?
+    IF scopeSym.attributes.infoUsed && out.writing
+                                 && ctx.gen.targetLang == Resolve.TargetLang.c
+      string fname = scopeSym.cName .. "__FINFO()"
+      outs.bodyOut.write("MINFOmodule__CModuleInfo *"
+                         .. fname .. " {\n")
+      outs.bodyOut.write("  MINFOmodule__CModuleInfo *info = "
+               .. "(MINFOmodule__CModuleInfo *)Zalloc("
+               .. "sizeof(MINFOmodule__CModuleInfo));\n")
+      outs.bodyOut.write("  info->Vname = \"" .. node.n_string .. "\";\n")
+
+      # Add permutation info, used in ZWT.createPage().
+      outs.bodyOut.write("  info->Vpermutations = ZnewDict(1);\n")
+      IF scopeSym.zwtPermu != NIL
+        FOR key IN scopeSym.zwtPermu.keys()
+          outs.bodyOut.write("  ZDictAdd(0, info->Vpermutations, 0, \""
+              .. key .. "\", 0, \"" .. scopeSym.zwtPermu.get(key) .. "\");\n")
+        }
+      }
+
+      outs.bodyOut.write("  return info;\n")
+      outs.bodyOut.write("}\n")
+      outs.declOut.write("MINFOmodule__CModuleInfo *" .. fname .. ";\n")
+    }
+
+    IF ctx.gen.targetLang == Resolve.TargetLang.none
+       || (ctx.gen.targetLang == Resolve.TargetLang.c && scope.usedAsZimbu())
+       || (ctx.gen.targetLang == Resolve.TargetLang.js && scope.usedAsZwt())
+      Scope moduleScope = Scope.newScope(scope, TRUE)
+      moduleScope.scopeName = node.n_scopeName
+      moduleScope.moduleName = node.n_string
+      moduleScope.depth = 0
+      moduleScope.returnSymbol = NIL
+      moduleScope.statements = FALSE
+      moduleScope.memberList = scopeSym.memberList
+      moduleScope.topNode = node.n_left
+      undef = generate(moduleScope.topNode, moduleScope, ctx.gen, outs)
+      node.n_undefined = undef
+      scopeSym.memberList = moduleScope.memberList
+    }
+
+    RETURN undef
+  }
+
+  # Generate a CLASS or INTERFACE.
+  FUNC int generateClass(Node node, SContext ctx, Output.Group outs)
+    Output out = ctx.out             # normal generate output
+    int undef
+    Resolve.I gen = ctx.gen
+    Scope scope = ctx.scope
+
+    node.checkTypeName(node.n_type == Node.Type.class ? "class" : "interface")
+    VAR name = node.n_string
+    Symbol classSym = NIL
+    IF scope.pass <= 1
+      # First round, add a class symbol.
+      # In a module of the same name check that it's the first thing.
+      IF name == scope.moduleName && scope.memberList != NIL
+                                           && scope.memberList.SIZE() >= 1
+        error("CLASS " .. name .. " must be the first item in module "
+                                                             .. name, node)
+      }
+      classSym = scope.addSymbol(name, node.n_type, node,
+                                                 name == scope.moduleName)
+      IF scope.pass == 1
+        node.n_symbol = classSym
+      }
+      IF scope.scopeName == NIL
+        node.n_scopeName = "C" .. name
+      ELSE
+        node.n_scopeName = scope.scopeName .. "__C" .. name
+      }
+    ELSE
+      # Second round, re-use the symbol created in the first round.
+      classSym = node.n_symbol
+      IF !scope.forwardDeclare
+        # Not re-using the scope, need to define the class again
+        scope.addMember(classSym)
+      }
+      classSym.noGenerate = scope.noGenerate
+      IF skip_zero_undefined && !doError(out) && node.n_undefined == 0
+        # No need to process this class again
+        RETURN 0
+      }
+    }
+    classSym.cName = node.n_scopeName
+    classSym.className = node.n_scopeName
+    classSym.attributes = node.n_attr
+
+    # EXTENDS
+    IF node.n_cond != NIL
+      node.n_cond.n_undefined = 0
+      classSym.parentClass = scope.findNodeSymbol(node.n_cond)
+      undef += node.n_cond.n_undefined
+      IF doError(out)
+        IF classSym.parentClass == NIL
+          node.error("Class not found")
+        ELSEIF classSym.parentClass.type != Node.Type.class
+          node.error("Not a class")
+        ELSEIF classSym.parentClass.attributes.final
+          node.error("Cannot extend " .. classSym.parentClass.name
+                                                 .. ": it is marked final")
+        }
+      }
+      IF classSym.parentClass != NIL
+        # Add ourselves as a child to the parent.
+        classSym.parentClass.addChild(classSym)
+      }
+    }
+
+    # IMPLEMENTS
+    IF node.n_right != NIL
+      # Clear the list every round to get errors for duplicates.
+      classSym.interfaces = NIL
+      undef += handleImplements(node.n_right, classSym, scope, doError(out))
+    }
+
+    # Write the struct declaration to a separate output and append it to
+    # outs.structOut when done.  This handles nested classes.
+    Output structOut = NEW(NEW())
+    structOut.writing = out.writing
+    IF classSym.parentClass != NIL && classSym.parentClass.structOut != NIL
+      structOut.append(classSym.parentClass.structOut)
+    }
+    IF !classSym.attributes.abstract && out.writing
+      gen.writeClassDef(node.n_scopeName, outs.typeOut)
+    }
+
+    # The members are what is added to the "symbols" of "classScope".
+    # In the second round they are updated, some types may have been
+    # unknown in the first round.
+    Scope classScope = Scope.newScope(scope, TRUE)
+    classScope.scopeName = node.n_scopeName
+    classScope.class = classSym
+    classScope.insideShared = FALSE
+    classScope.depth = 1
+    classScope.returnSymbol = NIL
+    classScope.init = FALSE
+    classScope.statements = FALSE
+    classScope.memberList = classSym.memberList
+    classScope.topNode = node.n_left
+    classScope.thisName = gen.thisName(FALSE)
+    Output.Group newOuts = outs.copy()
+    newOuts.out = structOut
+    newOuts.varOut = structOut
+    bool declOutWriting = newOuts.declOut.writing
+    bool bodyOutWriting = newOuts.bodyOut.writing
+    IF classSym.attributes.abstract && gen.targetLang == Resolve.TargetLang.c
+      # Methods of an abstract class are never used in C.
+      newOuts.declOut.writing = FALSE
+      newOuts.bodyOut.writing = FALSE
+    }
+
+    # Generate the class body.
+    undef += generate(classScope.topNode, classScope, gen, newOuts)
+
+    newOuts.declOut.writing = declOutWriting
+    newOuts.bodyOut.writing = bodyOutWriting
+    SContext newCtx = NEW(classScope, gen, newOuts.out)
+
+    # If we extended a class redefine the methods in this class scope.
+    # That's because the type of the THIS pointer is different and
+    # replaced methods may be invoked.
+    IF out.writing && classSym.parentClass != NIL
+                                     && classSym.parentClass.memberList != NIL
+                                     && !classSym.attributes.abstract
+      FOR s IN classSym.parentClass.memberList
+        IF s.type == Node.Type.lib_method
+            || s.type == Node.Type.func_def
+            || s.type == Node.Type.proc_def
+          Symbol f = classSym.findMatchingFunction(s.name, s.memberList,
+                                                            NIL, FALSE, FALSE)
+          IF f != NIL && f.tlang != gen.targetLang
+            # The method exists but for another language.  Remove it and add
+            # it again.
+            classSym.removeMember(f)
+            f = NIL
+          }
+          IF f == NIL
+            IF s.type == Node.Type.lib_method
+                  || gen.targetLang == Resolve.TargetLang.js
+              # Add the class to the lib_method, the generated code uses a
+              # different class.
+              Symbol scopy = s.copy()
+              scopy.class = classSym
+              classSym.addMember(scopy)
+            ELSEIF s.node != NIL && (s.type == Node.Type.func_def
+                                              || s.type == Node.Type.proc_def)
+              # Set pass to zero, implies that n_symbol is not used.
+              # TODO: n_scopeName is changed, does that matter?
+              int origPass = classScope.pass
+              classScope.pass = 0
+              Node symNode = s.node
+              undef += generateOneNode(&symNode, newCtx, newOuts)
+              classScope.pass = origPass
+            }
+          }
+        }
+      }
+    }
+    
+    classSym.memberList = classScope.memberList
+
+    # For C only write the declaration for a non-abstract class.
+    # JS takes care of inheritance for us.
+    IF !(gen.targetLang == Resolve.TargetLang.c && classSym.attributes.abstract)
+      gen.writeClassDecl(classSym, outs, structOut)
+    }
+    classSym.structOut = structOut
+
+    # Check that a non-abstract class doesn't have any abstract method.
+    IF !classSym.attributes.abstract && classSym.memberList != NIL
+      FOR s IN classSym.memberList
+        IF s.attributes.abstract
+          node.error("non-abstract class cannot have an abstract method")
+          IF s.node != NIL
+            s.node.error("location of the abstract method")
+          }
+        }
+      }
+    }
+
+    # Check that all interfaces have been implemented.
+    IF classSym.interfaces != NIL && doError(out)
+      FOR itf IN classSym.interfaces
+        list<Symbol> memberList = itf.memberList
+        IF itf.type == Node.Type.i_object && itf.class != NIL
+          memberList = itf.class.memberList
+        }
+        IF memberList != NIL
+          FOR member IN memberList
+            IF member.className != NIL
+              IF member.type == Node.Type.func_def
+                                        || member.type == Node.Type.lib_method
+                                        || member.type == Node.Type.proc_def
+                IF classSym.findMatchingFunction(member.name,
+                                  member.memberList, NIL, FALSE, FALSE) == NIL
+                  error("Missing implementation for " .. member.name
+                                       .. argTypesAsString(member.memberList),
+                        itf.node)
+                }
+              ELSE
+                IF classSym.findMember(member.name) == NIL
+                  error("Missing implementation for " .. member.name, itf.node)
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    node.n_undefined = undef
+    RETURN undef
+  }
+
+  # Generate SHARED section of a CLASS
+  FUNC int generateShared(Node node, SContext ctx, Output.Group outs)
+    Output out = ctx.out             # normal generate output
+    int undef
+    Scope scope = ctx.scope
+
+    IF !scope.isClassScope() || scope.statements
+      node.error("SHARED misplaced")
+    }
+
+    IF scope.pass > 1
+      IF skip_zero_undefined && !doError(out) && node.n_undefined == 0
+        # No need to process this class again
+        RETURN 0
+      }
+    }
+
+    # Go through the nodes of this scope.  Clear the ".class" field since
+    # we are no longer inside the class itself.
+    Scope sharedScope = Scope.newScope(scope, TRUE)
+    Output.Group newOuts = outs.copy()
+    newOuts.out = newOuts.declOut    # don't write to structOut
+    newOuts.varOut = newOuts.declOut
+    SContext newCtx = NEW(sharedScope, ctx.gen, newOuts.out)
+    sharedScope.statements = FALSE
+    sharedScope.insideShared = TRUE
+    sharedScope.nodeType = Node.Type.shared
+    sharedScope.init = TRUE
+    sharedScope.depth = 0
+    sharedScope.memberList = scope.memberList
+    sharedScope.scopeName = scope.scopeName .. "__X"  # __S used for struct
+
+    Node snode = node.n_left
+    WHILE snode != NIL
+      undef += generateOneNode(&snode, newCtx, newOuts)
+      snode = snode.n_next
+    }
+
+    node.n_undefined = undef
+    RETURN undef
+  }
+
+  # Generate a BITS.
+  FUNC int generateBits(Node node, SContext ctx, Output.Group outs)
+    Output out = ctx.out             # normal generate output
+    int undef
+
+    Resolve.I gen = ctx.gen
+    Scope scope = ctx.scope
+
+    node.checkTypeName("bits")
+    VAR name = node.n_string
+    Symbol sym
+    IF scope.pass <= 1
+      sym = scope.addSymbol(name, Node.Type.bits_small, node, FALSE)
+      sym.class = sym
+      IF scope.pass == 1
+        node.n_symbol = sym
+      }
+      IF scope.scopeName == NIL
+        sym.cName = "B" .. name
+      ELSE
+        sym.cName = scope.scopeName .. "__B" .. name
+      }
+    ELSE
+      sym = node.n_symbol
+      IF !scope.forwardDeclare
+        # Not re-using the scope, need to define the class again
+        scope.addMember(sym)
+      }
+    }
+
+    # Re-parse the fields every time, some may have been undefined
+    # previously.
+    IF sym.memberList != NIL
+      sym.memberList.clear()
+    }
+    int n = 0
+    Node en = node.n_left
+    WHILE en != NIL
+      IF en.n_type != Node.Type.declare
+        en.error("Syntax error in BITS declaration")
+      ELSE
+        int bits
+        Symbol typeSym
+        string typeName = en.n_left.n_string
+        IF typeName == "Bool" || typeName == "bool"
+          typeSym = NEW(Node.Type.bool)
+          bits = 1
+        ELSEIF typeName.byteSlice(0, 2) == "int"
+               || typeName.byteSlice(0, 2) == "nat"
+          IF typeName[0] == 'I' || typeName[0] == 'i'
+            typeSym = NEW(Node.Type.int)
+          ELSE
+            typeSym = NEW(Node.Type.nat)
+          }
+          bits = en.n_left.n_string.byteSlice(3, -1).toInt()
+          IF bits > 32
+            en.n_left.error("Cannot have more than 32 bits")
+          }
+        ELSE
+          en.n_left.n_undefined = 0
+          typeSym = scope.findNodeSymbol(en.n_left)
+          undef += en.n_left.n_undefined
+          IF typeSym == NIL || typeSym.type != Node.Type.enum
+            undef++
+            IF doError(out)
+              en.error("Type " .. en.n_left.n_string .. " not supported")
+            }
+          ELSE
+            bits = 1
+            # TODO: need log2()
+            int size = typeSym.memberList.SIZE()
+            WHILE size > 2
+              size = size >> 1
+              bits++
+            }
+          }
+        }
+        IF bits > 0
+          IF sym.findMember(en.n_string) != NIL
+            en.error("Duplicate member: " .. en.n_string)
+          ELSE
+            Symbol msym = sym.addMember(en.n_string, typeSym, n)
+            msym.mask = (1 << bits) - 1
+          }
+          n += bits
+        }
+      }
+      en = en.n_next
+    }
+    IF n > Config.intSize
+      sym.type = Node.Type.bits_big
+    }
+    RETURN undef
+  }
+
+  # Generate an ENUM declaration.
+  FUNC int generateEnum(Node node, SContext ctx, Output.Group outs)
+    Scope scope = ctx.scope
+
+    node.checkTypeName("enum")
+    VAR name = node.n_string
+    # TODO: IF scope.pass <= 1
+    Symbol sym = scope.addSymbol(name, Node.Type.enum, node, FALSE)
+    sym.class = sym
+    IF scope.pass >= 1  # TODO: == 1
+      node.n_symbol = sym
+    }
+    IF scope.scopeName == NIL
+      sym.cName = "E" .. name
+    ELSE
+      sym.cName = scope.scopeName .. "__E" .. name
+    }
+    outs.structOut.write("char *" .. sym.cName .. "[] = {\n")
+    int n = 0
+    Node en = node.n_left
+    WHILE en != NIL
+      IF scope.pass <= 1
+        en.checkItemName("enum value")
+        IF sym.findMember(en.n_string) != NIL
+          error("Duplicate ENUM value: " .. en.n_string, en)
+        ELSE
+          sym.addMember(en.n_string, NEW(Node.Type.enum_value), n++)
+        }
+      }
+      outs.structOut.write("\"" .. en.n_string .. "\",\n")
+      en = en.n_left
+    }
+    outs.structOut.write("};\n")
+    RETURN 0
+  }
+
+  # FOR
+  FUNC int generateFor(Node node, SContext ctx, Output.Group outs)
+    Output out = ctx.out             # normal generate output
+    int undef
+    Resolve.I gen = ctx.gen
+    Scope scope = ctx.scope
+    scope.addUsedItem("for")
+
+    # Start a new block so that we can declare the loop variable
+    out.writeIndent(scope.depth)
+    out.write("{\n")
+    out.writeIndent(scope.depth + 1)
+    gen.forStart(out)
+    Symbol iterSym = genExpr(node.n_cond, ctx, NIL)
+
+    undef = node.n_cond.n_undefined
+    Symbol itemSym
+    IF iterSym != NIL
+      out.write(", ")
+      IF iterSym != NIL
+        SWITCH iterSym.type
+          CASE Node.Type.string
+            out.write("1")
+            itemSym = NEW(Node.Type.string)
+          CASE Node.Type.list
+            out.write("2")
+            IF iterSym.returnSymbol != NIL
+              itemSym = iterSym.returnSymbol.copyObject()
+            }
+          CASE Node.Type.enum
+            out.write("3")
+            itemSym = NEW(Node.Type.int)
+          # TODO: dict
+          # TODO: array
+          CASE Node.Type.unknown
+          DEFAULT
+            IF doError(out)
+              node.n_cond.error("Unsupported type: " .. iterSym.type.name())
+            }
+        }
+      }
+      out.write(");\n")
+    }
+
+    IF node.n_left.n_type != Node.Type.id
+      error("FOR loop variable must be a name", node)
+      RETURN 1
+    }
+    string loopVar = node.n_left.n_string
+
+    # Find the loop variable in outer scope.
+    bool needDeclare
+    Symbol varSym = scope.getSymbol(loopVar, node.n_left)
+    IF varSym == NIL
+      # Declare the loop variable.
+      needDeclare = TRUE
+      varSym = itemSym
+      IF varSym == NIL
+        undef += 2
+        varSym = NEW(Node.Type.unknown)  # avoid NIL varSym
+      ELSE
+        IF varSym.type == Node.Type.unknown
+          undef++
+        }
+        varSym.cName = "V" .. loopVar
+        out.writeIndent(scope.depth + 1)
+        gen.vardecl(ctx, out)
+        gen.vartype(varSym, node, NIL, out)
+        out.write(varSym.cName)
+        out.write(";\n")
+      }
+    ELSEIF itemSym != NIL
+      IF varSym.type != itemSym.type
+        undef++
+        # TODO: if type is class check it is the same class
+        IF doError(out)
+          typeError(itemSym.type, varSym.type, node.n_left)
+        }
+      }
+    }
+
+    out.writeIndent(scope.depth + 1)
+    gen.forLoop(varSym, out)
+
+    Scope forScope = Scope.newScope(scope, FALSE)
+    IF scope.pass <= 1
+      IF scope.scopeName == NIL
+        node.n_scopeName = "BL_" .. scopeNumber++
+      ELSE
+        node.n_scopeName = scope.scopeName .. "__" .. scopeNumber++
+      }
+    }
+    IF scope.pass > 1 && skip_zero_undefined && !doError(out)
+                                    && node.n_undefined == 0 && undef == 0
+      # No need to process this block again.
+      RETURN 0
+    }
+    IF needDeclare
+      Symbol scopeSym = forScope.addSymbol(loopVar, varSym,
+                                                       node.n_left, FALSE)
+      scopeSym.cName = varSym.cName
+    }
+
+    forScope.depth++
+    forScope.scopeName = node.n_scopeName
+    forScope.topNode = node.n_right
+    forScope.nodeType = Node.Type.for
+    Output.Group newOuts = outs.copy()
+    newOuts.varOut = newOuts.out.copy()  # varOut appends to "out"
+    undef += generate(forScope.topNode, forScope, gen, newOuts)
+    node.n_undefined = undef
+
+    out.writeIndent(scope.depth + 1)
+    out.write("}\n")
+    out.writeIndent(scope.depth)
+    out.write("}\n")
+
+    RETURN undef
+  }
+
+  # RETURN and EXIT
+  FUNC int generateReturnExit(Node node, SContext ctx, Output.Group outs)
+    Output out = ctx.out             # normal generate output
+    int undef
+    Scope scope = ctx.scope
+
+    string name
+    out.writeIndent(scope.depth)
+    IF node.n_type == Node.Type.return
+      out.write("return ")
+      name = "RETURN"
+    ELSE
+      out.write("exit(")
+      name = "EXIT"
+    }
+    Node left = node.n_left
+    IF left != NIL && left.n_type != Node.Type.unknown
+      IF node.n_type == Node.Type.return
+                         && (scope.returnSymbol == NIL || scope.insideNew)
+        undef = 5
+        IF doError(out)
+          error(name .. " argument unexpected", node)
+        }
+      ELSEIF node.n_type == Node.Type.exit
+        genExpr(node.n_left, ctx, Symbol.int)
+        undef = node.n_left.n_undefined
+      ELSE
+        genExpr(node.n_left, ctx, scope.returnSymbol)
+        undef = node.n_left.n_undefined
+      }
+    ELSE
+      IF node.n_type == Node.Type.return && scope.insideNew
+        out.write(scope.thisName)
+      ELSEIF scope.returnSymbol != NIL
+        error("argument expected", node)
+      }
+    }
+    IF node.n_type == Node.Type.return
+      out.write(";\n")
+    ELSE
+      out.write(");\n")
+    }
+    IF node.n_next != NIL
+        && node.n_next.n_type != Node.Type.case
+        && node.n_next.n_type != Node.Type.default
+        && node.n_next.n_type != Node.Type.elseif
+        && node.n_next.n_type != Node.Type.else
+      error("code after " .. name, node)
+    }
+    RETURN undef
+  }
+
+  # SWITCH
+  FUNC int generateSwitch(Node node, SContext ctx, Output.Group outs)
+    Output out = ctx.out             # normal generate output
+    int undef
+    Scope scope = ctx.scope
+
+    out.writeIndent(scope.depth)
+    out.write("switch (")
+    Symbol switchSymbol = genExpr(node.n_cond, ctx, NIL)
+    undef = node.n_cond.n_undefined
+    out.write(")\n")
+    IF switchSymbol != NIL && switchSymbol.type != Node.Type.int
+                                        && switchSymbol.type != Node.Type.enum
+      undef++
+      IF doError(out)
+        error("SWITCH type must be int or enum, found "
+                                            .. switchSymbol.type.name(), node)
+      }
+    }
+    undef += generateScope(node.n_right, ctx, Node.Type.switch,
+                                                           switchSymbol, outs)
+    RETURN undef
+  }
+
+  # CASE and DEFAULT
+  FUNC int generateCase(Node &ref, SContext ctx, Output.Group outs)
+    Output out = ctx.out             # normal generate output
+    Node node = ref
+    Resolve.I gen = ctx.gen
+    int undef
+    Scope scope = ctx.scope
+
+    IF scope.nodeType != Node.Type.switch
+      error("Not inside a SWITCH", node)
+    }
+    IF node.n_type == Node.Type.case
+      out.writeIndent(scope.depth - 1)
+      out.write("case ")
+      # first write the output to caseOut, so that we can check for
+      # duplicate values.
+      Output caseOut = NEW(NEW())
+      caseOut.writing = doError(out)
+      genExpr(node.n_left, NEW(scope, gen, caseOut), scope.switchSymbol)
+      undef = node.n_left.n_undefined
+
+      IF doError(out)
+        # Only in the actual write round do we produce the result and can
+        # we check for the value to be unique.
+        out.append(caseOut)
+        out.write(":\n")
+        IF scope.caseList != NIL
+          string value = caseOut.toString()
+          FOR s IN scope.caseList
+            IF value == s
+              error("duplicate case value", node)
+              BREAK
+            }
+          }
+          scope.caseList.add(value)
+        }
+      }
+    ELSE
+      out.writeIndent(scope.depth - 1)
+      out.write("default:\n")
+    }
+
+    # If code is following create a new block, so that we can put
+    # declarations here.
+    IF node.n_next == NIL
+      # No statements after last DEFAULT or CASE, need to produce a break
+      # to avoid a compilation error.
+      out.writeIndent(scope.depth)
+      out.write("break;\n")
+    ELSEIF node.n_next.n_type != Node.Type.case
+        && node.n_next.n_type != Node.Type.default
+      out.writeIndent(scope.depth)
+      out.write("{\n")
+      IF scope.pass <= 1
+        IF scope.scopeName == NIL
+          node.n_scopeName = "BL_" .. scopeNumber++
+        ELSE
+          node.n_scopeName = scope.scopeName .. "__" .. scopeNumber++
+        }
+      }
+      Scope blockScope = Scope.newScope(scope, FALSE)
+      blockScope.scopeName = node.n_scopeName
+      outs.varOut.reset(out)
+      SContext blockCtx = NEW(blockScope, gen, outs.out)
+
+      # TODO: do we need a loop or do we always get a block here?
+      WHILE ref.n_next != NIL
+          && ref.n_next.n_type != Node.Type.case
+          && ref.n_next.n_type != Node.Type.default
+          && ref.n_next.n_type != Node.Type.proceed
+        ref = ref.n_next
+        undef += generateOneNode(ref, blockCtx, outs)
+      }
+
+      # Enforce a break at the end of each block, unless PROCEED is used.
+      IF ref.n_next != NIL && ref.n_next.n_type == Node.Type.proceed
+        ref = ref.n_next
+        IF ref.n_next != NIL
+              && ref.n_next.n_type != Node.Type.case
+              && ref.n_next.n_type != Node.Type.default
+          ref.n_next.error("Statement after PROCEED")
+        }
+      ELSE
+        out.writeIndent(scope.depth + 2)
+        out.write("break;\n")
+      }
+
+      out.writeIndent(scope.depth)
+      out.write("}\n")
+    }
+    RETURN undef
+  }
+
+  # Generate a function call for |m_node|.
+  # When |strictType| is TRUE then the result type must match |destSym|.
+  # Otherwise use |destSym| as a hint.
+  # Return a Symbol with the type of the result.
+  FUNC Symbol generateCall(Node m_node, SContext ctx, Symbol destSym,
+                                                              bool strictType)
+    Node.Type dest_type = (destSym == NIL) ? Node.Type.unknown : destSym.type
+    IF dest_type == Node.Type.class
+      dest_type = Node.Type.object
+    }
+    Symbol ret = NEW(dest_type)
+    m_node.n_undefined = 0
+
+    IF m_node.n_type != Node.Type.method
+      error("expected method node", m_node)
+      RETURN NIL
+    }
+    Node f_node = m_node.n_left
+    IF f_node.n_type == Node.Type.id
+      string funcName = f_node.n_string
+      Node.Type type = ctx.scope.getAType(funcName)
+      # function(args)
+      IF type == Node.Type.proc_def || type == Node.Type.func_def
+                                               || type == Node.Type.lib_method
+        list<Symbol> argTypeList = getSymbolListFromArgNode(m_node.n_right,
+                                                                       ctx, 0)
+        bool convert
+        Symbol func = ctx.scope.findMatchingFunc(funcName, argTypeList, NIL,
+                                                                  TRUE, FALSE)
+        IF func == NIL
+          convert = TRUE
+          func = ctx.scope.findMatchingFunc(funcName, argTypeList, NIL,
+                                                                   TRUE, TRUE)
+        }
+
+        IF func == NIL
+          m_node.n_undefined = 3
+          IF doError(ctx.out)
+            error("No function with matching arguments for "
+                                                  .. funcName .. "()", m_node)
+            listMatchingFunc(ctx.scope, funcName, argTypeList, TRUE)
+          }
+        ELSE
+          Symbol other = ctx.scope.findMatchingFunc(funcName, argTypeList,
+                                                          func, TRUE, convert)
+          IF other != NIL
+            m_node.n_undefined = 2
+            IF doError(ctx.out)
+              error("More than one function with matching arguments for "
+                                                  .. funcName .. "()", m_node)
+              listMatchingFunc(ctx.scope, funcName, argTypeList, FALSE)
+            }
+          ELSE
+            ret = generateFunctionCall(func, m_node, ctx, dest_type)
+          }
+        }
+      ELSEIF type == Node.Type.proc_ref || type == Node.Type.func_ref
+        Symbol sym = ctx.scope.getSymbol(funcName, f_node)
+        IF sym == NIL
+          m_node.n_undefined = 2
+        ELSE
+          generateRefCast(sym, f_node, ctx.out)
+          ctx.gen.writeSymName(sym, ctx)
+          # sym.writeCName(ctx.out)
+          ctx.out.write(")(")
+          generateArgumentsCheck(m_node.n_right, funcName, ctx, sym.memberList)
+          m_node.n_undefined = m_node.n_right.n_undefined
+          ctx.out.write(")")
+          ret = sym.returnSymbol
+        }
+      ELSE
+        m_node.n_undefined = 4
+        IF doError(ctx.out)
+          error("unknown function: " .. funcName, m_node)
+        }
+      }
+    ELSEIF f_node.n_type == Node.Type.member
+      Node left = f_node.n_left
+      Symbol moduleSym
+      moduleSym = ctx.scope.findNodeSymbol(left)
+      IF moduleSym == NIL || moduleSym.type != Node.Type.class
+        moduleSym = left.findTopModule(ctx.scope)
+      }
+      IF moduleSym != NIL
+        # "module.submodule.function(arg)"
+        moduleSym = ctx.scope.findNodeSymbol(left)
+        IF moduleSym == NIL
+          m_node.n_undefined = 3
+          IF doError(ctx.out)
+            error("Cannot find module member: " .. left.n_string, left)
+          }
+        ELSEIF f_node.n_string == "INFO"
+          IF m_node.n_right != NIL && m_node.n_right.n_type != Node.Type.unknown
+            m_node.error("INFO() does not take arguments")
+          ELSE
+            ret = generateModuleInfo(moduleSym, m_node, ctx)
+          }
+        ELSE
+          # TODO: make sure all functions have members, esp. for predefined
+          # modules.  Then only use findMethod()
+          Symbol sym = Symbol.find(moduleSym.memberList, f_node.n_string)
+          IF sym != NIL && sym.hasMember()
+            sym = findMethod(moduleSym, f_node.n_string,
+                             m_node.n_right, ctx, FALSE,
+                             doError(ctx.out) ? f_node : NIL, "")
+          }
+          IF sym == NIL
+            m_node.n_undefined = 1
+            IF doError(ctx.out)
+              error("module member not found: " .. f_node.n_string, left)
+            }
+          ELSEIF sym.type == Node.Type.func_def
+                                             || sym.type == Node.Type.proc_def
+            ret = generateFunctionCall(sym, m_node, ctx, dest_type)
+          ELSE
+            ret = generateModuleCall(sym, m_node.n_right, ctx)
+            m_node.n_undefined += m_node.n_right.n_undefined
+          }
+        }
+      ELSE
+        # "object.member.method(arg)"
+        ret = generateMethodCall(m_node, ctx, destSym)
+      }
+    ELSE
+      error("INTERNAL: unimplemented function call", f_node)
+    }
+    RETURN ret
+  }
+
+  FUNC int generateIncDec(Node node, SContext ctx, Output.Group outs)
+    Output out = ctx.out             # normal generate output
+    Scope scope = ctx.scope
+
+    out.writeIndent(scope.depth)
+    IF node.n_type == Node.Type.plusplus
+      out.write("++(")
+    ELSE
+      out.write("--(")
+    }
+    Symbol sym = generateLVarname(node.n_left, TRUE, ctx,
+                                                       NEW(Node.Type.int))
+    out.write(");\n")
+    IF node.n_left.n_type == Node.Type.id
+                  && sym != NIL && sym.cName != NIL && sym.cName[0] == 'A'
+      node.error("++/-- for argument not allowed")
+    }
+    RETURN node.n_left.n_undefined
+  }
+
+  # var = expr, var += expr, var -= expr, var ..= expr
+  FUNC int generateAssign(Node node, SContext ctx, Output.Group outs)
+    Output out = ctx.out             # normal generate output
+    Scope scope = ctx.scope
+    Resolve.I gen = ctx.gen
+    int undef
+
+    # "var = expr" or "module.something = expr"
+    out.writeIndent(scope.depth)
+
+    # Dictionary assignment requires a function call in C.
+    IF node.n_left.n_type == Node.Type.subscript
+      Symbol sp = generateVarname(
+                              node.n_left.n_left, NEW(scope, gen, noOut), NIL)
+      IF sp != NIL && sp.type == Node.Type.dict
+        RETURN generateDictAssign(node, sp, ctx, outs)
+      }
+    }
+
+    Symbol sp = generateLVarname(node.n_left, TRUE, ctx, NIL)
+    undef += node.n_left.n_undefined
+
+    IF sp != NIL
+        && ((node.n_left.n_type == Node.Type.id
+             || (node.n_left.n_type == Node.Type.member
+               && (sp.type == Node.Type.bits_small
+                                         || sp.type == Node.Type.bits_big)))
+             && sp.cName != NIL && sp.cName[0] == 'A')
+      node.error("Assignment to argument not allowed")
+    }
+
+    bool toInterface
+    Symbol exprSym
+    IF sp != NIL && sp.type == Node.Type.i_object
+      # The expression can either be of the same type or an object that
+      # matches the interface.  If it's not the same type we need to
+      # assign to the pointer field and set the type.
+      Symbol s = genExpr(node.n_right, ctx.copyNoOut(), sp)
+      IF s != NIL && s.type != Node.Type.i_object
+        toInterface = TRUE
+      }
+    }
+
+    SWITCH node.n_type
+      CASE Node.Type.assign
+           out.write(" = ")
+      CASE Node.Type.minassign
+          IF sp != NIL && sp.type == Node.Type.int
+            out.write(" -= ")
+          ELSE
+            undef++
+            IF doError(out)
+              node.error("-= not supported for " .. sp.type.name())
+            }
+          }
+      CASE Node.Type.plusassign
+          IF sp != NIL && sp.type == Node.Type.int
+            out.write(" += ")
+          ELSE
+            undef++
+            IF doError(out)
+              node.error("+= not supported for " .. sp.type.name())
+            }
+          }
+      CASE Node.Type.stringassign
+          IF sp != NIL && sp.type == Node.Type.string
+            ctx.scope.addUsedItem("concat")
+            out.write(" = Zconcat(")
+            generateVarname(node.n_left, ctx, NEW(Node.Type.string))
+            undef += node.n_left.n_undefined
+            out.write(", ")
+          ELSE
+            undef++
+            IF doError(out)
+              node.error("..= not supported for " .. sp.type.name())
+            }
+          }
+    }
+    IF sp != NIL
+      IF sp.type == Node.Type.var
+        # First assignment for VAR variable
+        Symbol r = genExpr(node.n_right, ctx, NIL)
+        IF r == NIL || r.type == Node.Type.unknown
+          undef++
+          IF doError(out)
+            error("Cannot determine type for VAR variable " .. sp.name, node)
+          }
+          Error.verbose2Msg(node.n_string .. " VAR type not detected\n")
+          sp.type = Node.Type.unknown
+        ELSE
+          sp.type = r.type
+          sp.class = r.class
+          sp.memberList = r.memberList
+          sp.cName = r.cName
+
+          sp.keySymbol = r.keySymbol
+          sp.returnSymbol = r.returnSymbol
+        }
+      ELSEIF (sp.type == Node.Type.bits_small
+               || sp.type == Node.Type.bits_big) && sp.returnSymbol != NIL
+        # Assignment to a BITS field requires some more work:
+        #  Zimbu: myFlags.on = someExpr 
+        #  C:     myFlags = ((myFlags) & mask) | ((someExpr) << shift)
+        out.write("((")
+        generateVarname(node.n_left, ctx, NIL)
+        undef += node.n_left.n_undefined
+        int shift = sp.returnSymbol.value
+        out.write(") & " .. ~(sp.returnSymbol.mask << shift) .. ") | ((")
+        # TODO: proper handling of Nat
+        Symbol retSym = sp.returnSymbol
+        IF sp.returnSymbol.type == Node.Type.nat
+          retSym = sp.returnSymbol.copy()
+          retSym.type = Node.Type.int
+        }
+        genExpr(node.n_right, ctx, retSym)
+        IF shift == 0
+          out.write("))")
+        ELSE
+          out.write(") << " .. shift .. ")")
+        }
+      ELSEIF sp.type == Node.Type.i_object
+        # The expression can either be of the same type or an object that
+        # matches the interface.  First try the same type.
+        IF toInterface
+          # TODO: more specific type cast useful?
+          out.write("(void *)")
+          exprSym = genExpr(node.n_right, ctx, NIL)
+        ELSE
+          genExpr(node.n_right, ctx, sp)
+        }
+      ELSEIF sp.type == Node.Type.ref
+        genExpr(node.n_right, ctx, sp.returnSymbol)
+      ELSE
+        genExpr(node.n_right, ctx, sp)
+      }
+      undef += node.n_right.n_undefined
+
+      # Close the Zconcat(lhs, expr) call.
+      IF node.n_type == Node.Type.stringassign
+                                            && sp.type == Node.Type.string
+        out.write(")")
+      }
+    }
+
+    IF sp != NIL && sp.class != NIL
+                                 && exprSym != NIL && exprSym.class != NIL
+      # Set the type of the i_object.
+      # TODO: if this is a different i_object the type will change.
+      out.write("; ")
+      generateVarname(node.n_left, ctx, NIL)
+      undef += node.n_left.n_undefined
+      out.write("->type = ")
+      int idx = sp.class.childIndex(exprSym.class)
+      IF idx < 0
+        IF out.writing
+          node.n_right.error("Type mismatch, expression result does not match the destination class")
+        ELSE
+          undef++
+        }
+      }
+      out.write("" .. idx)
+    }
+    out.write(";\n")
+
+    RETURN undef
+  }
+
+  # "dict[key] = val" -> ZDictAdd(1, dict, Ikey, Pkey, Ival, Pval)
+  FUNC int generateDictAssign(Node node, Symbol sp,
+                                              SContext ctx, Output.Group outs)
+    Output out = ctx.out             # normal generate output
+    int undef
+
+    IF node.n_type != Node.Type.assign
+      node.error("Sorry, only \"=\" supported for dict")
+    ELSE
+      out.write("ZDictAdd(1, ")
+      generateVarname(node.n_left.n_left, ctx, NIL)
+      undef = node.n_left.n_left.n_undefined
+      IF sp.keySymbol.isPointerType()
+        out.write(", 0, ")
+      ELSE
+        out.write(", ")
+      }
+      genExpr(node.n_left.n_right, ctx, sp.keySymbol)
+      undef += node.n_left.n_right.n_undefined
+      IF !sp.keySymbol.isPointerType()
+        out.write(", NULL")
+      }
+      out.write(", ")
+
+      IF sp.returnSymbol == NIL
+        undef += 3
+      ELSE
+        IF sp.returnSymbol.isPointerType()
+          out.write("0, ")
+        }
+        genExpr(node.n_right, ctx, sp.returnSymbol)
+        undef += node.n_right.n_undefined
+        IF !sp.returnSymbol.isPointerType()
+          out.write(", NULL")
+        }
+      }
+      out.write(");\n")
+    }
+    RETURN undef
+  }
+
+  # Generate a method.
+  FUNC int generateMethod(Node node, SContext ctx, Output.Group outs)
+    Output out = ctx.out             # normal generate output
+    int undef
+    Resolve.I gen = ctx.gen
+    Scope scope = ctx.scope
+    Symbol retSym = NIL
+
+    bool isEqual = (node.n_type == Node.Type.equal_def)
+    bool isNew = (node.n_type == Node.Type.new_def)
+    string name = node.n_string
+
+    # Define a function.
+    IF isNew || isEqual
+      IF !scope.isClassScope()
+        error(name .. " not in class scope", node)
+        RETURN 0
+      }
+      name = isNew ? "NEW" : "EQUAL"
+    ELSE
+      node.checkItemName(node.n_type == Node.Type.proc_def
+                                                        ? "proc" : "func")
+    }
+
+    # We also get here in a later pass with node.n_symbol equal to NIL
+    # when defining a method in a child class.
+    Symbol sym = NIL
+    IF scope.pass <= 1
+      int identNumber = 0
+      sym = scope.getSymbol(name, FALSE)
+      IF sym != NIL
+        IF sym.type != Node.Type.func_def
+           && sym.type != Node.Type.proc_def
+           && sym.type != Node.Type.lib_method
+           && sym.type != node.n_type
+          node.error("Symbol \"" .. name .. "\" redefined as "
+                                                        .. sym.type.name())
+          IF sym.node != NIL
+            sym.node.error("Previous definition here")
+          }
+        ELSE
+          identNumber = sym.value + 1
+        }
+      }
+      sym = scope.addSymbol(name, node.n_type, node, TRUE)
+      sym.value = identNumber
+      IF scope.pass == 1
+        node.n_symbol = sym
+      }
+    ELSE
+     # IF scope.outer != NIL && !isNew && !isEqual
+     #   # Check that method of a class isn't defined as a func or proc
+     #   # after the class.
+     #   # Disabled: SHARED stuff comes after the class.
+     #   sym = scope.outer.getSymbol(name, FALSE)
+     #   IF sym != NIL && !(sym IS node.n_symbol)
+     #     string loc = ""
+     #     IF sym.pos != NIL
+     #       loc = sym.pos.toString()
+     #     }
+     #     error("Symbol \"" .. name .. "\" redefined later: " .. loc, node)
+     #   }
+     # }
+      sym = node.n_symbol
+      IF !scope.forwardDeclare
+        # Not re-using the scope, need to define the class again
+        scope.addMember(sym)
+      }
+      IF skip_zero_undefined && !doError(out) && node.n_undefined == 0
+        # No need to process this method again
+        RETURN 0
+      }
+    }
+    sym.node = node
+    sym.attributes = node.n_attr
+
+    # Remember what language the method was produced for.  May have to do
+    # it again for another language.
+    sym.tlang = gen.targetLang
+
+    # Set the name of the method in the output.
+    IF scope.isClassScope()
+      sym.className = scope.class.className
+      IF scope.scopeName == NIL
+        sym.cName = "M" .. sym.className .. "__" .. name
+      ELSE
+        sym.cName = scope.scopeName .. "__F" .. name
+      }
+      IF sym.value > 0
+        sym.cName ..= "__" .. sym.value
+      }
+    ELSE
+      IF scope.scopeName == NIL
+        sym.cName = "F" .. name
+      ELSE
+        sym.cName = scope.scopeName .. "__F" .. name
+      }
+      IF sym.value > 0
+        sym.cName ..= "__" .. sym.value
+      }
+    }
+
+    # We need to be able to define a function inside a function.  To avoid
+    # problems with nesting, we write the function declaration and body to
+    # a separate output and append it all at once to the actual
+    # declaration and body out.
+    # First part is written to function declarations in the file.
+    # First and second part are written to function body in the file.
+    Output funcOut
+    IF node.n_attr.abstract
+      # We don't write anything for an abstract method.
+      funcOut = noOut
+    ELSE
+      funcOut = NEW(NEW())
+      funcOut.writing = out.writing
+    }
+    SContext funcOutCtx = NEW(scope, gen, funcOut)
+    retSym = gen.methodReturnType(node, sym, funcOutCtx)
+    IF retSym == NIL && node.n_type != Node.Type.proc_def
+      undef++
+      IF doError(out) && node.n_type == Node.Type.func_def
+        node.n_returnType.error("Unknown type")
+        retSym = Symbol.nil
+      ELSE
+        Error.verbose2Msg(name .. " return type undefined\n")
+      }
+    }
+
+    # If the return type is a class we return an object of that class.
+    IF retSym != NIL && retSym.type == Node.Type.class
+      retSym = retSym.copyObject()
+    }
+    sym.returnSymbol = retSym
+
+    Scope funcScope
+    IF !node.n_attr.abstract
+      funcScope = Scope.newScope(scope, FALSE)
+      funcScope.scopeName = sym.cName
+      funcScope.nodeType = Node.Type.proc_def
+    }
+
+    # Generate function arguments.  In each round we redo this, because
+    # types may have become known.
+    sym.memberList = NIL
+    Node arg_node = node.n_left
+    WHILE arg_node != NIL
+      Node left = arg_node.n_left
+      Symbol typeSym = generateObjDeclType(left, NEW(scope, gen, noOut))
+      IF typeSym == NIL
+        undef++
+        Error.verbose2Msg(name .. " arg " .. arg_node.n_string
+                                                    .. " type undefined\n")
+        IF doError(out)
+          error("Unknown type: " .. left.n_string, left)
+        }
+      ELSEIF typeSym.type == Node.Type.ref && typeSym.returnSymbol != NIL
+                            && typeSym.returnSymbol.type == Node.Type.class
+        typeSym.returnSymbol = typeSym.returnSymbol.copyObject()
+      }
+      sym.addMember(arg_node.n_string, typeSym, 0)
+
+      # Define the argument in the method scope.  Skip this for an
+      # abstract method.
+      IF funcScope != NIL
+        Symbol argSym
+        IF typeSym == NIL
+          # Define the var with unknown type
+          argSym = funcScope.addSymbol(arg_node.n_string, Node.Type.unknown,
+                                                            arg_node, FALSE)
+        ELSE
+          # Define the var with the actual type
+          argSym = funcScope.addSymbol(arg_node.n_string, typeSym,
+                                                            arg_node, FALSE)
+        }
+        string argName
+        IF typeSym != NIL && typeSym.type == Node.Type.ref
+          # Let's give by-reference args a different leader.
+          argName = "R" .. arg_node.n_string
+          IF argSym.returnSymbol != NIL
+            # Copy the returnSymbol, same object is used in typeSym, which
+            # we don't want to change.
+            argSym.returnSymbol = argSym.returnSymbol.copy()
+            argSym.returnSymbol.cName = argName
+            argSym.returnSymbol.className = NIL  # don't use THIS->
+          }
+        ELSE
+          argName = "A" .. arg_node.n_string
+          argSym.cName = argName
+        }
+
+        IF doError(out) && typeSym != NIL
+          gen.argWithType(arg_node IS node.n_left, typeSym, left,
+                                                      argName, funcOutCtx)
+        }
+      }
+      arg_node = arg_node.n_next
+    }
+
+    IF doError(out) && scope.pass >= 1
+      IF scope.findMatchingFunc(sym.name, sym.memberList, sym,
+                                                      FALSE, FALSE) != NIL
+        # method is redefined in the same scope.
+        node.error("Redefining " .. sym.name .. " with same signature")
+      ELSEIF scope.class != NIL
+        # check if method is already defined in a parent class
+        Symbol parent = scope.class.parentClass
+        WHILE parent != NIL
+          Symbol otherSym = parent.findMatchingFunction(
+                              sym.name, sym.memberList, NIL, FALSE, FALSE)
+          IF otherSym != NIL
+            IF otherSym.attributes.default && !sym.attributes.replace
+              node.error("Replacing default method "
+                                          .. sym.name .. " without REPLACE")
+              otherSym.node.error("Previously defined method is here")
+            ELSEIF otherSym.attributes.abstract && !sym.attributes.define
+              node.error("Defining abstract method "
+                                           .. sym.name .. " without DEFINE")
+              otherSym.node.error("Previously defined method is here")
+            ELSEIF !otherSym.attributes.abstract
+                                           && !otherSym.attributes.default
+              node.error("Cannot redefine " .. sym.name)
+              otherSym.node.error("Previously defined method "
+                                           .. "is not ABSTRACT or VIRTUAL")
+            }
+          }
+          parent = parent.parentClass
+        }
+      }
+    }
+
+    # There is no function body for an abstract method.
+    IF node.n_attr.abstract
+      node.n_undefined = undef
+      RETURN undef
+    }
+
+    # Here we split up the declaration and the implementation.
+    # The declaration is only needed for C, not for JS.
+    IF gen.doWriteDecl() && funcOut ISNOT noOut
+      outs.declOut.append(funcOut)
+      outs.declOut.write(");\n")
+    }
+
+    funcOut.write(") {\n")
+
+    IF isNew
+      gen.writeNewThis(sym, funcOutCtx)
+    }
+
+    funcScope.depth = 1
+    funcScope.returnSymbol = retSym
+    funcScope.insideNew = isNew
+    funcScope.topNode = node.n_right
+    funcScope.thisName = gen.thisName(isNew)
+
+    # generated code is written to outs.bodyOut.
+    Output.Group newOuts = outs.copy()
+    IF outs.origBodyOut == NIL
+      newOuts.origBodyOut = outs.bodyOut
+    }
+    newOuts.bodyOut = funcOut
+    newOuts.varOut = newOuts.bodyOut.copy()
+    newOuts.out = funcOut
+    undef += generate(funcScope.topNode, funcScope, gen, newOuts)
+
+    IF isNew
+      gen.writeNewReturn(funcOut)
+    ELSEIF node.n_type == Node.Type.func_def
+      Node n = node.n_right
+      WHILE TRUE
+        IF n == NIL || (n.n_next == NIL && n.n_type != Node.Type.return)
+          node.error("Missing RETURN")
+          BREAK
+        }
+        n = n.n_next
+        IF n == NIL
+          BREAK
+        }
+      }
+    }
+
+    funcOut.write("}\n")
+    IF outs.origBodyOut != NIL
+      outs.origBodyOut.append(funcOut)
+    ELSE
+      outs.bodyOut.append(funcOut)
+    }
+    node.n_undefined = undef
+    RETURN undef
+  }
+
+  # Generate a member or variable declaration.
+  # "type var.member = expr", "class.type var", etc.
+  FUNC int generateDeclare(Node node, SContext ctx, Output.Group outs)
+    Output out = ctx.out             # normal generate output
+    Output varOut = outs.varOut      # output for declaring vars
+    int undef
+    Resolve.I gen = ctx.gen
+    Scope scope = ctx.scope
+
+    Symbol typeSym
+    node.checkItemName("member")
+
+    # First generate the declaration without init.
+    IF scope.outer != NIL
+      varOut.writeIndent(scope.depth)
+    }
+    IF node.n_left.n_type == Node.Type.var
+      IF scope.pass <= 1
+        typeSym = NEW(Node.Type.var)
+        undef++
+        Error.verbose2Msg(node.n_string .. " is a VAR, undefined\n")
+      ELSE
+        #  VAR var in second round: use type detected in first round
+        typeSym = node.n_symbol
+        IF typeSym.type == Node.Type.var
+          undef++
+          Error.verbose2Msg(node.n_string .. " VAR type not yet detected\n")
+          IF doError(out)
+            error("Could not determine type for " .. node.n_string, node)
+          }
+        ELSE
+          IF typeSym.type == Node.Type.class
+             || typeSym.type == Node.Type.object
+             || typeSym.type == Node.Type.enum
+            typeSym = typeSym.class
+          }
+          gen.vartype(typeSym, node.n_left, scope, varOut)
+        }
+      }
+    ELSE
+      typeSym = generateDeclType(node.n_left, NEW(scope, gen, varOut))
+      undef += node.n_left.n_undefined
+    }
+    gen.vardecl(ctx, varOut)
+
+    # On first pass type may not be known, assume it's an int.
+    # On the final we already gave an error message, use some
+    # type to keep the code simple.
+    IF typeSym == NIL || typeSym.type == Node.Type.unknown
+      typeSym = NEW(Node.Type.unknown)
+    }
+
+    Symbol sym = NIL
+    SWITCH typeSym.type
+      CASE Node.Type.class
+        # The type of the variable is an object of the class.
+        Symbol objSym = typeSym.copyObject()
+        sym = scope.addSymbol(node.n_string, objSym, node, FALSE)
+
+      CASE Node.Type.object
+      CASE Node.Type.i_object
+      CASE Node.Type.int
+      CASE Node.Type.string
+      CASE Node.Type.bool
+      CASE Node.Type.status
+      CASE Node.Type.bits_small
+      CASE Node.Type.bits_big
+      CASE Node.Type.enum
+      CASE Node.Type.var
+      CASE Node.Type.list
+      CASE Node.Type.dict
+      CASE Node.Type.proc_ref
+      CASE Node.Type.func_ref
+        sym = scope.addSymbol(node.n_string, typeSym, node, FALSE)
+
+      DEFAULT
+        sym = scope.addSymbol(node.n_string, typeSym, node, FALSE)
+        undef++
+        IF doError(out)
+          error("Declaration of " .. node.n_string
+                   .. " for unsupported type " .. typeSym.type.name(), node)
+        }
+    }
+    IF scope.isClassScope() || scope.scopeName == NIL || scope.statements
+      # No need to use a long name, the variable is only visible in the
+      # current scope and nested scopes.
+      sym.cName = "V" .. node.n_string
+    ELSE
+      sym.cName = scope.scopeName .. "__V" .. node.n_string
+    }
+    IF scope.pass >= 1  # TODO: == 1
+      node.n_symbol = sym
+    }
+
+    # Array decl.: "Foo[expr] var" -> "Foo__S *(var[expr]);"
+    Node anode = node.n_left
+    WHILE anode != NIL
+      IF anode.n_type == Node.Type.subscript
+        sym.returnSymbol = NEW(sym.type)
+        sym.type = Node.Type.array
+        BREAK
+      }
+      anode = anode.n_left
+    }
+    IF anode != NIL && typeSym.isPointerType()
+      varOut.write("(")
+    }
+
+    # Output variable name.
+    varOut.write(sym.cName)
+
+    IF anode != NIL
+      # TODO: when the expression isn't a constant this fails
+      varOut.write("[")
+      genExpr(anode.n_right, NEW(scope, gen, varOut), Symbol.int)
+      varOut.write("]")
+      undef += anode.n_right.n_undefined
+      IF typeSym.isPointerType()
+        varOut.write(")")
+      }
+    }
+
+    # TODO: for JS we can always init the declaration, no need for two
+    # lines.
+    varOut.write(";\n")
+
+    # 2. Write the init or assignment
+    IF scope.init
+      Output iOut = out
+      IF gen.targetLang == Resolve.TargetLang.js
+        iOut = varOut
+        iOut.writeIndent(scope.depth)
+      ELSEIF scope.scopeName == NIL || scope.moduleName != NIL
+                                     || scope.nodeType == Node.Type.shared
+        # For global variables and for variables in a module write to the
+        # ZglobInit() or I{module}() function.
+        iOut = outs.initOut
+        iOut.writeIndent(1)
+      ELSE
+        iOut.writeIndent(scope.depth)
+      }
+
+      iOut.write(sym.cName)
+      iOut.write(" = ")
+
+      IF node.n_right == NIL
+        # no assignment, default init: NIL, FALSE, zero
+        gen.defaultInit(typeSym, iOut)
+      ELSE
+        # "var = expr"  init
+        bool varType
+        IF typeSym.type == Node.Type.var
+          # Set type to |Type.unknown|, genExpr doesn't handle |Type.var|
+          typeSym.type = Node.Type.unknown
+          varType = TRUE
+        }
+        IF typeSym.type == Node.Type.class
+          typeSym = typeSym.copyObject()
+        }
+        Symbol exprSym = genExpr(node.n_right, NEW(scope, gen, iOut),
+                                                                  typeSym)
+        undef += node.n_right.n_undefined
+        IF varType
+          IF exprSym.type == Node.Type.unknown
+            # type not known yet
+            sym.type = Node.Type.var
+          ELSE
+            # now we know the type for "VAR name = expr"
+            undef--
+            Error.verbose2Msg(node.n_string .. " VAR type detected\n")
+            sym.type = exprSym.type
+            sym.memberList = exprSym.memberList
+            sym.class = exprSym.class
+            sym.keySymbol = exprSym.keySymbol
+            sym.returnSymbol = exprSym.returnSymbol
+          }
+        }
+      }
+
+      iOut.write(";\n")
+    }
+    RETURN undef
+  }
+
+  FUNC int generateGenerateIf(Node node, SContext ctx, Output.Group outs)
+    Node gen_node = node.n_left
+    int undef
+    bool didBlock
+    bool noGenerate_save = ctx.scope.noGenerate
+    Output.Group noOuts = NEW()
+    noOuts.setHeads(NEW())
+
+    WHILE gen_node != NIL
+      bool doGenerate
+      IF !ctx.out.writing
+        # Always generate when not writing but resolving symbols.
+        doGenerate = TRUE
+      ELSEIF didBlock
+        # Don't generate when a previous block was generated.
+        doGenerate = FALSE
+      ELSEIF gen_node.n_type == Node.Type.gen_else
+        # Always generate the else block when we didn't generate any of the
+        # "if" or "elseif" blocks.
+        doGenerate = TRUE
+      ELSE
+        # Evaluate the expression.
+        doGenerate = ExprEval.evalBool(gen_node.n_cond, ctx)
+      }
+
+      # Move the the node with the block.
+      gen_node = gen_node.n_next
+      IF gen_node.n_type != Node.Type.block
+        gen_node.error("INTERNAL: expected block node")
+        BREAK
+      }
+
+      # Generate code, but without doing the end-of-block stuff.
+      ctx.scope.noGenerate = !doGenerate
+      undef += generateNode(gen_node.n_left, ctx.scope, ctx.gen,
+                                                   doGenerate ? outs : noOuts)
+      IF doGenerate
+        didBlock = TRUE
+      }
+
+      gen_node = gen_node.n_next
+    }
+
+    ctx.scope.noGenerate = noGenerate_save
+    RETURN undef
+  }
+
+  # Handle the IMPLEMENTS node after CLASS.
+  # Return the number of undefined symbols.
+  FUNC int handleImplements(Node node, Symbol class, Scope scope,
+                                                               bool giveError)
+    int undef
+    IF node.n_type == Node.Type.op_comma
+      undef += handleImplements(node.n_left, class, scope, giveError)
+      undef += handleImplements(node.n_right, class, scope, giveError)
+    ELSE
+      Symbol itf = scope.findNodeSymbol(node)
+      IF itf == NIL
+        undef += 2
+        IF giveError
+          node.error("Interface not found")
+        }
+      ELSEIF itf.type != Node.Type.interface && itf.type != Node.Type.i_object
+        undef++
+        IF giveError
+          node.error("Not an interface")
+        }
+      }
+      IF itf != NIL
+        # Add the interface to our class.
+        itf.node = node
+        class.addInterface(itf, node)
+
+        # Add ourselves as a child to the interface.
+        IF itf.type == Node.Type.i_object
+          itf.class.addChild(class)
+        ELSE
+          itf.addChild(class)
+        }
+      }
+    }
+    RETURN undef
+  }
+
+  # Generate a block scope.
+  # |node| may be NIL for an empty block.
+  # Use |nodeType| for SWITCH, FOR, IF, etc.
+  # Use |switchSymbol| in the scope of a SWITCH.
+  FUNC int generateScope(Node node, SContext ctx, Node.Type nodeType,
+                                       Symbol switchSymbol, Output.Group outs)
+    Output out = outs.out           # normal generate output
+    out.writeIndent(ctx.scope.depth)
+    out.write("{\n")
+    int undef
+    IF node != NIL
+      Scope blockScope = Scope.newScope(ctx.scope, FALSE)
+      IF ctx.scope.pass <= 1
+        IF ctx.scope.scopeName == NIL
+          node.n_scopeName = "BL_" .. scopeNumber++
+        ELSE
+          node.n_scopeName = ctx.scope.scopeName .. "__" .. scopeNumber++
+        }
+      }
+      IF ctx.scope.pass > 1 && skip_zero_undefined && !doError(out)
+                                                      && node.n_undefined == 0
+        # No need to process this block again.
+        RETURN 0
+      }
+
+      blockScope.scopeName = node.n_scopeName
+      blockScope.topNode = node
+      blockScope.nodeType = nodeType
+      IF nodeType == Node.Type.switch
+        blockScope.switchSymbol = switchSymbol
+        blockScope.caseList = NEW()
+      }
+      Output.Group newOuts = outs.copy()
+      newOuts.varOut = newOuts.out.copy()  # varOut appends to "out"
+      undef = generate(blockScope.topNode, blockScope, ctx.gen, newOuts)
+      node.n_undefined = undef
+    }
+    out.writeIndent(ctx.scope.depth)
+    out.write("}\n")
+    RETURN undef
+  }
+
+  # Generate tables for accessing member variables and methods of a class.
+  # Only for a class that has children, otherwise it's never needed.
+  PROC generateClassOffTable(Symbol classSym, SContext ctx)
+    # TODO: when using Class.I without any inheritance should not use an
+    # i_object for vars but the class directly.
+    IF classSym.children == NIL
+      RETURN
+    }
+    ctx.scope.addUsedItem("dummy")
+    genClassOffTableList(classSym, classSym, ctx.out, TRUE)
+
+    # member variables can be defined in parents
+    Symbol sym = classSym.parentClass
+    WHILE sym != NIL
+      genClassOffTableList(classSym, sym, ctx.out, FALSE)
+      sym = sym.parentClass
+    }
+  }
+
+  PROC genClassOffTableList(Symbol classSym, Symbol loopSym,
+                                                   Output out, bool doMethods)
+    IF loopSym.memberList == NIL
+      RETURN
+    }
+    FOR m IN loopSym.memberList
+      IF m.className != NIL
+        IF m.isMethodType()
+          IF doMethods
+            generateMethodReturnType(m, out)
+            out.write(" (*(" .. classFuncTableName(classSym, m) .. "[]))(")
+            generateMethodArgTypes(m, out)
+            out.write(") = {\n  ")
+            IF !loopSym.attributes.abstract
+              methodTypeCast(m, out)
+              out.write(m.cName .. ",\n")
+            }
+            genMethodChildrenList(classSym, m, out)
+            out.write("};\n")
+          }
+        ELSE
+          out.write("int " .. classOffTableName(classSym, m) .. "[] = {\n")
+          IF !classSym.attributes.abstract
+            out.write("  (char *)&((" .. classSym.cName .. " *)&dummy)->")
+            out.write(m.cName .. " - (char *)(" .. classSym.cName
+                                                            .. " *)&dummy,\n")
+          }
+          genMemberChildrenList(classSym, m, out)
+          out.write("};\n")
+        }
+      }
+    }
+  }
+
+  PROC genMethodChildrenList(Symbol class, Symbol member, Output out)
+    FOR c IN class.children
+      # TODO: match arguments
+      Symbol f = c.findMatchingMember(member)
+      IF f == NIL
+        out.write("  NULL,\n")
+      ELSEIF !c.attributes.abstract
+        out.write("  ")
+        methodTypeCast(member, out)
+        out.write(f.cName .. ",\n")
+      }
+      IF c.children != NIL
+        genMethodChildrenList(c, member, out)
+      }
+    }
+  }
+
+  PROC genMemberChildrenList(Symbol class, Symbol member, Output out)
+    FOR c IN class.children
+      IF !c.attributes.abstract
+        out.write("  (char *)&((" .. c.cName .. " *)&dummy)->")
+        out.write(member.cName .. " - (char *)(" .. c.cName .. " *)&dummy,\n")
+      }
+      IF c.children != NIL
+        genMemberChildrenList(c, member, out)
+      }
+    }
+  }
+
+  PROC methodTypeCast(Symbol m, Output out)
+    out.write("(")
+    generateMethodReturnType(m, out)
+    out.write(" (*)(")
+    generateMethodArgTypes(m, out)
+    out.write("))")
+  }
+
+  FUNC string classFuncTableName(Symbol classSym, Symbol member)
+    string s = classSym.cName .. "_I__M" .. member.name
+    IF member.memberList != NIL
+      FOR m IN member.memberList
+        IF m != NIL
+          IF m.class != NIL && (m.type == Node.Type.class
+                                                || m.type == Node.Type.object)
+            s ..= "__" .. m.class.cName
+          ELSEIF m.class != NIL && m.type == Node.Type.i_object
+            s ..= "__" .. m.class.cName .. "_I"
+          ELSEIF m.cName != NIL && m.type == Node.Type.enum
+            s ..= "__" .. m.cName
+          ELSE
+            s ..= "__" .. m.type.name()
+          }
+        }
+      }
+    }
+    RETURN s .. "_ptr"
+  }
+
+  FUNC string classOffTableName(Symbol classSym, Symbol member)
+    RETURN classSym.cName .. "_I__" .. member.cName .. "_off"
+  }
+
+  # Generate the return type of a method from the Symbol.
+  PROC generateMethodReturnType(Symbol sym, Output out)
+    IF sym.name == "NEW"
+      out.write(sym.returnSymbol.className .. " *")
+    ELSEIF sym.name == "EQUAL"
+      out.write("Zbool ")
+    ELSEIF sym.type == Node.Type.func_def
+      genType(sym.returnSymbol, NIL, out)
+    ELSE
+      out.write("void ")
+    }
+  }
+
+  PROC generateMethodArgTypes(Symbol sym, Output out)
+    string sep = ""
+    IF sym.name != "NEW"
+      out.write("void *")
+      sep = ", "
+    }
+    IF sym.memberList != NIL
+      FOR s IN sym.memberList
+        out.write(sep)
+        genType(s, NIL, out)
+        sep = ", "
+      }
+    }
+  }
+
+  list<ZimbuFile> importedFiles = NEW()
+
+  #
+  # Handle an IMPORT statement.
+  # Return the number of undefined items.
+  #
+  FUNC int generateImport(UsedFile usedFile, Node node, Resolve.I gen,
+                                                            Output.Group outs)
+    Scope scope = usedFile.scope()
+    IF node.n_usedFile == NIL
+      # Didn't handle this node before, create a UsedFile for it now.
+      handleImport(usedFile, node)
+    }
+    ZimbuFile zimbuFile = node.n_usedFile.zimbuFile
+    IF zimbuFile == NIL
+      RETURN 0  # error already reported
+    }
+
+    string name = zimbuFile.filename
+
+    IF scope.pass <= 1
+      # First round: add the zimbuFile in the current scope.  Note that
+      # zimbuFile.topScope and zimbuFile.topScope.symbols may still be NIL.
+      scope.addImport(zimbuFile)
+    }
+
+    int undef
+    IF zimbuFile.startedPass == -1
+      # Didn't parse the imported file yet, do it now.
+      node.n_usedFile.parse(scope.importIndent .. "  ")
+      IF zimbuFile.topScope == NIL
+        node.error("Cannot open file for reading: " .. name)
+      ELSE
+        int tail = name.rindex('/')
+        IF tail < 0
+          zimbuFile.topScope.dirName = ""
+        ELSE
+          zimbuFile.topScope.dirName = name.byteSlice(0, tail - 1)
+        }
+      }
+    }
+
+    # We need to go into the imported file if we haven't done it yet for the
+    # current top file (MAIN() or .zwt file).
+    # Rationale: "foo.zu" may be included below the file containing MAIN() and
+    # also below a .zwt file.  It must then be generated and included in both.
+    # This must be known at the toplevel, also for builtin modules.
+    IF node.n_usedFile.isNewImport(zimbuFile) && !Error.foundError
+      zimbuFile.startedPass = 1
+
+      # Do the first pass now, it's always needed.
+      # This collects the symbols, some forward declared types may still be
+      # unknown.
+      # This recursively imports files!
+      resolve(node.n_usedFile, scope.importIndent .. "  ")
+
+      Node top = zimbuFile.topScope.topNode
+      IF top != NIL
+        undef = zimbuFile.topScope.topNode.n_undefined
+
+        # Check that the toplevel item name appears in the file name,
+        # ignoring case.
+        WHILE top != NIL && top.n_type == Node.Type.import
+          top = top.n_next
+        }
+        IF top != NIL
+            && (top.n_type == Node.Type.class
+               || top.n_type == Node.Type.interface
+               || top.n_type == Node.Type.module
+               || top.n_type == Node.Type.enum_decl
+               || top.n_type == Node.Type.bits_decl)
+          string topName = top.n_string.toLower()
+          string root
+          IF name.byteSlice(-3, -1) == ".zu"
+            root = name.byteSlice(0, -4).toLower()  # remove .zu
+          ELSE
+            root = name.byteSlice(0, -5).toLower()  # remove .zwt
+          }
+          int slash = root.rindex('/')
+          IF slash >= 0
+            root = root.byteSlice(slash + 1, -1)
+          }
+          IF root.find(topName) < 0
+            top.error("Name must match part of the file name")
+          }
+        }
+      }
+    }
+
+    IF !Error.foundError
+      undef += processImport(node.n_usedFile, gen, scope, outs)
+    }
+    RETURN undef
+  }
+
+  # Handle an IMPORT for |node| and add the ZimbuFile to node.n_usedFile.
+  PROC handleImport(UsedFile usedFile, Node node)
+    Scope scope = usedFile.scope()
+    string name = node.n_string
+    IF name.byteSlice(-3, -1) != ".zu"
+      node.error("Input name must end in '.zu': " .. name)
+      RETURN
+    }
+    # Prepend the directory of the current file.
+    IF scope.dirName != NIL && scope.dirName != ""
+      string dir = scope.dirName
+      WHILE name.byteSlice(0, 2) == "../"
+        name = name.byteSlice(3, -1)
+        int slash = dir.rindex('/')
+        IF slash < 0
+          dir = ""
+          BREAK
+        }
+        dir = dir.byteSlice(0, slash - 1)
+      }
+      IF dir != ""
+        name = dir .. "/" .. name
+      }
+    }
+
+    ZimbuFile zimbuFile = ZimbuFile.find(importedFiles, name)
+    IF zimbuFile == NIL
+      # Didn't encounter this file before, create a new ZimbuFile.
+      zimbuFile = NEW(name)
+      importedFiles.add(zimbuFile)
+    }
+
+    bool topFile
+    IF node.n_left != NIL && node.n_left.n_string == "ZWT"
+      # This file needs to be produced as Javascript.
+      zimbuFile.usedAsZwt = TRUE
+      zimbuFile.topZwtFile = TRUE
+      topFile = TRUE
+    ELSE
+      IF node.n_left != NIL
+        node.error("Undefined IMPORT type: " .. node.n_left.n_string)
+      }
+      # How this file needs to be produced depends on where it was imported
+      # from.  TODO: use |=
+      IF usedFile.zimbuFile.usedAsZwt
+        zimbuFile.usedAsZwt = TRUE
+      }
+      IF usedFile.zimbuFile.usedAsZimbu
+        zimbuFile.usedAsZimbu = TRUE
+      }
+    }
+
+    # IMPORT.ZWT means generating a new JS file, thus topFile is TRUE.
+    node.n_usedFile = NEW(zimbuFile, FALSE, topFile)
+    node.n_usedFile.parent = usedFile
+  }
+
+  #
+  # Handle a parsed zimbuFile.
+  # This is shared between the IMPORT statement and builtin modules.
+  # Return the number of undefined items.
+  #
+  FUNC int processImport(UsedFile usedFile, Resolve.I gen, Scope scope,
+                                                            Output.Group outs)
+    ZimbuFile zimbuFile = usedFile.zimbuFile
+
+    # Set the directory to store the produced files.
+    IF zimbuFile.dirName != ""
+      zimbuFile.outDir = zimbuFile.dirName .. "/" .. Config.zudirName
+    ELSE
+      zimbuFile.outDir = Config.zudirName
+    }
+
+    string name = zimbuFile.filename
+    int undef
+
+
+    # Need to do another round of collecting symbols only when:
+    # - we didn't do this pass yet
+    # - there was no error somewhere
+    # - we are in a resolve pass
+    # - there were undefined symbols in this zimbuFile.
+    IF zimbuFile.startedPass < scope.pass
+        && !Error.foundError
+        && !doError(outs.out)
+      zimbuFile.startedPass = scope.pass
+      IF zimbuFile.topScope.topNode != NIL
+        IF !skip_zero_undefined || zimbuFile.topScope.topNode.n_undefined > 0
+          resolve(usedFile, scope.importIndent .. "  ")
+          undef = zimbuFile.topScope.topNode.n_undefined
+        ELSE
+          Error.verboseMsg(scope.importIndent .. "  " .. name .. ": Skipping\n")
+          zimbuFile.topScope.pass++
+        }
+      }
+    }
+
+    # Need to write code only when:
+    # - we didn't do this pass yet
+    # - there was no error somewhere
+    # - we are in a write pass
+    IF gen.needWrite(zimbuFile) && !Error.foundError && doError(outs.out)
+      zimbuFile.topScope.pass = scope.pass
+
+      # When a module is used with IMPORT.ZWT we start writing a JavaScipt
+      # file.  It includes all imported files.
+      # TODO: When already writing JS we should load it from the higher level
+      # JS file.
+      # This must be before generating the C code, because this sets the
+      # zwtPermu values in the module symbol.
+      IF zimbuFile.topZwtFile
+        generateJSFile(usedFile, scope)
+      }
+
+      # Write the code in the current language.
+      write(usedFile, gen, gen.getCS(zimbuFile).outputs)
+      IF zimbuFile.topScope.topNode != NIL
+        undef = zimbuFile.topScope.topNode.n_undefined
+      }
+
+      # Write the C files for the imported file.  If |gen| is Write_JS the
+      # code is appended to |outs|.
+      IF gen.targetLang == Resolve.TargetLang.c
+        gen.writeImport(zimbuFile, outs, scope)
+      }
+
+      # Check for toplevel items.  Not for JS, it's OK there.
+      IF !gen.getCS(zimbuFile).heads.mainLines.empty()
+           && gen.targetLang != Resolve.TargetLang.js
+        Error.report("Lines at toplevel of imported file "
+                                                .. zimbuFile.filename .. "\n")
+      }
+    }
+
+    # Add the keywords found in the parsed file to the current file scope.
+    IF !zimbuFile.topZwtFile
+      scope.mergeKeywords(zimbuFile.topScope)
+    }
+
+    IF outs.out.writing
+      # Write lines to include the files of an imported file.
+      gen.writeIncludeImport(zimbuFile, outs, scope)
+    }
+
+    RETURN undef
+  }
+
+  PROC generateJSFile(UsedFile usedFile, Scope scope)
+    Node node = usedFile.zimbuFile.getModuleNode()
+    IF node == NIL
+      RETURN
+    }
+    Symbol moduleSym = node.n_symbol
+    moduleSym.zwtPermu = NEW()
+
+    # Delete older versions of the produced files.
+    string moduleName = usedFile.zimbuFile.getModuleName()
+    IF moduleName != NIL
+      string pat = usedFile.zimbuFile.outDir .. "/" .. moduleName .. ".*.html"
+      IO.writeLine("Deleting " .. pat)
+      SYS.shell("rm " .. pat)
+    }
+
+    # Produce multiple versions of the JS file for different browsers.
+    FOR permu IN ZWTvalues.permuNames
+      Output.Group jsOutputs = NEW()
+      jsOutputs.setHeads(NEW())
+      Write_JS newGen = NEW()
+      newGen.permuName = permu
+      write(usedFile, newGen, jsOutputs)
+
+      # write JSoutputs to ZUDIR/ModuleName.ff.js
+      string fname = newGen.writeImport(usedFile.zimbuFile, jsOutputs, scope)
+      IF fname != NIL
+        # Rename to a name that depends on the file contents.
+        # TODO: use MD5 instead of file size.
+        IO.Stat stat = IO.stat(fname)
+
+        int i = fname.rindex('/')
+        IF i < 0
+          Error.report("INTERNAL: no slash in file name")
+        ELSE
+          # We use the file name {modulename}.{size}.html, so that we can
+          # delete {modulename}.*.html.
+          string newTail = moduleName .. "." .. stat.size .. ".html"
+          string dest = fname.byteSlice(0, i) .. newTail
+          IO.writeLine("Renaming " .. fname .. " to " .. dest)
+          IO.rename(fname, dest)
+          moduleSym.zwtPermu.add(permu, newTail)
+        }
+      }
+    }
+  }
+
+  # Check if a BREAK or CONTINUE is in a valid place scope.
+  PROC checkScope(Node node, Scope scope, bool isBreak)
+    Scope s = scope
+    WHILE s != NIL
+      IF s.nodeType == Node.Type.for
+        || s.nodeType == Node.Type.while
+        || s.nodeType == Node.Type.do
+        || (isBreak && s.nodeType == Node.Type.switch)
+        BREAK
+      }
+      IF Node.isMethodType(s.nodeType)
+        s = NIL  # don't look above proc level
+        BREAK
+      }
+      s = s.outer
+    }
+    IF s == NIL
+      IF isBreak
+        node.error("BREAK not inside FOR, WHILE, DO or SWITCH")
+      ELSE
+        node.error("CONTINUE not inside FOR, DO or WHILE")
+      }
+    }
+  }
+
+  # Like generateDeclType() and turn a class into an object type.
+  FUNC Symbol generateObjDeclType(Node node, SContext ctx)
+    Symbol sp = generateDeclType(node, ctx)
+    IF sp != NIL
+      IF sp.type == Node.Type.class
+        sp = sp.copyObject()
+      ELSEIF sp.type == Node.Type.ref && sp.returnSymbol != NIL
+                                    && sp.returnSymbol.type == Node.Type.class
+        sp.returnSymbol = sp.returnSymbol.copyObject()
+      }
+    }
+    RETURN sp
+  }
+
+  # Generate the type part of a declaration.
+  # Return a Symbol for the type.
+  FUNC Symbol generateDeclType(Node node, SContext ctx)
+    Symbol sp = NIL
+    node.n_undefined = 0
+    IF node.n_type == Node.Type.id
+      Node.Type type = Node.name2Type(node.n_string)
+      IF type == Node.Type.unknown
+        sp = ctx.scope.getSymbol(node.n_string, node)
+      ELSE
+        sp = NEW(type)
+        sp.name = node.n_string
+      }
+      IF sp != NIL
+        IF sp.type == Node.Type.module
+          # A module is never instantiated, thus the type must refer to the
+          # class with the same name inside the module.
+          sp = sp.findMember(node.n_string)
+          IF sp == NIL
+            node.n_undefined++
+            IF doError(ctx.out)
+              error("Cannot use module; no class with this name", node)
+            }
+          }
+        ELSEIF sp.type == Node.Type.interface
+          # A symbol declared as interface is an object for that interface:
+          # type i_object.
+          Symbol s = NEW(Node.Type.i_object)
+          s.class = sp
+          sp = s
+        }
+      }
+      IF sp == NIL
+        node.n_undefined++
+        IF doError(ctx.out)
+          error("Symbol not found: " .. node.n_string, node)
+        }
+      ELSE
+        ctx.gen.vartype(sp, node, ctx.scope, ctx.out)
+      }
+    ELSEIF node.n_type == Node.Type.ref
+      sp = NEW(Node.Type.ref)
+      sp.returnSymbol = generateDeclType(node.n_left, ctx)
+      node.n_undefined = node.n_left.n_undefined
+    ELSEIF node.n_type == Node.Type.member
+      # First try using the module.  If the member doesn't exist then
+      # try anything (would find a class with the same name in the
+      # module).
+      node.n_undefined = 0
+      sp = ctx.scope.findNodeSymbol(node, Node.Type.module, FALSE)
+      IF sp == NIL
+        node.n_undefined = 0
+        sp = ctx.scope.findNodeSymbol(node, Node.Type.unknown, doError(ctx.out))
+      }
+      IF sp == NIL
+        node.n_undefined = 1
+      ELSE
+        ctx.gen.vartype(sp, node, ctx.scope, ctx.out)
+      }
+    ELSEIF node.n_type == Node.Type.subscript
+      # "int [100] var" . "int " ("var[100]" added later)
+      sp = generateDeclType(node.n_left, ctx)
+      node.n_undefined = node.n_left.n_undefined
+    ELSEIF node.n_type == Node.Type.typespec
+      sp = generateContainerType(node, ctx)
+    ELSEIF node.n_type == Node.Type.method
+      error("cannot have method in type", node)
+    ELSE
+      error("unknown type for declaration: " .. node.n_type.name(), node)
+    }
+    RETURN sp
+  }
+
+  #
+  # Generate type for list<Type>
+  #
+  FUNC Symbol generateContainerType(Node node, SContext ctx)
+    IF node.n_left.n_type != Node.Type.id
+      node.error("Expected identifier before <>")
+      RETURN NIL
+    }
+
+    IF node.n_left.n_string == "list"
+      IF node.n_right.n_type == Node.Type.op_comma
+        node.error("list<> takes only one type")
+        RETURN NIL
+      }
+      # Get the type of the items.  Use the generic list header type.
+      Symbol sp = NEW(Node.Type.list)
+      sp.returnSymbol = generateObjDeclType(node.n_right, ctx.copyNoOut())
+      node.n_undefined = node.n_right.n_undefined
+      ctx.scope.addUsedItem("list")
+      ctx.gen.vartype(sp, node, ctx.scope, ctx.out)
+      RETURN sp
+    }
+
+    IF node.n_left.n_string == "dict"
+      IF node.n_right.n_type != Node.Type.op_comma
+         || node.n_right.n_left == NIL
+         || node.n_right.n_left.n_left != NIL
+         || node.n_right.n_right == NIL
+        node.error("dict<> requires two types")
+        RETURN NIL
+      }
+      # Get the type of the items.  Use the generic list header type.
+      Symbol sp = NEW(Node.Type.dict)
+      sp.keySymbol = generateObjDeclType(node.n_right.n_left, ctx.copyNoOut())
+      sp.returnSymbol = generateObjDeclType(node.n_right.n_right, ctx.copyNoOut())
+      node.n_undefined = node.n_right.n_left.n_undefined
+                       + node.n_right.n_right.n_undefined
+      DictStuff.useDict = TRUE
+      ctx.gen.vartype(sp, node, ctx.scope, ctx.out)
+      RETURN sp
+    }
+
+    # func<retType, arg1Type, arg2Type>
+    # proc<arg1Type, arg2Type>
+    bool isFunc = node.n_left.n_string == "func"
+    IF isFunc || node.n_left.n_string == "proc"
+      IF isFunc && node.n_right.n_type == Node.Type.unknown
+        node.error("func<> requires at least one type")
+        RETURN NIL
+      }
+      Symbol sp
+      Node argNode = node.n_right
+      Node lastLeft
+      IF isFunc
+        sp = NEW(Node.Type.func_ref)
+        Node typeNode = node.n_right
+        IF node.n_right.n_type == Node.Type.op_comma
+          DO
+            IF lastLeft == NIL
+              lastLeft = node
+            ELSEIF lastLeft IS node
+              lastLeft = node.n_right
+            ELSE
+              lastLeft = lastLeft.n_left
+            }
+            typeNode = typeNode.n_left
+          UNTIL typeNode.n_type != Node.Type.op_comma
+        ELSE
+          argNode = NEW(Node.Type.unknown)
+        }
+        sp.returnSymbol = generateObjDeclType(typeNode, ctx.copyNoOut())
+        node.n_undefined = typeNode.n_undefined
+      ELSE
+        sp = NEW(Node.Type.proc_ref)
+      }
+
+      # for a function remove the return type from argNode
+      Node saveLeft
+      IF lastLeft != NIL
+        IF lastLeft IS node
+          argNode = node.n_right.n_right
+        ELSE
+          saveLeft = lastLeft.n_left
+          lastLeft.n_left = lastLeft.n_left.n_right
+        }
+      }
+
+      # Add the argument types (can be empty).
+      # Redo this in every pass, types may have become available.
+      sp.memberList = getSymbolListFromArgNode(argNode, ctx,
+                               useType + (doError(ctx.out) ? reportError : 0))
+
+      IF lastLeft != NIL
+        lastLeft.n_left = saveLeft
+      }
+
+      ctx.gen.vartype(sp, node, ctx.scope, ctx.out)
+
+      RETURN sp
+    }
+    
+    node.error("Only list<>, dict<>, proc<> and func<> supported now")
+    RETURN NIL
+  }
+
+  #
+  # "var_node.method(arg_node)".
+  # |destSym| is a hint for the return type.
+  # Return a Symbol with the type of the result.
+  #
+  FUNC Symbol generateMethodCall(Node m_node, SContext ctx, Symbol destSym)
+    Node node = m_node.n_left       # n_left:  var.mem.method
+    Node arg_node = m_node.n_right  # n_right: arg1, arg2
+    IF Error.debug
+      IO.writeLine("generateMethodCall() " .. node.n_string)
+    }
+    string method = node.n_string
+    Node var_node = node.n_left
+    Symbol ret = NEW(Node.Type.unknown)
+    m_node.n_undefined = 0
+
+    Symbol sp
+    IF var_node.n_type == Node.Type.parent
+      # Special (and incomplete) handling of PARENT.method()
+      sp = Symbol.unknown
+      IF !ctx.scope.isClassScope()
+        node.error("PARENT not in class context")
+      ELSEIF ctx.scope.class.parentClass == NIL
+        node.error("PARENT not in a child class")
+      ELSE
+        sp = ctx.scope.class.parentClass.copyObject()
+      }
+    ELSE
+      sp = generateVarname(var_node, ctx.copyNoOut(), destSym)
+    }
+
+    IF sp == NIL
+      IF var_node.n_type == Node.Type.int
+        # Allow 123.SIZE().
+        sp = NEW(Node.Type.int)
+      ELSEIF var_node.n_type == Node.Type.string
+        # Allow "123".SIZE().
+        sp = NEW(Node.Type.string)
+      }
+    }
+
+    IF sp == NIL
+      m_node.n_undefined = 3
+      IF doError(ctx.out)
+        # Do generate the var to get the error message
+        generateVarname(var_node, ctx, destSym)
+      }
+      RETURN ret
+    }
+    IF sp.type == Node.Type.string
+      IF method == "slice"
+        ctx.scope.addUsedItem("stringSlice")
+        ctx.out.write("ZStringSlice(")
+        generateVarname(var_node, ctx, sp)
+        m_node.n_undefined += var_node.n_undefined
+        ctx.out.write(", ")
+        generateArguments(arg_node, ctx, [Symbol.int, Symbol.int], 0)
+        m_node.n_undefined += arg_node.n_undefined
+        ctx.out.write(")")
+        ret.type = Node.Type.string
+      ELSEIF method == "byteSlice"
+        ctx.scope.addUsedItem("stringByteSlice")
+        ctx.out.write("ZStringByteSlice(")
+        generateVarname(var_node, ctx, sp)
+        m_node.n_undefined += var_node.n_undefined
+        ctx.out.write(", ")
+        generateArguments(arg_node, ctx, [Symbol.int, Symbol.int], 0)
+        m_node.n_undefined += arg_node.n_undefined
+        ctx.out.write(")")
+        ret.type = Node.Type.string
+      ELSEIF method == "toInt"
+        ctx.scope.addUsedItem("stringToInt")
+        ctx.out.write("ZStringToInt(")
+        generateVarname(var_node, ctx, sp)
+        m_node.n_undefined += var_node.n_undefined
+        ctx.out.write(")")
+        ret.type = Node.Type.int
+      ELSEIF method == "toLower"
+        ctx.scope.addUsedItem("stringToLower")
+        ctx.scope.addUsedItem("alloc")
+        ctx.out.write("ZStringToLower(")
+        generateVarname(var_node, ctx, sp)
+        m_node.n_undefined += var_node.n_undefined
+        ctx.out.write(")")
+        ret.type = Node.Type.string
+      ELSEIF method == "toUpper"
+        ctx.scope.addUsedItem("stringToUpper")
+        ctx.scope.addUsedItem("alloc")
+        ctx.out.write("ZStringToUpper(")
+        generateVarname(var_node, ctx, sp)
+        m_node.n_undefined += var_node.n_undefined
+        ctx.out.write(")")
+        ret.type = Node.Type.string
+      ELSEIF method == "binToInt"
+        ctx.scope.addUsedItem("stringBinToInt")
+        ctx.out.write("ZStringBinToInt(")
+        generateVarname(var_node, ctx, sp)
+        m_node.n_undefined += var_node.n_undefined
+        ctx.out.write(")")
+        ret.type = Node.Type.int
+      ELSEIF method == "hexToInt"
+        ctx.scope.addUsedItem("stringHexToInt")
+        ctx.out.write("ZStringHexToInt(")
+        generateVarname(var_node, ctx, sp)
+        m_node.n_undefined += var_node.n_undefined
+        ctx.out.write(")")
+        ret.type = Node.Type.int
+      ELSEIF method == "quotedToInt"
+        ctx.scope.addUsedItem("stringQuotedToInt")
+        ctx.out.write("ZStringQuotedToInt(")
+        generateVarname(var_node, ctx, sp)
+        m_node.n_undefined += var_node.n_undefined
+        ctx.out.write(")")
+        ret.type = Node.Type.int
+      ELSEIF method == "quotedBinToInt"
+        ctx.scope.addUsedItem("stringQuotedBinToInt")
+        ctx.out.write("ZStringQuotedBinToInt(")
+        generateVarname(var_node, ctx, sp)
+        m_node.n_undefined += var_node.n_undefined
+        ctx.out.write(")")
+        ret.type = Node.Type.int
+      ELSEIF method == "quotedHexToInt"
+        ctx.scope.addUsedItem("stringQuotedHexToInt")
+        ctx.out.write("ZStringQuotedHexToInt(")
+        generateVarname(var_node, ctx, sp)
+        m_node.n_undefined += var_node.n_undefined
+        ctx.out.write(")")
+        ret.type = Node.Type.int
+      ELSEIF method == "SIZE"
+        ctx.out.write("strlen(")
+        generateVarname(var_node, ctx, sp)
+        m_node.n_undefined += var_node.n_undefined
+        ctx.out.write(")")
+        ret.type = Node.Type.int
+      ELSEIF method == "index"
+        ctx.scope.addUsedItem("strings.h")
+        ctx.scope.addUsedItem("stringIndex")
+        ctx.out.write("ZStringIndex(")
+        generateVarname(var_node, ctx, sp)
+        m_node.n_undefined += var_node.n_undefined
+        ctx.out.write(", ")
+        genExpr(arg_node, ctx, Symbol.int)
+        m_node.n_undefined += arg_node.n_undefined
+        ctx.out.write(")")
+        ret.type = Node.Type.int
+      ELSEIF method == "find"
+        ctx.scope.addUsedItem("strings.h")
+        ctx.scope.addUsedItem("stringFind")
+        ctx.out.write("ZStringFind(")
+        generateVarname(var_node, ctx, sp)
+        m_node.n_undefined += var_node.n_undefined
+        ctx.out.write(", ")
+        genExpr(arg_node, ctx, Symbol.string)
+        m_node.n_undefined += arg_node.n_undefined
+        ctx.out.write(")")
+        ret.type = Node.Type.int
+      ELSEIF method == "startsWith"
+        ctx.scope.addUsedItem("strings.h")
+        ctx.scope.addUsedItem("stringStartsWith")
+        ctx.out.write("ZStringStartsWith(")
+        generateVarname(var_node, ctx, sp)
+        m_node.n_undefined += var_node.n_undefined
+        ctx.out.write(", ")
+        genExpr(arg_node, ctx, Symbol.string)
+        m_node.n_undefined += arg_node.n_undefined
+        ctx.out.write(")")
+        ret.type = Node.Type.bool
+      ELSEIF method == "endsWith"
+        ctx.scope.addUsedItem("strings.h")
+        ctx.scope.addUsedItem("stringEndsWith")
+        ctx.out.write("ZStringEndsWith(")
+        generateVarname(var_node, ctx, sp)
+        m_node.n_undefined += var_node.n_undefined
+        ctx.out.write(", ")
+        genExpr(arg_node, ctx, Symbol.string)
+        m_node.n_undefined += arg_node.n_undefined
+        ctx.out.write(")")
+        ret.type = Node.Type.bool
+      ELSEIF method == "rindex"
+        ctx.scope.addUsedItem("strings.h")
+        ctx.scope.addUsedItem("stringRindex")
+        ctx.out.write("ZStringRindex(")
+        generateVarname(var_node, ctx, sp)
+        m_node.n_undefined += var_node.n_undefined
+        ctx.out.write(", ")
+        genExpr(arg_node, ctx, Symbol.int)
+        m_node.n_undefined += arg_node.n_undefined
+        ctx.out.write(")")
+        ret.type = Node.Type.int
+      ELSE
+        m_node.n_undefined++
+        IF doError(ctx.out)
+          error("Method " .. method .. "() not supported for string", node)
+        }
+      }
+    ELSEIF sp.type == Node.Type.int
+      IF method == "toChar"
+        ctx.scope.addUsedItem("tochar")
+        ctx.out.write("Ztochar(")
+        IF var_node.n_type == Node.Type.int
+          ctx.out.write(var_node.n_int .. "")
+        ELSE
+          generateVarname(var_node, ctx, sp)
+          m_node.n_undefined += var_node.n_undefined
+        }
+        ctx.out.write(")")
+        ret.type = Node.Type.string
+      ELSEIF method == "SIZE"
+        ctx.out.write("sizeof(Zint)")
+        ret.type = Node.Type.int
+      ELSE
+        m_node.n_undefined++
+        IF doError(ctx.out)
+          error("Method " .. method .. "() not supported for int", node)
+        }
+      }
+    ELSEIF sp.type == Node.Type.enum || sp.type == Node.Type.bits_small
+                                             || sp.type == Node.Type.bits_big
+      Symbol enumSym = sp
+      bool isBits
+      IF sp.type != Node.Type.enum
+        enumSym = sp.returnSymbol
+        isBits = TRUE
+      }
+
+      IF method == "name" && enumSym != NIL
+        genEnumNameCall(enumSym, node, ctx)
+        IF isBits
+          ctx.out.write("(((")
+        }
+        generateVarname(var_node, ctx, enumSym)
+        m_node.n_undefined += var_node.n_undefined
+        IF isBits
+          ctx.out.write(") & " .. (enumSym.mask << enumSym.value) .. ")")
+          IF enumSym.value > 0
+            ctx.out.write(" >> " .. enumSym.value)
+          }
+          ctx.out.write(")")
+        }
+        ctx.out.write(")")
+        ret.type = Node.Type.string
+      ELSE
+        m_node.n_undefined++
+        IF doError(ctx.out)
+          error("Method " .. method .. "() not supported for Enum", node)
+        }
+      }
+    ELSEIF sp.type == Node.Type.list
+      RETURN ListStuff.generateMethodCall(sp, m_node, ctx, destSym)
+    ELSEIF sp.type == Node.Type.dict
+      RETURN DictStuff.generateMethodCall(sp, m_node, ctx, destSym)
+    ELSEIF sp.type == Node.Type.object || sp.type == Node.Type.i_object
+      RETURN generateObjectCall(sp, m_node, ctx, destSym)
+    ELSE
+      m_node.n_undefined++
+      IF doError(ctx.out)
+        IF sp.type == Node.Type.class
+          error("Cannot invoke " .. method
+                          .. "() on a Class, expected an object or module", node)
+        ELSE
+          error("Method " .. method .. "() not supported for type "
+                                                         .. sp.type.name(), node)
+        }
+      }
+    }
+
+    RETURN ret
+  }
+
+  # Write header for name() call on enum |enumSym|.
+  PROC genEnumNameCall(Symbol enumSym, Node node, SContext ctx)
+    IF enumSym.class == NIL
+      node.error("INTERNAL: Enum class is NIL")
+    ELSE
+      ctx.scope.addUsedItem("enum2string")
+      ctx.out.write("Zenum2string(" .. enumSym.class.cName
+              .. ", sizeof(" .. enumSym.class.cName .. ") / sizeof(char *), ")
+    }
+  }
+
+  FUNC Symbol generateObjectCall(Symbol sp, Node m_node, SContext ctx,
+                                                               Symbol destSym)
+    Node node = m_node.n_left
+    Node arg_node = m_node.n_right
+    Node var_node = node.n_left
+    Symbol ret = NEW(Node.Type.unknown)
+
+    Symbol class = sp.class
+    IF class == NIL
+      m_node.n_undefined = 2
+      IF doError(ctx.out)
+        error("undefined class", node)
+      }
+    ELSE
+      # Get the type of the arguments, as far as they are known.
+      list<Symbol> arglist = getSymbolListFromArgNode(arg_node, ctx, 0)
+
+      # Check the arguments for an interface type.
+      bool i_object_arg
+      string objectArgName = ""
+      IF arglist != NIL
+        FOR s IN arglist
+          IF s != NIL
+            IF s.type == Node.Type.i_object
+              i_object_arg = TRUE
+              objectArgName ..= "__" .. s.class.cName .. "_I"
+            ELSEIF s.type == Node.Type.object || s.type == Node.Type.class
+              objectArgName ..= "__" .. s.class.cName
+            ELSE
+              objectArgName ..= "__" .. s.type.name()
+            }
+          }
+        }
+      }
+
+      # Find a method that matches.
+      Symbol p = findMethodArglist(class, node.n_string,
+                                                    arglist, ctx.scope, FALSE,
+                       doError(ctx.out) && !i_object_arg ? node : NIL,
+                       "for class " .. class.name)
+      IF p == NIL && i_object_arg
+        # This is possible if there is no method with the interface type and
+        # there is a method for all possible classes.
+        # Avoid checking for NIL everywhere
+        p = NEW(Node.Type.proc_def)
+        p.memberList = arglist
+      }
+      IF p == NIL
+        m_node.n_undefined = 5
+      ELSEIF p.type == Node.Type.lib_method
+        m_node.n_undefined = 0
+        p.produce(p, class, m_node, ctx)
+        ret = p.returnSymbol
+      ELSE
+        m_node.n_undefined = 0
+        IF p.type == Node.Type.proc_ref || p.type == Node.Type.func_ref
+          # Need to generate a type cast, since the variable is declared as
+          # "void *".
+          generateRefCast(p, node, ctx.out)
+          generateVarname(var_node, ctx, sp)
+          m_node.n_undefined += var_node.n_undefined
+          ctx.out.write("->" .. p.cName .. ")(")
+          ret = p.returnSymbol
+        ELSEIF p.isMethodType()
+          # TODO: proper detection if "object" results in an i_object or a
+          # pointer to an i_object.  See exception below for arguments,
+          # starting with "A".
+          bool varNodeIsPointer = var_node.n_type != Node.Type.id
+
+          IF ctx.gen.targetLang == Resolve.TargetLang.js
+            # Javascript is easy, it takes care of everything.
+            # object.method(arg) -> object.method(arg)
+            # But for PARENT we need to do something else:
+            # PARENT.method() -> this.parent__method()
+            IF var_node.n_type == Node.Type.parent
+              ctx.out.write("this.parent__" .. p.name .. "(")
+            ELSE
+              generateVarname(var_node, ctx, sp)
+              ctx.out.write("." .. p.name .. "(")
+            }
+            m_node.n_undefined += var_node.n_undefined
+            ret = p.returnSymbol
+          ELSE
+            # For C we need to call the right function and pass "THIS".
+            IF sp.type == Node.Type.object && !i_object_arg
+              # object.method(arg) -> method_name(object, arg)
+              ctx.out.write(p.cName .. "(")
+              generateVarnameParent(var_node, ctx, sp)
+              m_node.n_undefined += var_node.n_undefined
+              ret = p.returnSymbol
+            ELSEIF sp.type == Node.Type.i_object && !i_object_arg
+              # object.method(arg) -> method_table[object->type](object, arg)
+              #
+              # TODO: if "object" is not a variable it is evaluated twice.
+              #       Use the method below ELSE when it works.
+              ctx.out.write(classFuncTableName(class, p) .. "[")
+              Symbol s = generateVarnameParent(var_node, ctx, sp)
+              ctx.out.write("->type](")
+              generateVarnameParent(var_node, ctx, sp)
+              m_node.n_undefined += var_node.n_undefined
+              ctx.out.write("->ptr")
+              ret = p.returnSymbol
+            ELSE
+              # One of the arguments is of i_object type.
+              # object.method(arg) -> method_func(object, arg)
+              # Define a function that does the work:
+              # RetType method_func(objectType *object, argType arg) {
+              #   int idx = object->type * NTYPES + arg->type;
+              #   if (some_table[idx])  /* arg used as i_object */
+              #     return func_table[idx](object, arg)
+              #   return func_table[idx](object, arg->ptr)
+              # }
+              string funcName = class.cName
+              IF sp.type == Node.Type.i_object
+                funcName ..= "_I"
+              }
+              funcName ..= "__M" .. node.n_string .. "_I" .. objectArgName
+              ret = generateVirtualFunc(funcName, sp, node, arglist, ctx)
+              m_node.n_undefined += node.n_undefined
+              ctx.out.write(funcName .. "(")
+              generateVarnameParent(var_node, ctx, sp)
+              m_node.n_undefined += var_node.n_undefined
+            }
+            IF arg_node != NIL && arg_node.n_type != Node.Type.unknown
+              ctx.out.write(", ")
+            }
+          }
+        ELSE
+          IF doError(ctx.out)
+            error("() after " .. p.type.name() .. " not expected", node)
+          }
+        }
+        generateArgumentsCheck(arg_node, node.n_string, ctx, p.getMemberList())
+        m_node.n_undefined += arg_node.n_undefined
+        ctx.out.write(")")
+      }
+    }
+    RETURN ret
+  }
+
+  # Remember which functions have been generated, don't do one twice.
+  # The symbol is the return type, NIL for a PROC.
+  dict<string, Symbol> virtualFuncMap = NEW()
+
+  # Write output here, it's appended to declOut later.
+  Output virtualOut = NEW(NEW())
+
+  # Generate a function that takes an object or i_object and a list of
+  # arguments and figures out the method to be invoked.
+  # Returns a symbol with the return type, NIL for a PROC.
+  FUNC Symbol generateVirtualFunc(string name, Symbol varSym, Node node,
+                                           list<Symbol> arglist, SContext ctx)
+   Symbol dummy = NEW(Node.Type.unknown)
+   Symbol retsym = virtualFuncMap.get(name, dummy)
+   IF retsym ISNOT dummy
+     RETURN retsym
+   }
+
+    Node var_node = node.n_left
+
+    # Make a list with list of possible symbols for THIS and each argument.
+    list<list<Symbol>> altList = NEW()
+    list<Symbol> alist
+    IF varSym.type == Node.Type.i_object
+      alist = interfaceClassList(varSym.class)
+    ELSE
+      alist = NEW()
+      IF varSym.type == Node.Type.class
+        alist.add(varSym.copyObject())
+      ELSE
+        alist.add(varSym)
+      }
+    }
+    altList.add(alist)
+    FOR s IN arglist
+      IF s != NIL
+        IF s.type == Node.Type.i_object
+          alist = interfaceClassList(s.class)
+        ELSE
+          alist = NEW()
+          IF s.type == Node.Type.class
+            alist.add(s.copyObject())
+          ELSE
+            alist.add(s)
+          }
+        }
+        altList.add(alist)
+      }
+    }
+
+    Output tmpOut = NEW(NEW())
+    tmpOut.writing = ctx.out.writing
+
+    # For every permutation find a matching function.
+    # E.g. A0 is an i_object with 2 possible classes, A2 is an i_object with
+    # three possible classes
+    #        switch (A0->type) {
+    #          case 0:
+    #                  switch (A2->type) {
+    #                    case 0:
+    #                             return func_obj0_obj0(A0->ptr, A1, A2->ptr);
+    #                    case 1:
+    #                             return func_obj0_itf(A0->ptr, A1, A2);
+    #                    case 2:
+    #                             return func_obj0_itf(A0->ptr, A1, A2);
+    #                  }
+    #          case 1:
+    #                  switch (A2->type) {
+    #                    case 0:
+    #                             return func_obj1_obj0(A0->ptr, A1, A2->ptr);
+    #                    case 1:
+    #                             return func_obj1_obj1(A0->ptr, A1, A2->ptr);
+    #                    case 2:
+    #                             return func_obj1_obj2(A0->ptr, A1, A2->ptr);
+    #                  }
+    #        }
+    #
+    # Every possible class must have a matching method, either with that class
+    # or with an interface.
+    list<int> indexes = NEW()
+    FOR l IN altList
+      indexes.add(0)
+    }
+
+    # depth indicates what to do when a matching func is found:
+    # 0: write "switch" for A0
+    # 1: write "case" for A0
+    # 2: write "switch" for A1
+    # 3: write "case" for A1
+    # etc.
+    int depth
+
+    WHILE TRUE
+      int idx = 0
+      list<Symbol> argtry = NEW()
+      WHILE idx < altList.SIZE()
+        IF idx >= 1
+          argtry.add(altList[idx][indexes[idx]])
+        }
+        idx++
+      }
+
+      Symbol class = altList[0][indexes[0]]
+      Symbol p = findMethodArglist(class, node.n_string, argtry, ctx.scope,
+                                       TRUE, ctx.out.writing ? node : NIL, "")
+      IF p == NIL
+        node.n_undefined++
+      ELSE
+        IF p.type == Node.Type.func_def
+          # TODO: check the return types of all methods are equal.
+          retsym = p.returnSymbol
+        }
+        WHILE depth < 2 * altList.SIZE()
+          idx = depth / 2
+          # TODO: make altList[idx].SIZE() work
+          list<Symbol> altListIdx = altList[idx]
+          IF altListIdx.SIZE() > 1
+            IF (depth & 1) == 0
+              tmpOut.write("switch (A" .. idx .. "->type) {\n")
+            ELSE
+              tmpOut.write("case " .. indexes[idx] .. ":\n")
+            }
+          }
+          depth++
+        }
+
+        # Generate the function call.
+        IF p.type == Node.Type.func_def
+          tmpOut.write("return ")
+        }
+        tmpOut.write(p.cName .. "(A0")
+        IF varSym.type == Node.Type.i_object
+          tmpOut.write("->ptr")
+        }
+        int ai
+        WHILE ai < argtry.SIZE()
+          IF argtry[ai].type != Node.Type.i_object
+                                && p.memberList[ai].type != Node.Type.i_object
+            tmpOut.write(", (void *)(A" .. (ai + 1) .. "->ptr)")
+          ELSE
+            tmpOut.write(", A" .. (ai + 1))
+          }
+          ai++
+        }
+        tmpOut.write(")")
+        IF p.type != Node.Type.func_def
+          tmpOut.write("; return")
+        }
+        tmpOut.write(";\n")
+      }
+
+      # Advance to the next class for the argument.
+      idx = altList.SIZE()
+      WHILE idx > 0
+        idx--
+        IF depth > idx * 2
+          depth--
+        }
+        # TODO: make altList[idx].SIZE() work
+        list<Symbol> altListIdx = altList[idx]
+        IF altListIdx.SIZE() > 1
+          indexes[idx]++
+          IF indexes[idx] < altListIdx.SIZE()
+            BREAK
+          }
+          indexes[idx] = 0
+          IF depth > idx * 2
+            depth--
+            tmpOut.write("}\n")
+          }
+        ELSE
+          depth--
+        }
+      }
+      IF depth == 0
+        BREAK
+      }
+    }
+
+    virtualOut.writing = ctx.out.writing
+
+    # TODO: Write return type.
+    IF retsym == NIL
+      virtualOut.write("void ")
+    ELSE
+      genType(retsym, node, virtualOut)
+    }
+
+    # produce the arguments: "(classType A0, arg1Type A1, arg2Type A2)"
+    virtualOut.write(name .. "(")
+    IF varSym.type == Node.Type.object
+      genType(varSym.class, node, virtualOut)
+    ELSE
+      genType(varSym, node, virtualOut)
+    }
+    virtualOut.write("A0")
+    int argIdx = 1
+    FOR s IN arglist
+      virtualOut.write(", ")
+      genType(s, node, virtualOut)
+      virtualOut.write("A" .. argIdx)
+      argIdx++
+    }
+    virtualOut.write(") {\n")
+    virtualOut.append(tmpOut)
+    virtualOut.write("}\n")
+
+    IF ctx.out.writing
+      virtualFuncMap[name] = retsym
+    }
+    RETURN retsym
+  }
+
+  # Return a list of all possible classes for interface |sym|.
+  FUNC list<Symbol> interfaceClassList(Symbol sym)
+    list<Symbol> olist = NEW()
+    IF !sym.attributes.abstract
+      IF sym.type == Node.Type.class
+        olist.add(sym.copyObject())
+      ELSE
+        olist.add(sym)
+      }
+    }
+    IF sym.children != NIL
+      FOR m IN sym.children
+        olist.extend(interfaceClassList(m))
+      }
+    }
+    RETURN olist
+  }
+
+  # Return TRUE when |child| is a child of interface |itf|.
+  FUNC bool classOfInterface(Symbol itf, Symbol child)
+    IF !itf.attributes.abstract && itf IS child
+      RETURN TRUE
+    }
+    IF itf.children != NIL
+      FOR m IN itf.children
+        IF classOfInterface(m, child)
+          RETURN TRUE
+        }
+      }
+    }
+    RETURN FALSE
+  }
+
+  # Find method |name| in members of |parent|.
+  # When needed, match arguments from |args|.
+  # Use |msgNode| for the position of the error message and append |msg|.
+  # When |msgNode| is NIL don't give any error message.
+  FUNC Symbol findMethod(Symbol parent, string name, Node args,
+                           SContext ctx, bool noneOK, Node msgNode, string msg)
+    # get the type of the arguments, as far as they are known.
+    list<Symbol> arglist = getSymbolListFromArgNode(args, ctx, 0)
+    RETURN findMethodArglist(parent, name, arglist, ctx.scope,
+                                                         noneOK, msgNode, msg)
+  }
+
+  FUNC Symbol findMethodArglist(Symbol parent,
+                                string name,
+                                list<Symbol> arglist,
+                                Scope scope,
+                                bool noneOK,
+                                Node msgNode,
+                                string msg)
+    Symbol sym = parent.findMember(name)
+    IF sym == NIL
+      IF !noneOK && msgNode != NIL
+        msgNode.error("Unknown method " .. name .. "() " .. msg)
+      }
+    ELSEIF sym.type != Node.Type.proc_ref && sym.type != Node.Type.func_ref
+      bool convert
+      sym = parent.findMatchingFunction(name, arglist, NIL, TRUE, FALSE)
+      IF sym == NIL
+        convert = TRUE
+        sym = parent.findMatchingFunction(name, arglist, NIL, TRUE, TRUE)
+      }
+      IF msgNode != NIL
+        IF sym == NIL
+          msgNode.error("No method with matching arguments for "
+                                                         .. name .. "() " .. msg)
+          listMatchingMethods(name, parent, arglist)
+        ELSE
+          IF parent.findMatchingFunction(name, arglist, sym, TRUE,
+                                                               convert) != NIL
+            msgNode.error("More than one method with matching arguments for "
+                                                         .. name .. "() " .. msg)
+            listMatchingMethods(name, parent, arglist)
+            sym = NIL
+          }
+        }
+      }
+    }
+    RETURN sym
+  }
+
+  PROC listMatchingMethods(string name, Symbol parent, list<Symbol> argTypeList)
+    IO.write("Expected: " .. name)
+    listArgTypes(argTypeList)
+    Symbol sym = parent
+    WHILE TRUE
+      FOR m IN sym.memberList
+        IF m.name == name
+          IO.write("Candidate: " .. name)
+          listArgTypes(m.memberList)
+        }
+      }
+      IF sym.parentClass == NIL
+        BREAK
+      }
+      sym = sym.parentClass
+    }
+  }
+
+  PROC listArgTypes(list<Symbol> argList)
+    IO.write(argTypesAsString(argList))
+  }
+
+  FUNC string argTypesAsString(list<Symbol> argList)
+    string s = "("
+    IF argList != NIL
+      string comma = ""
+      FOR a IN argList
+        s ..= comma
+        IF a == NIL
+          s ..= "NIL"
+        ELSEIF (a.type == Node.Type.class || a.type == Node.Type.object)
+                                                             && a.class != NIL
+          s ..= a.class.name
+        ELSEIF a.type == Node.Type.i_object && a.class != NIL
+          s ..= a.class.name .. ".I"
+        ELSE
+          s ..= a.type.name()
+        }
+        comma = ", "
+      }
+    }
+    s ..= ")\n"
+    RETURN s
+  }
+
+  PROC generateRefCast(Symbol sym, Node node, Output out)
+    # ((returnType (*)(arg1Type, arg2Type))Vobj->Vmember)(arg1, arg2)
+    out.write("((")
+    IF sym.type == Node.Type.proc_ref
+      out.write("void")
+    ELSEIF sym.returnSymbol != NIL
+      genType(sym.returnSymbol, node, out)
+    }
+    out.write(" (*)(")
+
+    string comma = ""
+    IF sym.memberList != NIL
+      FOR arg IN sym.memberList
+        out.write(comma)
+        genType(arg, node, out)
+        comma = ", "
+      }
+    }
+    out.write("))")
+  }
+
+  BITS GetSymArg
+    bool useType
+    bool reportError
+  }
+
+  # Given a node for function arguments, return a list of symbols with types
+  # of those arguments.
+  # When |gsarg.useType| is FALSE |node| is a list of arguments with type specs.
+  # When |gsarg.useType| is TRUE |node| is a list of type specs only.
+  FUNC list<Symbol> getSymbolListFromArgNode(Node node, SContext ctx,
+                                                              GetSymArg gsarg)
+    IF node == NIL || node.n_type == Node.Type.unknown
+      RETURN NIL
+    }
+    IF node.n_type == Node.Type.op_comma
+      list<Symbol> symLeft = getSymbolListFromArgNode(node.n_left, ctx, gsarg)
+      list<Symbol> symRight = getSymbolListFromArgNode(node.n_right, ctx, gsarg)
+      node.n_undefined = node.n_left.n_undefined + node.n_right.n_undefined
+      IF symLeft == NIL
+        RETURN symRight
+      }
+      IF symRight == NIL
+        RETURN symLeft
+      }
+      RETURN symLeft.extend(symRight)
+    }
+
+    IF Error.debug
+      IO.writeLine("getSymbolListFromArgNode() " .. node.n_type.name() .. " node")
+    }
+    Symbol sym
+    IF gsarg.useType
+      sym = generateObjDeclType(node, ctx.copyNoOut())
+    ELSE
+      sym = genExpr(node, ctx.copyNoOut(), NIL)
+    }
+    IF sym == NIL
+      sym = NEW(Node.Type.unknown)
+      node.n_undefined = 10
+      IF gsarg.reportError
+        node.error("Unknown type: " .. node.n_string)
+      }
+    ELSE
+      IF sym.type == Node.Type.unknown
+        node.n_undefined = 2
+      ELSE
+        node.n_undefined = 0
+      }
+      # Make a copy, so that we can make a list of them.
+      sym = sym.copy()
+    }
+    RETURN [sym]
+  }
+
+  #  NEW(args) or ClassName.NEW(args)
+  FUNC Symbol generateNewCall(Node node, SContext ctx, Symbol destSym)
+    Symbol destClass = destSym
+    node.n_undefined = 0
+    IF destClass != NIL && destClass.type == Node.Type.object
+      destClass = destClass.copyObject()
+    }
+    Symbol sym = destSym
+    IF node.n_left != NIL && node.n_left.n_type == Node.Type.typespec
+      sym = generateDeclType(node.n_left, ctx.copyNoOut())
+      node.n_undefined += node.n_left.n_undefined
+    }
+    IF sym != NIL && sym.type == Node.Type.list
+      IF node.n_left != NIL && node.n_left.n_type != Node.Type.list
+                                   && node.n_left.n_type != Node.Type.typespec
+        node.error("Type.NEW() for list not supported")
+      ELSE
+        # ctx.gen.writeAlloc("CListHead", ctx)
+        ctx.gen.writeListAlloc(ctx)
+        RETURN sym
+      }
+    ELSEIF sym != NIL && sym.type == Node.Type.dict
+      IF node.n_left != NIL && node.n_left.n_type != Node.Type.dict
+                                   && node.n_left.n_type != Node.Type.typespec
+        node.error("Type.NEW() for dict not supported")
+      ELSEIF sym.keySymbol == NIL
+        node.n_undefined++
+        IF doError(ctx.out)
+          node.error("Key type unknown")
+        }
+      ELSE
+        ctx.out.write("ZnewDict(" .. (sym.keySymbol.isPointerType()
+                                                           ? "1" : "0") .. ")")
+        RETURN sym
+      }
+    ELSEIF node.n_left == NIL
+            && (destClass == NIL
+                || (destClass.type != Node.Type.class
+                    && destClass.type != Node.Type.object))
+      node.n_undefined++
+      IF doError(ctx.out)
+        IF destClass.type == Node.Type.i_object
+          error("Cannot use NEW() for an interface object", node)
+        ELSE
+          error("Do not know what class name to use for NEW()", node)
+        }
+      }
+    ELSE
+      Symbol class = NIL
+      IF node.n_left == NIL
+        class = destClass
+        IF class.class != NIL
+          class = class.class
+        }
+      ELSE
+        class = generateDeclType(node.n_left, ctx.copyNoOut())
+        node.n_undefined += node.n_left.n_undefined
+        IF class == NIL || class.type != Node.Type.class
+          node.n_undefined++
+          IF doError(ctx.out)
+            error("class name not found: " .. node.n_left.n_string, node)
+          }
+        ELSEIF class.class != NIL
+          class = class.class
+        }
+      }
+      IF class == NIL || class.type != Node.Type.class
+                                                  || class.attributes.abstract
+        node.n_undefined++
+        IF doError(ctx.out)
+          IF class != NIL
+            error("class not usable for NEW(): " .. class.name, node)
+          ELSE
+            error("class not usable for NEW()", node)
+          }
+        }
+      ELSE
+        Symbol p = findMethod(class, "NEW", node.n_right, ctx,
+                                      TRUE, doError(ctx.out) ? node : NIL, "")
+        IF p == NIL
+          # Default NEW() sets everything to NIL/zero/FALSE
+          ctx.gen.writeAlloc(class.cName, ctx)
+        ELSEIF p.produce != NIL
+          p.produce(p, class, node, ctx)
+        ELSE
+          ctx.out.write(p.cName .. "(")
+          generateArguments(node.n_right, ctx, p.getMemberList(), 0)
+          node.n_undefined += node.n_right.n_undefined
+          ctx.out.write(")")
+        }
+        # The result is an object of the class.
+        RETURN class.copyObject()
+      }
+    }
+    RETURN NIL
+  }
+
+  PROC listMatchingFunc(Scope scope, string funcName,
+                                           list<Symbol> argTypeList, bool all)
+    IO.write("Expected: " .. funcName)
+    listArgTypes(argTypeList)
+    scope.listMatchingFunc(funcName, argTypeList, all)
+  }
+
+  FUNC Symbol generateFunctionCall(Symbol func, Node node, SContext ctx,
+                                                          Node.Type dest_type)
+
+    VAR args = func.getMemberList()
+    Node.Type ret_type = func.getReturnType()
+    Node arg_node = node.n_right
+    Symbol ret = func.returnSymbol
+    IF dest_type != Node.Type.unknown
+                              && (ret == NIL || ret.type == Node.Type.unknown)
+      IF doError(ctx.out)
+        node.error("PROC does not have a return value")
+      }
+    }
+
+    ctx.gen.writeMethodCall(func,
+                       arg_node != NIL && args != NIL && args.SIZE() > 0, ctx)
+    generateArguments(arg_node, ctx, args, 0)
+    ctx.out.write(")")
+    node.n_undefined += arg_node.n_undefined
+    RETURN ret
+  }
+
+  # Generate all arguments for a function call.
+  # Give an error if there are not enough nodes to make the arguments.
+  PROC generateArgumentsCheck(Node node, string funcName,
+                                              SContext ctx, list<Symbol> args)
+    int n = generateArguments(node, ctx, args, 0)
+    IF args != NIL && n < args.SIZE()
+      IF doError(ctx.out)
+        error("Expected " .. args.SIZE() .. " arguments for " .. funcName .. "()"
+                                                  .. ", found only " .. n, node)
+      }
+    }
+  }
+
+  # Generate arguments for a function call, starting at |index|.
+  # |args| is the list of expected arguments (can be NIL).
+  # Return the index of the next argument to generate.
+  FUNC int generateArguments(Node node, SContext ctx,
+                                                 list<Symbol> args, int index)
+    int next_index = index
+    Symbol next_arg
+    IF args != NIL
+      next_arg = args[index]
+    }
+
+    IF node == NIL || node.n_type == Node.Type.unknown
+      IF next_arg != NIL
+        error("missing " .. next_arg.type.name() .. " argument "
+              .. (next_arg.name == NIL ? index : next_arg.name), node)
+      }
+    ELSEIF next_arg == NIL
+      node.n_undefined = 1
+      IF doError(ctx.out)
+        error("too many arguments, expected "
+                                      .. (args == NIL ? 0 : args.SIZE()), node)
+      }
+    ELSEIF node.n_type == Node.Type.op_comma
+      next_index = generateArguments(node.n_left, ctx, args, index)
+      ctx.out.write(", ")
+      next_index = generateArguments(node.n_right, ctx, args, next_index)
+      node.n_undefined = node.n_left.n_undefined + node.n_right.n_undefined
+    ELSE
+      Symbol sym = genExpr(node, ctx.copyNoOut(), next_arg)
+      string close = ""
+      IF sym != NIL && sym.type == Node.Type.object
+                    && next_arg.type == Node.Type.i_object
+                    && ctx.gen.targetLang == Resolve.TargetLang.c
+        # Need to get the pointer and set the type.  The only way to avoid
+        # evaluating the expression twice is by using a function.
+        ctx.scope.addUsedItem("allocZoref")
+        ctx.out.write("ZallocZoref(")
+        close = ", " .. next_arg.class.findChild(sym.class) .. ")"
+      }
+      genExpr(node, ctx, next_arg)
+      ctx.out.write(close)
+      next_index++
+    }
+    RETURN next_index
+  }
+
+  # Generate a module call.
+  # Return a Symbol with the type of the result.
+  FUNC Symbol generateModuleCall(Symbol sym, Node arg_node, SContext ctx)
+    Node.Type func_type = sym.type
+    Symbol ret = NEW(Node.Type.unknown)
+
+    IF func_type == Node.Type.lib_method
+      arg_node.n_undefined = 0
+      sym.produce(sym, NIL, arg_node, ctx)
+      ret = sym.returnSymbol
+    ELSE
+      arg_node.n_undefined = 10
+      IF doError(ctx.out)
+        error("unexpected module function node type: "
+                                                 .. func_type.name(), arg_node)
+      }
+    }
+
+    RETURN ret
+  }
+
+  # Generate a ModuleInfo for sym.
+  # Return a Symbol with the type of the result.
+  FUNC Symbol generateModuleInfo(Symbol sym, Node node, SContext ctx)
+    Symbol infoSym = ctx.scope.getSymbol("INFO")
+    IF infoSym == NIL
+      # INFO module not loaded yet
+      node.n_undefined = 3
+      RETURN NIL
+    }
+    IF sym.scope == NIL
+      node.error("INTERNAL: sym.scope not set")
+      RETURN NIL
+    }
+    Symbol ret = infoSym.findMember("ModuleInfo")
+    sym.attributes.infoUsed = TRUE
+    IF ret == NIL
+      # INFO.ModuleInfo not loaded yet?  Strange.
+      node.n_undefined = 2
+      RETURN NIL
+    }
+    ctx.out.write(sym.cName .. "__FINFO()")
+    RETURN ret.copyObject()
+  }
+
+  # Like generateVarname(), but special handling for PARENT.
+  FUNC Symbol generateVarnameParent(Node node, SContext ctx, Symbol destSym)
+    IF node.n_type == Node.Type.parent
+      ctx.out.write("this")
+      RETURN destSym
+    }
+    RETURN generateVarname(node, ctx, destSym)
+  }
+
+  #
+  # Generate "var", or "class.member", "module.member", etc.
+  # |destSym| is a hint for the resulting type.
+  # TODO: "module.object.member"
+  # Return the symbol_T of the item.  NIL if not known.
+  #
+  FUNC Symbol generateVarname(Node node, SContext ctx, Symbol destSym)
+    IF node.n_type == Node.Type.string
+      generateString(node, ctx)
+      RETURN Symbol.string
+    }
+    RETURN generateLVarname(node, FALSE, ctx, destSym)
+  }
+
+  FUNC Symbol generateLVarname(Node node, bool lvalue, SContext ctx,
+                                                               Symbol destSym)
+    node.n_undefined = 0
+    Symbol sym
+    IF node.n_type == Node.Type.member
+      sym = node.n_left.findTopModule(ctx.scope)
+    }
+    IF sym != NIL
+      sym = ctx.scope.findNodeSymbol(node)
+      IF sym == NIL
+        node.n_undefined++
+        IF doError(ctx.out)
+          error("module member " .. node.n_string .. " not found", node)
+        }
+      ELSE
+        ctx.out.write(sym.cName)
+      }
+    ELSE
+      sym = generateVarnamePart(node, lvalue, ctx, destSym)
+    }
+    RETURN sym
+  }
+
+  # Recursively produce a variable or object member name.
+  # |destSym| is a hint for the resulting type.
+  # When |lvalue| is true need to have something to assign to.
+  # Return the symbol_T of the item.  NIL if not known.
+  FUNC Symbol generateVarnamePart(Node node, bool lvalue, SContext ctx,
+                                                               Symbol destSym)
+    Symbol sp = NIL
+    Node.Type type
+
+    IF node.n_type == Node.Type.id
+      sp = ctx.scope.getSymbol(node.n_string, node)
+      IF sp == NIL
+        node.n_undefined++
+        IF doError(ctx.out)
+          error("symbol " .. node.n_string .. " not found", node)
+        }
+      ELSE
+        ctx.gen.writeSymName(sp, ctx)
+        IF sp.type == Node.Type.ref
+          sp = sp.returnSymbol
+          IF sp == NIL
+            node.n_undefined++
+            IF doError(ctx.out)
+              error("symbol " .. node.n_string .. " type unknown", node)
+            }
+          }
+        }
+      }
+    ELSEIF node.n_type == Node.Type.this
+      IF !ctx.scope.isClassScope()
+        node.error("THIS not in class context")
+      ELSE
+        ctx.out.write(ctx.scope.thisName)
+        sp = ctx.scope.class.copyObject()
+      }
+    ELSEIF node.n_type == Node.Type.parent
+      node.error("invalid use of PARENT")
+    ELSEIF node.n_type == Node.Type.method
+      sp = generateCall(node, ctx, destSym, FALSE)
+    ELSEIF node.n_type == Node.Type.new
+      sp = generateNewCall(node, ctx, destSym)
+    ELSEIF node.n_type == Node.Type.member
+      node.n_left.n_undefined = 0
+      sp = generateVarnamePart(node.n_left, FALSE, ctx.copyNoOut(), destSym)
+      node.n_undefined += node.n_left.n_undefined
+      IF sp == NIL
+        IF doError(ctx.out)
+          error("Error before ." .. node.n_string, node)
+        }
+      ELSEIF sp.type == Node.Type.i_object
+        Symbol member = sp.class.findMember(node.n_string)
+        IF member == NIL
+          node.n_undefined++
+          IF doError(ctx.out)
+            node.error("member \"" .. node.n_string .. "\" not found")
+          }
+        ELSEIF ctx.gen.targetLang == Resolve.TargetLang.c
+          # some.member -> (*(type *)(some->ptr + table_off[some->type]))
+          ctx.out.write("(*(")
+          genType(member, node, ctx.out)
+          ctx.out.write("*)(")
+          generateVarnamePart(node.n_left, FALSE, ctx, destSym)
+          ctx.out.write("->ptr + "
+                                .. classOffTableName(sp.class, member) .. "[")
+          node.n_left.n_undefined = 0
+          generateVarnamePart(node.n_left, FALSE, ctx, destSym)
+          ctx.out.write("->type]))")
+          sp = member
+          node.n_undefined += node.n_left.n_undefined
+        ELSE
+          generateVarnamePart(node.n_left, FALSE, ctx, destSym)
+          node.n_undefined += node.n_left.n_undefined
+          ctx.out.write("." .. member.cName)
+          sp = member
+        }
+      ELSEIF sp.type == Node.Type.class
+        Symbol m = sp.findMember(node.n_string)
+        IF m == NIL
+          node.n_undefined += 2
+          IF doError(ctx.out)
+            error("no member " .. node.n_string .. " in this class", node)
+          }
+        ELSEIF m.cName[0] != 'C'  # shared members start with class name
+          node.n_undefined++
+          IF doError(ctx.out)
+            error("member " .. node.n_string
+                                .. " in not in SHARED section of class", node)
+          }
+        ELSE
+          ctx.out.write(m.cName)
+          sp = m
+        }
+      ELSE
+        node.n_left.n_undefined = 0
+        sp = generateVarnamePart(node.n_left, FALSE, ctx, destSym)
+        node.n_undefined += node.n_left.n_undefined
+        IF sp.type == Node.Type.object
+          sp = sp.findMember(node.n_string)
+          IF sp == NIL
+            node.n_undefined++
+            IF doError(ctx.out)
+              error("member \"" .. node.n_string .. "\" not found", node)
+            }
+          ELSE
+            ctx.gen.member(sp.cName, ctx.out)
+          }
+        ELSEIF sp.type == Node.Type.bits_small || sp.type == Node.Type.bits_big
+          Symbol m = sp.findMember(node.n_string)
+          IF m == NIL
+            node.n_undefined++
+            IF doError(ctx.out)
+              error("member " .. node.n_string .. " not found", node)
+            }
+          ELSE
+            # We need to generate a value with the type of "m", but remember
+            # that it needs to be shifted to fit in "sp".  This is done for
+            # Node.Type.assign.
+            sp = sp.copy()
+            sp.returnSymbol = m
+          }
+        ELSE
+          node.n_undefined++
+          IF doError(ctx.out)
+            error("Unexpected type " .. sp.type.name()
+                                         .. "  before ." .. node.n_string, node)
+          }
+        }
+      }
+    ELSEIF node.n_type == Node.Type.subscript
+      # For array assignment a[n] = x  C code is similar.
+      # Dict assignment d[k] = v  has to be done elsewhere.
+      # For dict access d[k].m becomes ZDictGetPtr(d, Ik, Pk)->m
+      # For list access d[i].m becomes ZListGetPtr(d, i)->m
+      sp = generateVarnamePart(node.n_left, FALSE, ctx.copyNoOut(), destSym)
+      IF sp != NIL && sp.type == Node.Type.list
+        ListStuff.generateSubscript(sp, node, lvalue, ctx, destSym)
+        # result type is the value type
+        IF sp.returnSymbol != NIL
+          sp = sp.returnSymbol.copy()
+        }
+      ELSEIF sp != NIL && sp.type == Node.Type.dict
+        DictStuff.generateSubscript(sp, node, lvalue, ctx, destSym)
+        # result type is the value type
+        IF sp.returnSymbol != NIL
+          sp = sp.returnSymbol.copy()
+        }
+      ELSE
+        node.n_left.n_undefined = 0
+        sp = generateVarnamePart(node.n_left, FALSE, ctx, destSym)
+        node.n_undefined += node.n_left.n_undefined
+        ctx.out.write("[")
+        genExpr(node.n_right, ctx, Symbol.int)
+        node.n_undefined += node.n_right.n_undefined
+        ctx.out.write("]")
+        IF sp != NIL && sp.type == Node.Type.string
+          # "string[n]" results in an int
+          sp = NEW(Node.Type.int)
+        ELSEIF sp != NIL && sp.type == Node.Type.array
+          # "var[n]" results in type of var item
+          sp = sp.returnSymbol.copy()
+        }
+      }
+    ELSE
+      node.n_undefined++
+      IF doError(ctx.out)
+        Node.Type t = node.n_type
+        error("node type " .. t.name() .. " not expected", node)
+      }
+    }
+
+    RETURN sp
+  }
+
+  # Return TRUE when |dest| can be assigned to |source|, possibly using
+  # automatic conversion.
+  FUNC bool compatibleTypes(Node.Type src_type, Node.Type dest_type)
+    RETURN dest_type == src_type
+           || dest_type == Node.Type.unknown
+           || (dest_type == Node.Type.string
+               && (src_type == Node.Type.int   # convertable to string
+                   || src_type == Node.Type.bool
+                   || src_type == Node.Type.status))
+  }
+  
+  # Like compatibleTypes, but also check type of class, object, etc.
+  FUNC bool compatibleSymbols(Symbol src, Symbol dest)
+    IF !compatibleTypes(src.type, dest.type)
+        && ((src.type != Node.Type.object && src.type != Node.Type.class)
+            || (dest.type != Node.Type.object
+                 && dest.type != Node.Type.i_object
+                 && dest.type != Node.Type.class))
+      RETURN FALSE
+    }
+    IF (src.type == Node.Type.class || src.type == Node.Type.object
+                                             || src.type == Node.Type.i_object)
+      IF src.class == NIL || dest.class == NIL
+        RETURN FALSE
+      }
+      IF src.class IS dest.class
+        RETURN TRUE
+      }
+      IF dest.type == Node.Type.i_object && classOfInterface(dest.class,
+                               src.type == Node.Type.object ? src.class : src)
+        RETURN TRUE
+      }
+      RETURN FALSE
+    }
+    RETURN TRUE
+  }
+
+  # Generate the expression from |node|.
+  # Give an error when the result type differs from |destSym|, or wrap it in
+  # a conversion function if possible.
+  # Sets node.n_undefined.
+  # Return a symbol that defines the type of the result.
+  # Return NIL when there is an error.
+  FUNC Symbol genExpr(Node node, SContext ctx, Symbol destSym)
+    int errorCount = Error.errorCount
+    Symbol ret = ctx.gen.expr(node, ctx, destSym)
+
+    # Report a type error if we are writing and the expression itself
+    # didn't generate an error.
+    IF destSym != NIL && ret != NIL
+                          && ctx.out.writing && Error.errorCount == errorCount
+      Node.Type dest_type = destSym.type
+      IF ret.type != dest_type
+        Generate.typeError(dest_type, ret.type, node)
+      ELSEIF dest_type == Node.Type.object
+             && destSym.class != NIL
+             && ret.class != NIL
+             && destSym.class.name != ret.class.name
+        Generate.error("Expected " .. destSym.class.name
+                                       .. " but found " .. ret.class.name, node)
+      ELSEIF dest_type == Node.Type.list
+             && destSym.returnSymbol != NIL
+             && ret.returnSymbol != NIL
+             && destSym.returnSymbol.type != ret.returnSymbol.type
+        Generate.typeError(destSym.returnSymbol.type,
+                                                  ret.returnSymbol.type, node)
+      ELSEIF dest_type == Node.Type.dict
+             && destSym.keySymbol != NIL
+             && ret.keySymbol != NIL
+             && destSym.keySymbol.type != ret.keySymbol.type
+        Generate.typeError(destSym.keySymbol.type, ret.keySymbol.type, node)
+      ELSEIF dest_type == Node.Type.dict
+             && destSym.returnSymbol != NIL
+             && ret.returnSymbol != NIL
+             && destSym.returnSymbol.type != ret.returnSymbol.type
+        Generate.typeError(destSym.returnSymbol.type,
+                                                  ret.returnSymbol.type, node)
+      }
+    }
+
+    RETURN ret
+  }
+
+  # Generate the expression from |node|.
+  # Like genExpr(), but may produce a different type than asked for.
+  # Sets node.n_undefined.
+  FUNC Symbol genExprChecked(Node node, SContext ctx, Symbol destSym)
+    Output out = ctx.out
+    Scope scope = ctx.scope
+
+    Node.Type dest_type = (destSym == NIL) ? Node.Type.unknown : destSym.type
+    IF Error.debug
+      IF scope.importIndent != NIL
+        IO.write(scope.importIndent)
+      }
+      IO.write("genExpr() ")
+      IO.write(node.n_type.name() .. " node")
+      IF node.n_string != NIL
+        IO.write(" \"" .. node.n_string .. "\"")
+      }
+      IF destSym != NIL
+        IO.write("; dest type: " .. destSym.type.name() .. " ")
+      }
+      IO.write("writing: " .. out.writing)
+      IO.write("\n")
+    }
+
+    IF destSym != NIL && (dest_type == Node.Type.bits_small
+                                           || dest_type == Node.Type.bits_big)
+      # The destination is a BITS type.
+      Symbol ret = destSym.copy()  # default return type
+      SWITCH node.n_type
+        CASE Node.Type.id
+          # "field" may be a BITS field name
+          Symbol memberSym = destSym.findMember(node.n_string)
+          IF memberSym == NIL
+            BREAK
+          }
+          node.n_undefined = 0
+          IF memberSym.type != Node.Type.bool
+            node.n_undefined = 1
+            IF doError(out)
+              typeError(Node.Type.bool, memberSym.type, node)
+            }
+          }
+          ret.value = 1 << memberSym.value
+          out.write("" .. ret.value)
+          RETURN ret
+
+        CASE Node.Type.int
+          # "0" can always be used
+          IF node.n_int == 0
+            ret.value = 0
+            out.write("0")
+            node.n_undefined = 0
+            RETURN ret
+          }
+
+        CASE Node.Type.op_plus
+          # "field + field"
+          out.write("(")
+          genExpr(node.n_left, ctx, destSym)
+          out.write(" + ")
+          genExpr(node.n_right, ctx, destSym)
+          out.write(")")
+          node.n_undefined = node.n_left.n_undefined + node.n_right.n_undefined
+          RETURN ret
+
+        CASE Node.Type.bits_value
+          # "field=value"
+          IF node.n_left.n_type != Node.Type.id
+            BREAK
+          }
+          Symbol memberSym = destSym.findMember(node.n_left.n_string)
+          IF memberSym == NIL
+            BREAK
+          }
+          node.n_undefined = 0
+          IF memberSym.type == Node.Type.int
+            # "field=-123"
+            IF node.n_right.n_int > memberSym.mask >> 1
+                || node.n_right.n_int < -memberSym.mask >> 1
+              node.n_undefined = 1
+              node.error("value out of range: " .. node.n_right.n_int)
+            }
+            ret.value = node.n_right.n_int << memberSym.value
+            out.write("" .. ret.value)
+            RETURN ret
+          }
+          IF memberSym.type == Node.Type.nat
+            # "field=123"
+            IF node.n_right.n_int & ~memberSym.mask != 0
+              node.n_undefined = 1
+              node.error("value out of range: " .. node.n_right.n_int)
+            }
+            ret.value = node.n_right.n_int << memberSym.value
+            out.write("" .. ret.value)
+            RETURN ret
+          }
+          IF memberSym.type != Node.Type.enum
+            node.n_undefined = 2
+            IF doError(out)
+              typeError(Node.Type.enum, memberSym.type, node)
+            }
+          ELSE
+            # "field=name"
+            Symbol valueSym = memberSym.findMember(node.n_right.n_string)
+            IF valueSym == NIL
+              node.n_undefined = 1
+              node.error("Unknown enum value: " .. node.n_right.n_string)
+            ELSE
+              ret.value = valueSym.value << memberSym.value
+              out.write("" .. ret.value)
+            }
+          }
+          RETURN ret
+      }
+    }
+
+    # Get here when there is no special handling for BITS type.
+    IF dest_type == Node.Type.class
+      dest_type = Node.Type.object
+    }
+    Symbol ret = NEW(dest_type)  # default return type
+    ret.value = 1  # not just zero
+
+    SWITCH node.n_type
+      CASE Node.Type.bool
+        IF dest_type == Node.Type.string
+          # Use the literal string, faster than conversion.
+          IF node.n_int == 0
+            out.write("\"FALSE\"")
+          ELSE
+            out.write("\"TRUE\"")
+          }
+          ret.type = Node.Type.string
+        ELSE
+          IF node.n_int == 0
+            out.write("0")
+          ELSE
+            out.write("1")
+          }
+          ret.type = Node.Type.bool
+        }
+
+      CASE Node.Type.status
+        IF dest_type == Node.Type.string
+          # Use the literal string, faster than conversion.
+          IF node.n_int == 0
+            out.write("\"FAIL\"")
+          ELSE
+            out.write("\"OK\"")
+          }
+          ret.type = Node.Type.string
+        ELSE
+          IF node.n_int == 0
+            out.write("0")
+          ELSE
+            out.write("1")
+          }
+          ret.type = Node.Type.status
+        }
+
+      CASE Node.Type.int
+        IF dest_type == Node.Type.string
+          # Efficient way to turn a number into a string.
+          out.write("\"" .. node.n_int .. "\"")
+        ELSE
+          ret.type = Node.Type.int
+          ret.value = node.n_int
+          out.write(node.n_int .. "")
+        }
+
+      CASE Node.Type.string
+        generateString(node, ctx)
+        ret.type = Node.Type.string
+
+      CASE Node.Type.nil
+        node.n_undefined = 0
+        IF !Node.isPointerType(dest_type)
+          node.n_undefined = 1
+          IF doError(out)
+            typeError(dest_type, Node.Type.nil, node)
+          }
+        }
+        ctx.gen.nil(ctx)
+
+      CASE Node.Type.this
+        node.n_undefined = 0
+        IF dest_type != Node.Type.object && dest_type != Node.Type.i_object
+                                                 && dest_type != Node.Type.nil
+          node.n_undefined = 1
+          IF doError(out)
+            typeError(dest_type, Node.Type.object, node)
+          }
+        ELSEIF !scope.isClassScope()
+          node.n_undefined = 2
+          node.error("THIS cannot be used here")
+        }
+        out.write(ctx.scope.thisName)
+        ret.type = Node.Type.object
+        ret.class = scope.class
+
+      CASE Node.Type.parent
+        node.error("PARENT cannot be used here")
+
+      CASE Node.Type.op_negative
+        out.write("-(")
+        genExpr(node.n_left, ctx, Symbol.int)
+        out.write(")")
+        ret.type = Node.Type.int
+        node.n_undefined = node.n_left.n_undefined
+
+      CASE Node.Type.op_not
+        out.write("!(")
+        genExpr(node.n_left, ctx, Symbol.bool)
+        out.write(")")
+        ret.type = Node.Type.bool
+        node.n_undefined = node.n_left.n_undefined
+
+      CASE Node.Type.op_tilde
+        out.write("~(")
+        genExpr(node.n_left, ctx, Symbol.int)
+        out.write(")")
+        ret.type = Node.Type.int
+        node.n_undefined = node.n_left.n_undefined
+
+      CASE Node.Type.ref
+        node.n_undefined = 0
+        IF destSym == NIL || destSym.type != Node.Type.ref
+          node.n_undefined = 5
+          IF doError(out)
+            node.error("Unexpected &")
+          }
+        ELSE
+          out.write("&(")
+          ret.returnSymbol = generateVarname(node.n_left, ctx,
+                                                         destSym.returnSymbol)
+          node.n_undefined += node.n_left.n_undefined
+          ret.type = Node.Type.ref
+          out.write(")")
+        }
+
+      CASE Node.Type.id
+        ret = ctx.gen.id(node, ctx, destSym)
+
+      CASE Node.Type.method
+        ret = generateCall(node, ctx, destSym, TRUE)
+
+      CASE Node.Type.new
+        ret = generateNewCall(node, ctx, destSym)
+
+      # Four ways of generating code for a member:
+      # Enum value:    enum.name                  ->  "99"
+      #                module.submodule.enum.name ->  "99"
+      # Bits value:    flags.member               ->  "((Vflags & M) >> N)"
+      # Module member: module.name                ->  "Vmodule_name"
+      #                module.submodule.name      ->  "Vmodule_submodule_name"
+      # Class member:  whatever.name              ->  whatever "->name"
+      CASE Node.Type.member
+        Symbol nodeSym = scope.findNodeSymbol(node.n_left)
+        IF nodeSym != NIL && nodeSym.type == Node.Type.enum
+          # Enum value
+          genEnumMember(node, nodeSym, destSym, out, ret)
+        ELSEIF nodeSym != NIL && nodeSym.type == Node.Type.class
+          # Class member
+          genModuleMember(node, dest_type, ctx, ret)
+        ELSEIF nodeSym != NIL && (nodeSym.type == Node.Type.bits_small
+                                        || nodeSym.type == Node.Type.bits_big)
+          # BITS value
+          genBitsMember(node, nodeSym, dest_type, ctx, ret)
+        ELSE
+          Symbol moduleSym = node.n_left.findTopModule(scope)
+          IF moduleSym != NIL
+            # Module variable
+            ret = genModuleMember(node, dest_type, ctx, ret)
+          ELSE
+            # Class member
+            ret = genClassMember(node, dest_type, ctx, ret)
+          }
+        }
+
+      CASE Node.Type.subscript
+        ret = ctx.gen.subscript(node, ctx, destSym)
+
+      CASE Node.Type.bit_and
+      CASE Node.Type.bit_or
+      CASE Node.Type.bit_xor
+      CASE Node.Type.op_mult
+      CASE Node.Type.op_div
+      CASE Node.Type.op_rem
+      CASE Node.Type.op_rshift
+      CASE Node.Type.op_lshift
+      CASE Node.Type.op_minus
+        ctx.gen.numberOp(node, ctx)
+        ret.type = Node.Type.int
+
+      CASE Node.Type.op_concat
+        ctx.gen.concatOp(node, ctx)
+        ret.type = Node.Type.string
+
+      CASE Node.Type.op_plus
+        ret.type = ctx.gen.plusOp(node, ctx, dest_type)
+
+      CASE Node.Type.op_pre_incr
+      CASE Node.Type.op_pre_decr
+      CASE Node.Type.op_post_incr
+      CASE Node.Type.op_post_decr
+        ctx.gen.incrdecrOp(node, ctx)
+        ret.type = Node.Type.int
+
+      CASE Node.Type.op_equal
+      CASE Node.Type.op_notequal
+      CASE Node.Type.op_is
+      CASE Node.Type.op_isnot
+        ctx.gen.booleanOp(node, ctx)
+        ret.type = Node.Type.bool
+
+      CASE Node.Type.op_isa
+      CASE Node.Type.op_isnota
+        error("ISA and ISNOTA not implemented yet", node)
+
+      CASE Node.Type.op_gt
+      CASE Node.Type.op_gte
+      CASE Node.Type.op_lt
+      CASE Node.Type.op_lte
+        ctx.gen.compareOp(node, ctx)
+        ret.type = Node.Type.bool
+
+      CASE Node.Type.op_and
+      CASE Node.Type.op_or
+        ctx.gen.andorOp(node, ctx)
+        ret.type = Node.Type.bool
+
+      CASE Node.Type.parens
+        ret = ctx.gen.parens(node, ctx, destSym)
+
+      CASE Node.Type.op_alt
+        ret = ctx.gen.altOp(node, ctx, destSym)
+
+      CASE Node.Type.list
+        ret.type = Node.Type.list
+        ret.returnSymbol = ctx.gen.listPart(node.n_right, ctx,
+                                  destSym == NIL ? NIL : destSym.returnSymbol)
+        node.n_undefined = node.n_right.n_undefined
+        IF ret.returnSymbol != NIL && ret.returnSymbol.type == Node.Type.class
+          ret.returnSymbol = ret.returnSymbol.copyObject()
+        }
+
+      CASE Node.Type.dict
+        ret.type = Node.Type.dict
+        ctx.gen.dictPart(node.n_right, ret, ctx)
+        node.n_undefined = node.n_right.n_undefined
+
+      DEFAULT
+        IF node.n_type == Node.Type.unknown
+          error("Missing argument", node)
+        ELSEIF doError(out)
+          error("INTERNAL: Node type not supported: "
+                                                   .. node.n_type.name(), node)
+        }
+    }
+
+    RETURN ret
+  }
+
+  # Generate C code for a string literaly "node".
+  PROC generateString(Node node, SContext ctx)
+    Output out = ctx.out
+
+    out.write("\"")
+    # Handle limited set of special characters.
+    int i = 0
+    WHILE i < node.n_string.SIZE()
+      int c = node.n_string[i]
+      IF c == '\n'
+        out.write("\\n")
+      ELSEIF c == '\r'
+        out.write("\\r")
+      ELSEIF c == '\t'
+        out.write("\\t")
+      ELSEIF c == '"'
+        out.write("\\\"")
+      ELSEIF c == '\\'
+        out.write("\\\\")
+      ELSE
+        out.write(c.toChar())
+      }
+      i++
+    }
+    out.write("\"")
+  }
+
+  # For a node of type Node.Type.member where n_left ends in an enum type.
+  # Enum value:    enum.name                  ->  "99"
+  #                module.submodule.enum.name ->  "99"
+  PROC genEnumMember(Node node, Symbol nodeSym, Symbol destSym,
+                                                       Output out, Symbol ret)
+    int value = -1
+    list<Symbol> memberList = nodeSym.getMemberList()
+    IF memberList == NIL
+      node.n_undefined = 3
+      error("Enum without members", node)
+    ELSE
+      Symbol member_sym = Symbol.find(memberList, node.n_string)
+      IF member_sym == NIL
+        node.n_undefined = 2
+        error("No such enum value: " .. node.n_string, node)
+      ELSE
+        value = member_sym.value
+        Node.Type dest_type = (destSym == NIL)
+                                            ? Node.Type.unknown : destSym.type
+        node.n_undefined = 0
+        IF dest_type != Node.Type.unknown
+          IF dest_type != Node.Type.enum
+            node.n_undefined = 1
+            IF doError(out)
+              typeError(dest_type, Node.Type.enum, node)
+            }
+          ELSEIF !(destSym.class IS nodeSym)
+            node.n_undefined = 1
+            IF doError(out)
+              error("Expected ENUM " .. destSym.class.name
+                              .. " but found ENUM " .. nodeSym.name, node)
+            }
+          }
+        }
+        ret.type = Node.Type.enum
+        ret.class = nodeSym
+      }
+    }
+    out.write(value .. "")
+  }
+
+  PROC genBitsMember(Node node, Symbol nodeSym, Node.Type dest_type,
+                                          SContext ctx, Symbol ret)
+    list<Symbol> memberList = nodeSym.getMemberList()
+    IF memberList == NIL
+      error("BITS without members", node)
+      node.n_undefined = 2
+    ELSE
+      Symbol member_sym = Symbol.find(memberList, node.n_string)
+      IF member_sym == NIL
+        node.n_undefined = 1
+        IF doError(ctx.out)
+          node.error("No such member: " .. node.n_string)
+        }
+      ELSE
+        IF member_sym.type == Node.Type.bool
+          IF dest_type != Node.Type.unknown && dest_type != Node.Type.string
+                                                && dest_type != Node.Type.bool
+            node.n_undefined++
+            IF doError(ctx.out)
+              typeError(dest_type, Node.Type.bool, node)
+            }
+          }
+          ret.type = Node.Type.bool
+          ctx.out.write("(((")
+          genExpr(node.n_left, ctx, NIL)
+          node.n_undefined = node.n_left.n_undefined
+          int shift = member_sym.value
+          ctx.out.write(") & " .. (1 << shift) .. ")")
+          # TODO: is there any reason we would need TRUE be 1 and not
+          # any non-zero value?
+          #IF shift > 0
+          #  ctx.out.write(" >> " .. shift)
+          #}
+          ctx.out.write(")")
+        ELSEIF member_sym.type == Node.Type.int
+                                     || member_sym.type == Node.Type.nat
+          IF dest_type != Node.Type.unknown && dest_type != Node.Type.string
+                                                 && dest_type != Node.Type.int
+            node.n_undefined++
+            IF doError(ctx.out)
+              typeError(dest_type, Node.Type.int, node)
+            }
+          }
+            ret.type = Node.Type.int
+          # Getting a Nat out of a BITS:
+          #    (((expr) & (mask << shift)) >> shift)
+          # Getting an int  out of a BITS:
+          #    ZFixSign((((expr) & (mask << shift)) >> shift),
+          #                                            ~(mask >> 1))
+          IF member_sym.type == Node.Type.int
+            ctx.scope.addUsedItem("fixSign")
+            ctx.out.write("ZFixSign(")
+          }
+          ctx.out.write("(((")
+          genExpr(node.n_left, ctx, NIL)
+          node.n_undefined = node.n_left.n_undefined
+          int shift = member_sym.value
+          ctx.out.write(") & " .. (member_sym.mask << shift) .. ")")
+          IF shift > 0
+            ctx.out.write(" >> " .. shift)
+          }
+          ctx.out.write(")")
+          IF member_sym.type == Node.Type.int
+            ctx.out.write(", " .. ~(member_sym.mask >> 1) .. ")")
+          }
+        ELSEIF member_sym.type == Node.Type.enum
+          IF dest_type != Node.Type.unknown && dest_type != Node.Type.string
+            # TODO: check enum type
+            IF dest_type != Node.Type.enum
+              node.n_undefined++
+              IF doError(ctx.out)
+                typeError(dest_type, Node.Type.bool, node)
+              }
+            }
+          }
+          IF dest_type == Node.Type.string
+            genEnumNameCall(member_sym, node, ctx)
+          ELSE
+            ret.type = Node.Type.enum
+          }
+          ctx.out.write("(((")
+          genExpr(node.n_left, ctx, NIL)
+          node.n_undefined = node.n_left.n_undefined
+          int shift = member_sym.value
+          ctx.out.write(") & " .. (member_sym.mask << shift) .. ")")
+          IF shift > 0
+            ctx.out.write(" >> " .. shift)
+          }
+          ctx.out.write(")")
+          IF dest_type == Node.Type.string
+            ctx.out.write(")")
+          }
+        ELSE
+          node.error("INTERNAL: Not implemented yet")
+        }
+      }
+    }
+  }
+
+  # Node.Type.member node where the top item is a module
+  # Module member: module.name                ->  "Vmodule_name"
+  #                module.submodule.name      ->  "Vmodule_submodule_name"
+  # Class member:  Class.name
+  FUNC Symbol genModuleMember(Node node, Node.Type dest_type,
+                                                  SContext ctx, Symbol ret_in)
+    Symbol ret = ret_in
+    Symbol moduleSym = ctx.scope.findNodeSymbol(node.n_left, Node.Type.unknown,
+                                                             doError(ctx.out))
+    IF moduleSym == NIL
+      node.n_undefined = 3
+    ELSE
+      list<Symbol> memberList = moduleSym.getMemberList()
+      IF memberList == NIL
+        node.n_undefined = 2
+        error("Module without members", node)
+      ELSE
+        Symbol sym = Symbol.find(memberList, node.n_string)
+        IF sym == NIL
+          node.n_undefined = 1
+          error("No such module member: " .. node.n_string, node)
+        ELSE
+          node.n_undefined = 0
+          IF sym.type == Node.Type.int && dest_type == Node.Type.string
+          ELSEIF sym.type != dest_type
+            node.n_undefined = 1
+            IF doError(ctx.out)
+              typeError(dest_type, sym.type, node)
+            }
+          }
+          ctx.out.write(sym.cName)
+          ret = sym.copy()
+        }
+      }
+    }
+    RETURN ret
+  }
+
+  # Node.Type.member node that is not a module, bits or enum.
+  # Class member:  whatever.name              ->  whatever "->name"
+  FUNC Symbol genClassMember(Node node, Node.Type dest_type,
+                                                  SContext ctx, Symbol ret_in)
+    Symbol ret = ret_in
+    Symbol leftSym
+    Symbol destSym
+    Symbol parentSym
+    # We don't want to generate anything yet, just get the Symbol
+    # that has the type of result.
+    leftSym = genExpr(node.n_left, ctx.copyNoOut(), Symbol.parent)
+    node.n_undefined = node.n_left.n_undefined
+
+    Node.Type member_type
+    Symbol    sym
+    Node.Type type
+    IF leftSym == NIL
+      ret = NIL
+      IF doError(ctx.out)
+        # Let genExpr() produce the error message
+        leftSym = genExpr(node.n_left, ctx, Symbol.parent)
+      }
+    ELSE
+      parentSym = leftSym
+      destSym = leftSym
+      IF leftSym.type == Node.Type.ref
+        IF leftSym.returnSymbol != NIL
+          parentSym = leftSym.returnSymbol
+          destSym = parentSym
+        ELSE
+          node.n_undefined++
+        }
+      }
+      IF leftSym.type == Node.Type.i_object
+        parentSym = leftSym.class
+        type = Node.Type.object
+      ELSE
+        type = destSym.type
+      }
+      sym = parentSym.findMember(node.n_string)
+      IF sym == NIL
+         member_type = Node.Type.unknown
+      ELSE
+         member_type = sym.type
+      }
+    }
+    IF type == Node.Type.object && sym != NIL
+      IF doError(ctx.out)
+        checkExprType(dest_type, member_type, node)
+      }
+      IF leftSym.type == Node.Type.i_object
+        ctx.gen.iobjectMember(sym, leftSym, node, ctx, destSym)
+      ELSE
+        genExpr(node.n_left, ctx, destSym)
+        ctx.gen.member(sym.cName, ctx.out)
+        node.n_undefined = node.n_left.n_undefined
+      }
+      IF sym.type == Node.Type.unknown
+        node.n_undefined++
+      }
+      ret.type = member_type
+      ret.class = sym.class
+      ret.cName = sym.cName
+      ret.className = sym.className
+      ret.memberList = sym.memberList
+      ret.returnSymbol = sym.returnSymbol
+      ret.parentClass = sym.parentClass
+      ret.attributes = sym.attributes
+    ELSE
+      node.n_undefined = 10
+      IF doError(ctx.out)
+        IF node.n_left == NIL || node.n_left.n_type != Node.Type.id
+          error("unknown member: " .. node.n_string, node)
+        ELSE
+          error("unknown member: " .. node.n_left.n_string
+                                                  .. "." .. node.n_string, node)
+        }
+      }
+    }
+    RETURN ret
+  }
+
+  # Give an error related to a node object that might be NIL.
+  PROC error(string msg, Node node)
+    IF node == NIL
+      Error.report(msg)
+    ELSE
+      node.error(msg)
+    }
+    IO.flush()
+  }
+
+  PROC typeError(Node.Type expected, Node.Type actual, Node node)
+    IF expected != Node.Type.unknown
+                 && !(expected == Node.Type.nil && Node.isPointerType(actual))
+      IF Node.isTypeWithArgs(actual)
+        error("Missing ()", node)
+      ELSE
+        error("Type mismatch: expected " .. expected.name()
+                    .. " but found " .. actual.name(), node)
+      }
+    }
+  }
+
+  # Give an error when "expected" and "actual" are not equal and cannot
+  # be converted in genExpr().
+  PROC checkExprType(Node.Type expected, Node.Type actual, Node node)
+    IF !compatibleTypes(actual, expected)
+       typeError(expected, actual, node)
+    }
+  }
+
+  #
+  # Generate the C code for the type of |sym|.
+  #
+  PROC genType(Symbol sym, Node node, Output out)
+    SWITCH sym.type
+      CASE Node.Type.class
+      CASE Node.Type.object
+          IF sym.attributes.abstract
+            error("Cannot use abstract class " .. sym.name, node)
+          }
+          IF sym.class != NIL
+            out.write(sym.class.className .. " *")
+          ELSE
+            # TODO: error?
+            out.write(sym.className .. " *")
+          }
+          RETURN
+      CASE Node.Type.i_object
+          out.write("Zoref *")
+          RETURN
+      CASE Node.Type.list
+          out.write("CListHead *")
+          RETURN
+      CASE Node.Type.dict
+          out.write("CDictHead *")
+          RETURN
+      CASE Node.Type.proc_ref
+          out.write("void *")
+          RETURN
+      CASE Node.Type.func_ref
+          out.write("void *")
+          RETURN
+      CASE Node.Type.string
+          out.write("char *")
+          RETURN
+      CASE Node.Type.ref
+          genType(sym.returnSymbol, node, out)
+          out.write(" *")
+          RETURN
+      CASE Node.Type.bool
+          out.write("Zbool ")
+          RETURN
+      CASE Node.Type.status
+          out.write("Zstatus ")
+          RETURN
+      CASE Node.Type.bits_small
+          out.write("Zbits ")
+          RETURN
+      CASE Node.Type.bits_big
+          out.write("Zbbits ")
+          RETURN
+      CASE Node.Type.enum
+          out.write("Zenum ")
+          RETURN
+      CASE Node.Type.int
+          out.write("Zint ")
+          RETURN
+      DEFAULT
+          IF doError(out)
+            error("Declaration of unknown type " .. sym.type.name(), node)
+          }
+    }
+  }
+
+}

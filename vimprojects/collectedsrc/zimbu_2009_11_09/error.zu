@@ -1,0 +1,117 @@
+#
+# The Zimbu compiler written in Zimbu
+#
+# Error module
+#
+# Copyright 2009 Bram Moolenaar
+# Licensed under the Apache License, Version 2.0.  See the LICENSE file or
+# obtain a copy at: http://www.apache.org/licenses/LICENSE-2.0
+#
+
+IMPORT "node.zu"
+IMPORT "pos.zu"
+
+MODULE Error
+
+  bool foundError
+  int  errorCount
+  int verbose      # write messages about progress
+  bool debug       # write messages for debugging the compiler
+
+  # Report error |msg|.
+  PROC report(string msg)
+    report(msg, NIL)
+  }
+
+  # Use the information in |pos| if it's not NIL.
+  PROC report(string msg, Pos pos)
+    foundError = TRUE
+    errorCount++
+    IF pos == NIL
+      IO.writeLine("ERROR: " .. msg)
+    ELSE
+      IO.write(pos.toString())
+      IO.writeLine(": ERROR: " .. msg)
+    }
+    IO.flush()
+  }
+
+  # Write a message only when "-v" was used.
+  PROC verboseMsg(string msg)
+    IF verbose >= 1
+      IO.write(msg)
+      IO.flush()
+    }
+  }
+
+  # Write a message only when "-v" was used twice.
+  PROC verbose2Msg(string msg)
+    IF verbose >= 2
+      IO.write(msg)
+      IO.flush()
+    }
+  }
+
+  FUNC status checkArgCount(Node node, int min, int max, string name)
+    int argCount
+    IF node != NIL && node.n_type != Node.Type.unknown
+      argCount++
+      Node n = node
+      WHILE n.n_type == Node.Type.op_comma
+        argCount++
+        n = n.n_left
+      }
+    }
+    IF argCount > max
+      IF max == 0
+        report(name .. "() does not accept arguments", node.n_start)
+      ELSEIF max == 1
+        report(name .. "() takes only 1 argument, found " .. argCount,
+                                                                 node.n_start)
+      ELSE
+        report(name .. "() takes up to " .. max .. " arguments, found "
+                                                     .. argCount, node.n_start)
+      }
+      RETURN FAIL
+    ELSEIF argCount < min
+      string msg = name .. "() requires at least " .. min
+      IF min == 1
+        msg ..= " argument"
+      ELSE
+        msg ..= " arguments"
+      }
+      IF argCount == 0
+        report(msg, node.n_start)
+      ELSE
+        report(msg .. ", found only " .. argCount, node.n_start)
+      }
+      RETURN FAIL
+    }
+    RETURN OK
+  }
+
+  # For debugging: find the lowest node in the node tree that is undefined.
+  FUNC bool findDeepUndef(Node node)
+    bool done
+    IF node.n_next != NIL
+      done = done || findDeepUndef(node.n_next)
+    }
+    IF node.n_left != NIL && node.n_left.n_undefined > 0
+      done = done || findDeepUndef(node.n_left)
+    }
+    IF node.n_right != NIL && node.n_right.n_undefined > 0
+      done = done || findDeepUndef(node.n_right)
+    }
+    IF node.n_cond != NIL && node.n_cond.n_undefined > 0
+      done = done || findDeepUndef(node.n_cond)
+    }
+    IF node.n_returnType != NIL && node.n_returnType.n_undefined > 0
+      done = done || findDeepUndef(node.n_returnType)
+    }
+    IF !done && node.n_undefined > 0
+      IO.writeLine("deepest undef: " .. node.toString())
+      done = TRUE
+    }
+    RETURN done
+  }
+}

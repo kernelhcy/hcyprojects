@@ -1,0 +1,176 @@
+#
+# The Zimbu compiler written in Zimbu
+#
+# Token class.
+#
+# Copyright 2009 Bram Moolenaar
+# Licensed under the Apache License, Version 2.0.  See the LICENSE file or
+# obtain a copy at: http://www.apache.org/licenses/LICENSE-2.0
+#
+
+IMPORT "error.zu"
+IMPORT "pos.zu"
+
+CLASS Token
+  Type        type
+  string      value
+  Pos         startPos       # start in input
+  Pos         endPos         # end in input
+
+  # Error detected during parse phase after getting this token.
+  PROC error(string msg)
+    Error.report(msg, startPos)
+  }
+
+  # Error for token found in a place where it is not accepted.
+  PROC errorNotAllowed()
+    Error.report("'" .. value .. "' not allowed here", startPos)
+  }
+
+  # Return TRUE if the token has a type that is white space or comment.
+  FUNC bool isSep()
+    RETURN type == Type.sep || type == Type.line_sep || type == Type.comment
+  }
+
+  FUNC Token copy()
+    Token t = NEW()
+    t.type = type
+    t.value = value
+    IF startPos != NIL
+      t.startPos = startPos.copy()
+    }
+    IF endPos != NIL
+      t.endPos = endPos.copy()
+    }
+    RETURN t
+  }
+
+  ENUM Type
+    unknown
+    eof         # end of input
+    sep         # separator: at least a space or line break
+    line_sep    # line separator: at least a line break
+    comment     # comment without preceding white space or line break
+    empty       # nothing
+
+    nil
+    this
+    parent
+    false
+    true
+    ok
+    fail
+    string      # string in double quotes
+    rawstring   # string in R""
+    char        # 'c'
+    any
+    var
+
+    id          # identifier, name is in "value"
+
+    import
+    main
+    copy_start
+    c           # C code
+    js          # JS code
+
+    module
+    class
+    shared
+    interface
+    mixin
+    enum
+    bits
+    func
+    proc
+
+    extends
+    implements
+    define
+    replace
+
+    return
+    exit
+    new
+    equal
+    size
+    copy
+
+    i           # for "class.I"
+
+    gen_if
+    gen_elseif
+    gen_else
+
+    if
+    elseif
+    else
+    while
+    break
+    continue
+    proceed
+    switch
+    case
+    default
+    do
+    until
+    for
+    in
+
+    comma       # ,
+    semicolon   # ;
+    colon       # :
+    question    # ?
+    dot         # .
+    p_open      # (
+    p_close     # )
+    c_open      # {
+    c_close     # }
+    sq_open     # [
+    sq_close    # ]
+
+    minus          # -
+    minmin         # --
+    plus           # +
+    plusplus       # ++
+    tilde          # ~
+    star           # *
+    slash          # /
+    percent        # %
+    concat         # _
+    bit_or         # |
+    bit_xor        # ^
+    amp            # &
+    rshift         # >>
+    lshift         # <<
+
+    assign         # =
+    minassign      # -=
+    plusassign     # +=
+    multassign     # *=
+    divassign      # /=
+    percentassign  # %=
+    tildeassign    # ~=
+    andassign      # &=
+    orassign       # |=
+    xorassign      # ^=
+    stringassign   # ..=
+    lshiftassign   # <<=
+    rshiftassign   # >>=
+
+    isis           # ==
+    notequal       # !=
+    and            # &&
+    or             # ||
+    not            # !
+    gt             # >
+    gte            # >=
+    lt             # <
+    lte            # <=
+
+    is          # IS
+    isnot       # ISNOT
+    isa         # ISA
+    isnota      # ISNOTA
+  }
+}

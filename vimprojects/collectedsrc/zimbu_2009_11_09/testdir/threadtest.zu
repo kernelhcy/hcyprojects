@@ -1,0 +1,74 @@
+# Test file for threads and locks
+
+MODULE ThreadTest
+
+  PROC test()
+    test1()
+    test2()
+    test3()
+  }
+
+  ###############################################################
+
+  PROC threadOneFunc()
+    IO.writeLine("threadOneFunc(0)")
+    SYS.sleep(50'000)
+    IO.writeLine("threadOneFunc(1)")
+    SYS.sleep(50'000)  # gets killed here
+    IO.writeLine("threadOneFunc(2)")
+  }
+
+  PROC threadTwoFunc()
+    SYS.sleep(25'000)
+    IO.writeLine("threadTwoFunc(0)")
+    SYS.sleep(50'000)
+    IO.writeLine("threadTwoFunc(1)")
+  }
+
+  PROC test1()
+    thread t1 = NEW(threadOneFunc)
+    t1.name = "One"
+    t1.start()
+    thread t2 = NEW()
+    t2.name = "Two"
+    t2.setProc(threadTwoFunc)
+    t2.start()
+    SYS.sleep(75'000)
+    t1.kill()
+    t1.wait()
+    t2.wait()
+  }
+
+  ###############################################################
+
+  PROC simpleFunc()
+    SYS.sleep(10'000)
+    IO.writeLine("simpleFunc()")
+  }
+
+  PROC test2()
+    thread.NEW(simpleFunc).start()
+    IO.writeLine("started simpleFunc()")
+    SYS.sleep(20'000)
+  }
+
+  ###############################################################
+
+  CLASS Server EXTENDS thread
+    REPLACE PROC body()
+      WHILE TRUE
+        SYS.sleep(5'000)
+        IO.writeLine("still alive")
+      }
+    }
+  }
+
+  PROC test3()
+    Server t = NEW()
+    t.name = "nice"
+    t.start()
+    SYS.sleep(12'000)
+    t.kill()
+  }
+
+}

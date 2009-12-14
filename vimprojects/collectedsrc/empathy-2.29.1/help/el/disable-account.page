@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<page xmlns="http://projectmallard.org/1.0/" xmlns:e="http://projectmallard.org/experimental/" type="topic" style="task" id="disable-account">
+
+  <info>
+    <link type="guide" xref="index#accounts"/>
+    <link type="seealso" xref="remove-account"/>
+    <desc>Εμποδίζοντας το <app>Empathy</app> να συνδέεται αυτόματα στους λογαριασμούς.</desc>
+    <revision pkgversion="2.28" version="0.1" date="2009-06-14" status="draft"/>
+    <revision pkgversion="2.28" version="0.2" date="2009-08-10" status="review"/>
+    <revision pkgversion="2.28" version="0.3" date="2009-08-27" status="review"/>
+    <revision pkgversion="2.28" version="0.4" date="2009-08-31" status="review">
+      <!--
+      <e:review by="shaunm@gnome.org" date="2009-08-31" status="done"/>
+      -->
+    </revision>
+    <credit type="author">
+      <name>Milo Casagrande</name>
+      <email>milo@ubuntu.com</email>
+    </credit>
+    <credit type="author">
+      <name>Shaun McCance</name>
+      <email>shaunm@gnome.org</email>
+    </credit>
+<!--
+    <copyright>
+      <year>2009</year>
+      <name>GNOME Documentation Project</name>
+    </copyright>
+-->
+    <include xmlns="http://www.w3.org/2001/XInclude" href="legal.xml"/>
+  </info>
+
+  <title>Απενεργοποίηση λογαριασμού</title>
+
+  <p>Μπορείτε να απενεργοποιήσετε ένα λογαριασμό, έτσι ώστε το <app>Empathy</app> να μη συνδέεται πλέον αυτόματα σε αυτόν. Έτσι, δε χρειάζεται να τον διαγράψετε, και μπορείτε να τον ενεργοποιείτε μόνο όποτε τον χρειάζεστε, απενεργοποιώντας τον στη συνέχεια. Παράλληλα, θα συνεχίζετε να χρησιμοποιείτε κανονικά το <app>Empathy</app> για τους υπόλοιπους λογαριασμούς σας.</p>
+
+  <steps>
+    <item>
+      <p>Από το παράθυρο <gui>Λίστα επαφών</gui>, επιλέξτε <guiseq><gui>Επεξεργασία</gui><gui>Λογαριασμοί</gui></guiseq>, ή πατήστε <key>F4</key>.</p>
+    </item>
+    <item>
+      <p>Επιλέξτε το λογαριασμό που θέλετε να απενεργοποιήσετε από τη λίστα λογαριασμών στην αριστερή πλευρά του παραθύρου.</p>
+    </item>
+    <item>
+      <p>Αποεπιλέξτε το <gui style="checkbox">Ενεργός</gui> στη δεξιά πλευρά του παραθύρου. Η επιλογή αυτή εμφανίζεται μετά τις βασικές ρυθμίσεις του λογαριασμού, αλλά πριν τις ρυθμίσεις για προχωρημένους.</p>
+    </item>
+    <item>
+      <p>Πατήστε <gui style="button">Εφαρμογή</gui>.</p>
+    </item>
+  </steps>
+
+  <p>Για να επανενεργοποιήσετε το λογαριασμό, απλά επιλέξτε το <gui style="checkbox">Ενεργός</gui> και πατήστε <gui>Εφαρμογή</gui>.</p>
+
+</page>

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<page xmlns="http://projectmallard.org/1.0/" type="topic" id="prob-conn-name">
+
+  <info>
+    <link type="guide" xref="prob-conn"/>
+    <link type="guide" xref="irc-manage#problems"/>
+    <link type="seealso" xref="account-irc"/>
+    <title type="link" role="error-msg">"Το όνομα χρησιμοποιείται ήδη"</title>
+    <desc>Στο κύριο παράθυρο εμφανίζεται το μήνυμα λάθους "<gui>Το όνομα χρησιμοποιείται ήδη</gui>".</desc>
+    <revision pkgversion="2.28" version="0.1" date="2009-07-26" status="draft"/>
+    <revision pkgversion="2.28" version="0.2" date="2009-08-14" status="review"/>
+    <credit type="author">
+      <name>Milo Casagrande</name>
+      <email>milo@ubuntu.com</email>
+    </credit>
+<!--
+    <copyright>
+      <year>2009</year>
+      <name>GNOME Documentation Project</name>
+    </copyright>
+-->
+    <include xmlns="http://www.w3.org/2001/XInclude" href="legal.xml"/>
+  </info>
+
+  <title>Λαμβάνω το μήνυμα "Το όνομα χρησιμοποιείται ήδη"</title>
+
+  <p>Αυτό το σφάλμα εμφανίζεται όταν προσπαθείτε να συνδεθείτε σε λογαριασμό IRC με ψευδώνυμο που χρησιμοποιείται ήδη από άλλο χρήστη του συγκεκριμένου δικτύου.</p>
+
+  <steps>
+    <item>
+      <p>Πατήστε το κουμπί <gui>Επεξεργασία λογαριασμού</gui> στο μήνυμα σφάλματος.</p>
+    </item>
+    <item>
+      <list>
+        <item>
+          <p>Στο πεδίο κειμένου <gui>Ψευδώνυμο</gui>, εισάγετε ένα νέο ψευδώνυμο.</p>
+        </item>
+        <item>
+          <p>Αν έχετε καταχωρήσει το ψευδώνυμο αυτό στο συγκεκριμένο δίκτυο, εισάγετε το συνθηματικό για το ψευδώνυμο. Για περισσότερες πληροφορίες, δείτε την <link xref="irc-nick-password"/>.</p>
+        </item>
+      </list>
+    </item>
+    <item>
+      <p>Αποεπιλέξτε το <gui>Ενεργός</gui> δίπλα στο όνομα του λογαριασμού σας. Μετά, επιλέξτε το ξανά, για να γίνει νέα προσπάθεια σύνδεσης στην υπηρεσία.</p>
+    </item>
+  </steps>
+
+</page>

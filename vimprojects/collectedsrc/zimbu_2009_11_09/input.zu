@@ -1,0 +1,100 @@
+#
+# The Zimbu compiler written in Zimbu
+#
+# Input class.
+#
+# Copyright 2009 Bram Moolenaar
+# Licensed under the Apache License, Version 2.0.  See the LICENSE file or
+# obtain a copy at: http://www.apache.org/licenses/LICENSE-2.0
+#
+
+IMPORT "parse.zu"
+IMPORT "pos.zu"
+IMPORT "token.zu"
+IMPORT "tokenize.zu"
+
+CLASS Input
+  IO.File     fd             # input stream
+  Pos         pos            # input file position
+  int         prevLineCol    # last "col" in previous line
+  list<int>   charStack      # pushed back characters
+  list<Token> tokenStack     # pushed back tokens
+                             #
+  # Keep track of which Token.Type.id keywords have been used in this file.
+  # This is for loading a built-in library only when it is used.
+  dict<string, bool> usedIdKeywords  # todo: this should be type set<string>
+
+
+  # Create an Input for an opened file |_fd| with name |fname|.
+  # |fname| is to be used for error messages.
+  NEW(IO.File _fd, string fname)
+    fd = _fd
+    pos = NEW(fname)
+    charStack = NEW()
+    tokenStack = NEW()
+    usedIdKeywords = NEW()
+  }
+
+  # Low level input function.
+  # Gets one character at a time, removing CR characters.
+  # Uses pushed character if there is one.
+  # Returns File.eof when there is nothing more to read.
+  FUNC int get()
+    int c
+    IF charStack.SIZE() > 0
+      c = charStack.pop()
+      pos.col++
+    ELSE
+      DO
+        # TODO: handle utf-8 characters
+        c = fd.readByte()
+        pos.col++
+        IF (c >= 0 && c <= 31) || c == 127
+          IF c == 0
+            Parse.error("found NUL character", THIS)
+            c = ' '
+          ELSEIF c == '\t'
+            Parse.error("found Tab character", THIS)
+            c = ' '
+          ELSEIF c != '\r' && c != '\n'
+            Parse.error("found control character", THIS)
+            c = ' '
+          }
+        }
+      UNTIL c != '\r'    # CR character is ignored
+         && c != 0xfeff  # Unicode BOM is ignored
+    }
+    IF c == '\n'
+      prevLineCol = pos.col
+      pos.nextLine()
+    }
+    RETURN c
+  }
+
+  # Push |c| back, a following get() will use it.
+  PROC push(int c)
+    charStack.add(c)
+    IF c == '\n'
+      pos.col = prevLineCol
+      pos.lnum--
+    ELSE
+      pos.col--
+    }
+  }
+
+  # When there is a previously pushed back token, return it.
+  # Otherwise read a token from the file and return it.
+  FUNC Token getToken()
+    IF tokenStack.SIZE() > 0
+      RETURN tokenStack.pop()
+    }
+    RETURN Tokenize.get(THIS)
+  }
+
+  # Push |token| back, a following getToken() will use it.
+  PROC pushToken(Token token)
+    tokenStack.add(token)
+  }
+
+}
+

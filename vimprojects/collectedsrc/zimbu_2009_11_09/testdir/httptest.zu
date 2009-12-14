@@ -1,0 +1,44 @@
+# Test file for HTTP module
+
+MODULE HttpTest
+
+  PROC test()
+    test1()
+  }
+
+  ###############################################################
+
+
+  PROC test1()
+    HTTP.Server server = NEW(8888)
+    server.fileRoot = "/home/mool/zimbu/pages"
+
+    HTTP.FileServlet fs = NEW("index.html")
+    fs.addPath("index.html")
+    fs.addPath("index.htm")
+    fs.setFile("index.html")
+    server.addServlet(fs)
+
+    fs = HTTP.FileServlet.NEW("zimbu.png")
+    fs.addPath("zimbu.png")
+    fs.setMimeType("image/png")
+    server.addServlet(fs)
+
+    string hello = "hello"
+    HTTP.StringServlet ss = NEW(hello)
+    ss.addPath("hello.html")
+    server.addServlet(ss)
+
+    FUNC string varz(HTTP.Request req, HTTP.Response res)
+      RETURN "something"
+    }
+    HTTP.FunctionServlet ps = NEW(varz)
+    ps.addPath("varz")
+    server.addServlet(ps)
+
+    server.start()
+
+    ss.setBody("hello there!")
+  }
+
+}

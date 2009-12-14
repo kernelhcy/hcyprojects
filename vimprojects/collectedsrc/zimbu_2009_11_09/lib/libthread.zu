@@ -1,0 +1,390 @@
+#
+# The Zimbu compiler written in Zimbu
+#
+# THREAD module
+#
+# Copyright 2009 Bram Moolenaar
+# Licensed under the Apache License, Version 2.0.  See the LICENSE file or
+# obtain a copy at: http://www.apache.org/licenses/LICENSE-2.0
+#
+
+IMPORT "../attr.zu"
+IMPORT "../config.zu"
+IMPORT "../generate.zu"
+IMPORT "../node.zu"
+IMPORT "../output.zu"
+IMPORT "../scontext.zu"
+IMPORT "../scope.zu"
+IMPORT "../symbol.zu"
+IMPORT "../write_c.zu"
+
+MODULE LibTHREAD
+  Symbol moduleSym
+  Symbol threadSym
+  bool useThread
+  dict<string, Symbol> threadNewClasses = NEW()
+  dict<string, Symbol> threadNewProcClasses = NEW()
+  dict<string, Symbol> threadBodyClasses = NEW()
+  dict<string, Symbol> threadStartClasses = NEW()
+  dict<string, Symbol> threadSetprocClasses = NEW()
+  dict<string, Symbol> threadWaitClasses = NEW()
+  dict<string, Symbol> threadKillClasses = NEW()
+
+  # Return the symbol for the module.  The members of this symbol contain all
+  # the items that the module defines.
+  FUNC list<Symbol> getSymbols()
+    moduleSym = NEW(Node.Type.lib_module)
+    moduleSym.name = "THREAD"
+    moduleSym.cName = "MTHREAD"
+    Write_C.includeWriters.add(writeIncludes)
+    Write_C.typedefWriters.add(writeTypedefs)
+    Write_C.declWriters.add(writeDecl)
+    Write_C.bodyWriters.add(writeBody)
+
+    # THREAD.State
+    Symbol stateSymbol = moduleSym.addMember("State", NEW(Node.Type.enum), 0)
+    stateSymbol.class = stateSymbol
+    stateSymbol.cName = "MTHREAD_EState"
+    # TODO: table for name()
+    stateSymbol.addMember("new", NEW(Node.Type.enum_value), 0)
+    stateSymbol.addMember("running", NEW(Node.Type.enum_value), 1)
+    stateSymbol.addMember("finished", NEW(Node.Type.enum_value), 2)
+
+    # THREAD.Type
+    Symbol typeSymbol = moduleSym.addMember("Type", NEW(Node.Type.enum), 0)
+    typeSymbol.class = typeSymbol
+    typeSymbol.cName = "MTHREAD_EType"
+    # TODO: table for name()
+    typeSymbol.addMember("main", NEW(Node.Type.enum_value), 0)
+    typeSymbol.addMember("daemon", NEW(Node.Type.enum_value), 1)
+    typeSymbol.addMember("normal", NEW(Node.Type.enum_value), 2)
+
+    # define "thread" class
+    threadSym = NEW(Node.Type.class)
+    threadSym.name = "thread"
+    threadSym.class = threadSym
+    threadSym.cName = "Zthread"
+    threadSym.className = "Zthread"
+
+    threadSym.addMember("name", Symbol.string, 0).cName = "name"
+    threadSym.addMember("state", stateSymbol, 0).cName = "state"
+    threadSym.addMember("type", typeSymbol, 0).cName = "type"
+    threadSym.addMember("keep", Symbol.bool, 0).cName = "keep"
+
+    # Put the C for the members in structOut, used by subclasses.
+    threadSym.structOut = NEW(NEW())
+    threadSym.structOut.writing = TRUE
+    threadSym.structOut.write("  char *name;\n")
+    threadSym.structOut.write("  int state;\n")
+    threadSym.structOut.write("  int type;\n")
+    threadSym.structOut.write("  int keep;\n")
+    threadSym.structOut.write("  void (*proc)();\n")
+    threadSym.structOut.write("  pthread_t id;\n")
+
+    Symbol member
+    Symbol funcSym
+
+    # thread.NEW()
+    funcSym = threadSym.addLibMethod("NEW", threadNew, NIL)
+
+    # thread.NEW(proc<>)
+    funcSym = threadSym.addLibMethod("NEW", threadNewProc, NIL)
+    funcSym.addMember("proc", Symbol.proc_ref, 0)
+
+    # TODO: thread.NEW(callback<>)
+
+    # PROC thead.body()
+    funcSym = threadSym.addLibMethod("body", threadBody, NIL)
+    funcSym.attributes = default
+
+    # PROC thead.start()
+    funcSym = threadSym.addLibMethod("start", threadStart, NIL)
+
+    # PROC thead.setProc(proc<>)
+    # TODO: thread.setCallback(callback<>)
+    funcSym = threadSym.addLibMethod("setProc", threadSetProc, NIL)
+    funcSym.addMember("proc", Symbol.proc_ref, 0)
+
+    # PROC thead.wait()
+    threadSym.addLibMethod("wait", threadWait, NIL)
+
+    # PROC thead.kill()
+    threadSym.addLibMethod("kill", threadKill, NIL)
+
+    # PROC thead.remove()
+    threadSym.addLibMethod("remove", threadRemove, NIL)
+
+    # Also define thread as THREAD.thread.
+    moduleSym.addMember(threadSym)
+
+    # THREAD methods
+
+    # FUNC list<thread> THREAD.threads()
+    funcSym = moduleSym.addLibMethod("threads", threads, NIL)
+    member = NEW(Node.Type.list)
+    member.returnSymbol = threadSym
+    funcSym.returnSymbol = member
+
+    # FUNC thread THREAD.current()
+    funcSym = moduleSym.addLibMethod("current", current, NIL)
+    funcSym.returnSymbol = threadSym
+
+    RETURN [moduleSym, threadSym]
+  }
+
+  # list<thread> THREAD.threads()
+  PROC threads(Symbol sym, Symbol class, Node m_node, SContext ctx)
+    m_node.error("THREAD.threads() not implemented yet")
+  }
+
+  # thread THREAD.current()
+  PROC current(Symbol sym, Symbol class, Node m_node, SContext ctx)
+    m_node.error("THREAD.current() not implemented yet")
+  }
+
+  # thread.NEW()
+  PROC threadNew(Symbol sym, Symbol class, Node m_node, SContext ctx)
+    string name = parentClassName(sym, threadNewClasses)
+    ctx.out.write(name .. "ZThreadNew()")
+  }
+
+  # thread.NEW(proc)
+  PROC threadNewProc(Symbol sym, Symbol class, Node m_node, SContext ctx)
+    string name = parentClassName(sym, threadNewProcClasses)
+    ctx.out.write(name .. "ZThreadNewProc(")
+    IF m_node.n_right == NIL
+      m_node.error("missing proc argument")
+    ELSE
+      Generate.genExpr(m_node.n_right, ctx, Symbol.proc_ref)
+      m_node.n_undefined = m_node.n_right.n_undefined
+    }
+    ctx.out.write(")")
+  }
+
+  # thread.body()
+  PROC threadBody(Symbol sym, Symbol class, Node m_node, SContext ctx)
+    string name = parentClassName(sym, threadBodyClasses)
+    ctx.out.write(name .. "ZThreadBody(")
+    # TODO: threadSym should be real class
+    generateVarname(m_node.n_left.n_left, ctx, threadSym)
+    ctx.out.write(")")
+    m_node.n_undefined = m_node.n_left.n_left.n_undefined
+  }
+
+  # thread.start()
+  PROC threadStart(Symbol sym, Symbol class, Node m_node, SContext ctx)
+    string name = parentClassName(sym, threadStartClasses)
+    ctx.out.write(name .. "ZThreadStart(")
+    # TODO: threadSym should be real class
+    generateVarname(m_node.n_left.n_left, ctx, threadSym)
+    m_node.n_undefined = m_node.n_left.n_left.n_undefined
+    Symbol s = class.findMember("body")
+    IF s == NIL || s.cName == NIL
+      ctx.out.write(", " .. name .. "ZThreadBody)")
+    ELSE
+      ctx.out.write(", " .. s.cName .. ")")
+    }
+    parentClassName(sym, threadBodyClasses)
+  }
+
+  # thread.setProc(proc)
+  PROC threadSetProc(Symbol sym, Symbol class, Node m_node, SContext ctx)
+    string name = parentClassName(sym, threadSetprocClasses)
+    ctx.out.write(name .. "ZThreadSetProc(")
+    # TODO: threadSym should be real class
+    generateVarname(m_node.n_left.n_left, ctx, threadSym)
+    ctx.out.write(", ")
+    Generate.genExpr(m_node.n_right, ctx, Symbol.proc_ref)
+    ctx.out.write(")")
+    m_node.n_undefined = m_node.n_left.n_left.n_undefined
+                                                  + m_node.n_right.n_undefined
+  }
+
+  # thread.wait(thread t)
+  PROC threadWait(Symbol sym, Symbol class, Node m_node, SContext ctx)
+    string name = parentClassName(sym, threadWaitClasses)
+    ctx.out.write(name .. "ZThreadWait(")
+    # TODO: threadSym should be real class
+    generateVarname(m_node.n_left.n_left, ctx, threadSym)
+    ctx.out.write(")")
+    m_node.n_undefined = m_node.n_left.n_left.n_undefined
+  }
+
+  # thread.kill(thread t)
+  PROC threadKill(Symbol sym, Symbol class, Node m_node, SContext ctx)
+    string name = parentClassName(sym, threadKillClasses)
+    ctx.out.write(name .. "ZThreadKill(")
+    generateVarname(m_node.n_left.n_left, ctx,
+                                     sym.class == NIL ? threadSym : sym.class)
+    ctx.out.write(")")
+    m_node.n_undefined = m_node.n_left.n_left.n_undefined
+  }
+
+  FUNC Symbol generateVarname(Node node, SContext ctx, Symbol destSym)
+    RETURN Generate.generateVarname(node, ctx, destSym)
+  }
+
+
+  # thread.remove(thread t)
+  PROC threadRemove(Symbol sym, Symbol class, Node m_node, SContext ctx)
+    m_node.error("thread.remove() not implemented yet")
+  }
+
+  # Check if "sym.class" is not NIL, which means it's a subclass of thread.
+  # If so, return the name of the class.  This is to be prepended to the C
+  # function name.
+  # If not so, the name is "", an empty string.
+  # Also add the class to "classes", so we know what C functions to produce
+  # later.
+  # Return the name with "__" appended when it's not empty.
+  FUNC string parentClassName(Symbol sym, dict<string, Symbol> classes)
+    string name
+    IF sym.class == NIL
+      name = ""
+    ELSE
+      name = sym.class.className
+    }
+    IF !classes.has(name)
+      classes[name] = sym.class
+    }
+    IF name == ""
+      RETURN ""
+    }
+    RETURN name .. "__"
+  }
+
+  # Go through the members of the module and find out which ones were used.
+  PROC checkUsed()
+    IF moduleSym != NIL
+      IF threadBodyClasses.SIZE() > 0
+          || threadStartClasses.SIZE() > 0
+          || threadSetprocClasses.SIZE() > 0
+          || threadWaitClasses.SIZE() > 0
+          || threadKillClasses.SIZE() > 0
+        useThread = TRUE
+      }
+    }
+  }
+
+  PROC writeIncludes(Scope topScope, IO.File fd)
+    checkUsed()
+    IF useThread
+      Config.addThreadLib()
+      fd.write('''
+#include <pthread.h>
+''')
+    }
+  }
+
+  PROC writeTypedefs(Scope topScope, IO.File fd)
+    IF useThread
+      fd.write('''
+typedef struct Zthread__S Zthread;
+''')
+    }
+  }
+
+  PROC writeDecl(Scope topScope, IO.File fd)
+    IF useThread
+      fd.write("\nstruct Zthread__S {\n")
+      fd.write(threadSym.structOut.toString())
+      fd.write("};\n")
+    }
+  }
+
+  PROC writeFuncLead(IO.File fd, string name, string funcname)
+    fd.write("\nvoid ")
+    IF name != ""
+      fd.write(name .. "__")
+    }
+    fd.write(funcname .. "(")
+    IF name == ""
+      fd.write("Zthread")
+    ELSE
+      fd.write(name)
+    }
+    fd.write(" *t")
+  }
+
+  PROC writeBody(Scope topScope, IO.File fd)
+    FOR name IN threadNewClasses.keys()
+      string typeName
+      string extra
+      IF name == ""
+        typeName = "Zthread"
+        extra = ""
+      ELSE
+        typeName = name
+        extra = "__"
+      }
+      fd.write("\n" .. typeName .. " *" .. name .. extra .. "ZThreadNew() {\n")
+      fd.write("  return Zalloc(sizeof(" .. typeName .. "));\n")
+      fd.write("}\n")
+    }
+
+    FOR name IN threadNewProcClasses.keys()
+      string typeName
+      string extra
+      IF name == ""
+        typeName = "Zthread"
+        extra = ""
+      ELSE
+        typeName = name
+        extra = "__"
+      }
+      fd.write("\n" .. typeName .. " *" .. name .. extra .. "ZThreadNewProc(")
+      fd.write("void (*proc)()) {\n")
+      fd.write("  " .. typeName .. " *t = Zalloc(sizeof(" .. typeName .. "));\n")
+      fd.write("  t->proc = proc;\n")
+      fd.write("  return t;\n")
+      fd.write("}\n")
+    }
+
+    FOR name IN threadBodyClasses.keys()
+      writeFuncLead(fd, name, "ZThreadBody")
+      fd.write(''') {
+  if (t->proc != NULL) {
+    t->proc();
+  }
+}
+''')
+    }
+
+    FOR name IN threadSetprocClasses.keys()
+      writeFuncLead(fd, name, "ZThreadSetProc")
+      fd.write(''', void (*proc)()) {
+  t->proc = proc;
+}
+''')
+    }
+
+    FOR name IN threadStartClasses.keys()
+      writeFuncLead(fd, name, "ZThreadStart")
+      fd.write(''', void (*proc)()) {
+  pthread_create(&t->id, NULL, (void *(*)(void *))proc, t);
+  t->state = 1;
+}
+''')
+    }
+
+    FOR name IN threadWaitClasses.keys()
+      writeFuncLead(fd, name, "ZThreadWait")
+      # TODO: check state
+      fd.write(''') {
+  pthread_join(t->id, NULL);
+  t->state = 2;
+}
+''')
+    }
+
+    FOR name IN threadKillClasses.keys()
+      # TODO: check state
+      writeFuncLead(fd, name, "ZThreadKill")
+      fd.write(''') {
+  pthread_cancel(t->id);
+}
+''')
+    }
+  }
+
+}

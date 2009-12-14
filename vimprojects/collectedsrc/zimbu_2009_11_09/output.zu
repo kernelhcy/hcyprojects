@@ -1,0 +1,264 @@
+#
+# The Zimbu compiler written in Zimbu
+#
+# Output class and associated classes.
+#
+# Copyright 2009 Bram Moolenaar
+# Licensed under the Apache License, Version 2.0.  See the LICENSE file or
+# obtain a copy at: http://www.apache.org/licenses/LICENSE-2.0
+#
+
+IMPORT "scope.zu"
+
+CLASS Output
+  bool         writing   # FALSE for first pass, no writing
+  FragmentHead head1     # file output 1
+  FragmentHead head2     # file output 2
+
+  # Create an Output that writes into |head|.
+  # Use NIL to create an Output that doesn't write anywhere.
+  NEW(FragmentHead head)
+    head1 = head
+  }
+
+  PROC write(string s)
+    # Safety: handle NIL argument
+    string ss = (s == NIL) ? "NIL" : s
+    IF writing
+      IF head1 != NIL
+        head1.add(ss)
+      }
+      IF head2 != NIL
+        head2.add(ss)
+      }
+    }
+  }
+
+  PROC prepend(string s)
+    # Safety: handle NIL argument
+    string ss = (s == NIL) ? "NIL" : s
+    IF writing
+      IF head1 != NIL
+        head1.insert(ss)
+      }
+      IF head2 != NIL
+        head2.insert(ss)
+      }
+    }
+  }
+
+  # Append the fragments of |out|.head1.
+  PROC append(Output out)
+    IF writing && out.head1 != NIL
+      IF head1 != NIL
+        head1.append(out.head1)
+      }
+      IF head2 != NIL
+        head2.append(out.head1)
+      }
+    }
+  }
+
+  # Write spaces to "out" for |depth| indent.
+  PROC writeIndent(int depth)
+    IF writing
+      int i = 0
+      WHILE i < depth
+        write("  ")
+        i++
+      }
+    }
+  }
+
+  FUNC string toString()
+    IF head1 == NIL
+      RETURN ""
+    }
+    RETURN head1.toString()
+  }
+
+  # Return an output that is a copy of this Output, to be used to write
+  # declarations to the start of a block.
+  FUNC Output copy()
+    Output blockOut = NEW(NIL)
+    blockOut.writing = writing
+    IF head1 != NIL
+      blockOut.head1 = head1.copy()
+    }
+    IF head2 != NIL
+      blockOut.head2 = head2.copy()
+    }
+    RETURN blockOut
+  }
+
+  # Clear the text.
+  PROC clear()
+    IF head1 != NIL
+      head1.clear()
+    }
+    IF head2 != NIL
+      head2.clear()
+    }
+  }
+
+  # Reset the values of this object to those of |src|
+  PROC reset(Output src)
+    writing = src.writing
+    IF src.head1 == NIL
+      head1 = NIL
+    ELSE
+      head1 = src.head1.copy()
+    }
+    IF src.head2 == NIL
+      head2 = NIL
+    ELSE
+      head2 = src.head2.copy()
+    }
+  }
+
+  SHARED
+
+    # A dummy output, it never writes.
+    Output noOut = NEW(NIL)
+
+    # List of strings to be written to a file later.
+    CLASS FragmentHead
+      list<string> items
+
+      NEW()
+        items = NEW()
+      }
+
+      # Append a string
+      PROC add(string text)
+        items.add(text)
+      }
+
+      # Append FragmentHead |head| to this one.
+      PROC append(FragmentHead head)
+        IF head.items != NIL
+          items.extend(head.items)
+        }
+      }
+
+      # Prepend a string
+      PROC insert(string text)
+        items.insert(text)
+      }
+
+      # Return a shallow copy of the object.
+      FUNC FragmentHead copy()
+        FragmentHead lh = NEW()
+        lh.items = items
+        RETURN lh
+      }
+
+      PROC write(IO.File fd)
+        FOR s IN items
+          fd.write(s)
+        }
+      }
+
+      PROC clear()
+        items = NEW()
+      }
+
+      FUNC string toString()
+        string ret = ""
+        FOR s IN items
+          ret ..= s
+        }
+        RETURN ret
+      }
+
+      # Return true when there is no actual text.
+      FUNC bool empty()
+        FOR s IN items
+          IF s != NIL && s != ""
+            RETURN FALSE
+          }
+        }
+        RETURN TRUE
+      }
+
+    }
+
+    # A group of heads used to collect different parts of output.
+    CLASS Heads
+      FragmentHead typedefs
+      FragmentHead structs
+      FragmentHead declares
+      FragmentHead funcBodies
+      FragmentHead inits
+      FragmentHead mainLines
+
+      NEW()
+        typedefs = NEW()
+        structs = NEW()
+        declares = NEW()
+        funcBodies = NEW()
+        inits = NEW()
+        mainLines = NEW()
+      }
+    }
+
+    # A group of outputs used to write to several parts at one time.
+    # Besides the normal group of outputs, two are used for the current body
+    # code and current declarations code.
+    CLASS Group
+      Output out            # current code output
+      Output varOut         # current declarations output (start of block)
+
+      Output typeOut        # typedefs
+      Output structOut      # structure definitions
+      Output declOut        # variable and function declarations
+      Output bodyOut        # function bodies
+      Output initOut        # var inits
+      Output mainOut        # main code
+      Output origBodyOut    # Original bodyOut, used for nested functions
+
+      NEW()
+      }
+
+      NEW(Output.Heads heads)
+        setHeads(heads)
+      }
+
+      # Set a (new) Group using the FragmentHeads in |heads|
+      PROC setHeads(Output.Heads heads)
+        typeOut = NEW(heads.typedefs)
+        structOut = NEW(heads.structs)
+        declOut = NEW(heads.declares)
+        bodyOut = NEW(heads.funcBodies)
+        initOut = NEW(heads.inits)
+        mainOut = NEW(heads.mainLines)
+        out = mainOut
+        varOut = declOut
+      }
+
+      PROC startWriting()
+        typeOut.writing = TRUE
+        structOut.writing = TRUE
+        declOut.writing = TRUE
+        bodyOut.writing = TRUE
+        initOut.writing = TRUE
+        mainOut.writing = TRUE
+      }
+
+      FUNC Group copy()
+        Group outs = NEW()
+        outs.out = out
+        outs.varOut = varOut
+        outs.typeOut = typeOut
+        outs.structOut = structOut
+        outs.declOut = declOut
+        outs.bodyOut = bodyOut
+        outs.initOut = initOut
+        outs.mainOut = mainOut
+        RETURN outs
+      }
+    }
+
+  }
+
+}

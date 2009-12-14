@@ -1,0 +1,183 @@
+#
+# The Zimbu compiler written in Zimbu
+#
+# ARG module
+#
+# Copyright 2009 Bram Moolenaar
+# Licensed under the Apache License, Version 2.0.  See the LICENSE file or
+# obtain a copy at: http://www.apache.org/licenses/LICENSE-2.0
+#
+
+IMPORT "../generate.zu"
+IMPORT "../liststuff.zu"
+IMPORT "../node.zu"
+IMPORT "../output.zu"
+IMPORT "../scontext.zu"
+IMPORT "../scope.zu"
+IMPORT "../symbol.zu"
+IMPORT "../write_c.zu"
+
+MODULE LibARG
+  bool useCount
+  bool useName
+  bool useArgs
+  bool useZArgGet
+  bool useZArgAll
+  bool useZArgClean
+  Symbol moduleSymbol
+
+  # Return the symbol for the module.  The members of this symbol contain all
+  # the items that the module defines.
+  FUNC Symbol getSymbol()
+    moduleSymbol = NEW(Node.Type.lib_module)
+    moduleSymbol.name = "ARG"
+    moduleSymbol.cName = "MARG"
+    Write_C.declWriters.add(writeDecl)
+    Write_C.bodyWriters.add(writeBodies)
+
+    moduleSymbol.addMember("name", Symbol.string, 0).cName = "MARG__Vname"
+    moduleSymbol.addMember("count", Symbol.int, 0).cName = "MARG__Vcount"
+
+    Symbol member
+    member = moduleSymbol.addMember("args", NEW(Node.Type.array), 0)
+    member.cName = "MARG__Vargs"
+    member.returnSymbol = NEW(Node.Type.string)
+
+    moduleSymbol.addLibMethod("SIZE", size, Symbol.int)
+
+    member = moduleSymbol.addLibMethod("get", get, Symbol.string)
+    member.addMember("index", Symbol.int, 0)
+
+    Symbol ret = NEW(Node.Type.list)
+    ret.returnSymbol = Symbol.string
+    moduleSymbol.addLibMethod("getAll", getAll, ret)
+
+    ret = NEW(Node.Type.list)
+    ret.returnSymbol = Symbol.string
+    moduleSymbol.addLibMethod("getClean", getClean, ret)
+
+    RETURN moduleSymbol
+  }
+
+  # Int ARG.SIZE()
+  PROC size(Symbol sym, Symbol class, Node arg_node, SContext ctx)
+    useCount = TRUE
+    ctx.out.write("MARG__Vcount")
+  }
+
+  # string ARG.get(Int index)
+  PROC get(Symbol sym, Symbol class, Node arg_node, SContext ctx)
+    useCount = TRUE
+    useArgs = TRUE
+    useZArgGet = TRUE
+    ctx.out.write("ZArgGet(")
+    Generate.genExpr(arg_node, ctx, Symbol.int)
+    ctx.out.write(")")
+  }
+
+  # string[] ARG.getAll()
+  PROC getAll(Symbol sym, Symbol class, Node arg_node, SContext ctx)
+    useCount = TRUE
+    useArgs = TRUE
+    useZArgAll = TRUE
+    ctx.scope.addUsedItem("alloc")
+    ctx.scope.addUsedItem("listAdd")
+    ctx.out.write("ZArgAll()")
+  }
+
+  # Int ARG.getClean()
+  PROC getClean(Symbol sym, Symbol clss, Node arg_node, SContext ctx)
+    useCount = TRUE
+    useArgs = TRUE
+    useZArgClean = TRUE
+    ctx.scope.addUsedItem("alloc")
+    ctx.scope.addUsedItem("listAdd")
+    ctx.out.write("ZArgClean()")
+  }
+
+  # Go through the members of the module and find out which ones were used.
+  PROC checkUsed()
+    IF moduleSymbol != NIL
+      FOR sym IN moduleSymbol.memberList
+        IF sym.name == "count" && sym.used
+          useCount = TRUE
+        ELSEIF sym.name == "name" && sym.used
+          useName = TRUE
+        ELSEIF sym.name == "args" && sym.used
+          useArgs = TRUE
+        }
+      }
+    }
+  }
+
+  PROC writeDecl(Scope topScope, IO.File fd)
+    checkUsed()
+
+    IF useCount
+      fd.write('''
+Zint MARG__Vcount;
+''')
+    }
+    IF useName
+      fd.write('''
+char *MARG__Vname;
+''')
+    }
+    IF useArgs
+      fd.write('''
+char **MARG__Vargs;
+''')
+    }
+  }
+
+  PROC writeBodies(Scope topScope, IO.File fd)
+    IF useZArgGet
+      fd.write('''
+char *ZArgGet(Zint i) {
+  if (i < 0 || i >= MARG__Vcount)
+    return NULL;
+  return MARG__Vargs[i];
+}
+''')
+    }
+    IF useZArgAll
+      fd.write('''
+CListHead *ZArgAll() {
+  int i;
+  CListHead *head = Zalloc(sizeof(CListHead));
+  for (i = 0; i < MARG__Vcount; ++i) {
+    ZListAdd(head, -1, 0, MARG__Vargs[i], 1);
+  }
+  return head;
+}
+''')
+    }
+    IF useZArgClean
+      fd.write('''
+CListHead *ZArgClean() {
+  int i;
+  CListHead *head = Zalloc(sizeof(CListHead));
+  for (i = 0; i < MARG__Vcount; ++i) {
+    ZListAdd(head, -1, 0, MARG__Vargs[i], 1);
+  }
+  return head;
+}
+''')
+    }
+
+  }
+
+  PROC writeMain(Output out)
+    checkUsed()
+    IF useCount
+      out.write("  MARG__Vcount = argc - 1;\n")
+    }
+    IF useName
+      out.write("  MARG__Vname = argv[0];\n")
+    }
+    IF useArgs
+      out.write("  MARG__Vargs = argv + 1;\n")
+    }
+  }
+
+}

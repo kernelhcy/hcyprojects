@@ -1,0 +1,2182 @@
+#
+# The Zimbu compiler written in Zimbu
+#
+# Parser module.
+#
+# Copyright 2009 Bram Moolenaar
+# Licensed under the Apache License, Version 2.0.  See the LICENSE file or
+# obtain a copy at: http://www.apache.org/licenses/LICENSE-2.0
+#
+
+IMPORT "attr.zu"
+IMPORT "error.zu"
+IMPORT "input.zu"
+IMPORT "node.zu"
+IMPORT "pos.zu"
+IMPORT "scope.zu"
+IMPORT "token.zu"
+IMPORT "tokenize.zu"
+IMPORT "usedfile.zu"
+
+MODULE Parse
+
+  #
+  # Parse file |fileName| and return a Scope with the result.
+  # |mainFile| is not NIL only for a toplevel file.
+  # Return NIL whent he file can't be read.
+  #
+  FUNC Scope parseFile(string fileName, string indent, UsedFile usedFile)
+    bool isMainFile = usedFile != NIL && usedFile.isMainFile
+    IO.File inFile = IO.fileReader(fileName)
+    IF inFile == NIL
+      RETURN NIL
+    }
+
+    # Parse the file.  This will parse imported files recursively.
+    Input in = NEW(inFile, fileName)
+    Error.verboseMsg(indent .. fileName .. ": Parsing...\n")
+    Node node = parseInput(in, isMainFile)
+    inFile.close()
+
+    # Create a scope and set it up for the next steps.
+    Scope topScope = Scope.newScope(NIL, TRUE)
+    topScope.pass = 1
+    topScope.importIndent = indent
+    topScope.topNode = node
+    topScope.zimbuFile = usedFile.zimbuFile
+    topScope.usedIdKeywords = in.usedIdKeywords
+    topScope.usedItems = NEW()
+
+    IF Error.debug && isMainFile
+      # debugging: dump the result of parsing.
+      IO.write(node.toString("", TRUE, TRUE))
+    }
+
+    RETURN topScope
+  }
+
+  #
+  # The main parsing function.
+  #
+  # Parse input |in| and return the top of the resulting node tree.
+  #
+  FUNC Node parseInput(Input in, bool allowMain)
+    Node   top_node = NEW(Node.Type.unknown)
+    Node   end_node = top_node
+    Token  token
+    bool   hadMain
+    bool   hadBlockItem
+
+    # Skip comments and white space at the start of the file.
+    # All other skipping is done after a statement.
+    skipSep(in)
+
+    # Parse IMPORT statements.
+    WHILE TRUE
+      token = in.getToken()
+      IF token.type != Token.Type.import
+        in.pushToken(token)
+        BREAK
+      }
+
+      string spec
+      Token next = tokenAfterSep(in)
+      IF next.type == Token.Type.dot
+        # IMPORT.spec
+        checkNoSep(in)
+        token = in.getToken()  # eat the "."
+        checkNoSep(in)
+        token = in.getToken()
+        IF token.type != Token.Type.id
+          token.error("IMPORT. must be followed by a name")
+        ELSE
+          spec = token.value
+        }
+      }
+
+      expectSep(in)
+      token = in.getToken()
+      # TODO: accept <filename>
+      IF token.type != Token.Type.string
+        token.error("IMPORT must be followed by a string")
+        in.pushToken(token)
+      ELSE
+        end_node = newNode(end_node, token)
+        end_node.n_type = Node.Type.import
+        end_node.n_string = token.value
+        IF spec != NIL
+          end_node.n_left = NEW(Node.Type.id)
+          end_node.n_left.n_string = spec
+        }
+        expectNewLine(in)
+      }
+    }
+
+    # Parse toplevel code.
+    WHILE TRUE
+      token = in.getToken()
+      IF token.type == Token.Type.eof
+        # Normal way to end a file.
+        BREAK
+      }
+
+      IF token.type == Token.Type.main
+        IF !allowMain
+          token.error("MAIN not allowed in imported file")
+        ELSEIF hadMain
+          token.error("Duplicate MAIN")
+        }
+        hadMain = TRUE
+        IF in.getToken().type != Token.Type.p_open
+            || in.getToken().type != Token.Type.p_close
+          token.error("Expected ()")
+        }
+        expectNewLine(in)
+
+        end_node = newNode(end_node, token)
+        end_node.n_type = Node.Type.main
+        end_node.n_left = parseBlock(in, 0)
+      ELSE
+        IF !allowMain && hadBlockItem
+          token.error("Only one toplevel item allowed")
+        }
+        hadBlockItem = TRUE
+
+        in.pushToken(token)
+        Node node = parseBlockItem(in, end_node,
+                                toplevel + (allowMain ? 0 : import) + keepEnd)
+        IF node == NIL
+          token = in.getToken()
+          IF token.type == Token.Type.c_close
+            token.error("unexpected }")
+          ELSE
+            token.errorNotAllowed()
+          }
+        ELSE
+          end_node = node
+        }
+      }
+    }
+
+    end_node.n_next = NIL
+    RETURN top_node.n_next
+  }
+
+  #
+  # Allocate a new node and link it in the end_node.n_next list.
+  # Return the new Node.
+  #
+  FUNC Node newNode(Node end_node, Token token)
+    Node node = NEW(Node.Type.unknown)
+    end_node.n_next = node
+    node.n_start = token.startPos.copy()
+    RETURN node
+  }
+
+  BITS BlockType
+    bool toplevel  # toplevel block, cannot have statements
+    bool import    # imported file, only CLASS/MIXIN/INTERFACE and MODULE
+                   # allowed
+    bool keepEnd   # do not consume the trailing token; when FALSE block must
+                   # end in "}"
+    bool interface # Interface definition, all methods are abstract
+  }
+
+  #
+  # Parse a block of statements, ending in a "}".
+  # If |blockType|.toplevel is FALSE it may contain "ELSE" and "ELSEIF", they
+  # don't stop the block.
+  #
+  FUNC Node parseBlock(Input in, BlockType blockType)
+    Node   top_node = NEW(Node.Type.unknown)
+    Node   end_node = top_node
+
+    WHILE TRUE
+      Node n = parseBlockItem(in, end_node, blockType)
+      IF n == NIL
+        BREAK
+      }
+      end_node = n
+    }
+    IF !blockType.keepEnd
+      Token token = in.getToken()
+      IF token.type != Token.Type.c_close
+        token.error("Syntax error")
+      ELSE
+        expectNewLine(in)
+      }
+    }
+
+    end_node.n_next = NIL
+    RETURN top_node.n_next
+  }
+
+  #
+  # Parse an item in a block.
+  # Return the new end node
+  # Return NIL when at the end of the block.
+  #
+  FUNC Node parseBlockItem(Input in, Node start_node, BlockType blockType)
+    Node end_node = start_node
+    Token token = in.getToken()
+
+    SWITCH token.type
+      CASE Token.Type.eof
+        error("unexpected EOF", in)
+        RETURN NIL
+
+      CASE Token.Type.line_sep
+      CASE Token.Type.sep
+      CASE Token.Type.comment
+        # Ignore white space and commments at start of block.
+        # Should not happen in between statements, because we consume the
+        # separator after each statement.
+        RETURN end_node
+
+      CASE Token.Type.c_close
+        # End of this block.
+        in.pushToken(token)
+        RETURN NIL
+
+      CASE Token.Type.string
+        token.error("unexpected string with value '" .. token.value .. "'")
+        RETURN end_node
+
+        # >>> {lang} # comment
+        #   C or JS code
+        # <<<
+      CASE Token.Type.copy_start
+        Node node = copyCode(in)
+        end_node.n_next = node
+        RETURN node
+
+      CASE Token.Type.module
+        # MODULE {name}
+        #   type var1
+        #   type var2
+        # }
+        end_node = newNode(end_node, token)
+        end_node.n_type = Node.Type.module
+        expectSep(in)
+        token = in.getToken()
+        IF token.type != Token.Type.id
+          token.error("MODULE must be followed by a name")
+        }
+        end_node.n_string = token.value
+        expectNewLine(in)
+        end_node.n_left = parseBlock(in, toplevel)
+        RETURN end_node
+
+      CASE Token.Type.replace
+      CASE Token.Type.define
+        # DEFINE FUNC/PROC
+        # REPLACE FUNC/PROC
+        Attr a
+        IF token.type == Token.Type.define
+          a.define = TRUE
+          skipSep(in)
+        ELSE
+          a.replace = TRUE
+          skipSep(in)
+        }
+        Token next = in.getToken()
+
+        IF next.type == Token.Type.new
+           || next.type == Token.Type.equal
+           || next.type == Token.Type.func
+           || next.type == Token.Type.proc
+          RETURN parseMethod(next, a, end_node, in, blockType)
+        }
+        IF next.type == Token.Type.define || next.type == Token.Type.replace
+          IF token.type == next.type
+            next.error("Duplicate " .. token.value)
+          ELSE
+            next.error("Cannot have both DEFINE and REPLACE")
+          }
+        ELSE
+          token.error("Expected FUNC, PROC, NEW or EQUAL")
+        }
+        RETURN end_node
+
+      CASE Token.Type.class
+      CASE Token.Type.interface
+        RETURN parseClass(token, 0, end_node, in)
+
+      CASE Token.Type.shared
+        # SHARED
+        #   PROC name() ...
+        #   type var
+        # }
+        end_node = newNode(end_node, token)
+        end_node.n_type = Node.Type.shared
+        expectNewLine(in)
+        end_node.n_left = parseBlock(in, toplevel)
+        token = in.getToken()
+        IF token.type != Token.Type.c_close
+          token.error("No class items allowed after SHARED section")
+        }
+        in.pushToken(token)
+        RETURN end_node
+
+      CASE Token.Type.equal
+      CASE Token.Type.new
+      CASE Token.Type.proc
+      CASE Token.Type.func
+        RETURN parseMethod(token, 0, end_node, in, blockType)
+
+      CASE Token.Type.bits
+        # BITS {name}
+        #   type var1
+        #   type var2
+        # }
+        end_node = newNode(end_node, token)
+        end_node.n_type = Node.Type.bits_decl
+        expectSep(in)
+        token = in.getToken()
+        IF token.type != Token.Type.id
+          token.error("BITS must be followed by a name")
+        }
+        end_node.n_string = token.value
+        expectNewLine(in)
+        end_node.n_left = parseBlock(in, toplevel)
+        RETURN end_node
+
+      CASE Token.Type.enum
+        # ENUM {name}
+        #   value1
+        #   value2
+        # }
+        end_node = newNode(end_node, token)
+        end_node.n_type = Node.Type.enum_decl
+        expectSep(in)
+        token = in.getToken()
+        IF token.type != Token.Type.id
+          token.error("ENUM must be followed by a name")
+        }
+        end_node.n_string = token.value
+        end_node.n_left = NIL
+        Node node = end_node
+        expectNewLine(in)
+        WHILE TRUE
+          token = in.getToken()
+          IF token.type == Token.Type.c_close
+            expectNewLine(in)
+            BREAK
+          }
+          IF token.type != Token.Type.id
+            token.error("unexpected token in ENUM")
+            BREAK
+          }
+          Token next = tokenAfterSep(in)
+          IF next.type == Token.Type.c_close
+            expectNewLine(in)  # don't allow value1; value2; }
+          ELSE
+            expectSep(in)
+          }
+          Node en = NEW(Node.Type.enum_value)
+          node.n_left = en
+          node = en
+          node.n_string = token.value
+          node.n_start = token.startPos.copy()
+          node.n_left = NIL
+        }
+        RETURN end_node
+
+      CASE Token.Type.plusplus
+      CASE Token.Type.minmin
+        # ++var, --var.member
+        # Give an error for "++ x here, instead of giving an error for
+        # unexpected sep.
+        checkNoSep(in)
+
+        Node one_node = parseDotName(in)
+        # TODO: error when one_node is not a left value.
+        IF one_node.n_type == Node.Type.method
+          token.error("Cannot use " .. token.value .. " here")
+        }
+
+        end_node = newNode(end_node, token)
+        IF token.type == Token.Type.plusplus
+          end_node.n_type = Node.Type.plusplus
+        ELSE
+          end_node.n_type = Node.Type.minmin
+        }
+        end_node.n_left = one_node
+        expectLineSep(in)
+        RETURN end_node
+
+      CASE Token.Type.id
+      CASE Token.Type.any
+      CASE Token.Type.var
+      CASE Token.Type.this
+      CASE Token.Type.parent
+        IF blockType.import
+          token.errorNotAllowed()
+        }
+        Node one_node = NIL
+        IF token.type == Token.Type.id
+            || token.type == Token.Type.this
+            || token.type == Token.Type.parent
+          # Found a type/variable/module/class/enum/function name.
+          in.pushToken(token)
+          one_node = parseDotName(in)
+        ELSE
+          # Found ANY or VAR
+          one_node = NEW(token.type == Token.Type.var ? Node.Type.var
+                                                              : Node.Type.any)
+          one_node.n_string = token.value
+          one_node.n_start = token.startPos
+        }
+
+        IF one_node.n_type == Node.Type.method
+          # func(arg) or module.method(arg)
+          IF blockType.toplevel
+            token.error("cannot call function in this scope")
+          }
+          end_node = newNode(end_node, token)
+          end_node.n_type = Node.Type.function
+          end_node.n_left = one_node
+          expectLineSep(in)
+        ELSE
+          Token afterSep = tokenAfterSep(in)
+          IF afterSep.type != Token.Type.plusplus
+                                         && afterSep.type != Token.Type.minmin
+            expectSep(in)
+          }
+          token = in.getToken()
+          IF token.type == Token.Type.assign
+             || token.type == Token.Type.minassign
+             || token.type == Token.Type.plusassign
+             || token.type == Token.Type.stringassign
+            # "var = expr"
+            # "var -= expr"
+            # "var += expr"
+            # "var ..= expr"
+            # "module.something = expr"
+            # "var[i] = expr"
+            IF blockType.toplevel
+              token.error("cannot do assignment in this scope")
+            }
+            end_node = newNode(end_node, token)
+            SWITCH token.type
+              CASE Token.Type.assign
+                   end_node.n_type = Node.Type.assign
+              CASE Token.Type.minassign
+                   end_node.n_type = Node.Type.minassign
+              CASE Token.Type.plusassign
+                   end_node.n_type = Node.Type.plusassign
+              CASE Token.Type.stringassign
+                   end_node.n_type = Node.Type.stringassign
+            }
+            end_node.n_left = one_node
+            expectSep(in)
+            end_node.n_right = parseExpr(in)
+            expectLineSep(in)
+          ELSEIF afterSep.type == Token.Type.plusplus
+                 || afterSep.type == Token.Type.minmin
+            # "var++" or "module.something--"
+            IF token.type != Token.Type.plusplus
+                                            && token.type != Token.Type.minmin
+              token.error("superfluous white space")
+              token = in.getToken()
+            }
+            IF blockType.toplevel
+              token.error("cannot do in/decrement in this scope")
+            ELSEIF one_node.n_type == Node.Type.var
+                                           || one_node.n_type == Node.Type.any
+              token.error("cannot in/decrement ANY or VAR")
+            }
+            end_node = newNode(end_node, token)
+            IF token.type == Token.Type.plusplus
+              end_node.n_type = Node.Type.plusplus
+            ELSE
+              end_node.n_type = Node.Type.minmin
+            }
+            end_node.n_left = one_node
+            expectLineSep(in)
+          ELSEIF token.type != Token.Type.id
+            in.pushToken(token)
+            IF one_node.n_type == Node.Type.id
+              token.error("name without operation: " .. one_node.n_string)
+            ELSE
+              token.error("Syntax error")
+            }
+          ELSE
+            # "Type name" is a declaration
+            end_node = newNode(end_node, token)
+            end_node.n_type = Node.Type.declare
+            end_node.n_left = one_node
+            end_node.n_string = token.value
+
+            # TODO: repeat when there is a comma: Type name, name = 1, name
+            token = tokenAfterSep(in)
+            IF token.type == Token.Type.assign
+              # "Type name = expr"
+              expectSep(in)
+              token = in.getToken()
+              expectSep(in)
+              end_node.n_right = parseExpr(in)
+            ELSE
+              end_node.n_right = NIL
+            }
+            expectNewLine(in)
+          }
+        }
+        RETURN end_node
+
+      CASE Token.Type.gen_if
+        # GENERATE_IF expr
+        #   ...
+        # GENERATE_ELSEIF expr
+        #   ...
+        # GENERATE_ELSE
+        #   ...
+        # }
+        end_node = newNode(end_node, token)
+        end_node.n_type = Node.Type.gen_if
+        Node gen_node = NEW(Node.Type.gen_if)
+        end_node.n_left = gen_node
+        expectSep(in)
+        gen_node.n_cond = parseExpr(in)
+        expectLineSep(in)
+
+        bool hadElse
+        WHILE TRUE
+          gen_node = newNode(gen_node, token)
+          gen_node.n_type = Node.Type.block
+          gen_node.n_left = parseBlock(in, keepEnd)
+          token = in.getToken()
+          IF token.type == Token.Type.gen_elseif
+            gen_node = newNode(gen_node, token)
+            gen_node.n_type = Node.Type.gen_elseif
+            expectSep(in)
+            gen_node.n_cond = parseExpr(in)
+            expectLineSep(in)
+          ELSEIF token.type == Token.Type.gen_else
+            IF hadElse
+              token.error("already had a GENERATE_ELSE")
+            }
+            gen_node = newNode(gen_node, token)
+            gen_node.n_type = Node.Type.gen_else
+            expectLineSep(in)
+            hadElse = TRUE
+          ELSEIF token.type == Token.Type.c_close
+            expectNewLine(in)
+            BREAK
+          ELSE
+            token.error("Syntax error")
+            in.pushToken(token)
+            BREAK
+          }
+        }
+        RETURN end_node
+
+      CASE Token.Type.gen_elseif
+        # "GENERATE_ELSEIF expr"  ends the block
+        in.pushToken(token)
+        RETURN NIL
+
+      CASE Token.Type.gen_else
+        # "GENERATE_ELSE"  ends the block
+        in.pushToken(token)
+        RETURN NIL
+
+      DEFAULT
+        # something else
+    }
+
+    #
+    # The rest cannot appear at the toplevel.
+    #
+    IF blockType.toplevel
+      token.errorNotAllowed()
+    }
+
+    SWITCH token.type
+      CASE Token.Type.if
+        # IF expr
+        #   ...
+        # ELSEIF expr
+        #   ...
+        # ELSE
+        #   ...
+        # }
+        end_node = newNode(end_node, token)
+        end_node.n_type = Node.Type.if
+        expectSep(in)
+        end_node.n_cond = parseExpr(in)
+        expectLineSep(in)
+
+        bool hadElse
+        WHILE TRUE
+          end_node = newNode(end_node, token)
+          end_node.n_type = Node.Type.block
+          end_node.n_nodeType = Node.Type.if
+          end_node.n_left = parseBlock(in, keepEnd)
+
+          token = in.getToken()
+          IF token.type == Token.Type.elseif
+            end_node = newNode(end_node, token)
+            end_node.n_type = Node.Type.elseif
+            expectSep(in)
+            end_node.n_cond = parseExpr(in)
+            expectLineSep(in)
+          ELSEIF token.type == Token.Type.else
+            IF hadElse
+              token.error("already had an ELSE")
+            }
+            end_node = newNode(end_node, token)
+            end_node.n_type = Node.Type.else
+            expectLineSep(in)
+            hadElse = TRUE
+          ELSEIF token.type == Token.Type.c_close
+            expectNewLine(in)
+            BREAK
+          ELSE
+            token.error("Syntax error")
+            in.pushToken(token)
+            BREAK
+          }
+        }
+
+      CASE Token.Type.elseif
+        # "ELSEIF expr"  ends the block
+        in.pushToken(token)
+        RETURN NIL
+
+      CASE Token.Type.else
+        # "ELSE"  ends the block
+        in.pushToken(token)
+        RETURN NIL
+
+      CASE Token.Type.while
+        # WHILE expr
+        #   ...
+        # }
+        end_node = newNode(end_node, token)
+        end_node.n_type = Node.Type.while
+        expectSep(in)
+        end_node.n_cond = parseExpr(in)
+        expectLineSep(in)
+        end_node.n_right = parseBlock(in, 0)
+
+      CASE Token.Type.do
+        # DO
+        #   ...
+        # UNTIL expr
+        expectLineSep(in)
+        end_node = newNode(end_node, token)
+        end_node.n_type = Node.Type.do
+
+        end_node = newNode(end_node, token)
+        end_node.n_type = Node.Type.block
+        end_node.n_nodeType = Node.Type.do
+        end_node.n_left = parseBlock(in, keepEnd)
+
+        token = in.getToken()
+        IF token.type != Token.Type.until
+          token.error("Missing UNTIL")
+        }
+        end_node = newNode(end_node, token)
+        end_node.n_type = Node.Type.until
+        expectSep(in)
+        end_node.n_cond = parseExpr(in)
+        expectNewLine(in)
+
+      CASE Token.Type.until
+        # "UNTIL expr"  ends the block
+        in.pushToken(token)
+        RETURN NIL
+
+      CASE Token.Type.for
+        # FOR i IN expr
+        #   block
+        # }
+        # "i" goes in n_left
+        # "var" goes in n_cond
+        # block goes in n_right
+        end_node = newNode(end_node, token)
+        end_node.n_type = Node.Type.for
+
+        expectSep(in)
+        end_node.n_left = parseDotName(in)
+        expectSep(in)
+        token = in.getToken()
+        IF token.type != Token.Type.in
+          token.error("Missing IN")
+        }
+        expectSep(in)
+        end_node.n_cond = parseExpr(in)
+        expectLineSep(in)
+        end_node.n_right = parseBlock(in, 0)
+
+      CASE Token.Type.return
+        # RETURN [expr]
+        end_node = newNode(end_node, token)
+        end_node.n_type = Node.Type.return
+        Token next = in.getToken()
+        in.pushToken(next)
+        skipSep(in)
+        end_node.n_left = parseExpr(in)
+        IF end_node.n_left.n_type != Node.Type.unknown
+                                           || next.type != Token.Type.line_sep
+          # There must be a line separator when there is an argument.  When
+          # there is no argument check for a line break when there wasn't one
+          # before looking for the argument to generate an error.
+          expectLineSep(in)
+        }
+
+      CASE Token.Type.exit
+        # EXIT expr
+        end_node = newNode(end_node, token)
+        end_node.n_type = Node.Type.exit
+        skipSep(in)
+        end_node.n_left = parseExpr(in)
+        expectLineSep(in)
+
+      CASE Token.Type.break
+        # BREAK
+        end_node = newNode(end_node, token)
+        end_node.n_type = Node.Type.break
+        expectLineSep(in)
+
+      CASE Token.Type.proceed
+        # "PROCEED"  ends the block
+        in.pushToken(token)
+        RETURN NIL
+
+      CASE Token.Type.continue
+        # CONTINUE
+        end_node = newNode(end_node, token)
+        end_node.n_type = Node.Type.continue
+        expectLineSep(in)
+
+      CASE Token.Type.switch
+        # SWITCH expr
+        #   CASE expr
+        #   ...
+        #   DEFAULT
+        #   ...
+        # }
+        end_node = newNode(end_node, token)
+        end_node.n_type = Node.Type.switch
+        skipSep(in)
+        end_node.n_cond = parseExpr(in)
+        expectLineSep(in)
+
+        Node switchNode = NEW(Node.Type.unknown)
+        Node nnode = switchNode
+        bool hadCase
+        bool hadDefault
+        WHILE TRUE
+          token = in.getToken()
+          IF token.type == Token.Type.case
+            # CASE expr
+            hadCase = TRUE
+            nnode = newNode(nnode, token)
+            nnode.n_type = Node.Type.case
+            skipSep(in)
+            nnode.n_left = parseExpr(in)
+            expectLineSep(in)
+          ELSEIF token.type == Token.Type.default
+            # DEFAULT
+            IF hadDefault
+              token.error("Duplicate DEFAULT")
+            }
+            hadDefault = TRUE
+            nnode = newNode(nnode, token)
+            nnode.n_type = Node.Type.default
+            expectLineSep(in)
+          ELSEIF token.type == Token.Type.c_close
+                                               || token.type == Token.Type.eof
+            BREAK
+          ELSE
+            IF !hadCase && !hadDefault
+              token.error("Unexpected item in SWITCH")
+            }
+            in.pushToken(token)
+            nnode = newNode(nnode, token)
+            nnode.n_type = Node.Type.block
+            nnode.n_nodeType = Node.Type.switch
+            nnode.n_left = parseBlock(in, keepEnd)
+
+            token = tokenAfterSep(in)
+            IF token.type == Token.Type.proceed
+              token = in.getToken()
+              expectLineSep(in)
+              nnode = newNode(nnode, token)
+              nnode.n_type = Node.Type.proceed
+            }
+          }
+        }
+        end_node.n_right = switchNode.n_next
+
+      CASE Token.Type.case
+        # "CASE expr"  ends the block
+        in.pushToken(token)
+        RETURN NIL
+
+      CASE Token.Type.default
+        # "DEFAULT"  ends the block
+        in.pushToken(token)
+        RETURN NIL
+
+      CASE Token.Type.c_open
+        # {
+        #   ...
+        # }
+        expectLineSep(in)
+        end_node = newNode(end_node, token)
+        end_node.n_type = Node.Type.block
+        end_node.n_nodeType = Node.Type.block
+        end_node.n_left = parseBlock(in, 0)
+
+      CASE Token.Type.semicolon
+        token.error("unexpected ;")
+
+      DEFAULT
+        token.error("unexpected '" .. token.value .. "'")
+    }
+
+    RETURN end_node
+  }
+
+  FUNC Node parseClass(Token classToken, Attr attr, Node node_in, Input in)
+    # CLASS {name} [EXTENDS {name}, {name}] [IMPLEMENTS {name}, {name}]
+    #   type var1
+    #   FUNC type name()
+    #     stmt
+    #   }
+    # }
+    # INTERFACE {name} [EXTENDS {name}, {name}]
+    #   type var1
+    #   FUNC type name()
+    # }
+    Node end_node = newNode(node_in, classToken)
+    bool isInterface = classToken.type == Token.Type.interface
+    end_node.n_type = isInterface ? Node.Type.interface : Node.Type.class
+    end_node.n_attr = attr
+
+    Token token = in.getToken()
+    IF token.type != Token.Type.dot
+      in.pushToken(token)
+    ELSE
+      # CLASS.final  CLASS.abstract  INTERFACE.final
+      token = in.getToken()
+      IF token.type != Token.Type.id
+        token.error("Unexpected item " .. token.type.name())
+      ELSEIF token.value == "final"
+        end_node.n_attr.final = TRUE
+      ELSEIF token.value == "abstract"
+        IF classToken.type == Token.Type.interface
+          token.error("abstract attribute not supported for interface")
+        }
+        end_node.n_attr.abstract = TRUE
+      ELSE
+        token.error(token.value .. " attribute not supported")
+      }
+    }
+    IF isInterface
+      end_node.n_attr.abstract = TRUE
+    }
+
+    # {name}
+    expectSep(in)
+    token = in.getToken()
+    IF token.type != Token.Type.id
+      token.error("CLASS must be followed by a name")
+    }
+    end_node.n_string = token.value
+
+    # EXTENDS {name}
+    token = tokenAfterSep(in)
+    IF token.type == Token.Type.extends
+      expectSep(in)
+      token = in.getToken()
+      expectSep(in)
+      end_node.n_cond = parseExpr(in)
+      token = tokenAfterSep(in)
+    }
+
+    # IMPLEMENTS {name}
+    IF token.type == Token.Type.implements
+      IF isInterface
+        token.error("cannot use IMPLEMENTS on an interface")
+      }
+      expectSep(in)
+      token = in.getToken()
+      expectSep(in)
+      end_node.n_right = parseComma(in, 0)
+    }
+    expectNewLine(in)
+
+    # block until }
+    end_node.n_left = parseBlock(in, toplevel + (isInterface ? interface : 0))
+    RETURN end_node
+  }
+
+  FUNC Node parseMethod(Token firstToken, Attr attr, Node node_in,
+                                                Input in, BlockType blockType)
+    # EQUAL( type arg1, type arg2 )
+    #   body
+    # }
+    #
+    # NEW( type arg1, type arg2 )
+    #   body
+    # }
+    #
+    # PROC {name} ( type arg1, type arg2 )
+    #   body
+    # }
+    #
+    # FUNC type {name} ( type arg1, type arg2 )
+    #   body
+    # }
+    #
+    # Generated node tree:
+    #
+    # Node.Type.func_def / .proc_def / .new_def / .equal_def
+    #  |
+    #  |- n_returnType -> Node.Type.id  (not used for Node.Type.proc_def)
+    #  |                  |- n_string return type
+    #  |                  |- n_right -> Node.Type.id  (.type etc.)
+    #  |- n_string    function name
+    #  |- n_left -> Node.Type.id  (NIL if no arguments)
+    #  |                |- n_string  name of argument
+    #  |                |- n_left -> Node.Type.id or Node.Type.member
+    #  |                |            |- n_string argument type
+    #  |                |            |- n_right -> Node.Type.id  (.type etc.)
+    #  |                |- n_right -> Node.Type.id next argument
+    #  |- n_right -> function block
+    #  |- n_next -> next item
+    #
+    IF blockType.import
+      firstToken.errorNotAllowed()
+    }
+    Node end_node = node_in
+    end_node = newNode(end_node, firstToken)
+    end_node.n_attr = attr
+
+    Token token = in.getToken()
+    IF token.type != Token.Type.dot
+      in.pushToken(token)
+    ELSE
+      # PROC.default  FUNC.abstract
+      token = in.getToken()
+      IF blockType.interface
+        token.error("attribute not supported inside INTERFACE")
+      ELSEIF token.type != Token.Type.id
+        token.error("Unexpected item " .. token.type.name())
+      ELSEIF token.value == "default"
+        end_node.n_attr.default = TRUE
+      ELSEIF token.value == "abstract"
+        end_node.n_attr.abstract = TRUE
+      ELSE
+        token.error(token.value .. " attribute not supported")
+      }
+    }
+    IF blockType.interface
+      end_node.n_attr.abstract = TRUE
+    }
+
+    IF firstToken.type == Token.Type.new
+      end_node.n_type = Node.Type.new_def
+    ELSEIF firstToken.type == Token.Type.equal
+      end_node.n_type = Node.Type.equal_def
+    ELSEIF firstToken.type == Token.Type.func
+      # FUNC: get the return type
+      # Explicitly check for forgetting the return type, otherwise the
+      # error message is hard to understand.
+      expectSep(in)
+      Token next = in.getToken()
+      IF next.type == Token.Type.id && next.value != "proc"
+        Token nnext = in.getToken()
+        IF nnext.type == Token.Type.p_open
+          next.error("Missing return type")
+        }
+        in.pushToken(nnext)
+      }
+      in.pushToken(next)
+      end_node.n_returnType = parseDotName(in)
+      end_node.n_type = Node.Type.func_def
+    ELSE
+      end_node.n_type = Node.Type.proc_def
+    }
+
+    IF firstToken.type != Token.Type.new && firstToken.type != Token.Type.equal
+      # FUNC / PROC: get the function name
+      expectSep(in)
+      Token name = in.getToken()
+      IF name.type != Token.Type.id
+        name.error("Expected a name")
+      }
+      end_node.n_string = name.value
+    }
+
+    # get function arguments
+    token = in.getToken()
+    IF token.type != Token.Type.p_open
+      token.error("Missing (")
+    ELSE
+      Node arg_node = end_node
+
+      # Parse the arguments: "type name".
+      # Loop until we find the ")".
+      skipLineSep(in)
+      WHILE TRUE
+        token = in.getToken()
+        IF token.type == Token.Type.p_close
+          BREAK
+        }
+        IF arg_node IS end_node
+          # first argument
+          in.pushToken(token)
+        ELSE
+          # second or later argument
+          IF token.type != Token.Type.comma
+            token.error("missing comma")
+          }
+          expectSep(in)
+        }
+
+        # get the type
+        Node arg_type = parseDotName(in)
+        expectSep(in)
+
+        # get optional '&' and the argument name
+        token = in.getToken()
+        IF token.type == Token.Type.amp
+          Node n = NEW(Node.Type.ref)
+          n.n_left = arg_type
+          n.n_start = token.startPos
+          arg_type = n
+          token = in.getToken()
+        }
+        IF token.type != Token.Type.id
+          token.error("Expected argument name; missing )?")
+          BREAK
+        }
+        Node an = NEW(Node.Type.id)
+        IF arg_node IS end_node
+          end_node.n_left = an
+        ELSE
+          arg_node.n_next = an
+        }
+        an.n_string = token.value
+        an.n_left = arg_type
+        an.n_start = token.startPos
+        arg_node = an
+
+        # A comma must be right after the name, but the ) may come after a
+        # line break.
+        token = tokenAfterSep(in)
+        IF token.type != Token.Type.comma
+          skipLineSep(in)
+        }
+      }
+    }
+
+    expectNewLine(in)
+
+    # Get the body of the method when it is not abstract and we are not in an
+    # interface definition.
+    IF !end_node.n_attr.abstract
+      end_node.n_right = parseBlock(in, 0)
+    }
+    RETURN end_node
+  }
+
+  #
+  # Toplevel expression parser.
+  # Return the top node.
+  #
+  FUNC Node parseExpr(Input in)
+    RETURN parseExprAlt(in)
+  }
+
+  # Like parseExpr(), but check for a leading '&'
+  FUNC Node parseRefExpr(Input in)
+    Token token = in.getToken()
+    IF token.type == Token.Type.amp
+      Node node = NEW(Node.Type.ref)
+      node.n_left = parseExpr(in)
+      node.n_start = token.startPos
+      RETURN node
+    }
+    in.pushToken(token)
+    RETURN parseExpr(in)
+  }
+
+  #
+  # Evaluate "expr_or ? expr_alt : expr_alt"
+  #
+  FUNC Node parseExprAlt(Input in)
+    Node node = parseExprOr(in)
+    Token token = tokenAfterSep(in)
+    IF token.type == Token.Type.question
+      expectSep(in)
+      token = in.getToken()
+      expectSep(in)
+      Node altNode = newOp(node, in)
+      altNode.n_cond = node
+      node = altNode
+      node.n_type = Node.Type.op_alt
+      node.n_left = parseExprAlt(in)
+      expectSep(in)
+      token = in.getToken()
+      IF token.type != Token.Type.colon
+        token.error("Missing ':' after '?'")
+        in.pushToken(token)
+      ELSE
+        expectSep(in)
+        node.n_right = parseExprAlt(in)
+      }
+    }
+    RETURN node
+  }
+
+  #
+  # Evaluate "expr_and || expr_and || expr_and"
+  #
+  FUNC Node parseExprOr(Input in)
+    Node  node = parseExprAnd(in)
+
+    WHILE TRUE
+      Token token = tokenAfterSep(in)
+      IF token.type != Token.Type.or
+        BREAK
+      }
+      expectSep(in)
+      token = in.getToken()
+      expectSep(in)
+      node = newOp(node, in)
+      node.n_type = Node.Type.op_or
+      node.n_right = parseExprAnd(in)
+    }
+    RETURN node
+  }
+
+  #
+  # Evaluate "expr_comp && expr_comp && expr_comp"
+  #
+  FUNC Node parseExprAnd(Input in)
+    Node   node = parseExprComp(in)
+
+    WHILE TRUE
+      Token token = tokenAfterSep(in)
+      IF token.type != Token.Type.and
+        BREAK
+      }
+      expectSep(in)
+      token = in.getToken()
+      expectSep(in)
+      node = newOp(node, in)
+      node.n_type = Node.Type.op_and
+      node.n_right = parseExprComp(in)
+    }
+    RETURN node
+  }
+
+  #
+  # Evaluate "expr_concat COMPARE expr_concat" (==, !=, =~, etc.)
+  #
+  FUNC Node parseExprComp(Input in)
+    Node   node = parseExprConcat(in)
+
+    WHILE TRUE
+      Token token = tokenAfterSep(in)
+      IF token.type != Token.Type.isis
+          && token.type != Token.Type.notequal
+          && token.type != Token.Type.gt
+          && token.type != Token.Type.gte
+          && token.type != Token.Type.lt
+          && token.type != Token.Type.lte
+          && token.type != Token.Type.is
+          && token.type != Token.Type.isnot
+          && token.type != Token.Type.isa
+          && token.type != Token.Type.isnota
+        BREAK
+      }
+      bool typeSpec
+      Token first = in.getToken()
+      IF first.type == Token.Type.lt
+        # typeSpec is written as "expr<"
+        typeSpec = TRUE
+        token = first
+      ELSE
+        # smaller-than is written as "expr <"
+        in.pushToken(first)
+        expectSep(in)
+        token = in.getToken()
+      }
+      IF typeSpec
+        skipSep(in)
+      ELSE
+        expectSep(in)
+      }
+      node = newOp(node, in)
+      SWITCH token.type
+        CASE Token.Type.isis
+            node.n_type = Node.Type.op_equal
+        CASE Token.Type.notequal
+            node.n_type = Node.Type.op_notequal
+        CASE Token.Type.gt
+            node.n_type = Node.Type.op_gt
+        CASE Token.Type.gte
+            node.n_type = Node.Type.op_gte
+        CASE Token.Type.lt
+            node.n_type = Node.Type.op_lt
+        CASE Token.Type.lte
+            node.n_type = Node.Type.op_lte
+        CASE Token.Type.is
+            node.n_type = Node.Type.op_is
+        CASE Token.Type.isnot
+            node.n_type = Node.Type.op_isnot
+        CASE Token.Type.isa
+            node.n_type = Node.Type.op_isa
+        CASE Token.Type.isnota
+            node.n_type = Node.Type.op_isnota
+      }
+      node.n_right = parseExprConcat(in)
+
+      # Can be: list<string>.NEW().add("1")
+      # Correct < operator to typespec for Type<Type> and Type<Type, Type>
+      # TODO: is this right?
+      # TODO: >> and >>> are Type.rshift and Type.copy_start
+      IF node.n_type == Node.Type.op_lt
+        token = in.getToken()
+        IF token.type == Token.Type.gt || token.type == Token.Type.comma
+          node.n_type = Node.Type.typespec
+          IF token.type == Token.Type.comma
+            # TODO: fix this
+            node.n_right.n_right = parseNameList(in)
+            token.error("comma in typespec not supported yet")
+            token = in.getToken()
+          }
+          IF token.type != Token.Type.gt
+            token.error("MISSING > after type spec")
+            in.pushToken(token)
+          }
+          # Now check for what follows: list<string>.NEW()...
+          node = parseMembers(node, in, FALSE)
+        ELSE
+          in.pushToken(token)
+        }
+      }
+    }
+    RETURN node
+  }
+
+  #
+  # Evaluate "expr_bitwise .. expr_bitwise": string concatenation
+  #
+  FUNC Node parseExprConcat(Input in)
+    Node  node = parseExprBitwise(in)
+
+    WHILE TRUE
+      Token token = tokenAfterSep(in)
+      IF token.type != Token.Type.concat
+        BREAK
+      }
+      expectSep(in)
+      token = in.getToken()
+      expectSep(in)
+      node = newOp(node, in)
+      node.n_type = Node.Type.op_concat
+      node.n_right = parseExprBitwise(in)
+    }
+    RETURN node
+  }
+
+  #
+  # Evaluate "expr_shift OP expr_shift"  (&, |, ^)
+  #
+  FUNC Node parseExprBitwise(Input in)
+    Node  node = parseExprShift(in)
+
+    WHILE TRUE
+      Token token = tokenAfterSep(in)
+      IF token.type != Token.Type.amp
+          && token.type != Token.Type.bit_or
+          && token.type != Token.Type.bit_xor
+        BREAK
+      }
+      expectSep(in)
+      token = in.getToken()
+      expectSep(in)
+      node = newOp(node, in)
+      IF token.type == Token.Type.amp
+        node.n_type = Node.Type.bit_and
+      ELSEIF token.type == Token.Type.bit_or
+        node.n_type = Node.Type.bit_or
+      ELSE
+        node.n_type = Node.Type.bit_xor
+      }
+      node.n_right = parseExprShift(in)
+    }
+    RETURN node
+  }
+
+  #
+  # Evaluate "expr_incr OP expr_incr" (<<, >>)
+  #
+  FUNC Node parseExprShift(Input in)
+      Node  node = parseExprPlus(in)
+
+      WHILE TRUE
+        Token token = tokenAfterSep(in)
+        IF token.type != Token.Type.lshift && token.type != Token.Type.rshift
+          BREAK
+        }
+        expectSep(in)
+        token = in.getToken()
+        expectSep(in)
+        node = newOp(node, in)
+        IF token.type == Token.Type.lshift
+          node.n_type = Node.Type.op_lshift
+        ELSE
+          node.n_type = Node.Type.op_rshift
+        }
+        node.n_right = parseExprPlus(in)
+      }
+      RETURN node
+  }
+
+  #
+  # Evaluate "expr_incr OP expr_incr" (+, -)
+  #
+  FUNC Node parseExprPlus(Input in)
+      Node  node = parseExprMult(in)
+
+      WHILE TRUE
+        Token token = tokenAfterSep(in)
+        IF token.type != Token.Type.plus && token.type != Token.Type.minus
+          BREAK
+        }
+        expectSep(in)
+        token = in.getToken()
+        expectSep(in)
+        node = newOp(node, in)
+        IF token.type == Token.Type.plus
+          node.n_type = Node.Type.op_plus
+        ELSE
+          node.n_type = Node.Type.op_minus
+        }
+        node.n_right = parseExprMult(in)
+      }
+      RETURN node
+  }
+
+  #
+  # Evaluate "expr_neg OP expr_neg" (*, /, %)
+  #
+  FUNC Node parseExprMult(Input in)
+      Node  node = parseExprIndecr(in)
+
+      WHILE TRUE
+        Token token = tokenAfterSep(in)
+        IF token.type != Token.Type.star
+            && token.type != Token.Type.slash
+            && token.type != Token.Type.percent
+          BREAK
+        }
+        expectSep(in)
+        token = in.getToken()
+        expectSep(in)
+        node = newOp(node, in)
+        IF token.type == Token.Type.star
+          node.n_type = Node.Type.op_mult
+        ELSEIF token.type == Token.Type.slash
+          node.n_type = Node.Type.op_div
+        ELSE
+          node.n_type = Node.Type.op_rem
+        }
+        node.n_right = parseExprIndecr(in)
+      }
+
+      RETURN node
+  }
+
+  #
+  # Evaluate "++expr_dot", "--expr_dot", "expr_dot++" and "expr_dot--".
+  #
+  FUNC Node parseExprIndecr(Input in)
+    Token token = in.getToken()
+    Node  pre_node = NIL
+
+    IF token.type == Token.Type.plusplus || token.type == Token.Type.minmin
+      IF token.type == Token.Type.plusplus
+        pre_node = NEW(Node.Type.op_pre_incr)
+      ELSE
+        pre_node = NEW(Node.Type.op_pre_decr)
+      }
+    ELSE
+      in.pushToken(token)
+    }
+
+    Node  node = parseExprNeg(in)
+    IF pre_node != NIL
+      pre_node.n_left = node
+      node = pre_node
+    }
+
+    token = in.getToken()
+    # give an error for "x ++" here, instead of giving an error for
+    # unexpected ++ much later.
+    IF token.type == Token.Type.sep
+      Token next = in.getToken()
+      IF next.type == Token.Type.plusplus
+        next.error("white space before ++")
+        token = next
+      ELSEIF next.type == Token.Type.minmin
+        next.error("white space before --")
+        token = next
+      ELSE
+        in.pushToken(next)
+      }
+    }
+    IF token.type == Token.Type.plusplus || token.type == Token.Type.minmin
+      node = newOp(node, in)
+      IF token.type == Token.Type.plusplus
+        node.n_type = Node.Type.op_post_incr
+      ELSE
+        node.n_type = Node.Type.op_post_decr
+      }
+    ELSE
+      in.pushToken(token)
+    }
+
+    RETURN node
+  }
+
+  #
+  # Evaluate  -expr  and  !expr  and  ~expr
+  #
+  FUNC Node parseExprNeg(Input in)
+    Node node
+    Token token = in.getToken()
+
+    IF token.type == Token.Type.minus
+      node = NEW(Node.Type.op_negative)
+      node.n_left = parseExprDot(in)
+    ELSEIF token.type == Token.Type.not
+      node = NEW(Node.Type.op_not)
+      node.n_left = parseExprDot(in)
+    ELSEIF token.type == Token.Type.tilde
+      node = NEW(Node.Type.op_tilde)
+      node.n_left = parseExprDot(in)
+    ELSE
+      in.pushToken(token)
+      node = parseExprDot(in)
+    }
+    RETURN node
+  }
+
+  #
+  # Evaluate members and methods.
+  #
+  FUNC Node parseExprDot(Input in)
+    Node  node = parseExprParen(in)
+
+    # This is shared with toplevel evaluation.
+    RETURN parseMembers(node, in, FALSE)
+  }
+
+  #
+  # Evaluate "( expr_alt )" or "expr_base".
+  #
+  FUNC Node parseExprParen(Input in)
+    Node  node
+    Token token = in.getToken()
+
+    IF token.type == Token.Type.p_open
+      node = NEW(Node.Type.parens)
+      skipLineSep(in)
+      node.n_left = parseExpr(in)
+      skipLineSep(in)
+      token = in.getToken()
+      IF token.type != Token.Type.p_close
+        token.error("missing )")
+      }
+    ELSE
+      in.pushToken(token)
+      node = parseExprBase(in)
+    }
+    RETURN node
+  }
+
+
+  #
+  # Base level evaluation, recognize:
+  # "string"
+  # 123    number
+  # 0x12   hex number
+  # 'c'    character (used as a number)
+  # TRUE   boolean
+  # FALSE  boolean
+  # OK     status
+  # FAIL   status
+  # THIS   object
+  # PARENT object
+  # name   identifier
+  # [item, item]  list
+  # {key: value, key: value} dict
+  #
+  FUNC Node parseExprBase(Input in)
+    Node  node
+    Token token = in.getToken()
+
+    SWITCH token.type
+      CASE Token.Type.string
+           node = NEW(Node.Type.string)
+           node.n_string = token.value
+      CASE Token.Type.nil
+           node = NEW(Node.Type.nil)
+      CASE Token.Type.this
+           node = NEW(Node.Type.this)
+      CASE Token.Type.parent
+           node = NEW(Node.Type.parent)
+      CASE Token.Type.new
+           node = NEW(Node.Type.new)
+           parseNew(node, in)
+      CASE Token.Type.true
+           node = NEW(Node.Type.bool)
+           node.n_int = 1
+      CASE Token.Type.false
+           node = NEW(Node.Type.bool)
+           node.n_int = 0
+      CASE Token.Type.ok
+           node = NEW(Node.Type.status)
+           node.n_int = 1
+      CASE Token.Type.fail
+           node = NEW(Node.Type.status)
+           node.n_int = 0
+      CASE Token.Type.semicolon
+           token.error("unexpected ;")
+      CASE Token.Type.char
+           node = NEW(Node.Type.int)
+           node.n_int = token.value[0]
+      CASE Token.Type.id
+           node = parseId(token)
+      CASE Token.Type.sq_open
+           node = parseList(in)
+      CASE Token.Type.c_open
+           node = parseDict(in)
+      DEFAULT
+           # Didn't recognize anything, could be empty expression in ()
+           in.pushToken(token)
+           node = NEW(Node.Type.unknown)
+    }
+    node.n_start = token.startPos.copy()
+
+    RETURN node
+  }
+
+  # A id token can be a number (Node.type.int) or a name (Node.type.id).
+  FUNC Node parseId(Token token)
+    int c = token.value[0]
+    Node node
+    IF c >= '0' && c <= '9'
+      node = NEW(Node.Type.int)
+      IF c == '0' && (token.value[1] == 'x' || token.value[1] == 'X')
+        node.n_int = token.value.byteSlice(2, -1).quotedHexToInt()
+      ELSEIF c == '0' && (token.value[1] == 'b' || token.value[1] == 'B')
+        node.n_int = token.value.byteSlice(2, -1).quotedBinToInt()
+      ELSE
+        node.n_int = token.value.quotedToInt()
+      }
+    ELSE
+      node = NEW(Node.Type.id)
+      node.n_string = token.value
+    }
+    RETURN node
+  }
+
+  # parse NEW(args)
+  PROC parseNew(Node node, Input in)
+    node.n_type = Node.Type.new
+
+    Token token = in.getToken()
+    IF token.type != Token.Type.p_open
+      token.error("Expected (, found " .. token.type.name())
+      RETURN
+    }
+    skipLineSep(in)
+    node.n_right = parseComma(in, allowReference)
+    token = in.getToken()
+    IF token.type != Token.Type.p_close
+      token.error("Expected ), found " .. token.type.name())
+    }
+  }
+
+  # parse [item, item]
+  FUNC Node parseList(Input in)
+    Node node = NEW(Node.Type.list)
+    skipLineSep(in)
+    node.n_right = parseComma(in, allowTrailing)
+    skipLineSep(in)
+    Token token = in.getToken()
+    IF token.type != Token.Type.sq_close
+      token.error("Expected ], found " .. token.type.name())
+    }
+    RETURN node
+  }
+
+  # parse {key: value, key: value }
+  FUNC Node parseDict(Input in)
+    # Evaluate expression pairs separated by commas:
+    #   "expr1: expr2, expr3: expr4"
+    # Node  Type.dict
+    #  | n_right -> | n_type   Type.comma
+    #               | n_left ->  | n_type  Type.dictPair
+    #               |            | n_cond  expr1
+    #               |            | n_right expr2
+    #               |
+    #               | n_cond   expr3
+    #               | n_right  expr4
+    #
+    Node node = NEW(Node.Type.dictPair)
+    skipLineSep(in)
+    Token token = in.getToken()
+    IF token.type == Token.Type.c_close
+      node.n_type = Node.Type.unknown  # empty {}
+    ELSE
+      in.pushToken(token)
+      WHILE TRUE
+        node.n_cond = parseExpr(in)   # parse key
+        skipLineSep(in)
+        token = in.getToken()
+        IF token.type != Token.Type.colon
+          token.error("Missing ':' after dict key")
+          IF token.type == Token.Type.c_close
+            in.pushToken(token)
+            BREAK
+          }
+        }
+        expectSep(in)
+        node.n_right = parseExpr(in)  # parse value
+
+        # if there is a comma, consume it
+        IF tokenAfterSep(in).type != Token.Type.comma
+          IF tokenAfterSep(in).type == Token.Type.c_close
+            BREAK
+          }
+          token.error("missing comma")
+        }
+        token = in.getToken()
+        IF token.isSep()
+          token.error("superfluous white space")
+          token = in.getToken()
+        }
+
+        # break when comma after last item
+        IF tokenAfterSep(in).type == Token.Type.c_close
+          skipSep(in)
+          BREAK
+        }
+        expectSep(in)
+        node = newOp(node, in)
+        node.n_type = Node.Type.op_comma
+      }
+    }
+    skipLineSep(in)
+    token = in.getToken()
+    IF token.type != Token.Type.c_close
+      token.error("Expected }, found " .. token.type.name())
+    }
+
+    Node topNode = NEW(Node.Type.dict)
+    topNode.n_right = node
+    RETURN topNode
+  }
+
+  #
+  # Allocate a new node for an operator and link it in the tree.
+  #
+  # Keep them in sequence, with three expressions we get:
+  # ret_node
+  #   |-> n_type   Node.Type.op_?
+  #   |-> n_left
+  #   |     |-> n_type   Node.Type.op_?
+  #   |     |-> n_left   first expr
+  #   |     |-> n_right  second expr
+  #   |
+  #   |-> n_right      third expr
+  #
+  FUNC Node newOp(Node node, Input in)
+    Node ret_node = NEW(Node.Type.unknown)
+    ret_node.n_left = node
+    ret_node.n_start = in.pos.copy()
+    RETURN ret_node
+  }
+
+  #
+  # Parse a type specification or var name: "string", "MyMod.method".
+  # This is turned into a tree:
+  # name:             Node.Type.id
+  #                     |-> n_string  name
+  #
+  # name.member:      Node.Type.member
+  #                     |-> n_string  member
+  #                     |-> n_left -> Node.Type.id
+  #                                   |-> n_string  name
+  #
+  # top.name.member:  Node.Type.member
+  #                     |-> n_string  member
+  #                     |-> n_left -> Node.Type.member
+  #                                   |-> n_string  name
+  #                                   |-> n_left -> Node.Type.id
+  #                                                 |-> n_string  top
+  #
+  FUNC Node parseDotName(Input in)
+    Token token = in.getToken()
+
+    Node node
+    IF token.type == Token.Type.id
+      node = NEW(Node.Type.id)
+    ELSEIF token.type == Token.Type.this
+      node = NEW(Node.Type.this)
+    ELSEIF token.type == Token.Type.parent
+      node = NEW(Node.Type.parent)
+    ELSE
+      token.error("unexpected token type: " .. token.type.name())
+      node = NEW(Node.Type.unknown)
+    }
+    node.n_string = token.value
+    node.n_start = token.startPos
+
+    RETURN parseMembers(node, in, TRUE)
+  }
+
+  # Like parseDotName(), but also accept VAR and ANY
+  FUNC Node parseTypeName(Input in)
+    Token token = in.getToken()
+
+    IF token.type != Token.Type.var && token.type != Token.Type.any
+      in.pushToken(token)
+      RETURN parseDotName(in)
+    }
+    Node node = NEW(token.type == Token.Type.var ? Node.Type.var
+                                                              : Node.Type.any)
+    node.n_string = token.value
+    node.n_start = token.startPos
+    RETURN node
+  }
+
+  #
+  # Find a list of dot names: type, type, ...
+  #
+  FUNC Node parseNameList(Input in)
+    Node  node = parseDotName(in)
+    Token token
+
+    WHILE TRUE
+      token = in.getToken()
+      IF token.type != Token.Type.comma
+        BREAK
+      }
+      expectSep(in)
+      node = newOp(node, in)
+      node.n_type = Node.Type.op_comma
+      node.n_right = parseDotName(in)
+    }
+    in.pushToken(token)
+
+    RETURN node
+  }
+
+  BITS CommaFlags
+    bool allowTrailing   # trailing comma allowed
+    bool allowReference  # "&expr" allowed
+  }
+
+  #
+  # Evaluate expressions separated by commas:  "expr, expr, expr"
+  # This works like "," is an operator, thus uses n_right.
+  #
+  FUNC Node parseComma(Input in, CommaFlags flags)
+    Node node
+    IF flags.allowReference
+      node = parseRefExpr(in)
+    ELSE
+      node = parseExpr(in)
+    }
+
+    WHILE TRUE
+      IF tokenAfterSep(in).type != Token.Type.comma
+        BREAK
+      }
+      Token token = in.getToken()
+      IF token.type != Token.Type.comma
+        token.error("superfluous white space")
+        token = in.getToken()
+      }
+      expectSep(in)
+      Node right
+      IF flags.allowReference
+        right = parseRefExpr(in)
+      ELSE
+        right = parseExpr(in)
+      }
+      IF right.n_type == Node.Type.unknown
+        IF !flags.allowTrailing
+          token.error("trailing comma")
+        }
+        BREAK
+      }
+      node = newOp(node, in)
+      node.n_type = Node.Type.op_comma
+      node.n_right = right
+    }
+
+    RETURN node
+  }
+
+  #
+  # Evaluate "expr_idx.member"
+  #      and "expr_idx(expr, ...)"
+  #      and "expr_idx[arg]"
+  #      and "filename:value
+  #      and "expr_idx<type>"  (only when "doTypespec" is TRUE)
+  #      and "expr_idx.method(expr, ...)"
+  #      and "expr_idx.method(expr, ...).member"
+  #      and "expr_idx.method[expr].member"
+  #      etc.
+  # |start_node| points to expr_idx.
+  #
+  FUNC Node parseMembers(Node start_node, Input in, bool doTypespec)
+    Node  node = start_node
+    Token token
+
+    WHILE TRUE
+      token = tokenAfterSep(in)
+      IF token.type != Token.Type.dot
+          && token.type != Token.Type.p_open
+          && token.type != Token.Type.sq_open
+          && (token.type != Token.Type.assign || doTypespec)
+          && !(doTypespec && token.type == Token.Type.lt)
+        BREAK
+      }
+      IF token.type == Token.Type.dot
+        # We allow a line break before '.', nothing else
+        token = in.getToken()
+        IF token.type != Token.Type.line_sep
+          in.pushToken(token)
+        }
+      }
+      checkNoSep(in)
+      token = in.getToken()
+
+      IF token.type != Token.Type.dot && token.type != Token.Type.assign
+        # skip line break after '(', '[' and '<'
+        skipLineSep(in)
+      }
+      node = newOp(node, in)
+      IF token.type == Token.Type.dot
+        token = in.getToken()
+        IF token.type == Token.Type.new
+          # .NEW(args)
+          parseNew(node, in)
+        ELSE
+          # ".member" / ".SIZE" / ".COPY" / ".I"
+          IF token.type != Token.Type.id
+             && token.type != Token.Type.size
+             && token.type != Token.Type.copy
+             && token.type != Token.Type.i
+            token.error("expected ID after .")
+          }
+          node.n_type = Node.Type.member
+          node.n_string = token.value
+        }
+      ELSEIF token.type == Token.Type.assign
+        # "=value"
+        token = in.getToken()
+        bool negative
+        IF token.type == Token.Type.minus
+          negative = TRUE
+          token = in.getToken()
+        }
+        IF token.type != Token.Type.id
+          token.error("expected ID or number after =")
+        }
+        node.n_type = Node.Type.bits_value
+        node.n_right = parseId(token)
+        IF negative
+          IF node.n_right.n_type != Node.Type.int
+            token.error("expected number after =-")
+          }
+          node.n_right.n_int = -node.n_right.n_int
+        }
+      ELSEIF token.type == Token.Type.p_open
+        # "(arg, arg)"
+        node.n_type = Node.Type.method
+        skipLineSep(in)
+        node.n_right = parseComma(in, allowReference)
+        skipLineSep(in)
+        token = in.getToken()
+        IF token.type != Token.Type.p_close
+          token.error("MISSING )")
+          in.pushToken(token)
+        }
+      ELSEIF token.type == Token.Type.sq_open
+        # "[arg]"
+        node.n_type = Node.Type.subscript
+        node.n_string = NIL
+        node.n_right = parseExpr(in)
+        skipLineSep(in)
+        token = in.getToken()
+        IF token.type != Token.Type.sq_close
+          token.error("MISSING ] after subscript")
+          in.pushToken(token)
+        }
+      ELSE # token.type == Token.Type.lt
+        # <type, type>
+        node.n_type = Node.Type.typespec
+        node.n_string = NIL
+        skipLineSep(in)
+        token = in.getToken()
+
+        # If we get >, >> or >>> it's an empty type spec.
+        IF token.type != Token.Type.gt
+              && token.type != Token.Type.rshift
+              && token.type != Token.Type.copy_start
+          in.pushToken(token)
+          node.n_right = parseNameList(in)
+          skipLineSep(in)
+          token = in.getToken()
+        }
+
+        # If we get >> or >>> split it into individual > tokens.
+        IF token.type == Token.Type.rshift
+             || token.type == Token.Type.copy_start
+          # For ">>" push the second ">" with startpos incremented, decrement
+          # endpos of first ">".
+          Token second = token.copy()
+          second.type = Token.Type.gt
+          second.startPos.col++
+          IF token.endPos != NIL
+            token.endPos.col--
+          }
+          IF token.type == Token.Type.copy_start
+            # For ">>>" push another ">" with startpos incremented, decrement
+            # endpos of first and second ">".
+            Token third = second.copy()
+            third.startPos.col++
+            in.pushToken(third)
+            IF token.endPos != NIL
+              token.endPos.col--
+              second.endPos.col--
+            }
+          }
+          in.pushToken(second)
+          token.type = Token.Type.gt
+        }
+        IF token.type != Token.Type.gt
+          token.error("MISSING > after type spec")
+          in.pushToken(token)
+        }
+      }
+    }
+    RETURN node
+  }
+
+  #
+  # Found ">>>": start of directly copied text.
+  #
+  FUNC Node copyCode(Input in)
+    int    c
+    Node   node = NEW(Node.Type.copydirect)
+
+    # We can't use tokens here, a C line may start with #ifdef which would be
+    # recognized as a comment and skipped over.
+
+    # Skip to end of line, ignore comment
+    bool comment
+    WHILE TRUE
+      Pos startPos = in.pos.copy()
+      c = in.get()
+      IF c == IO.eof || c == '\n'
+        BREAK
+      }
+      IF c == '#'
+        comment = TRUE
+      ELSEIF !comment && c != ' '
+        Error.report("Only comment allowed here", startPos)
+        comment = TRUE
+      }
+    }
+
+    # Collect all text until the "<<<".
+    node.n_start = in.pos.copy()
+    int text_len = 200
+    string text = SYS.malloc(text_len)
+    int    idx = 0
+    int    count = 0
+    WHILE TRUE
+      c = in.get()
+      IF c == IO.eof
+        error("missing <<<", in)
+        BREAK
+      }
+      IF c == '\n'
+        count = 0
+      ELSEIF count >= 0 && c == '<'
+        IF ++count == 3  # found "<<<"
+          idx = idx - 2  # remove the stored "<<"
+          BREAK
+        }
+      ELSE
+        count = -1
+      }
+      IF idx + 2 >= text_len
+        text_len = text_len + 200
+        text = SYS.realloc(text, text_len)
+      }
+      text[idx++] = c
+    }
+    text[idx++] = 0
+
+    # Skip to end of line, ignore comment.
+    WHILE TRUE
+      c = in.get()
+      IF c == IO.eof || c == '\n'
+        BREAK
+      }
+    }
+
+    node.n_string = text
+    RETURN node
+  }
+
+  # Error detected during parse phase
+  PROC error(string msg, Input in)
+    Error.report(msg, in.pos)
+  }
+
+  # Read a line separator from |in|.  When there is none give an error message.
+  # A semicolon may also be used.
+  # A comment without leading white space is not acceptable.
+  PROC expectLineSep(Input in)
+    expectLineSep(in, TRUE)
+  }
+
+  # Like expectLineSep() above, but do not allow a semicolon.
+  PROC expectNewLine(Input in)
+    expectLineSep(in, FALSE)
+  }
+
+  # Like expectLineSep() above, but allow a semicolon only when
+  # |allowSemicolon| is TRUE.
+  PROC expectLineSep(Input in, bool allowSemicolon)
+    Token token = in.getToken()
+    Token next
+    IF token.type == Token.Type.sep
+      next = in.getToken()
+      token = next
+    }
+    IF allowSemicolon
+      IF token.type == Token.Type.semicolon
+        # Semicolon must be followed by white space, not a line break.
+        token = in.getToken()
+        IF token.type == Token.Type.line_sep
+          token.error("unexpected semicolon")
+        ELSE
+          in.pushToken(token)
+          expectSep(in)
+        }
+        RETURN
+      }
+      IF next != NIL
+        in.pushToken(next)
+      }
+    }
+
+    IF token.type != Token.Type.line_sep
+      IF token.type == Token.Type.comment
+        token.error("missing white space before comment")
+      ELSEIF token.type == Token.Type.semicolon
+        next = in.getToken()
+        IF next.type == Token.Type.line_sep
+          token.error("unexpected semicolon")
+        ELSE
+          token.error("semicolon not allowed here, line break required")
+          IF next.type != Token.Type.sep
+            in.pushToken(next)
+          }
+        }
+      ELSE
+        token.error("missing line break")
+        IF token.type != Token.Type.sep
+          in.pushToken(token)
+        }
+      }
+    }
+  }
+
+  # Read a separator from |in|.  When there is none give an error message.
+  # A comment without leading white space is not acceptable.
+  PROC expectSep(Input in)
+    Token token = in.getToken()
+    IF token.type != Token.Type.sep && token.type != Token.Type.line_sep
+      token.error("white space required")
+      IF token.type != Token.Type.comment
+        in.pushToken(token)
+      }
+    }
+  }
+
+  # Read an optional separator or comment from |in|.
+  PROC skipSep(Input in)
+    Token token = in.getToken()
+    IF !token.isSep()
+      IF token.type == Token.Type.comment
+        token.error("white space required")
+      ELSE
+        in.pushToken(token)
+      }
+    }
+  }
+
+  # Read an optional line break or comment from |in|.
+  # Give an error if it is white space without a line break.
+  PROC skipLineSep(Input in)
+    Token token = in.getToken()
+    IF token.type != Token.Type.line_sep
+      IF token.type == Token.Type.sep
+        token.error("superfluous white space")
+      ELSEIF token.type == Token.Type.comment
+        token.error("white space required")
+      ELSE
+        in.pushToken(token)
+      }
+    }
+  }
+
+  # Return a copy of the next token, ignoring a separator token.
+  # Does not actually read anything.
+  FUNC Token tokenAfterSep(Input in)
+    Token res
+    Token token = in.getToken()
+    IF token.type == Token.Type.sep || token.type == Token.Type.line_sep
+      res = in.getToken()
+      in.pushToken(res)
+    ELSE
+      res = token
+    }
+    in.pushToken(token)
+    RETURN res
+  }
+
+  # Check that the next token is not a separator.  If it is anyway, give an
+  # error message and consume it.
+  PROC checkNoSep(Input in)
+    Token next = in.getToken()
+    IF next.type == Token.Type.sep || next.type == Token.Type.line_sep
+      next.error("superfluous white space")
+    ELSE
+      in.pushToken(next)
+    }
+  }
+
+}
+

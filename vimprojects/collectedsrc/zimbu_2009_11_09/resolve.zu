@@ -1,0 +1,473 @@
+#
+# The Zimbu compiler written in Zimbu
+#
+# Resolve class and module: Methods are invoked from Generate for each node
+# where symbols need to be resolved.
+#
+# Copyright 2009 Bram Moolenaar
+# Licensed under the Apache License, Version 2.0.  See the LICENSE file or
+# obtain a copy at: http://www.apache.org/licenses/LICENSE-2.0
+#
+
+IMPORT "conversion.zu"
+IMPORT "dictstuff.zu"
+IMPORT "error.zu"
+IMPORT "generate.zu"
+IMPORT "liststuff.zu"
+IMPORT "node.zu"
+IMPORT "output.zu"
+IMPORT "scontext.zu"
+IMPORT "scope.zu"
+IMPORT "symbol.zu"
+IMPORT "zimbufile.zu"
+
+# TODO: these are needed because Write_C and Write_JS implement Resolve.I
+# This should be handled automatically.
+IMPORT "write_c.zu"
+IMPORT "write_js.zu"
+
+CLASS Resolve
+
+  TargetLang targetLang
+  string permuName
+
+  NEW()
+    targetLang = TargetLang.none
+  }
+
+  # Return the name of the language, to be displayed in
+  # "Generating {langName} code".
+  FUNC string getLangName()
+    RETURN "none"
+  }
+
+  # Return the name to be used for "THIS".  When |insideNew| for a NEW()
+  # method, otherwise for any other method.
+  FUNC string thisName(bool insideNew)
+    # return arbitrary value
+    RETURN "this"
+  }
+
+  # Return the code-specific entry in |zimbuFile|.
+  FUNC ZimbuFile.CodeSpecific getCS(ZimbuFile zimbuFile)
+    Error.report("INTERNAL: Resolve.getCS() should not be called")
+    RETURN NIL
+  }
+
+  # Produce head of the MAIN() function.
+  PROC mainHead(SContext ctx)
+  }
+
+  # Produce end of the MAIN() function.
+  PROC mainEnd(Node mainNode, SContext ctx)
+  }
+
+  # >>> C block
+  PROC copyC(Node node, SContext ctx)
+  }
+
+  # >>> JS block
+  PROC copyJS(Node node, SContext ctx)
+  }
+
+  # Allocate a new object.
+  PROC writeAlloc(string typeName, SContext ctx)
+  }
+
+  # Allocate a new list.
+  PROC writeListAlloc(SContext ctx)
+  }
+
+  # Write the statement for a NEW() method that allocates the object.
+  PROC writeNewThis(Symbol sym, SContext ctx)
+  }
+
+  # Write the return statement for a NEW() method.
+  PROC writeNewReturn(Output out)
+  }
+
+  # Write the name of this symbol, surrounding it with what is required to
+  # access it.
+  PROC writeSymName(Symbol sym, SContext ctx)
+  }
+
+  # id
+  FUNC Symbol id(Node node, SContext ctx, Symbol destSym)
+    Symbol ret
+    Node.Type dest_type = destSym == NIL ? Node.Type.unknown : destSym.type
+    Symbol sym = ctx.scope.getSymbol(node.n_string, node)
+    IF sym == NIL
+      node.n_undefined = 2
+    ELSE
+      IF sym.type == Node.Type.unknown
+        node.n_undefined = 1
+      ELSE
+        node.n_undefined = 0
+      }
+      Symbol unrefSym = sym
+      IF sym.type == Node.Type.ref
+        IF sym.returnSymbol == NIL
+          node.n_undefined++
+        ELSE
+          IF dest_type == Node.Type.ref
+            # have a reference and want a reference, produce referred var
+            sym = sym.returnSymbol
+          ELSE
+            # have a reference and want value, produce de-reference
+            unrefSym = sym.returnSymbol
+          }
+        }
+      }
+      ret = unrefSym.copy()
+      Node.Type type = unrefSym.type
+      IF Generate.compatibleTypes(ret.type, dest_type)
+          || (destSym != NIL && Generate.compatibleSymbols(ret, destSym))
+          || (dest_type == Node.Type.parent
+              && (type == Node.Type.module
+                 || type == Node.Type.object
+                 || type == Node.Type.class
+                 || type == Node.Type.enum))
+          || (dest_type == Node.Type.nil && Node.isPointerType(type))
+      ELSEIF dest_type == Node.Type.proc_ref && type == Node.Type.proc_def
+        ret.type = dest_type
+      ELSEIF dest_type == Node.Type.func_ref && type == Node.Type.func_def
+        ret.type = dest_type
+      ELSE
+        node.n_undefined++
+      }
+      IF sym.type != Node.Type.unknown
+        node.n_symbol = sym.copy()
+        node.n_returnSymbol = ret
+      }
+    }
+    RETURN ret
+  }
+
+  # Generate the return type of a method from the Node.
+  # Return a symbol for the type.
+  FUNC Symbol methodReturnType(Node node, Symbol sym, SContext ctx)
+    Symbol retSym
+    IF node.n_type == Node.Type.new_def
+      retSym = ctx.scope.class
+    ELSEIF node.n_type == Node.Type.equal_def
+      retSym = NEW(Node.Type.bool)
+    ELSEIF node.n_type == Node.Type.func_def
+      retSym = Generate.generateDeclType(node.n_returnType, ctx)
+    }
+    RETURN retSym
+  }
+
+  # Write the start of a method call.
+  PROC writeMethodCall(Symbol func, bool moreArgs, SContext ctx)
+  }
+
+  # Write a function argument "argName" with type declaration.
+  # |first| is true for the first argument.
+  PROC argWithType(bool first, Symbol typeSym, Node typeNode, string argName,
+                                                               SContext ctx)
+  }
+
+  # Return TRUE when forward declarations are to be written.
+  FUNC bool doWriteDecl()
+    RETURN FALSE
+  }
+
+  # expr[index]
+  FUNC Symbol subscript(Node node, SContext ctx, Symbol destSym)
+    Symbol ret
+
+    # Get type of "expr".
+    Symbol sym = Generate.genExpr(node.n_left, ctx, NIL)
+    IF sym != NIL
+      IF sym.type == Node.Type.list
+        ret = ListStuff.generateSubscript(sym, node, FALSE, ctx, destSym)
+      ELSEIF sym.type == Node.Type.dict
+        ret = DictStuff.generateSubscript(sym, node, FALSE, ctx, destSym)
+      ELSEIF sym.type == Node.Type.array
+        Generate.genExpr(node.n_left, ctx, Symbol.array)
+        Generate.genExpr(node.n_right, ctx, Symbol.int)
+        node.n_undefined = node.n_left.n_undefined + node.n_right.n_undefined
+        IF sym.returnSymbol != NIL
+          ret = sym.returnSymbol.copy()
+        ELSE
+          node.n_undefined++
+        }
+      ELSEIF sym.type == Node.Type.string
+        Generate.genExpr(node.n_left, ctx, Symbol.string)
+        Generate.genExpr(node.n_right, ctx, Symbol.int)
+        node.n_undefined = node.n_left.n_undefined + node.n_right.n_undefined
+        ret = Symbol.int
+      ELSE
+        node.n_undefined = 7
+      }
+    ELSE
+      node.n_undefined = 10
+    }
+    IF destSym != NIL
+      node.n_symbol = sym
+    }
+    RETURN ret
+  }
+
+  # Generate accessing an object member |objSym| of an interface |itfSym|.
+  PROC iobjectMember(Symbol objSym, Symbol itfSym, Node node,
+                                                 SContext ctx, Symbol destSym)
+  }
+
+  # Binary operator with int values.
+  PROC numberOp(Node node, SContext ctx)
+    Generate.genExpr(node.n_left, ctx, Symbol.int)
+    Generate.genExpr(node.n_right, ctx, Symbol.int)
+    node.n_undefined = node.n_left.n_undefined + node.n_right.n_undefined
+  }
+
+  # String concatenation operator.
+  PROC concatOp(Node node, SContext ctx)
+    Generate.genExpr(node.n_left, ctx, Symbol.string)
+    Generate.genExpr(node.n_right, ctx, Symbol.string)
+    node.n_undefined = node.n_left.n_undefined + node.n_right.n_undefined
+  }
+
+  # Binary plus operator.
+  # Need to figure out if this is a mathematical addition or string
+  # concatenation, depends on the left and right side.
+  FUNC Node.Type plusOp(Node node, SContext ctx, Node.Type destType)
+    Node.Type retType = Node.Type.nil
+    IF destType != Node.Type.int
+      # Figure out the types of the left and right, so that we can decide
+      # if it is an addition or string concatenation.
+      # If both are int then we do addition, even when the target is
+      # string (convert int2string after the addition).
+      Symbol l = Generate.genExpr(node.n_left, ctx.copyNoOut(), NIL)
+      Symbol r = Generate.genExpr(node.n_right, ctx.copyNoOut(), NIL)
+
+      # If the destination type is unknown and we are not sure what the
+      # left and right types are, the result type is also unknown.
+      # This is needed for using "field + field" as a BITS argument.
+      IF destType == Node.Type.unknown
+          && (l == NIL || l.type == Node.Type.unknown
+           || r == NIL || r.type == Node.Type.unknown)
+        retType = Node.Type.unknown
+        node.n_undefined = node.n_left.n_undefined
+                                              + node.n_right.n_undefined + 1
+      }
+    }
+    IF retType == Node.Type.nil
+      retType = Node.Type.int
+      numberOp(node, ctx)
+    }
+
+    RETURN retType
+  }
+
+  # post/pre increment/decrement
+  PROC incrdecrOp(Node node, SContext ctx)
+    IF node.n_left.n_type == Node.Type.int
+      node.error("Cannot increment/decrement constant")
+    }
+    Generate.genExpr(node.n_left, ctx, Symbol.int)
+    node.n_undefined = node.n_left.n_undefined
+  }
+
+  # ==, !=, IS and ISNOT
+  PROC booleanOp(Node node, SContext ctx)
+    node.n_undefined = 0
+    IF node.n_left.n_type == Node.Type.nil
+       || node.n_right.n_type == Node.Type.nil
+       || node.n_type == Node.Type.op_is
+       || node.n_type == Node.Type.op_isnot
+      Generate.genExpr(node.n_left, ctx, Symbol.nil)
+      Generate.genExpr(node.n_right, ctx, Symbol.nil)
+      node.n_nodeType = Node.Type.nil
+    ELSE
+      # Figure out the type of left and right hand side.
+      Symbol symLeft = Generate.genExpr(node.n_left, ctx, NIL)
+      Symbol symRight = Generate.genExpr(node.n_right, ctx, NIL)
+      IF symLeft == NIL || symRight == NIL
+        node.n_undefined++
+      ELSE
+        IF symLeft.type == Node.Type.string
+                                        || symRight.type == Node.Type.string
+          # If either one is a string use string compare.
+          Generate.genExpr(node.n_left, ctx, Symbol.string)
+          Generate.genExpr(node.n_right, ctx, Symbol.string)
+          node.n_nodeType = Node.Type.string
+        ELSE
+          symLeft = Generate.genExpr(node.n_left, ctx, symLeft)
+          Generate.genExpr(node.n_right, ctx, symLeft)
+          node.n_nodeType = Node.Type.object
+          node.n_symbol = symLeft
+          IF symLeft.type == Node.Type.unknown
+            node.n_undefined++
+          }
+        }
+      }
+    }
+    node.n_undefined += node.n_left.n_undefined + node.n_right.n_undefined
+  }
+
+  # >, >=, <, <=
+  PROC compareOp(Node node, SContext ctx)
+    Generate.genExpr(node.n_left, ctx, Symbol.int)
+    Generate.genExpr(node.n_right, ctx, Symbol.int)
+    node.n_undefined = node.n_left.n_undefined + node.n_right.n_undefined
+  }
+
+  # (expr_left && expr_right)
+  # (expr_left || expr_right)
+  PROC andorOp(Node node, SContext ctx)
+    Generate.genExpr(node.n_left, ctx, Symbol.bool)
+    Generate.genExpr(node.n_right, ctx, Symbol.bool)
+    node.n_undefined = node.n_left.n_undefined + node.n_right.n_undefined
+  }
+
+  # ( expr )
+  FUNC Symbol parens(Node node, SContext ctx, Symbol destSym)
+    Symbol ret = Generate.genExpr(node.n_left, ctx, destSym)
+    node.n_undefined = node.n_left.n_undefined
+    RETURN ret
+  }
+
+  # cond ? expr_left : expr_right
+  FUNC Symbol altOp(Node node, SContext ctx, Symbol destSym)
+    Generate.genExpr(node.n_cond, ctx, Symbol.bool)
+    Symbol syml = Generate.genExpr(node.n_left, ctx, destSym)
+    Symbol symr = Generate.genExpr(node.n_right, ctx, destSym)
+    node.n_undefined = node.n_left.n_undefined + node.n_right.n_undefined
+                                               + node.n_cond.n_undefined
+    IF symr != NIL
+      RETURN symr.copy()
+    }
+    RETURN NIL
+  }
+
+  # [item, item]
+  # Return type of item.
+  FUNC Symbol listPart(Node node, SContext ctx, Symbol destSym)
+    Symbol sym
+    IF node.n_type == Node.Type.unknown  # empty list
+      sym = destSym
+    ELSEIF node.n_type == Node.Type.op_comma
+      sym = listPart(node.n_left, ctx, destSym)  # recursive!
+      Generate.genExpr(node.n_right, ctx, sym)
+      node.n_undefined = node.n_left.n_undefined + node.n_right.n_undefined
+    ELSE
+      sym = Generate.genExpr(node, ctx, destSym)
+    }
+    RETURN sym
+  }
+
+  # {key1 : value1, key2 : value2}
+  # Return type of dict in ret.keySymbol and ret.returnSymbol
+  PROC dictPart(Node node, Symbol ret, SContext ctx)
+    IF node.n_type == Node.Type.op_comma
+      dictPart(node.n_left, ret, ctx)  # recursive!
+      node.n_undefined = node.n_left.n_undefined
+    ELSE
+      ret.keySymbol = Generate.genExpr(node.n_cond, ctx, NIL)
+      ret.returnSymbol = Generate.genExpr(node.n_right, ctx, NIL)
+      node.n_undefined = 0
+    }
+    Generate.genExpr(node.n_cond, ctx, ret.keySymbol)
+    Generate.genExpr(node.n_right, ctx, ret.returnSymbol)
+    node.n_undefined += node.n_cond.n_undefined + node.n_right.n_undefined
+  }
+
+
+  # Toplevel expression.  Handle conversion from the result type of the
+  # expression to what is expected, indicated by destSym.
+  FUNC Symbol expr(Node node, SContext ctx, Symbol destSym)
+    Symbol ret = Generate.genExprChecked(node, ctx, destSym)
+    # Detect required conversion.
+    IF destSym != NIL && ret != NIL
+      Node.Type dest_type = destSym.type
+      IF dest_type == Node.Type.string && ret.type == Node.Type.int
+        # automatic conversion from int to string
+        node.n_conversion = Conversion.int2string
+        ret = NEW(Node.Type.string)
+      ELSEIF dest_type == Node.Type.string && ret.type == Node.Type.bool
+        # automatic conversion from bool to string
+        node.n_conversion = Conversion.bool2string
+        ret = NEW(Node.Type.string)
+      ELSEIF dest_type == Node.Type.string && ret.type == Node.Type.status
+        # automatic conversion from Status to string
+        node.n_conversion = Conversion.status2string
+        ret = NEW(Node.Type.string)
+      ELSEIF dest_type == Node.Type.i_object && ret.type == Node.Type.object
+        # Need to allocate a Zoref and set the type.  The only way to avoid
+        # evaluating the expression twice is by using a function.
+        node.n_conversion = Conversion.object2iobject
+        node.n_ret_class = ret.class
+        ret = destSym
+      ELSE
+        # Reset the conversion, it may have been set in a previous pass.
+        node.n_conversion = Conversion.none
+      }
+    }
+    RETURN ret
+  }
+
+  # Write the files for an imported file.
+  FUNC string writeImport(ZimbuFile import, Output.Group outs, Scope scope)
+    Error.report("INTERNAL: Resolve.writeImport() should not be called")
+    RETURN ""
+  }
+
+  # Write lines to "myOuts" to include the header files for an
+  # imported file.
+  PROC writeIncludeImport(ZimbuFile import, Output.Group myOuts, Scope scope)
+    Error.report("INTERNAL: Resolve.writeIncludeImport() should not be called")
+  }
+
+  # Return TRUE if |zimbuFile| needs to be written.
+  FUNC bool needWrite(ZimbuFile zimbuFile)
+    RETURN FALSE
+  }
+
+  # Write class declaration.
+  PROC writeClassDef(string name, Output typeOut)
+  }
+
+  # Write class declaration. |structOut| has the body.
+  PROC writeClassDecl(Symbol classSym, Output.Group outs, Output structOut)
+  }
+
+  # Write the default init value for |sym|.
+  PROC defaultInit(Symbol sym, Output out)
+  }
+
+  # Write the value used for NIL.
+  PROC nil(SContext ctx)
+  }
+
+  # Write "->name" or ".name", access object member.
+  PROC member(string name, Output out)
+  }
+
+  # Write the declaration part for a variable.
+  PROC vardecl(SContext ctx, Output out)
+  }
+
+  # Write the type of a variable or return value.
+  PROC vartype(Symbol sym, Node node, Scope scope, Output out)
+  }
+
+  # Write the first part of a for loop, declare the iterator.
+  PROC forStart(Output out)
+  }
+
+  # Write the loop part of a for loop: "for (init; cond; prep) {"
+  PROC forLoop(Symbol varSym, Output out)
+  }
+
+  SHARED
+
+    ENUM TargetLang
+      none
+      c
+      js
+    }
+
+  }
+
+}

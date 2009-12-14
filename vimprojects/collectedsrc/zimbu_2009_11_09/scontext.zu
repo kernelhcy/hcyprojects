@@ -1,0 +1,45 @@
+#
+# The Zimbu compiler written in Zimbu
+#
+# Statement context
+#
+# Copyright 2009 Bram Moolenaar
+# Licensed under the Apache License, Version 2.0.  See the LICENSE file or
+# obtain a copy at: http://www.apache.org/licenses/LICENSE-2.0
+#
+
+IMPORT "output.zu"
+IMPORT "resolve.zu"
+IMPORT "scope.zu"
+
+# Context of a statement.
+# Passed around for statement and expression generation.
+CLASS SContext
+  Scope scope     # block scope
+  Resolve.I gen   # for generating code
+  Output out      # where to write code
+
+  NEW(Scope _scope, Resolve.I _gen, Output _out)
+    scope = _scope
+    gen = _gen
+    out = _out
+  }
+  
+  # Return a copy of this object.
+  FUNC SContext copy()
+    RETURN NEW(THIS.scope, THIS.gen, THIS.out)
+  }
+
+  # Return a copy of this object with a new Output.
+  FUNC SContext copyNewOut()
+    SContext r = NEW(THIS.scope, THIS.gen, NEW(NEW()))
+    r.out.writing = out.writing
+    RETURN r
+  }
+
+  # Return a copy of this object with no Output.
+  FUNC SContext copyNoOut()
+    SContext r = NEW(THIS.scope, THIS.gen, Output.noOut)
+    RETURN r
+  }
+}

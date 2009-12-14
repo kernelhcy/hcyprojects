@@ -1,0 +1,134 @@
+#
+# The Zimbu compiler written in Zimbu
+#
+# ZimbuFile class: A Zimbu file that can be (or has been) parsed.
+#                  Does not contain info about where it was imported, see
+#                  UsedFile for that.
+#
+# Copyright 2009 Bram Moolenaar
+# Licensed under the Apache License, Version 2.0.  See the LICENSE file or
+# obtain a copy at: http://www.apache.org/licenses/LICENSE-2.0
+#
+
+IMPORT "error.zu"
+IMPORT "node.zu"
+IMPORT "output.zu"
+IMPORT "parse.zu"
+IMPORT "scope.zu"
+IMPORT "symbol.zu"
+IMPORT "usedfile.zu"
+
+CLASS ZimbuFile
+  string filename   # file name relative to build directory
+  string rootName   # |filename| with directory and ".zu"/".zwt" removed
+  string dirName    # directory relative to build directory
+  string outDir     # where to write the output
+  string initFunc   # name of function that inits global vars
+
+  int    startedPass  # pass number that started (and may have ended)
+  bool   didInitFunc  # set when generated call to initFunc
+
+  bool   topZwtFile    # was used in IMPORT.ZWT
+  bool   usedAsZwt     # was used in IMPORT.ZWT or below
+  bool   usedAsZimbu   # was used in IMPORT
+
+  Scope         topScope
+
+  CodeSpecific    c     # C specific values
+  CodeSpecific    js    # JS specific values
+
+  NEW(string _filename)
+    filename = _filename
+    IF _filename.byteSlice(-3, -1) == ".zu"
+      rootName = _filename.byteSlice(0, -4)  # without ".zu"
+    ELSE
+      rootName = _filename.byteSlice(0, -5)  # without ".zwt"
+    }
+    int slash = rootName.rindex('/')
+    IF slash >= 0
+      dirName = rootName.byteSlice(0, slash - 1)
+      rootName = rootName.byteSlice(slash + 1, -1)
+    ELSE
+      dirName = ""
+    }
+    initFunc = "I" .. rootName
+    startedPass = -1  # didn't start any pass yet (parsing is 0)
+    c = NEW()
+    js = NEW()
+  }
+
+  # Parse the file, unless done already.
+  # Return FAIL if the file could not be read.
+  FUNC status parse(string indent, UsedFile usedFile)
+    IF startedPass == -1
+      startedPass = 0
+      topScope = Parse.parseFile(filename, indent, usedFile)
+    }
+    RETURN topScope == NIL ? FAIL : OK
+  }
+
+  # return the name of the top module in this file.
+  # If not found gives an error and returns NIL.
+  FUNC string getModuleName()
+    Node node = getModuleNode()
+    IF node == NIL
+      RETURN NIL
+    }
+    RETURN node.n_string
+  }
+
+  # Find the node in this file that is the top module.
+  # If not found gives an error and returns NIL.
+  FUNC Node getModuleNode()
+    Node node = topScope.topNode
+    WHILE node != NIL   # skip over imports
+      IF node.n_type == Node.Type.module
+        BREAK
+      }
+      node = node.n_next
+    }
+    IF node == NIL
+      Error.report("No Module found in JS import")
+    }
+    RETURN node
+  }
+
+  SHARED
+
+    CLASS CodeSpecific
+      string        startedWrite  # name of code that writing has started for
+      Output.Heads  heads
+      Output.Group  outputs
+
+      NEW()
+        clear()
+      }
+
+      PROC clear()
+        heads = NEW()
+        outputs = NEW()
+        outputs.setHeads(heads)
+      }
+    }
+
+    # The languages to produce code in.
+    # For a zwt file we always produce JS, for a zimbu file it can be both C and
+    # JS.
+    BITS WriteLang
+      bool c
+      bool js
+    }
+
+    FUNC ZimbuFile find(list<ZimbuFile> importList, string name)
+      IF importList != NIL
+        FOR import IN importList
+          IF import.filename == name
+            RETURN import
+          }
+        }
+      }
+      RETURN NIL
+    }
+
+  }
+}

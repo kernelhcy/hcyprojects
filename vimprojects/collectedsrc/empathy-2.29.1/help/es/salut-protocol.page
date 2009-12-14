@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<page xmlns="http://projectmallard.org/1.0/" xmlns:e="http://projectmallard.org/experimental/" type="topic" id="salut-protocol">
+
+  <info>
+    <link type="seealso" xref="create-account"/>
+    <desc>
+      Undesrtanding the People Nearby feature.
+    </desc>
+    <revision pkgversion="2.28" version="0.1" date="2009-08-12" status="draft"/>
+    <revision pkgversion="2.28" version="0.1" date="2009-08-14" status="review">
+      <!--
+      <e:review by="shaunm@gnome.org" date="2009-09-09" status="deferred"/>
+      -->
+    </revision>
+    <credit type="author">
+      <name>Milo Casagrande</name>
+      <email>milo@ubuntu.com</email>
+    </credit>
+<!--
+    <copyright>
+      <year>2009</year>
+      <name>GNOME Documentation Project</name>
+    </copyright>
+-->
+    <include xmlns="http://www.w3.org/2001/XInclude" href="legal.xml"/>
+  </info>
+
+  <title>What is People Nearby?</title>
+
+  <comment>
+    <cite date="2009-09-09">Shaun McCance</cite>
+    <p>I'd like to see this played up a bit more.</p>
+  </comment>
+
+  <p>
+    The People Nearby service is a serverless communication service:
+    you do not need to connect and authenticate to a central server in
+    order to use it.
+  </p>
+  <p>Este tipo de sistemas de mensajería sin servidores está restringido a redes de área local y no se necesita una conexión activa con Internet.</p>
+  <p>La gente que usa este servicio dentro de la misma red de área local se autodescubrirá y será posible enviarles mensajes y archivos al igual que con otros servicios.</p>
+  <p>Todas las redes modernas de área local deberían poder soportar este tipo de servicio.</p>
+</page>
