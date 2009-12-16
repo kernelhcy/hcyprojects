@@ -1,5 +1,6 @@
 HD = libemail/headers.h
-OBJECTS = main.o libemail/buffer.o libemail/log.o libemail/libemail.o libemail/base64/base64.o libemail/html.o
+OBJECTS = main.o libemail/buffer.o libemail/log.o \
+	libemail/libemail.o libemail/base64/base64.o libemail/html.o
 DEBUG = -g
 
 main : ${OBJECTS} ${HD}
