@@ -13,5 +13,6 @@ SOURCES += main.cpp \
 HEADERS += mainwindow.h \
     controlthread.h \
     settingdialog.h \
-    config.h
+    config.h \
+    env.h
 RESOURCES += application.qrc

@@ -19,6 +19,7 @@ Config::Config()
     proxyHost = "202.117.21.117";
     proxyPort = 3128;
     useProxy = true;
+    mode = ENV1G::V_NORMAL;
     readFromFile();
 }
 
@@ -72,6 +73,31 @@ int Config::readFromFile()
         sl = info.split('=');
         proxyPort = sl[1].toInt();
     }
+
+    /*view mode*/
+    in >> info;
+    while (info.at(0) == '#')
+    {
+        in >> info;
+    }
+    sl = info.split('=');
+    int m = sl[1].toInt();
+    switch(m)
+    {
+    case 0:
+        mode = ENV1G::V_NORMAL;
+        break;
+    case 1:
+        mode = ENV1G::V_SIMPLE;
+        break;
+    case 2:
+        mode = ENV1G::V_LISTEN;
+        break;
+    default:
+        mode = ENV1G::V_NORMAL;
+        break;
+    }
+
     file.close();
 
     return 0;
@@ -110,6 +136,8 @@ int Config::writeToFile()
         out << "#proxy_port=" << proxyPort << "\n";
     }
 
+    out << tr("#显示模式\n");
+    out << "view_mode=" << mode << "\n";
     out.flush();
 
     file.close();

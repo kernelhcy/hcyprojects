@@ -27,8 +27,10 @@
 #include <QIcon>
 #include <QAction>
 #include <QTextStream>
+#include <QActionGroup>
 #include "controlthread.h"
 #include "settingdialog.h"
+#include "env.h"
 
 class MainWindow : public QMainWindow
 {
@@ -43,6 +45,11 @@ public:
 public slots:
     void processCommand(QString);
     void changeTitle(QString);
+    //设置显示模式
+    void setViewMode(ENV1G::viewMode mode);
+    void setNormalViewMode();
+    void setSimpleViewMode();
+    void setListenViewMode();
 protected slots:
     void exitProgram();
     void hideWindow();
@@ -53,7 +60,9 @@ protected slots:
 
 protected:
     void closeEvent(QCloseEvent *event);
-
+    void moveEvent(QMoveEvent *event);
+    void leaveEvent(QEvent *event);
+    void enterEvent(QEvent *event);
 private:
     QWebView* player;   
     ControlThread* ct;
@@ -62,7 +71,13 @@ private:
     QAction *minimizeAction;
     QAction *showAction;
     QAction *quitAction;
+    //显示模式按钮
     QAction *settingAction;
+    QAction *vnormalAction;
+    QAction *vsimpleAction;
+    QAction *vlistenAction;
+    QActionGroup *actiongroup;
+
     void center();
     void setProxy();
     void setTrayIcon();

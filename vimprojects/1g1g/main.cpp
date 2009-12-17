@@ -25,7 +25,6 @@
 #include <QTextCodec>
 #include "mainwindow.h"
 #include "controlthread.h"
-#include "config.h"
 
 int main(int argc, char *argv[])
 {  

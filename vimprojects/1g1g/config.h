@@ -5,6 +5,7 @@
 #include <QTextStream>
 #include <QStringList>
 #include <QtGui>
+#include "env.h"
 
 class Config : public QObject
 {
@@ -17,6 +18,9 @@ public:
     QString proxyHost;
     int proxyPort;
     bool useProxy;
+
+    //显示模式
+    ENV1G::viewMode mode;
 private:
     Config();
     static Config *_instance;

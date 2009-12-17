@@ -20,36 +20,86 @@
 
 #include "mainwindow.h"
 
-
 MainWindow::MainWindow(QWidget *parent, ControlThread* ct)
     : QMainWindow(parent)
 {
+    //设置鼠标跟踪。
+    this->setMouseTracking(true);
     this->ct = ct;
     setProxy();
+    setTrayIcon();
     startPlayer();
 
     this->setWindowIcon(QIcon(":images/icon.png"));
     this->resize(800, 600);
     this->setFixedSize(this->size());
     center();
+    this->setFixedSize(QSize(800, 600));
+    Config *config = Config::getInstance();
+    this->setViewMode(config->mode);
+
     //show();
-    setTrayIcon();
 }
 
 void MainWindow::startPlayer()
 {
     player = new QWebView(this);
     player->settings()->setAttribute(QWebSettings::PluginsEnabled, true);
-    player->load(QUrl("http://www.1g1g.com/?version=desktop_linux"));
+    player->load(QUrl("http://www.1g1g.com/"));
     //player -> load(QUrl("http://commander.1g1g.com/test.html"));
     connect(player, SIGNAL(titleChanged(QString)), this, SLOT(changeTitle(QString)));
     connect(player, SIGNAL(titleChanged(QString)), this, SLOT(changeTrayIconTooltip(QString)));
     connect(player, SIGNAL(statusBarMessage ( const QString &)), this, SLOT(playerStatusBarMsgChange(const QString)));
     this->setCentralWidget(player);
 
-    QTextStream out(stdout);
-    out << player->page()->mainFrame() ->toPlainText();
+}
 
+void MainWindow::setViewMode(ENV1G::viewMode mode)
+{
+    //QTextStream out(stdout);
+    Config *config = Config::getInstance();
+
+    switch(mode)
+    {
+    case ENV1G::V_NORMAL:
+        //out<< tr("正常模式\n");
+        this->setFixedSize(QSize(800, 600));
+        player->reload();
+        config->mode = ENV1G::V_NORMAL;
+        break;
+    case ENV1G::V_SIMPLE:
+        //out<< tr("精简模式\n");
+        this->setFixedSize(QSize(320, 450));
+        player->reload();
+        config->mode = ENV1G::V_SIMPLE;
+        //player->resize(this->centralWidget()->size());
+        //this->centralWidget()->resize(this->size());
+        break;
+    case ENV1G::V_LISTEN:
+        //out<< tr("听歌模式\n");
+        this->setFixedSize(QSize(300, 60));
+        player->reload();
+        config->mode = ENV1G::V_LISTEN;
+        break;
+    default:
+        this->setFixedSize(QSize(800, 600));
+        player->reload();
+        config->mode = ENV1G::V_NORMAL;
+        break;
+    }
+}
+
+void MainWindow::setNormalViewMode()
+{
+    this->setViewMode(ENV1G::V_NORMAL);
+}
+void MainWindow::setSimpleViewMode()
+{
+    this->setViewMode(ENV1G::V_SIMPLE);
+}
+void MainWindow::setListenViewMode()
+{
+    this->setViewMode(ENV1G::V_LISTEN);
 }
 
 void MainWindow::playerStatusBarMsgChange(const QString msg)
@@ -90,6 +140,16 @@ void MainWindow::setTrayIcon()
     trayIcon->show();
     trayIcon->setToolTip(QString(tr("亦歌")));
 
+    vnormalAction = new QAction(tr("正常模式"), this);
+    connect(vnormalAction, SIGNAL(triggered()), this, SLOT(setNormalViewMode()));
+    vnormalAction ->setCheckable(true);
+    vsimpleAction = new QAction(tr("精简模式"), this);
+    connect(vsimpleAction, SIGNAL(triggered()), this, SLOT(setSimpleViewMode()));
+    vsimpleAction ->setCheckable(true);
+    vlistenAction = new QAction(tr("听歌模式"), this);
+    connect(vlistenAction, SIGNAL(triggered()), this, SLOT(setListenViewMode()));
+    vlistenAction ->setCheckable(true);
+
     minimizeAction = new QAction(QIcon(":images/mini.png"),tr("最小化"), this);
     connect(minimizeAction, SIGNAL(triggered()), this, SLOT(hideWindow()));
     showAction = new QAction(QIcon(":images/nor.png"),tr("显示窗口"), this);
@@ -101,6 +161,33 @@ void MainWindow::setTrayIcon()
 
     traymenu=new QMenu();
 
+    actiongroup = new QActionGroup(this);
+    actiongroup->addAction(vnormalAction);
+    actiongroup->addAction(vsimpleAction);
+    actiongroup->addAction(vlistenAction);
+
+    Config *config = Config::getInstance();
+    switch(config -> mode)
+    {
+    case ENV1G::V_NORMAL:
+        vnormalAction -> setChecked(true);
+        break;
+    case ENV1G::V_SIMPLE:
+        vsimpleAction -> setChecked(true);
+        break;
+    case ENV1G::V_LISTEN:
+        vlistenAction  -> setChecked(true);
+        break;
+    default:
+        vnormalAction -> setChecked(true);
+        break;
+    }
+
+    traymenu->addAction(vnormalAction);
+    traymenu->addAction(vsimpleAction);
+    traymenu->addAction(vlistenAction);
+
+    traymenu->addSeparator();
     traymenu->addAction(showAction);
     traymenu->addAction(settingAction);
     traymenu->addAction(minimizeAction);
@@ -131,6 +218,8 @@ void MainWindow::changeTitle(QString title){
 
 MainWindow::~MainWindow()
 {
+    Config *config = Config::getInstance();
+    delete config;
     ct->terminate();
 }
 
@@ -195,4 +284,78 @@ void MainWindow::trayActived(QSystemTrayIcon::ActivationReason reason)
     }
 }
 
+void MainWindow::moveEvent(QMoveEvent *event)
+{
+    QPoint pos = event->pos();
+    QPoint toPos = pos;
 
+    //获取桌面大小
+    QDesktopWidget *desktop = QApplication::desktop();
+    int screenWidth = desktop->width();
+    int screenHeight = desktop->height();
+
+    if (pos.x() < 0)
+    {
+        toPos.setX(0);
+    }
+
+    if (pos.y() < 100 && pos.y() > 30)
+    {
+        toPos.setY(0);
+    }
+
+
+    if (pos.x() + this->size().width() > screenWidth - 50)
+    {
+        toPos.setX(screenWidth - this->size().width() -5);
+    }
+
+    if (pos.y() + this->size().height() > screenHeight - 50)
+    {
+        toPos.setY(screenHeight - this->size().height() - 5);
+    }
+
+    if ( pos != toPos)
+    {
+        this->move(toPos);
+    }
+
+}
+
+void MainWindow::leaveEvent(QEvent *event)
+{
+    if (this->pos().y() < 30)
+    {
+        //this->hideWindow();
+    }
+    event->accept();
+}
+
+void MainWindow::enterEvent(QEvent *event)
+{
+//    printf("鼠标进入\n");
+//    if (this->pos().y() < 30)
+//    {
+//        QSize size = this->size();
+//        Config *config = Config::getInstance();
+//
+//        switch(config -> mode)
+//        {
+//        case ENV1G::V_NORMAL:
+//            size.setHeight(600);
+//            break;
+//        case ENV1G::V_SIMPLE:
+//            size.setHeight(450);
+//            break;
+//        case ENV1G::V_LISTEN:
+//            size.setHeight(60);
+//            break;
+//        default:
+//            size.setHeight(600);
+//            break;
+//        }
+//
+//        this->setFixedSize(size);
+//    }
+    event->accept();
+}
