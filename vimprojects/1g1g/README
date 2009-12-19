@@ -1,16 +1,21 @@
 Program dependencies : 
 libQtCore libQtGui libQtNetwork libQtWebKit(>=4.5.0)
 
-Installation :
-1 Extract the tar archive file
-2 Make sure you have libqt4-dev package installed
-3 qmake -o Makefile linux1g1g.pro
-4 make
-5 copy the compiled executable file to /usr/bin/
-6 In order to use global shortcuts, you have to make sure Xbindkeys has already 
-  been installed. Then run ./bindkeys.sh from the source package directory.
+运行:
+	可以直接运行目录下的linux1g1g: ./linux1g1g
+编译:
+1、切换到目录src
+2、qmake
+3、make
+
+如果需要全局快捷键，则需要安装xbindkeys，然后运行脚本bindkeys.sh
   
 ChangeLog:
 1、增加了设置代理的功能。
 2、实现最小化到托盘，并在托盘提示当前播放歌曲。
+3、增加了三种显示模式（正常，精简和听歌）
+4、实现窗口自动靠边.
+
+网址：www.1g1g.com
+本程序是在其linux桌面版的基础上改的。
 

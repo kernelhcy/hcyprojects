@@ -31,6 +31,7 @@
 #include "controlthread.h"
 #include "settingdialog.h"
 #include "env.h"
+#include "tipwindow.h"
 
 class MainWindow : public QMainWindow
 {
@@ -81,6 +82,9 @@ private:
     void center();
     void setProxy();
     void setTrayIcon();
+
+    //用于提示歌曲切换。无边框
+    TipWindow *tipwin;
 
 };
 

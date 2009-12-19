@@ -23,8 +23,6 @@
 MainWindow::MainWindow(QWidget *parent, ControlThread* ct)
     : QMainWindow(parent)
 {
-    //设置鼠标跟踪。
-    this->setMouseTracking(true);
     this->ct = ct;
     setProxy();
     setTrayIcon();
@@ -33,12 +31,32 @@ MainWindow::MainWindow(QWidget *parent, ControlThread* ct)
     this->setWindowIcon(QIcon(":images/icon.png"));
     this->resize(800, 600);
     this->setFixedSize(this->size());
-    center();
     this->setFixedSize(QSize(800, 600));
     Config *config = Config::getInstance();
     this->setViewMode(config->mode);
 
-    //show();
+    center();
+
+    tipwin = new TipWindow(0);
+    tipwin -> show();
+}
+
+MainWindow::~MainWindow()
+{
+    Config *config = Config::getInstance();
+    delete config;
+    delete player;
+    delete trayIcon;
+    delete minimizeAction;
+    delete showAction;
+    delete quitAction;
+    delete settingAction;
+    delete vnormalAction;
+    delete vsimpleAction;
+    delete vlistenAction;
+    delete actiongroup;
+    delete tipwin;
+    ct->terminate();
 }
 
 void MainWindow::startPlayer()
@@ -104,8 +122,7 @@ void MainWindow::setListenViewMode()
 
 void MainWindow::playerStatusBarMsgChange(const QString msg)
 {
-    QTextStream out(stdout);
-    out << msg << "\n";
+
 }
 
 void MainWindow::reStartPlayer()
@@ -216,13 +233,6 @@ void MainWindow::changeTitle(QString title){
     this->setWindowTitle(title);
 }
 
-MainWindow::~MainWindow()
-{
-    Config *config = Config::getInstance();
-    delete config;
-    ct->terminate();
-}
-
 void MainWindow::center()
 {
     int x, y;
@@ -266,6 +276,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
 {
     event->ignore();
     hideWindow();
+    tipwin->pollOut();
 }
 
 void MainWindow::trayActived(QSystemTrayIcon::ActivationReason reason)

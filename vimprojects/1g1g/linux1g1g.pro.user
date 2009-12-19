@@ -73,7 +73,7 @@
    <value key="ProjectExplorer.BuildConfiguration.DisplayName" type="QString" >Debug</value>
    <valuelist key="abstractProcess.Environment" type="QVariantList" >
     <value type="QString" >CLASSPATH=.:/usr/lib/jvm/java-6-sun/lib</value>
-    <value type="QString" >DBUS_SESSION_BUS_ADDRESS=unix:abstract=/tmp/dbus-ZWTdK0tnyk,guid=afefd13160c51a3ed0b8afaf4b29ac4f</value>
+    <value type="QString" >DBUS_SESSION_BUS_ADDRESS=unix:abstract=/tmp/dbus-sXKlm83LrE,guid=627e76819c59e213cd66f95e4b2b1931</value>
     <value type="QString" >DESKTOP_SESSION=gnome</value>
     <value type="QString" >DESKTOP_STARTUP_ID=</value>
     <value type="QString" >DISPLAY=:0.0</value>
@@ -81,9 +81,9 @@
     <value type="QString" >GDM_LANG=zh_CN.UTF-8</value>
     <value type="QString" >GDM_XSERVER_LOCATION=local</value>
     <value type="QString" >GNOME_DESKTOP_SESSION_ID=Default</value>
-    <value type="QString" >GNOME_KEYRING_PID=6149</value>
-    <value type="QString" >GNOME_KEYRING_SOCKET=/tmp/keyring-Y4YY9g/socket</value>
-    <value type="QString" >GPG_AGENT_INFO=/tmp/seahorse-WXEltL/S.gpg-agent:6266:1</value>
+    <value type="QString" >GNOME_KEYRING_PID=10476</value>
+    <value type="QString" >GNOME_KEYRING_SOCKET=/tmp/keyring-7MHbLd/socket</value>
+    <value type="QString" >GPG_AGENT_INFO=/tmp/seahorse-GEj0Zy/S.gpg-agent:10563:1</value>
     <value type="QString" >GTK_IM_MODULE=xim</value>
     <value type="QString" >GTK_RC_FILES=/etc/gtk/gtkrc:/home/hcy/.gtkrc-1.2-gnome2</value>
     <value type="QString" >HOME=/home/hcy</value>
@@ -96,15 +96,15 @@
     <value type="QString" >PWD=/home/hcy/ProgramFiles/qtsdk4.5/bin</value>
     <value type="QString" >QTDIR=/home/hcy/ProgramFiles/qtsdk4.5/qt</value>
     <value type="QString" >QT_IM_MODULE=xim</value>
-    <value type="QString" >SESSION_MANAGER=local/hcy-desktop:/tmp/.ICE-unix/6150</value>
+    <value type="QString" >SESSION_MANAGER=local/hcy-desktop:/tmp/.ICE-unix/10477</value>
     <value type="QString" >SHELL=/bin/bash</value>
-    <value type="QString" >SSH_AUTH_SOCK=/tmp/keyring-Y4YY9g/ssh</value>
+    <value type="QString" >SSH_AUTH_SOCK=/tmp/keyring-7MHbLd/ssh</value>
     <value type="QString" >USER=hcy</value>
     <value type="QString" >USERNAME=hcy</value>
     <value type="QString" >WINDOWPATH=7</value>
     <value type="QString" >XAUTHORITY=/home/hcy/.Xauthority</value>
     <value type="QString" >XDG_DATA_DIRS=/usr/local/share/:/usr/share/:/usr/share/gdm/</value>
-    <value type="QString" >XDG_SESSION_COOKIE=cd82a6d253641cf45f1e152a4a8feef4-1261022284.266712-604206890</value>
+    <value type="QString" >XDG_SESSION_COOKIE=cd82a6d253641cf45f1e152a4a8feef4-1261115697.113087-1625459763</value>
     <value type="QString" >XMODIFIERS=@im=fcitx</value>
    </valuelist>
    <valuelist key="abstractProcess.arguments" type="QVariantList" >
@@ -125,7 +125,7 @@
    <value key="ProjectExplorer.BuildConfiguration.DisplayName" type="QString" >Debug</value>
    <valuelist key="abstractProcess.Environment" type="QVariantList" >
     <value type="QString" >CLASSPATH=.:/usr/lib/jvm/java-6-sun/lib</value>
-    <value type="QString" >DBUS_SESSION_BUS_ADDRESS=unix:abstract=/tmp/dbus-ZWTdK0tnyk,guid=afefd13160c51a3ed0b8afaf4b29ac4f</value>
+    <value type="QString" >DBUS_SESSION_BUS_ADDRESS=unix:abstract=/tmp/dbus-sXKlm83LrE,guid=627e76819c59e213cd66f95e4b2b1931</value>
     <value type="QString" >DESKTOP_SESSION=gnome</value>
     <value type="QString" >DESKTOP_STARTUP_ID=</value>
     <value type="QString" >DISPLAY=:0.0</value>
@@ -133,9 +133,9 @@
     <value type="QString" >GDM_LANG=zh_CN.UTF-8</value>
     <value type="QString" >GDM_XSERVER_LOCATION=local</value>
     <value type="QString" >GNOME_DESKTOP_SESSION_ID=Default</value>
-    <value type="QString" >GNOME_KEYRING_PID=6149</value>
-    <value type="QString" >GNOME_KEYRING_SOCKET=/tmp/keyring-Y4YY9g/socket</value>
-    <value type="QString" >GPG_AGENT_INFO=/tmp/seahorse-WXEltL/S.gpg-agent:6266:1</value>
+    <value type="QString" >GNOME_KEYRING_PID=10476</value>
+    <value type="QString" >GNOME_KEYRING_SOCKET=/tmp/keyring-7MHbLd/socket</value>
+    <value type="QString" >GPG_AGENT_INFO=/tmp/seahorse-GEj0Zy/S.gpg-agent:10563:1</value>
     <value type="QString" >GTK_IM_MODULE=xim</value>
     <value type="QString" >GTK_RC_FILES=/etc/gtk/gtkrc:/home/hcy/.gtkrc-1.2-gnome2</value>
     <value type="QString" >HOME=/home/hcy</value>
@@ -148,15 +148,15 @@
     <value type="QString" >PWD=/home/hcy/ProgramFiles/qtsdk4.5/bin</value>
     <value type="QString" >QTDIR=/home/hcy/ProgramFiles/qtsdk4.5/qt</value>
     <value type="QString" >QT_IM_MODULE=xim</value>
-    <value type="QString" >SESSION_MANAGER=local/hcy-desktop:/tmp/.ICE-unix/6150</value>
+    <value type="QString" >SESSION_MANAGER=local/hcy-desktop:/tmp/.ICE-unix/10477</value>
     <value type="QString" >SHELL=/bin/bash</value>
-    <value type="QString" >SSH_AUTH_SOCK=/tmp/keyring-Y4YY9g/ssh</value>
+    <value type="QString" >SSH_AUTH_SOCK=/tmp/keyring-7MHbLd/ssh</value>
     <value type="QString" >USER=hcy</value>
     <value type="QString" >USERNAME=hcy</value>
     <value type="QString" >WINDOWPATH=7</value>
     <value type="QString" >XAUTHORITY=/home/hcy/.Xauthority</value>
     <value type="QString" >XDG_DATA_DIRS=/usr/local/share/:/usr/share/:/usr/share/gdm/</value>
-    <value type="QString" >XDG_SESSION_COOKIE=cd82a6d253641cf45f1e152a4a8feef4-1261022284.266712-604206890</value>
+    <value type="QString" >XDG_SESSION_COOKIE=cd82a6d253641cf45f1e152a4a8feef4-1261115697.113087-1625459763</value>
     <value type="QString" >XMODIFIERS=@im=fcitx</value>
    </valuelist>
    <valuelist key="abstractProcess.arguments" type="QVariantList" >
