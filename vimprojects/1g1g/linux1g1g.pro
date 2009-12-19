@@ -9,12 +9,10 @@ SOURCES += main.cpp \
     mainwindow.cpp \
     controlthread.cpp \
     settingdialog.cpp \
-    config.cpp \
-    tipwindow.cpp
+    config.cpp
 HEADERS += mainwindow.h \
     controlthread.h \
     settingdialog.h \
     config.h \
-    env.h \
-    tipwindow.h
+    env.h
 RESOURCES += application.qrc

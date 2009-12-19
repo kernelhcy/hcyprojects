@@ -19,6 +19,9 @@ public:
     int proxyPort;
     bool useProxy;
 
+    //关闭是窗口的位置
+    int pos_x, pos_y;
+
     //显示模式
     ENV1G::viewMode mode;
 private:

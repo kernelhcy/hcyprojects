@@ -28,17 +28,13 @@ MainWindow::MainWindow(QWidget *parent, ControlThread* ct)
     setTrayIcon();
     startPlayer();
 
-    this->setWindowIcon(QIcon(":images/icon.png"));
-    this->resize(800, 600);
-    this->setFixedSize(this->size());
-    this->setFixedSize(QSize(800, 600));
+    this -> setWindowIcon(QIcon(":images/icon.png"));
+    this -> resize(800, 600);
+    this -> setFixedSize(this->size());
+    this -> setFixedSize(QSize(800, 600));
     Config *config = Config::getInstance();
-    this->setViewMode(config->mode);
-
-    center();
-
-    tipwin = new TipWindow(0);
-    tipwin -> show();
+    this -> setViewMode(config->mode);
+    this -> move(config -> pos_x, config -> pos_y);
 }
 
 MainWindow::~MainWindow()
@@ -55,7 +51,7 @@ MainWindow::~MainWindow()
     delete vsimpleAction;
     delete vlistenAction;
     delete actiongroup;
-    delete tipwin;
+
     ct->terminate();
 }
 
@@ -240,6 +236,7 @@ void MainWindow::center()
     int screenHeight;
     int width, height;
     QSize windowSize;
+    Config *config = Config::getInstance();
 
     QDesktopWidget *desktop = QApplication::desktop();
 
@@ -253,10 +250,14 @@ void MainWindow::center()
     y = (screenHeight - height) / 2;
 
     this->move( x, y );
+    config -> pos_x = x;
+    config -> pos_y = y;
+
 }
 
 void MainWindow::exitProgram()
 {
+
     qApp->exit(0);
 }
 
@@ -276,7 +277,6 @@ void MainWindow::closeEvent(QCloseEvent *event)
 {
     event->ignore();
     hideWindow();
-    tipwin->pollOut();
 }
 
 void MainWindow::trayActived(QSystemTrayIcon::ActivationReason reason)
@@ -330,6 +330,10 @@ void MainWindow::moveEvent(QMoveEvent *event)
     {
         this->move(toPos);
     }
+
+    Config *config = Config::getInstance();
+    config -> pos_x = pos.x();
+    config -> pos_y = pos.y();
 
 }
 

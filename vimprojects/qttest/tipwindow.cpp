@@ -1,10 +1,10 @@
 #include "tipwindow.h"
 
 TipWindow::TipWindow(QWidget *parent)
-        :QWidget(0, Qt::FramelessWindowHint)
+        :QWidget(parent, Qt::FramelessWindowHint)
 {
 
-    this -> resize(2, 50);
+    this -> resize(200, 50);
     this -> parent = parent;
 
     QDesktopWidget *desktop = QApplication::desktop();

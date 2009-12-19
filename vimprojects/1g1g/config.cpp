@@ -20,6 +20,9 @@ Config::Config()
     proxyPort = 3128;
     useProxy = true;
     mode = ENV1G::V_NORMAL;
+    pos_x = 0;
+    pos_y = 0;
+
     readFromFile();
 }
 
@@ -41,6 +44,7 @@ int Config::readFromFile()
     QTextStream in(&file);
     QString info;
     QStringList sl;
+    bool tranOk = false;
 
     in >> info;
     while (info.at(0) == '#')
@@ -81,7 +85,12 @@ int Config::readFromFile()
         in >> info;
     }
     sl = info.split('=');
-    int m = sl[1].toInt();
+    int m = sl[1].toInt(&tranOk);
+    if (!tranOk)
+    {
+        m = 1;
+    }
+
     switch(m)
     {
     case 0:
@@ -98,8 +107,37 @@ int Config::readFromFile()
         break;
     }
 
-    file.close();
+    in >> info;
+    if (info.isEmpty())
+    {
+        goto close;
+    }
 
+    while (info.at(0) == '#')
+    {
+        in >> info;
+    }
+    sl = info.split('=');
+    pos_x = sl[1].toInt(&tranOk);
+    if (!tranOk)
+    {
+        pos_x = 0;
+    }
+
+    in >> info;
+    while (info.at(0) == '#')
+    {
+        in >> info;
+    }
+    sl = info.split('=');
+    pos_y = sl[1].toInt(&tranOk);
+    if (!tranOk)
+    {
+        pos_y = 0;
+    }
+
+close:
+    file.close();
     return 0;
 }
 
@@ -138,6 +176,11 @@ int Config::writeToFile()
 
     out << tr("#显示模式\n");
     out << "view_mode=" << mode << "\n";
+
+    out << tr("#窗口的位置\n");
+    out << "pos_x=" << pos_x << "\n";
+    out << "pos_y=" << pos_y << "\n";
+
     out.flush();
 
     file.close();
