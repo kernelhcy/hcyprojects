@@ -46,14 +46,14 @@ CLEAN	mod_fastcgi.c	421;"	d	file:
 CLEAN	mod_fastcgi.c	432;"	d	file:
 CLEAN	mod_fastcgi.c	434;"	d	file:
 CLEAN	mod_fastcgi.c	441;"	d	file:
-CLEAN	server.c	198;"	d	file:
-CLEAN	server.c	220;"	d	file:
-CLEAN	server.c	222;"	d	file:
-CLEAN	server.c	228;"	d	file:
-CLEAN	server.c	273;"	d	file:
-CLEAN	server.c	297;"	d	file:
-CLEAN	server.c	332;"	d	file:
-CLEAN	server.c	339;"	d	file:
+CLEAN	server.c	233;"	d	file:
+CLEAN	server.c	255;"	d	file:
+CLEAN	server.c	257;"	d	file:
+CLEAN	server.c	263;"	d	file:
+CLEAN	server.c	311;"	d	file:
+CLEAN	server.c	335;"	d	file:
+CLEAN	server.c	370;"	d	file:
+CLEAN	server.c	377;"	d	file:
 CMD_CAT	proc_open.c	487;"	d	file:
 COMPLETE	lemon.c	/^		COMPLETE,				\/* The status is used during followset and *\/$/;"	e	enum:config::__anon199	file:
 COMP_HTTP_COOKIE	array.h	/^	COMP_HTTP_COOKIE,$/;"	e	enum:__anon152
@@ -68,9 +68,9 @@ COMP_HTTP_USER_AGENT	array.h	/^	COMP_HTTP_USER_AGENT,$/;"	e	enum:__anon152
 COMP_LAST_ELEMENT	array.h	/^	COMP_LAST_ELEMENT$/;"	e	enum:__anon152
 COMP_SERVER_SOCKET	array.h	/^	COMP_SERVER_SOCKET,$/;"	e	enum:__anon152
 COMP_UNSET	array.h	/^	COMP_UNSET,$/;"	e	enum:__anon152
-COND_RESULT_FALSE	base.h	/^typedef enum { COND_RESULT_UNSET, COND_RESULT_FALSE,$/;"	e	enum:__anon33
+COND_RESULT_FALSE	base.h	/^	COND_RESULT_FALSE,$/;"	e	enum:__anon33
 COND_RESULT_TRUE	base.h	/^	COND_RESULT_TRUE$/;"	e	enum:__anon33
-COND_RESULT_UNSET	base.h	/^typedef enum { COND_RESULT_UNSET, COND_RESULT_FALSE,$/;"	e	enum:__anon33
+COND_RESULT_UNSET	base.h	/^	COND_RESULT_UNSET, $/;"	e	enum:__anon33
 CONFIG_ACTIVATE	mod_dirlisting.c	275;"	d	file:
 CONFIG_COND_EQ	array.h	/^	CONFIG_COND_EQ,		 \/** == *\/$/;"	e	enum:__anon151
 CONFIG_COND_MATCH	array.h	/^	CONFIG_COND_MATCH,			 \/** =~ *\/$/;"	e	enum:__anon151
@@ -78,7 +78,7 @@ CONFIG_COND_NE	array.h	/^	CONFIG_COND_NE,		 \/** != *\/$/;"	e	enum:__anon151
 CONFIG_COND_NOMATCH	array.h	/^	CONFIG_COND_NOMATCH			 \/** !~ *\/$/;"	e	enum:__anon151
 CONFIG_COND_UNSET	array.h	/^	CONFIG_COND_UNSET,$/;"	e	enum:__anon151
 CONFIG_DIR_LISTING	mod_dirlisting.c	283;"	d	file:
-CONFIG_DOCUMENT_ROOT	server.h	/^typedef enum { CONFIG_UNSET, CONFIG_DOCUMENT_ROOT } config_var_t;$/;"	e	enum:__anon48
+CONFIG_DOCUMENT_ROOT	server.h	/^	CONFIG_DOCUMENT_ROOT $/;"	e	enum:__anon48
 CONFIG_ENCODING	mod_dirlisting.c	278;"	d	file:
 CONFIG_EXCLUDE	mod_dirlisting.c	274;"	d	file:
 CONFIG_EXTERNAL_CSS	mod_dirlisting.c	277;"	d	file:
@@ -88,7 +88,7 @@ CONFIG_HIDE_README_FILE	mod_dirlisting.c	280;"	d	file:
 CONFIG_SET_FOOTER	mod_dirlisting.c	284;"	d	file:
 CONFIG_SHOW_HEADER	mod_dirlisting.c	281;"	d	file:
 CONFIG_SHOW_README	mod_dirlisting.c	279;"	d	file:
-CONFIG_UNSET	server.h	/^typedef enum { CONFIG_UNSET, CONFIG_DOCUMENT_ROOT } config_var_t;$/;"	e	enum:__anon48
+CONFIG_UNSET	server.h	/^	CONFIG_UNSET, $/;"	e	enum:__anon48
 CONFLICT	lemon.c	/^		CONFLICT,				\/* Was a reduce, but part of a conflict *\/$/;"	e	enum:action::e_action	file:
 CONNECTION_DEAD	mod_fastcgi.c	/^	CONNECTION_DEAD				\/* disable for 60 seconds, take another backend $/;"	e	enum:__anon192	file:
 CONNECTION_DELAYED	mod_fastcgi.c	/^	CONNECTION_DELAYED,			\/* retry after event, take same host *\/$/;"	e	enum:__anon192	file:
@@ -179,7 +179,7 @@ EXTERNAL	base.h	/^typedef enum { DIRECT, EXTERNAL } connection_type;$/;"	e	enum:
 Encode	md5.c	/^static void Encode(output, input, len)$/;"	f	file:
 ErrorMsg	lemon.c	/^void ErrorMsg(const char *filename, int lineno, const char *format, ...)$/;"	f
 F	md5.c	81;"	d	file:
-FALSE	settings.h	43;"	d
+FALSE	settings.h	48;"	d
 FCGI_ABORT_REQUEST	fastcgi.h	51;"	d
 FCGI_AUTHORIZER	fastcgi.h	90;"	d
 FCGI_BEGIN_REQUEST	fastcgi.h	50;"	d
@@ -228,29 +228,29 @@ FCGI_UNKNOWN_TYPE	fastcgi.h	60;"	d
 FCGI_UnknownTypeBody	fastcgi.h	/^} FCGI_UnknownTypeBody;$/;"	t	typeref:struct:__anon121
 FCGI_UnknownTypeRecord	fastcgi.h	/^} FCGI_UnknownTypeRecord;$/;"	t	typeref:struct:__anon122
 FCGI_VERSION_1	fastcgi.h	45;"	d
-FDEVENT_ERR	fdevent.h	70;"	d
+FDEVENT_ERR	fdevent.h	93;"	d
 FDEVENT_HANDLED_ERROR	mod_cgi.c	/^	FDEVENT_HANDLED_NOT_FINISHED, FDEVENT_HANDLED_ERROR$/;"	e	enum:__anon115	file:
 FDEVENT_HANDLED_FINISHED	mod_cgi.c	/^enum { FDEVENT_HANDLED_UNSET, FDEVENT_HANDLED_FINISHED,$/;"	e	enum:__anon115	file:
 FDEVENT_HANDLED_NOT_FINISHED	mod_cgi.c	/^	FDEVENT_HANDLED_NOT_FINISHED, FDEVENT_HANDLED_ERROR$/;"	e	enum:__anon115	file:
 FDEVENT_HANDLED_UNSET	mod_cgi.c	/^enum { FDEVENT_HANDLED_UNSET, FDEVENT_HANDLED_FINISHED,$/;"	e	enum:__anon115	file:
-FDEVENT_HANDLER_FREEBSD_KQUEUE	fdevent.h	/^	FDEVENT_HANDLER_FREEBSD_KQUEUE,$/;"	e	enum:__anon4
-FDEVENT_HANDLER_LINUX_RTSIG	fdevent.h	/^	FDEVENT_HANDLER_LINUX_RTSIG,$/;"	e	enum:__anon4
-FDEVENT_HANDLER_LINUX_SYSEPOLL	fdevent.h	/^	FDEVENT_HANDLER_LINUX_SYSEPOLL,$/;"	e	enum:__anon4
-FDEVENT_HANDLER_POLL	fdevent.h	/^	FDEVENT_HANDLER_POLL,$/;"	e	enum:__anon4
-FDEVENT_HANDLER_SELECT	fdevent.h	/^	FDEVENT_HANDLER_SELECT,$/;"	e	enum:__anon4
-FDEVENT_HANDLER_SOLARIS_DEVPOLL	fdevent.h	/^	FDEVENT_HANDLER_SOLARIS_DEVPOLL,$/;"	e	enum:__anon4
-FDEVENT_HANDLER_SOLARIS_PORT	fdevent.h	/^	FDEVENT_HANDLER_SOLARIS_PORT$/;"	e	enum:__anon4
-FDEVENT_HANDLER_UNSET	fdevent.h	/^typedef enum { FDEVENT_HANDLER_UNSET,$/;"	e	enum:__anon4
-FDEVENT_HUP	fdevent.h	71;"	d
-FDEVENT_IN	fdevent.h	67;"	d
-FDEVENT_NVAL	fdevent.h	72;"	d
-FDEVENT_OUT	fdevent.h	69;"	d
-FDEVENT_PRI	fdevent.h	68;"	d
-FD_EVENT_TYPE_CGI_CONNECTION	fdevent.h	/^	FD_EVENT_TYPE_CGI_CONNECTION$/;"	e	enum:__anon3
-FD_EVENT_TYPE_CONNECTION	fdevent.h	/^	FD_EVENT_TYPE_CONNECTION,$/;"	e	enum:__anon3
-FD_EVENT_TYPE_DIRWATCH	fdevent.h	/^	FD_EVENT_TYPE_DIRWATCH,$/;"	e	enum:__anon3
-FD_EVENT_TYPE_FCGI_CONNECTION	fdevent.h	/^	FD_EVENT_TYPE_FCGI_CONNECTION,$/;"	e	enum:__anon3
-FD_EVENT_TYPE_UNSET	fdevent.h	/^typedef enum { FD_EVENT_TYPE_UNSET = -1,$/;"	e	enum:__anon3
+FDEVENT_HANDLER_FREEBSD_KQUEUE	fdevent.h	/^	FDEVENT_HANDLER_FREEBSD_KQUEUE, 	\/\/kqueue$/;"	e	enum:__anon4
+FDEVENT_HANDLER_LINUX_RTSIG	fdevent.h	/^	FDEVENT_HANDLER_LINUX_RTSIG, 		\/\/rtsig$/;"	e	enum:__anon4
+FDEVENT_HANDLER_LINUX_SYSEPOLL	fdevent.h	/^	FDEVENT_HANDLER_LINUX_SYSEPOLL, 	\/\/sysepoll$/;"	e	enum:__anon4
+FDEVENT_HANDLER_POLL	fdevent.h	/^	FDEVENT_HANDLER_POLL, 				\/\/poll$/;"	e	enum:__anon4
+FDEVENT_HANDLER_SELECT	fdevent.h	/^	FDEVENT_HANDLER_SELECT, 			\/\/select$/;"	e	enum:__anon4
+FDEVENT_HANDLER_SOLARIS_DEVPOLL	fdevent.h	/^	FDEVENT_HANDLER_SOLARIS_DEVPOLL, 	\/\/devpoll$/;"	e	enum:__anon4
+FDEVENT_HANDLER_SOLARIS_PORT	fdevent.h	/^	FDEVENT_HANDLER_SOLARIS_PORT 		\/\/port$/;"	e	enum:__anon4
+FDEVENT_HANDLER_UNSET	fdevent.h	/^	FDEVENT_HANDLER_UNSET, 				\/\/未定义$/;"	e	enum:__anon4
+FDEVENT_HUP	fdevent.h	94;"	d
+FDEVENT_IN	fdevent.h	90;"	d
+FDEVENT_NVAL	fdevent.h	95;"	d
+FDEVENT_OUT	fdevent.h	92;"	d
+FDEVENT_PRI	fdevent.h	91;"	d
+FD_EVENT_TYPE_CGI_CONNECTION	fdevent.h	/^	FD_EVENT_TYPE_CGI_CONNECTION 	\/\/cgi连接$/;"	e	enum:__anon3
+FD_EVENT_TYPE_CONNECTION	fdevent.h	/^	FD_EVENT_TYPE_CONNECTION, 		\/\/普通连接$/;"	e	enum:__anon3
+FD_EVENT_TYPE_DIRWATCH	fdevent.h	/^	FD_EVENT_TYPE_DIRWATCH, 		\/\/监听目录变化$/;"	e	enum:__anon3
+FD_EVENT_TYPE_FCGI_CONNECTION	fdevent.h	/^	FD_EVENT_TYPE_FCGI_CONNECTION, 	\/\/fcgi连接$/;"	e	enum:__anon3
+FD_EVENT_TYPE_UNSET	fdevent.h	/^	FD_EVENT_TYPE_UNSET = -1, 		\/\/未定义类型，设置为-1$/;"	e	enum:__anon3
 FF	md5.c	95;"	d	file:
 FIELD_FORMAT	mod_accesslog.c	/^	enum { FIELD_UNSET, FIELD_STRING, FIELD_FORMAT } type;$/;"	e	enum:__anon66::__anon67	file:
 FIELD_STRING	mod_accesslog.c	/^	enum { FIELD_UNSET, FIELD_STRING, FIELD_FORMAT } type;$/;"	e	enum:__anon66::__anon67	file:
@@ -336,7 +336,7 @@ HANDLER_COMEBACK	settings.h	/^	HANDLER_COMEBACK,$/;"	e	enum:__anon1
 HANDLER_ERROR	settings.h	/^	HANDLER_ERROR,$/;"	e	enum:__anon1
 HANDLER_FINISHED	settings.h	/^	HANDLER_FINISHED,$/;"	e	enum:__anon1
 HANDLER_GO_ON	settings.h	/^	HANDLER_GO_ON,$/;"	e	enum:__anon1
-HANDLER_UNSET	settings.h	/^typedef enum { HANDLER_UNSET,$/;"	e	enum:__anon1
+HANDLER_UNSET	settings.h	/^	HANDLER_UNSET,$/;"	e	enum:__anon1
 HANDLER_WAIT_FOR_EVENT	settings.h	/^	HANDLER_WAIT_FOR_EVENT,$/;"	e	enum:__anon1
 HANDLER_WAIT_FOR_FD	settings.h	/^	HANDLER_WAIT_FOR_FD$/;"	e	enum:__anon1
 HASH	http_auth_digest.h	/^typedef unsigned char HASH[HASHLEN];$/;"	t
@@ -365,10 +365,10 @@ HTTP_ACCEPT_ENCODING_GZIP	mod_compress.c	43;"	d	file:
 HTTP_ACCEPT_ENCODING_IDENTITY	mod_compress.c	42;"	d	file:
 HTTP_AUTH_BASIC	keyvalue.h	/^typedef enum { HTTP_AUTH_BASIC, HTTP_AUTH_DIGEST } httpauth_type;$/;"	e	enum:__anon162
 HTTP_AUTH_DIGEST	keyvalue.h	/^typedef enum { HTTP_AUTH_BASIC, HTTP_AUTH_DIGEST } httpauth_type;$/;"	e	enum:__anon162
-HTTP_CONNECTION	base.h	143;"	d
-HTTP_CONTENT_LENGTH	base.h	144;"	d
-HTTP_DATE	base.h	145;"	d
-HTTP_LOCATION	base.h	146;"	d
+HTTP_CONNECTION	base.h	147;"	d
+HTTP_CONTENT_LENGTH	base.h	148;"	d
+HTTP_DATE	base.h	149;"	d
+HTTP_LOCATION	base.h	150;"	d
 HTTP_METHOD_CHECKIN	keyvalue.h	/^	HTTP_METHOD_CHECKIN,$/;"	e	enum:__anon157
 HTTP_METHOD_CHECKOUT	keyvalue.h	/^	HTTP_METHOD_CHECKOUT,$/;"	e	enum:__anon157
 HTTP_METHOD_CONNECT	keyvalue.h	/^	HTTP_METHOD_CONNECT$/;"	e	enum:__anon157
@@ -392,7 +392,7 @@ HTTP_METHOD_UNCHECKOUT	keyvalue.h	/^	HTTP_METHOD_UNCHECKOUT,$/;"	e	enum:__anon15
 HTTP_METHOD_UNLOCK	keyvalue.h	/^	HTTP_METHOD_UNLOCK,$/;"	e	enum:__anon157
 HTTP_METHOD_UNSET	keyvalue.h	/^	HTTP_METHOD_UNSET = -1,$/;"	e	enum:__anon157
 HTTP_METHOD_VERSION_CONTROL	keyvalue.h	/^	HTTP_METHOD_VERSION_CONTROL,$/;"	e	enum:__anon157
-HTTP_STATUS	base.h	142;"	d
+HTTP_STATUS	base.h	146;"	d
 HTTP_TRANSFER_ENCODING_CHUNKED	base.h	/^		HTTP_TRANSFER_ENCODING_IDENTITY, HTTP_TRANSFER_ENCODING_CHUNKED$/;"	e	enum:__anon25::__anon26
 HTTP_TRANSFER_ENCODING_IDENTITY	base.h	/^		HTTP_TRANSFER_ENCODING_IDENTITY, HTTP_TRANSFER_ENCODING_CHUNKED$/;"	e	enum:__anon25::__anon26
 HTTP_VERSION_1_0	keyvalue.h	/^typedef enum { HTTP_VERSION_UNSET = -1, HTTP_VERSION_1_0, HTTP_VERSION_1_1$/;"	e	enum:__anon158
@@ -484,7 +484,7 @@ MAGNET_ENV_URI_QUERY	mod_magnet.c	/^		MAGNET_ENV_URI_QUERY,$/;"	e	enum:__anon141
 MAGNET_ENV_URI_SCHEME	mod_magnet.c	/^		MAGNET_ENV_URI_SCHEME,$/;"	e	enum:__anon141::__anon142	file:
 MAGNET_RESTART_REQUEST	mod_magnet.c	25;"	d	file:
 MAP_FAILED	network_backends.h	42;"	d
-MAP_FAILED	stat_cache.c	33;"	d	file:
+MAP_FAILED	stat_cache.c	86;"	d	file:
 MAP_FAILED	sys-mmap.h	20;"	d
 MAP_FAILED	sys-mmap.h	6;"	d
 MAP_SHARED	sys-mmap.h	8;"	d
@@ -537,7 +537,7 @@ O_BINARY	base.h	41;"	d
 O_BINARY	stream.c	15;"	d	file:
 O_LARGEFILE	base.h	45;"	d
 O_LARGEFILE	log.c	31;"	d	file:
-O_LARGEFILE	stat_cache.c	37;"	d	file:
+O_LARGEFILE	stat_cache.c	90;"	d	file:
 OptArg	lemon.c	/^char *OptArg(n)$/;"	f
 OptErr	lemon.c	/^void OptErr(n)$/;"	f
 OptInit	lemon.c	/^int OptInit(a, o, err)$/;"	f
@@ -662,14 +662,14 @@ PLUGIN_FUNC_INIT	plugin.c	/^	PLUGIN_FUNC_INIT,$/;"	e	enum:__anon210	file:
 PLUGIN_FUNC_SET_DEFAULTS	plugin.c	/^	PLUGIN_FUNC_SET_DEFAULTS,$/;"	e	enum:__anon210	file:
 PLUGIN_FUNC_SIZEOF	plugin.c	/^	PLUGIN_FUNC_SIZEOF$/;"	e	enum:__anon210	file:
 PLUGIN_FUNC_UNSET	plugin.c	/^	PLUGIN_FUNC_UNSET,$/;"	e	enum:__anon210	file:
-PLUGIN_INIT	plugin.c	119;"	d	file:
+PLUGIN_INIT	plugin.c	122;"	d	file:
 PLUGIN_TO_SLOT	plugin.c	/^PLUGIN_TO_SLOT(PLUGIN_FUNC_HANDLE_URI_CLEAN, handle_uri_clean)$/;"	f
-PLUGIN_TO_SLOT	plugin.c	243;"	d	file:
-PLUGIN_TO_SLOT	plugin.c	288;"	d	file:
-PLUGIN_TO_SLOT	plugin.c	289;"	d	file:
-PLUGIN_TO_SLOT	plugin.c	325;"	d	file:
-PLUGIN_TO_SLOT	plugin.c	394;"	d	file:
-PLUGIN_TO_SLOT	plugin.c	425;"	d	file:
+PLUGIN_TO_SLOT	plugin.c	246;"	d	file:
+PLUGIN_TO_SLOT	plugin.c	291;"	d	file:
+PLUGIN_TO_SLOT	plugin.c	292;"	d	file:
+PLUGIN_TO_SLOT	plugin.c	328;"	d	file:
+PLUGIN_TO_SLOT	plugin.c	397;"	d	file:
+PLUGIN_TO_SLOT	plugin.c	428;"	d	file:
 POINTER	md5.h	36;"	d
 PRECEDENCE_MARK_1	lemon.c	/^		PRECEDENCE_MARK_1,$/;"	e	enum:pstate::e_state	file:
 PRECEDENCE_MARK_2	lemon.c	/^		PRECEDENCE_MARK_2,$/;"	e	enum:pstate::e_state	file:
@@ -767,8 +767,8 @@ SERVER_FUNC	plugin.h	7;"	d
 SET	fdevent_freebsd_kqueue.c	181;"	d	file:
 SET	fdevent_linux_rtsig.c	286;"	d	file:
 SET	fdevent_linux_sysepoll.c	141;"	d	file:
-SET	fdevent_poll.c	207;"	d	file:
-SET	fdevent_select.c	132;"	d	file:
+SET	fdevent_poll.c	233;"	d	file:
+SET	fdevent_select.c	164;"	d	file:
 SET	fdevent_solaris_devpoll.c	140;"	d	file:
 SETDEFAULTS_FUNC	mod_access.c	/^SETDEFAULTS_FUNC(mod_access_set_defaults)$/;"	f
 SETDEFAULTS_FUNC	mod_accesslog.c	/^SETDEFAULTS_FUNC(log_access_open)$/;"	f
@@ -857,11 +857,11 @@ Symbol_insert	lemon.c	/^int Symbol_insert(data, key)$/;"	f
 Symbol_new	lemon.c	/^struct symbol *Symbol_new(x)$/;"	f
 Symbolcmpp	lemon.c	/^int Symbolcmpp(struct symbol **a, struct symbol **b)$/;"	f
 TERMINAL	lemon.c	/^		TERMINAL,$/;"	e	enum:symbol::__anon198	file:
-TEXT_IPV6	server.c	523;"	d	file:
-TEXT_SSL	server.c	368;"	d	file:
-TEXT_SSL	server.c	376;"	d	file:
-TEXT_SSL	server.c	507;"	d	file:
-TEXT_SSL	server.c	522;"	d	file:
+TEXT_IPV6	server.c	563;"	d	file:
+TEXT_SSL	server.c	407;"	d	file:
+TEXT_SSL	server.c	415;"	d	file:
+TEXT_SSL	server.c	547;"	d	file:
+TEXT_SSL	server.c	562;"	d	file:
 TK_AND	mod_ssi_exprparser.h	1;"	d
 TK_APPEND	configparser.h	3;"	d
 TK_ARRAY_ASSIGN	configparser.h	11;"	d
@@ -910,7 +910,7 @@ TRIGGER_FUNC	mod_scgi.c	/^TRIGGER_FUNC(mod_scgi_handle_trigger)$/;"	f
 TRIGGER_FUNC	mod_status.c	/^TRIGGER_FUNC(mod_status_trigger)$/;"	f
 TRIGGER_FUNC	mod_trigger_b4_dl.c	/^TRIGGER_FUNC(mod_trigger_b4_dl_handle_trigger)$/;"	f
 TRIGGER_FUNC	plugin.h	17;"	d
-TRUE	settings.h	39;"	d
+TRUE	settings.h	44;"	d
 TYPE_ARRAY	array.h	/^	TYPE_ARRAY, 	\/* 数组类型 *\/$/;"	e	enum:__anon146
 TYPE_CONFIG	array.h	/^	TYPE_CONFIG 	\/* CONFIG类型 *\/$/;"	e	enum:__anon146
 TYPE_COUNT	array.h	/^	TYPE_COUNT, 	\/* COUNT类型 *\/$/;"	e	enum:__anon146
@@ -965,20 +965,20 @@ URIHANDLER_FUNC	mod_webdav.c	/^URIHANDLER_FUNC(mod_webdav_uri_handler)$/;"	f
 URIHANDLER_FUNC	plugin.h	25;"	d
 USE_AIX_SENDFILE	network_backends.h	47;"	d
 USE_BZ2LIB	mod_compress.c	29;"	d	file:
-USE_FREEBSD_KQUEUE	fdevent.h	55;"	d
+USE_FREEBSD_KQUEUE	fdevent.h	68;"	d
 USE_FREEBSD_SENDFILE	network_backends.h	20;"	d
 USE_LDAP	http_auth.h	8;"	d
-USE_LINUX_EPOLL	fdevent.h	18;"	d
+USE_LINUX_EPOLL	fdevent.h	31;"	d
 USE_LINUX_SENDFILE	network_backends.h	14;"	d
-USE_LINUX_SIGIO	fdevent.h	34;"	d
+USE_LINUX_SIGIO	fdevent.h	47;"	d
 USE_LOCKS	mod_webdav.c	27;"	d	file:
 USE_MMAP	network_backends.h	36;"	d
 USE_OPENSSL	base.h	32;"	d
-USE_POLL	fdevent.h	27;"	d
+USE_POLL	fdevent.h	40;"	d
 USE_PROPPATCH	mod_webdav.c	19;"	d	file:
-USE_SELECT	fdevent.h	43;"	d
-USE_SOLARIS_DEVPOLL	fdevent.h	50;"	d
-USE_SOLARIS_PORT	fdevent.h	60;"	d
+USE_SELECT	fdevent.h	56;"	d
+USE_SOLARIS_DEVPOLL	fdevent.h	63;"	d
+USE_SOLARIS_PORT	fdevent.h	73;"	d
 USE_SOLARIS_SENDFILEV	network_backends.h	25;"	d
 USE_WRITEV	network_backends.h	31;"	d
 USE_ZLIB	mod_compress.c	24;"	d	file:
@@ -1071,7 +1071,7 @@ __USE_GNU	fdevent_linux_rtsig.c	11;"	d	file:
 __WIN32__	lemon.c	37;"	d	file:
 __crc32cr_table_h__	crc32.h	2;"	d
 _data_config	array.h	/^struct _data_config {$/;"	s
-_fdnode	fdevent.h	/^typedef struct _fdnode {$/;"	s
+_fdnode	fdevent.h	/^typedef struct _fdnode $/;"	s
 aAction	lemon.c	/^	} *aAction,					\/* The yy_action[] table under construction *\/$/;"	m	struct:acttab	typeref:struct:acttab::__anon201	file:
 aLookahead	lemon.c	/^	*aLookahead;				\/* A single new transaction set *\/$/;"	m	struct:acttab	typeref:struct:acttab::__anon201	file:
 abs_requests	mod_status.c	/^	double abs_requests;$/;"	m	struct:__anon75	file:
@@ -1317,10 +1317,10 @@ chunkqueue_reset	chunk.c	/^void chunkqueue_reset(chunkqueue * cq)$/;"	f
 chunkqueue_set_tempdirs	chunk.c	/^int chunkqueue_set_tempdirs(chunkqueue * cq, array * tempdirs)$/;"	f
 chunkqueue_written	chunk.c	/^off_t chunkqueue_written(chunkqueue * cq)$/;"	f
 clean_cond_cache	mod_extforward.c	/^static void clean_cond_cache(server * srv, connection * con)$/;"	f	file:
-cleanup	plugin.h	/^	 handler_t(*cleanup) (server * srv, void *p_d);$/;"	m	struct:__anon79
+cleanup	plugin.h	/^	handler_t(*cleanup) (server * srv, void *p_d);$/;"	m	struct:__anon79
 close_descriptor	proc_open.c	35;"	d	file:
 close_descriptor	proc_open.c	60;"	d	file:
-close_timeout_ts	base.h	/^	time_t close_timeout_ts;$/;"	m	struct:__anon35
+close_timeout_ts	base.h	/^	time_t close_timeout_ts; 			\/\/$/;"	m	struct:__anon35
 cmd	mod_rrdtool.c	/^	buffer *cmd;$/;"	m	struct:__anon218	file:
 code	lemon.c	/^	char *code;					\/* The code executed when this rule is reduced *\/$/;"	m	struct:rule	file:
 collide	lemon.c	/^	struct action *collide;		\/* Next action with the same hash *\/$/;"	m	struct:action	typeref:struct:action::action	file:
@@ -1446,7 +1446,7 @@ config_unsupported	base.h	/^	short int config_unsupported;$/;"	m	struct:server
 config_url	mod_status.c	/^	buffer *config_url;$/;"	m	struct:__anon74	file:
 config_values_t	base.h	/^} config_values_t;$/;"	t	typeref:struct:__anon19
 config_values_type_t	base.h	/^} config_values_type_t;$/;"	t	typeref:enum:__anon17
-config_var_t	server.h	/^typedef enum { CONFIG_UNSET, CONFIG_DOCUMENT_ROOT } config_var_t;$/;"	t	typeref:enum:__anon48
+config_var_t	server.h	/^} config_var_t;$/;"	t	typeref:enum:__anon48
 confighash	lemon.c	/^PRIVATE int confighash(a)$/;"	f
 configparser	configparser.c	/^void configparser(void *yyp,	\/* The parser *\/$/;"	f
 configparserARG_FETCH	configparser.c	202;"	d	file:
@@ -1463,7 +1463,7 @@ configparser_merge_data	configparser.c	/^data_unset *configparser_merge_data(dat
 configparser_pop	configparser.c	/^static data_config *configparser_pop(config_t * ctx)$/;"	f	file:
 configparser_push	configparser.c	/^static void configparser_push(config_t * ctx, data_config * dc, int isnew)$/;"	f	file:
 configs_stack	configfile.h	/^	array *configs_stack;		\/* to parse nested block *\/$/;"	m	struct:__anon194
-conn	fdevent.h	/^	void *conn;				 \/**< a reference the corresponding data-structure *\/$/;"	m	struct:__anon5
+conn	fdevent.h	/^	void *conn;				\/**< a reference the corresponding data-structure *\/$/;"	m	struct:__anon5
 connection	base.h	/^} connection;$/;"	t	typeref:struct:__anon35
 connection_accept	connections.c	/^connection *connection_accept(server * srv, server_socket * srv_socket)$/;"	f
 connection_close	connections.c	/^int connection_close(server * srv, connection * con)$/;"	f
@@ -1479,17 +1479,17 @@ connection_handle_write_prepare	connections.c	/^static int connection_handle_wri
 connection_init	connections.c	/^connection *connection_init(server * srv)$/;"	f
 connection_name	mod_fastcgi.c	/^	buffer *connection_name;	\/* either tcp:<host>:<port> or$/;"	m	struct:fcgi_proc	file:
 connection_reset	connections.c	/^int connection_reset(server * srv, connection * con)$/;"	f
-connection_reset	plugin.h	/^	 handler_t(*connection_reset) (server * srv, connection * con, void *p_d);	\/* *\/$/;"	m	struct:__anon79
+connection_reset	plugin.h	/^	handler_t(*connection_reset) (server * srv, connection * con, void *p_d);	\/* *\/$/;"	m	struct:__anon79
 connection_result_t	mod_fastcgi.c	/^} connection_result_t;$/;"	t	typeref:enum:__anon192	file:
 connection_set_state	connections-glue.c	/^connection_set_state(server * srv, connection * con, connection_state_t state)$/;"	f
-connection_start	base.h	/^	time_t connection_start;$/;"	m	struct:__anon35
+connection_start	base.h	/^	time_t connection_start; 			\/\/连接建立开始的时间$/;"	m	struct:__anon35
 connection_state_machine	connections.c	/^int connection_state_machine(server * srv, connection * con)$/;"	f
 connection_state_t	base.h	/^} connection_state_t;$/;"	t	typeref:enum:__anon32
 connection_type	base.h	/^typedef enum { DIRECT, EXTERNAL } connection_type;$/;"	t	typeref:enum:__anon20
 connections	base.h	/^} connections;$/;"	t	typeref:struct:__anon36
 connections_free	connections.c	/^void connections_free(server * srv)$/;"	f
 connections_get_new_connection	connections.c	/^static connection *connections_get_new_connection(server * srv)$/;"	f	file:
-conns	base.h	/^	connections *conns;$/;"	m	struct:server
+conns	base.h	/^	connections *conns; 			\/\/连接数组$/;"	m	struct:server
 contentLengthB0	fastcgi.h	/^	unsigned char contentLengthB0;$/;"	m	struct:__anon116
 contentLengthB1	fastcgi.h	/^	unsigned char contentLengthB1;$/;"	m	struct:__anon116
 content_charset	mod_dirlisting.c	/^	buffer *content_charset;$/;"	m	struct:__anon85	file:
@@ -1513,9 +1513,9 @@ count	lemon.c	/^	int count;					\/* Number of currently slots filled *\/$/;"	m	s
 count	md5.h	/^	UINT4 count[2];				\/* number of bits, modulo 2^64 (lsb first) *\/$/;"	m	struct:__anon135
 crc_c	crc32.c	/^static const unsigned int crc_c[256] = {$/;"	v	file:
 ctrl	stat_cache.c	/^static fake_keys ctrl;$/;"	v	file:
-ctx	fdevent.h	/^	void *ctx;$/;"	m	struct:_fdnode
-cur_fds	base.h	/^	int cur_fds;				\/* currently used fds *\/$/;"	m	struct:server
-cur_ts	base.h	/^	time_t cur_ts;$/;"	m	struct:server
+ctx	fdevent.h	/^	void *ctx;   			 \/\/文件描述符的context$/;"	m	struct:_fdnode
+cur_fds	base.h	/^	int cur_fds;				\/* currently used fds 当前所使用的文件描述符*\/$/;"	m	struct:server
+cur_ts	base.h	/^	time_t cur_ts; 					\/\/当前时间戳$/;"	m	struct:server
 current	configfile.h	/^	data_config *current;		\/* current started with { *\/$/;"	m	struct:__anon194
 current	lemon.c	/^static struct config *current = 0;	\/* Top of list of configurations *\/$/;"	v	typeref:struct:config	file:
 currentend	lemon.c	/^static struct config **currentend = 0;	\/* Last on list of configs *\/$/;"	v	typeref:struct:config	file:
@@ -1796,11 +1796,11 @@ fcgi_spawn_connection	mod_fastcgi.c	/^fcgi_spawn_connection(server * srv,$/;"	f	
 fcgi_spawn_connection	spawn-fcgi.c	/^fcgi_spawn_connection(char *appPath, char **appArgv, char *addr,$/;"	f
 fcgi_write_request	mod_fastcgi.c	/^static handler_t fcgi_write_request(server * srv, handler_ctx * hctx)$/;"	f	file:
 fcntl_set	fdevent.h	/^	int (*fcntl_set) (struct fdevents * ev, int fd);$/;"	m	struct:fdevents
-fd	base.h	/^	int fd;						\/* the FD for this connection *\/$/;"	m	struct:__anon35
+fd	base.h	/^	int fd;						\/* the FD for this connection 连接的描述符*\/$/;"	m	struct:__anon35
 fd	base.h	/^	int fd;$/;"	m	struct:__anon44
 fd	chunk.h	/^		int fd;$/;"	m	struct:chunk::__anon9
-fd	fdevent.h	/^	int fd;$/;"	m	struct:__anon5
-fd	fdevent.h	/^	int fd;$/;"	m	struct:_fdnode
+fd	fdevent.h	/^	int fd; 				 \/\/文件描述符$/;"	m	struct:_fdnode
+fd	fdevent.h	/^	int fd; 				\/\/文件描述符$/;"	m	struct:__anon5
 fd	mod_cgi.c	/^	int fd;$/;"	m	struct:__anon114	file:
 fd	mod_fastcgi.c	/^	int fd;						\/* fd to the fastcgi process *\/$/;"	m	struct:__anon191	file:
 fd	mod_proxy.c	/^	int fd;						\/* fd to the proxy process *\/$/;"	m	struct:__anon105	file:
@@ -1809,9 +1809,9 @@ fd	proc_open.h	/^	int fd;$/;"	m	struct:__anon212
 fd_conn	fdevent.h	/^} fd_conn;$/;"	t	typeref:struct:__anon5
 fd_conn_buffer	fdevent.h	/^} fd_conn_buffer;$/;"	t	typeref:struct:__anon6
 fd_event_t	fdevent.h	/^} fd_event_t;$/;"	t	typeref:enum:__anon3
-fd_type	fdevent.h	/^	fd_event_t fd_type;			 \/**< type of the fd *\/$/;"	m	struct:__anon5
-fdarray	fdevent.h	/^	fdnode **fdarray;$/;"	m	struct:fdevents
-fde_ndx	base.h	/^	int fde_ndx;				\/* index for the fdevent-handler *\/$/;"	m	struct:__anon35
+fd_type	fdevent.h	/^	fd_event_t fd_type;		\/* 文件描述符的类型 *\/$/;"	m	struct:__anon5
+fdarray	fdevent.h	/^	fdnode **fdarray; 	\/\/文件描述符数组$/;"	m	struct:fdevents
+fde_ndx	base.h	/^	int fde_ndx;				\/* index for the fdevent-handler  *\/$/;"	m	struct:__anon35
 fde_ndx	base.h	/^	int fde_ndx;$/;"	m	struct:__anon44
 fde_ndx	mod_cgi.c	/^	int fde_ndx;				\/* index into the fd-event buffer *\/$/;"	m	struct:__anon114	file:
 fde_ndx	mod_fastcgi.c	/^	int fde_ndx;				\/* index into the fd-event buffer *\/$/;"	m	struct:__anon191	file:
@@ -1856,7 +1856,7 @@ fdevent_linux_sysepoll_free	fdevent_linux_sysepoll.c	/^static void fdevent_linux
 fdevent_linux_sysepoll_init	fdevent_linux_sysepoll.c	/^int fdevent_linux_sysepoll_init(fdevents * ev)$/;"	f
 fdevent_linux_sysepoll_poll	fdevent_linux_sysepoll.c	/^static int fdevent_linux_sysepoll_poll(fdevents * ev, int timeout_ms)$/;"	f	file:
 fdevent_poll	fdevent.c	/^int fdevent_poll(fdevents * ev, int timeout_ms)$/;"	f
-fdevent_poll_event_add	fdevent_poll.c	/^fdevent_poll_event_add(fdevents * ev, int fde_ndx, int fd, int events)$/;"	f	file:
+fdevent_poll_event_add	fdevent_poll.c	/^static int fdevent_poll_event_add(fdevents * ev, int fde_ndx, int fd, int events)$/;"	f	file:
 fdevent_poll_event_del	fdevent_poll.c	/^static int fdevent_poll_event_del(fdevents * ev, int fde_ndx, int fd)$/;"	f	file:
 fdevent_poll_event_get_fd	fdevent_poll.c	/^static int fdevent_poll_event_get_fd(fdevents * ev, size_t ndx)$/;"	f	file:
 fdevent_poll_event_get_revent	fdevent_poll.c	/^static int fdevent_poll_event_get_revent(fdevents * ev, size_t ndx)$/;"	f	file:
@@ -1866,7 +1866,7 @@ fdevent_poll_init	fdevent_poll.c	/^int fdevent_poll_init(fdevents * ev)$/;"	f
 fdevent_poll_poll	fdevent_poll.c	/^static int fdevent_poll_poll(fdevents * ev, int timeout_ms)$/;"	f	file:
 fdevent_register	fdevent.c	/^int fdevent_register(fdevents * ev, int fd, fdevent_handler handler, void *ctx)$/;"	f
 fdevent_reset	fdevent.c	/^int fdevent_reset(fdevents * ev)$/;"	f
-fdevent_select_event_add	fdevent_select.c	/^fdevent_select_event_add(fdevents * ev, int fde_ndx, int fd, int events)$/;"	f	file:
+fdevent_select_event_add	fdevent_select.c	/^static int fdevent_select_event_add(fdevents * ev, int fde_ndx, int fd, int events)$/;"	f	file:
 fdevent_select_event_del	fdevent_select.c	/^static int fdevent_select_event_del(fdevents * ev, int fde_ndx, int fd)$/;"	f	file:
 fdevent_select_event_get_fd	fdevent_select.c	/^static int fdevent_select_event_get_fd(fdevents * ev, size_t ndx)$/;"	f	file:
 fdevent_select_event_get_revent	fdevent_select.c	/^static int fdevent_select_event_get_revent(fdevents * ev, size_t ndx)$/;"	f	file:
@@ -1884,12 +1884,12 @@ fdevent_solaris_devpoll_init	fdevent_solaris_devpoll.c	/^int fdevent_solaris_dev
 fdevent_solaris_devpoll_poll	fdevent_solaris_devpoll.c	/^static int fdevent_solaris_devpoll_poll(fdevents * ev, int timeout_ms)$/;"	f	file:
 fdevent_solaris_devpoll_reset	fdevent_solaris_devpoll.c	/^int fdevent_solaris_devpoll_reset(fdevents * ev)$/;"	f
 fdevent_unregister	fdevent.c	/^int fdevent_unregister(fdevents * ev, int fd)$/;"	f
-fdevents	fdevent.h	/^typedef struct fdevents {$/;"	s
+fdevents	fdevent.h	/^typedef struct fdevents $/;"	s
 fdevents	fdevent.h	/^} fdevents;$/;"	t	typeref:struct:fdevents
 fdnode	fdevent.h	/^} fdnode;$/;"	t	typeref:struct:_fdnode
 fdnode_free	fdevent.c	/^void fdnode_free(fdnode * fdn)$/;"	f
 fdnode_init	fdevent.c	/^fdnode *fdnode_init()$/;"	f
-fdwaitqueue	base.h	/^	connections *fdwaitqueue;$/;"	m	struct:server
+fdwaitqueue	base.h	/^	connections *fdwaitqueue; 		\/\/描述符等待队列$/;"	m	struct:server
 fdwaitqueue_append	joblist.c	/^int fdwaitqueue_append(server * srv, connection * con)$/;"	f
 fdwaitqueue_free	joblist.c	/^void fdwaitqueue_free(server * srv, connections * fdwaitqueue)$/;"	f
 fdwaitqueue_unshift	joblist.c	/^connection *fdwaitqueue_unshift(server * srv, connections * fdwaitqueue)$/;"	f
@@ -1921,7 +1921,7 @@ format	mod_accesslog.c	/^	buffer *format;$/;"	m	struct:__anon69	file:
 format_field	mod_accesslog.c	/^} format_field;$/;"	t	typeref:struct:__anon66	file:
 format_fields	mod_accesslog.c	/^} format_fields;$/;"	t	typeref:struct:__anon68	file:
 format_mapping	mod_accesslog.c	/^} format_mapping;$/;"	t	typeref:struct:__anon64	file:
-forwarded_sig_hup	server.c	/^static volatile sig_atomic_t forwarded_sig_hup = 0;$/;"	v	file:
+forwarded_sig_hup	server.c	/^static volatile sig_atomic_t forwarded_sig_hup = 0; \/\/用于标记是否发送SIGHUP信号。$/;"	v	file:
 forwarder	mod_extforward.c	/^	array *forwarder;$/;"	m	struct:__anon214	file:
 fplp	lemon.c	/^	struct plink *fplp;			\/* Follow-set forward propagation links *\/$/;"	m	struct:config	typeref:struct:config::plink	file:
 free	fdevent.h	/^	void (*free) (struct fdevents * ev);$/;"	m	struct:fdevents
@@ -1954,22 +1954,22 @@ gp	lemon.c	/^	struct lemon *gp;			\/* Global state vector *\/$/;"	m	struct:pstat
 graceful_restart	lighttpd-angel.c	/^static volatile sig_atomic_t graceful_restart = 0;$/;"	v	file:
 graceful_shutdown	server.c	/^static volatile sig_atomic_t graceful_shutdown = 0;$/;"	v	file:
 groupname	base.h	/^	buffer *groupname;$/;"	m	struct:__anon42
-handle_connection_close	plugin.h	/^	 handler_t(*handle_connection_close) (server * srv, connection * con, void *p_d);	\/* at $/;"	m	struct:__anon79
-handle_docroot	plugin.h	/^	 handler_t(*handle_docroot) (server * srv, connection * con, void *p_d);	\/* getting $/;"	m	struct:__anon79
-handle_joblist	plugin.h	/^	 handler_t(*handle_joblist) (server * srv, connection * con, void *p_d);	\/* after $/;"	m	struct:__anon79
-handle_physical	plugin.h	/^	 handler_t(*handle_physical) (server * srv, connection * con, void *p_d);	\/* mapping $/;"	m	struct:__anon79
-handle_request_done	plugin.h	/^	 handler_t(*handle_request_done) (server * srv, connection * con, void *p_d);	\/* at $/;"	m	struct:__anon79
+handle_connection_close	plugin.h	/^	handler_t(*handle_connection_close) (server * srv, connection * con, void *p_d);	\/* at the end of a connection *\/$/;"	m	struct:__anon79
+handle_docroot	plugin.h	/^	handler_t(*handle_docroot) (server * srv, connection * con, void *p_d);	\/* getting the document-root *\/$/;"	m	struct:__anon79
+handle_joblist	plugin.h	/^	handler_t(*handle_joblist) (server * srv, connection * con, void *p_d);	\/* after all events are handled *\/$/;"	m	struct:__anon79
+handle_physical	plugin.h	/^	handler_t(*handle_physical) (server * srv, connection * con, void *p_d);	\/* mapping url to physical path *\/$/;"	m	struct:__anon79
+handle_request_done	plugin.h	/^	handler_t(*handle_request_done) (server * srv, connection * con, void *p_d);	\/* at the end of a request *\/$/;"	m	struct:__anon79
 handle_sig_alarm	server.c	/^static volatile sig_atomic_t handle_sig_alarm = 1;$/;"	v	file:
 handle_sig_hup	server.c	/^static volatile sig_atomic_t handle_sig_hup = 0;$/;"	v	file:
-handle_sighup	plugin.h	/^	 handler_t(*handle_sighup) (server * srv, void *p_d);	\/* at $/;"	m	struct:__anon79
-handle_subrequest	plugin.h	/^	 handler_t(*handle_subrequest) (server * srv, connection * con, void *p_d);	\/* *\/$/;"	m	struct:__anon79
-handle_subrequest_start	plugin.h	/^	 handler_t(*handle_subrequest_start) (server * srv, connection * con,$/;"	m	struct:__anon79
-handle_trigger	plugin.h	/^	 handler_t(*handle_trigger) (server * srv, void *p_d);	\/* once $/;"	m	struct:__anon79
-handle_uri_clean	plugin.h	/^	 handler_t(*handle_uri_clean) (server * srv, connection * con, void *p_d);	\/* after $/;"	m	struct:__anon79
-handle_uri_raw	plugin.h	/^	 handler_t(*handle_uri_raw) (server * srv, connection * con, void *p_d);	\/* after $/;"	m	struct:__anon79
+handle_sighup	plugin.h	/^	handler_t(*handle_sighup) (server * srv, void *p_d);	\/* at a signup *\/$/;"	m	struct:__anon79
+handle_subrequest	plugin.h	/^	handler_t(*handle_subrequest) (server * srv, connection * con, void *p_d);	\/* *\/$/;"	m	struct:__anon79
+handle_subrequest_start	plugin.h	/^	handler_t(*handle_subrequest_start) (server * srv, connection * con, void *p_d);$/;"	m	struct:__anon79
+handle_trigger	plugin.h	/^	handler_t(*handle_trigger) (server * srv, void *p_d);	\/* once a second *\/$/;"	m	struct:__anon79
+handle_uri_clean	plugin.h	/^	handler_t(*handle_uri_clean) (server * srv, connection * con, void *p_d);\/* after uri is set *\/$/;"	m	struct:__anon79
+handle_uri_raw	plugin.h	/^	handler_t(*handle_uri_raw) (server * srv, connection * con, void *p_d); \/* after uri_raw is set *\/$/;"	m	struct:__anon79
 handled	mod_setenv.c	/^	int handled;				\/* make sure that we only apply the headers$/;"	m	struct:__anon71	file:
 handleflags	lemon.c	/^static int handleflags(i, err)$/;"	f	file:
-handler	fdevent.h	/^	fdevent_handler handler;$/;"	m	struct:_fdnode
+handler	fdevent.h	/^	fdevent_handler handler; \/\/处理函数指针$/;"	m	struct:_fdnode
 handler_ctx	mod_cgi.c	/^} handler_ctx;$/;"	t	typeref:struct:__anon114	file:
 handler_ctx	mod_extforward.c	/^} handler_ctx;$/;"	t	typeref:struct:__anon216	file:
 handler_ctx	mod_fastcgi.c	/^} handler_ctx;$/;"	t	typeref:struct:__anon191	file:
@@ -2130,7 +2130,7 @@ is_symlink	base.h	/^	char is_symlink; 	\/\/是否是连接文件$/;"	m	struct:__
 is_temp	chunk.h	/^		int is_temp;			\/* file is temporary and will be deleted if $/;"	m	struct:chunk::__anon9
 is_weakref	array.h	/^	int is_weakref;				\/* data is weakref, don't bother the data *\/$/;"	m	struct:__anon147
 is_writable	base.h	/^	int is_writable;$/;"	m	struct:__anon35
-joblist	base.h	/^	connections *joblist;$/;"	m	struct:server
+joblist	base.h	/^	connections *joblist; 			\/\/作业列表$/;"	m	struct:server
 joblist_append	joblist.c	/^int joblist_append(server * srv, connection * con)$/;"	f
 joblist_free	joblist.c	/^void joblist_free(server * srv, connections * joblist)$/;"	f
 kbytes_per_second	base.h	/^	unsigned short kbytes_per_second;	\/* connection kb\/s limit *\/$/;"	m	struct:__anon31
@@ -2170,8 +2170,8 @@ lambda	lemon.c	/^	Boolean lambda;				\/* True if NT and can generate an empty st
 last	chunk.h	/^	chunk *last;$/;"	m	struct:__anon11
 last_generated_accesslog_ts	mod_accesslog.c	/^	time_t last_generated_accesslog_ts;$/;"	m	struct:__anon69	file:
 last_generated_accesslog_ts_ptr	mod_accesslog.c	/^	time_t *last_generated_accesslog_ts_ptr;$/;"	m	struct:__anon69	file:
-last_generated_date_ts	base.h	/^	time_t last_generated_date_ts;$/;"	m	struct:server
-last_generated_debug_ts	base.h	/^	time_t last_generated_debug_ts;$/;"	m	struct:server
+last_generated_date_ts	base.h	/^	time_t last_generated_date_ts; 	\/\/前一个日期的时间戳$/;"	m	struct:server
+last_generated_debug_ts	base.h	/^	time_t last_generated_debug_ts; \/\/前一个调试时间戳$/;"	m	struct:server
 last_not_in_array	mod_extforward.c	/^static const char *last_not_in_array(array * a, plugin_data * p)$/;"	f	file:
 last_sighup_info	lighttpd-angel.c	/^static siginfo_t last_sighup_info;$/;"	v	file:
 last_sighup_info	server.c	/^static volatile siginfo_t last_sighup_info;$/;"	v	file:
@@ -2222,7 +2222,7 @@ log_condition_handling	base.h	/^	unsigned short log_condition_handling;$/;"	m	st
 log_error_close	log.c	/^int log_error_close(server * srv)$/;"	f
 log_error_cycle	log.c	/^int log_error_cycle(server * srv)$/;"	f
 log_error_open	log.c	/^int log_error_open(server * srv)$/;"	f
-log_error_write	log.c	/^log_error_write(server * srv, const char *filename, unsigned int line,$/;"	f
+log_error_write	log.c	/^int log_error_write(server * srv, const char *filename, unsigned int line,$/;"	f
 log_file_not_found	base.h	/^	unsigned short log_file_not_found;$/;"	m	struct:__anon31
 log_request_handling	base.h	/^	unsigned short log_request_handling;$/;"	m	struct:__anon31
 log_request_header	base.h	/^	unsigned short log_request_header;$/;"	m	struct:__anon31
@@ -2234,7 +2234,7 @@ log_xml	mod_webdav.c	/^	unsigned short log_xml;$/;"	m	struct:__anon51	file:
 lookahead	lemon.c	/^		int lookahead;			\/* Value of the lookahead token *\/$/;"	m	struct:acttab::__anon201	file:
 loops	mod_rewrite.c	/^	int loops;$/;"	m	struct:__anon126	file:
 loops_per_request	base.h	/^	size_t loops_per_request;	\/* to catch endless loops in a single$/;"	m	struct:__anon35
-lstat	stat_cache.c	41;"	d	file:
+lstat	stat_cache.c	94;"	d	file:
 lua_to_c_get_string	mod_cml_lua.c	/^static int lua_to_c_get_string(lua_State * L, const char *varname, buffer * b)$/;"	f	file:
 lua_to_c_is_table	mod_cml_lua.c	/^static int lua_to_c_is_table(lua_State * L, const char *varname)$/;"	f	file:
 magnet_atpanic	mod_magnet.c	/^static int magnet_atpanic(lua_State * L)$/;"	f	file:
@@ -2266,10 +2266,10 @@ match_buf	mod_redirect.c	/^	buffer *match_buf;$/;"	m	struct:__anon99	file:
 match_buf	mod_rewrite.c	/^	buffer *match_buf;$/;"	m	struct:__anon128	file:
 match_buf	mod_skeleton.c	/^	buffer *match_buf;$/;"	m	struct:__anon13	file:
 matches	base.h	/^	int matches[3 * 10];$/;"	m	struct:__anon34
-max_conns	base.h	/^	size_t max_conns;$/;"	m	struct:server
+max_conns	base.h	/^	size_t max_conns; 			\/\/允许的最大连接数$/;"	m	struct:server
 max_conns	base.h	/^	unsigned short max_conns;$/;"	m	struct:__anon42
 max_conns	mod_evasive.c	/^	unsigned short max_conns;$/;"	m	struct:__anon58	file:
-max_fds	base.h	/^	int max_fds;				\/* max possible fds *\/$/;"	m	struct:server
+max_fds	base.h	/^	int max_fds;				\/* max possible fds 可以使用的最大文件描述符*\/$/;"	m	struct:server
 max_fds	base.h	/^	unsigned short max_fds;$/;"	m	struct:__anon42
 max_id	mod_fastcgi.c	/^	size_t max_id;				\/* corresponds most of the time to num_procs.$/;"	m	struct:__anon183	file:
 max_id	mod_scgi.c	/^	size_t max_id;				\/* corresponds most of the time to num_procs.$/;"	m	struct:__anon171	file:
@@ -2286,7 +2286,7 @@ max_requests_per_proc	mod_fastcgi.c	/^	size_t max_requests_per_proc;$/;"	m	struc
 max_requests_per_proc	mod_scgi.c	/^	size_t max_requests_per_proc;$/;"	m	struct:__anon171	file:
 max_worker	base.h	/^	unsigned short max_worker;$/;"	m	struct:__anon42
 max_write_idle	base.h	/^	unsigned short max_write_idle;$/;"	m	struct:__anon31
-maxfds	fdevent.h	/^	size_t maxfds;$/;"	m	struct:fdevents
+maxfds	fdevent.h	/^	size_t maxfds; 		\/\/最大的文件描述符数$/;"	m	struct:fdevents
 mc	mod_cml.h	/^	struct memcache *mc;$/;"	m	struct:__anon60	typeref:struct:__anon60::memcache
 mc	mod_trigger_b4_dl.c	/^	struct memcache *mc;$/;"	m	struct:__anon62	typeref:struct:__anon62::memcache	file:
 mc_hosts	mod_cml.h	/^	array *mc_hosts;$/;"	m	struct:__anon60
@@ -2446,16 +2446,16 @@ nbits	bitset.h	/^	size_t nbits;$/;"	m	struct:__anon57
 nconflict	lemon.c	/^	int nconflict;				\/* Number of parsing conflicts *\/$/;"	m	struct:lemon	file:
 ndx	base.h	/^	int ndx;					\/* reverse mapping to server->connection[ndx] *\/$/;"	m	struct:__anon35
 network_backend	base.h	/^	buffer *network_backend;$/;"	m	struct:__anon42
-network_backend_read	base.h	/^	int (*network_backend_read) (struct server * srv, connection * con,$/;"	m	struct:server
+network_backend_read	base.h	/^	int (*network_backend_read) (struct server * srv, connection * con, int fd, chunkqueue * cq);$/;"	m	struct:server
 network_backend_t	network.c	/^} network_backend_t;$/;"	t	typeref:enum:__anon179	file:
-network_backend_write	base.h	/^	int (*network_backend_write) (struct server * srv,$/;"	m	struct:server
+network_backend_write	base.h	/^	int (*network_backend_write) (struct server * srv, connection * con, int fd, chunkqueue * cq);$/;"	m	struct:server
 network_close	network.c	/^int network_close(server * srv)$/;"	f
 network_init	network.c	/^int network_init(server * srv)$/;"	f
 network_register_fdevents	network.c	/^int network_register_fdevents(server * srv)$/;"	f
 network_server_handle_fdevent	network.c	/^handler_t network_server_handle_fdevent(void *s, void *context, int revents)$/;"	f
 network_server_init	network.c	/^int network_server_init(server * srv, buffer * host_token, specific_config * s)$/;"	f
-network_ssl_backend_read	base.h	/^	int (*network_ssl_backend_read) (struct server * srv,$/;"	m	struct:server
-network_ssl_backend_write	base.h	/^	int (*network_ssl_backend_write) (struct server * srv,$/;"	m	struct:server
+network_ssl_backend_read	base.h	/^	int (*network_ssl_backend_read) (struct server * srv, connection * con, SSL * ssl, chunkqueue * cq);$/;"	m	struct:server
+network_ssl_backend_write	base.h	/^	int (*network_ssl_backend_write) (struct server * srv, connection * con, SSL * ssl, chunkqueue * cq);$/;"	m	struct:server
 network_write_chunkqueue	network.c	/^int network_write_chunkqueue(server * srv, connection * con, chunkqueue * cq)$/;"	f
 network_write_chunkqueue_freebsdsendfile	network_freebsd_sendfile.c	/^network_write_chunkqueue_freebsdsendfile(server * srv, connection * con,$/;"	f
 network_write_chunkqueue_linuxsendfile	network_linux_sendfile.c	/^network_write_chunkqueue_linuxsendfile(server * srv, connection * con,$/;"	f
@@ -2466,7 +2466,7 @@ network_write_chunkqueue_writev	network_writev.c	/^network_write_chunkqueue_writ
 newconfig	lemon.c	/^PRIVATE struct config *newconfig()$/;"	f
 next	array.h	/^	data_config *next;$/;"	m	struct:_data_config
 next	chunk.h	/^	struct chunk *next;$/;"	m	struct:chunk	typeref:struct:chunk::chunk
-next	fdevent.h	/^	struct _fdnode *prev, *next;$/;"	m	struct:_fdnode	typeref:struct:_fdnode::
+next	fdevent.h	/^	struct _fdnode *prev, *next; \/\/指针$/;"	m	struct:_fdnode	typeref:struct:_fdnode::
 next	lemon.c	/^	struct action *next;		\/* Next action for this state *\/$/;"	m	struct:action	typeref:struct:action::action	file:
 next	lemon.c	/^	struct config *next;		\/* Next configuration in the state *\/$/;"	m	struct:config	typeref:struct:config::config	file:
 next	lemon.c	/^	struct plink *next;			\/* The next propagate link *\/$/;"	m	struct:plink	typeref:struct:plink::plink	file:
@@ -2649,7 +2649,7 @@ plugins_free	plugin.c	/^void plugins_free(server * srv)$/;"	f
 plugins_load	plugin.c	/^int plugins_load(server * srv)$/;"	f
 plugins_register	plugin.c	/^static int plugins_register(server * srv, plugin * p)$/;"	f	file:
 poll	fdevent.h	/^	int (*poll) (struct fdevents * ev, int timeout_ms);$/;"	m	struct:fdevents
-pollfds	fdevent.h	/^	struct pollfd *pollfds;$/;"	m	struct:fdevents	typeref:struct:fdevents::pollfd
+pollfds	fdevent.h	/^	struct pollfd *pollfds; 	\/\/描述符及其状态的结构体数组$/;"	m	struct:fdevents	typeref:struct:fdevents::pollfd
 port	array.h	/^	unsigned short port;$/;"	m	struct:__anon154
 port	base.h	/^	unsigned short port;$/;"	m	struct:__anon22
 port	base.h	/^	unsigned short port;$/;"	m	struct:__anon42
@@ -2664,7 +2664,7 @@ prec	lemon.c	/^	int prec;					\/* Precedence if defined (-1 otherwise) *\/$/;"	m
 preccounter	lemon.c	/^	int preccounter;			\/* Assign this precedence to decl arguments $/;"	m	struct:pstate	file:
 precsym	lemon.c	/^	struct symbol *precsym;		\/* Precedence symbol for this rule *\/$/;"	m	struct:rule	typeref:struct:rule::symbol	file:
 prev	array.h	/^	data_config *prev;$/;"	m	struct:_data_config
-prev	fdevent.h	/^	struct _fdnode *prev, *next;$/;"	m	struct:_fdnode	typeref:struct:_fdnode::_fdnode
+prev	fdevent.h	/^	struct _fdnode *prev, *next; \/\/指针$/;"	m	struct:_fdnode	typeref:struct:_fdnode::_fdnode
 prev	mod_fastcgi.c	/^	struct fcgi_proc *prev, *next;	\/* see first *\/$/;"	m	struct:fcgi_proc	typeref:struct:fcgi_proc::fcgi_proc	file:
 prev	mod_scgi.c	/^	struct scgi_proc *prev, *next;	\/* see first *\/$/;"	m	struct:scgi_proc	typeref:struct:scgi_proc::scgi_proc	file:
 prevrule	lemon.c	/^	struct rule *prevrule;		\/* Previous rule parsed *\/$/;"	m	struct:pstate	typeref:struct:pstate::rule	file:
@@ -2706,7 +2706,7 @@ ptr	buffer.h	/^	buffer **ptr; 	\/\/buffer指针数组$/;"	m	struct:__anon89
 ptr	buffer.h	/^	char *ptr; 		\/\/指向存储空间$/;"	m	struct:__anon88
 ptr	buffer.h	/^	char *ptr;$/;"	m	struct:__anon90
 ptr	fdevent.h	/^	fd_conn *ptr;$/;"	m	struct:__anon6
-ptr	fdevent.h	/^	int *ptr;$/;"	m	struct:__anon7
+ptr	fdevent.h	/^	int *ptr; 		\/\/位置索引数组。$/;"	m	struct:__anon7
 ptr	http_auth.c	/^	char **ptr;$/;"	m	struct:__anon219	file:
 ptr	mod_accesslog.c	/^	format_field **ptr;$/;"	m	struct:__anon68	file:
 ptr	mod_cgi.c	/^	char **ptr;$/;"	m	struct:__anon110	file:
@@ -2728,7 +2728,7 @@ rb	mod_fastcgi.c	/^	chunkqueue *rb;				\/* read queue *\/$/;"	m	struct:__anon191
 rb	mod_scgi.c	/^	read_buffer *rb;$/;"	m	struct:__anon178	file:
 read_buffer	buffer.h	/^} read_buffer;$/;"	t	typeref:struct:__anon90
 read_fd	mod_rrdtool.c	/^	int read_fd, write_fd;$/;"	m	struct:__anon218	file:
-read_idle_ts	base.h	/^	time_t read_idle_ts;$/;"	m	struct:__anon35
+read_idle_ts	base.h	/^	time_t read_idle_ts; 				\/\/读操作的发呆时间$/;"	m	struct:__anon35
 read_queue	base.h	/^	chunkqueue *read_queue;		\/* a small queue for low-level read ( HTTP$/;"	m	struct:__anon35
 readme	mod_cml_lua.c	/^} readme;$/;"	t	typeref:struct:__anon211	file:
 realm	keyvalue.h	/^	char *realm;$/;"	m	struct:__anon163
@@ -2761,7 +2761,7 @@ request_id	mod_fastcgi.c	/^	size_t request_id;$/;"	m	struct:__anon191	file:
 request_id	mod_fastcgi.c	/^	size_t request_id;$/;"	m	struct:__anon193	file:
 request_id	mod_scgi.c	/^	size_t request_id;$/;"	m	struct:__anon178	file:
 request_line	base.h	/^	buffer *request_line;$/;"	m	struct:__anon24
-request_start	base.h	/^	time_t request_start;$/;"	m	struct:__anon35
+request_start	base.h	/^	time_t request_start;  				\/\/请求开始的时间$/;"	m	struct:__anon35
 request_uri	base.h	/^} request_uri;$/;"	t	typeref:struct:__anon27
 request_uri_is_valid_char	request.c	/^int request_uri_is_valid_char(unsigned char c)$/;"	f
 requests	mod_fastcgi.c	/^	size_t requests;			\/* see max_requests *\/$/;"	m	struct:fcgi_proc	file:
@@ -2877,15 +2877,15 @@ script_cache_init	mod_magnet_cache.c	/^script_cache *script_cache_init()$/;"	f
 script_free	mod_magnet_cache.c	/^void script_free(script * sc)$/;"	f
 script_init	mod_magnet_cache.c	/^script *script_init()$/;"	f
 secret	mod_secure_download.c	/^	buffer *secret;$/;"	m	struct:__anon15	file:
-select_error	fdevent.h	/^	fd_set select_error;$/;"	m	struct:fdevents
-select_max_fd	fdevent.h	/^	int select_max_fd;$/;"	m	struct:fdevents
-select_read	fdevent.h	/^	fd_set select_read;$/;"	m	struct:fdevents
+select_error	fdevent.h	/^	fd_set select_error; 		\/\/处于异常条件，对应FDEVENT_ERR$/;"	m	struct:fdevents
+select_max_fd	fdevent.h	/^	int select_max_fd; 			\/\/最大的文件描述符数。用于select函数的第一个参数。$/;"	m	struct:fdevents
+select_read	fdevent.h	/^	fd_set select_read; 		\/\/可读，对应FDEVENT_IN$/;"	m	struct:fdevents
 select_set_error	fdevent.h	/^	fd_set select_set_error;$/;"	m	struct:fdevents
 select_set_read	fdevent.h	/^	fd_set select_set_read;$/;"	m	struct:fdevents
 select_set_write	fdevent.h	/^	fd_set select_set_write;$/;"	m	struct:fdevents
-select_write	fdevent.h	/^	fd_set select_write;$/;"	m	struct:fdevents
+select_write	fdevent.h	/^	fd_set select_write; 		\/\/可写，对应FDEVENT_OUT$/;"	m	struct:fdevents
 send_content_body	mod_fastcgi.c	/^	int send_content_body;$/;"	m	struct:__anon191	file:
-server	base.h	/^typedef struct server {$/;"	s
+server	base.h	/^typedef struct server $/;"	s
 server	base.h	/^} server;$/;"	t	typeref:struct:server
 server_config	base.h	/^} server_config;$/;"	t	typeref:struct:__anon42
 server_free	server.c	/^static void server_free(server * srv)$/;"	f	file:
@@ -2897,7 +2897,7 @@ server_root	mod_simple_vhost.c	/^	buffer *server_root;$/;"	m	struct:__anon49	fil
 server_socket	base.h	/^} server_socket;$/;"	t	typeref:struct:__anon44
 server_socket_array	base.h	/^} server_socket_array;$/;"	t	typeref:struct:__anon45
 server_tag	base.h	/^	buffer *server_tag;$/;"	m	struct:__anon31
-set_defaults	plugin.h	/^	 handler_t(*set_defaults) (server * srv, void *p_d);$/;"	m	struct:__anon79
+set_defaults	plugin.h	/^	handler_t(*set_defaults) (server * srv, void *p_d);$/;"	m	struct:__anon79
 set_footer	mod_dirlisting.c	/^	buffer *set_footer;$/;"	m	struct:__anon84	file:
 show_features	server.c	/^static void show_features(void)$/;"	f	file:
 show_header	mod_dirlisting.c	/^	unsigned short show_header;$/;"	m	struct:__anon84	file:
@@ -2921,9 +2921,9 @@ size	buffer.h	/^	size_t size; 	\/\/buffer数组的大小$/;"	m	struct:__anon89
 size	buffer.h	/^	size_t size; 	\/\/buffer的长度$/;"	m	struct:__anon88
 size	buffer.h	/^	size_t size;$/;"	m	struct:__anon90
 size	configfile.c	/^	size_t size;$/;"	m	struct:__anon204	file:
+size	fdevent.h	/^	size_t size; 				\/\/数组中数据的个数$/;"	m	struct:fdevents
+size	fdevent.h	/^	size_t size; 	\/\/数组长度。$/;"	m	struct:__anon7
 size	fdevent.h	/^	size_t size;$/;"	m	struct:__anon6
-size	fdevent.h	/^	size_t size;$/;"	m	struct:__anon7
-size	fdevent.h	/^	size_t size;$/;"	m	struct:fdevents
 size	lemon.c	/^	int size;					\/* The number of available slots. *\/$/;"	m	struct:s_x1	file:
 size	lemon.c	/^	int size;					\/* The number of available slots. *\/$/;"	m	struct:s_x2	file:
 size	lemon.c	/^	int size;					\/* The number of available slots. *\/$/;"	m	struct:s_x3	file:
@@ -2952,7 +2952,7 @@ sizefmt	mod_ssi.h	/^	int sizefmt;$/;"	m	struct:__anon168
 sock_addr	base.h	/^} sock_addr;$/;"	t	typeref:union:__anon23
 sock_addr_get_port	configfile-glue.c	/^unsigned short sock_addr_get_port(sock_addr * addr)$/;"	f
 socket	mod_scgi.c	/^	buffer *socket;				\/* config.socket + "-" + id *\/$/;"	m	struct:scgi_proc	file:
-sockets_disabled	base.h	/^	int sockets_disabled;$/;"	m	struct:server
+sockets_disabled	base.h	/^	int sockets_disabled; 		\/* socket连接失效 *\/$/;"	m	struct:server
 socklen_t	base.h	/^typedef int socklen_t;$/;"	t
 socklen_t	spawn-fcgi.c	/^typedef int socklen_t;$/;"	t	file:
 sort	mod_status.c	/^	int sort;$/;"	m	struct:__anon74	file:
@@ -3024,7 +3024,7 @@ start	lemon.c	/^	char *start;				\/* Name of the start symbol for the grammar *\
 start	stream.h	/^	char *start;$/;"	m	struct:__anon106
 start_process	lighttpd-angel.c	/^static volatile sig_atomic_t start_process = 1;$/;"	v	file:
 start_tv	base.h	/^	struct timeval start_tv;$/;"	m	struct:__anon35	typeref:struct:__anon35::timeval
-startup_ts	base.h	/^	time_t startup_ts;$/;"	m	struct:server
+startup_ts	base.h	/^	time_t startup_ts; 				\/\/服务器启动的时间戳$/;"	m	struct:server
 stat_cache	base.h	/^	stat_cache *stat_cache;$/;"	m	struct:server
 stat_cache	base.h	/^} stat_cache;$/;"	t	typeref:struct:__anon30
 stat_cache_attr_get	stat_cache.c	/^static int stat_cache_attr_get(buffer * buf, char *name)$/;"	f	file:
@@ -3033,7 +3033,7 @@ stat_cache_entry	base.h	/^} stat_cache_entry;$/;"	t	typeref:struct:__anon29
 stat_cache_entry_free	stat_cache.c	/^static void stat_cache_entry_free(void *data)$/;"	f	file:
 stat_cache_entry_init	stat_cache.c	/^static stat_cache_entry *stat_cache_entry_init(void)$/;"	f	file:
 stat_cache_free	stat_cache.c	/^void stat_cache_free(stat_cache * sc)$/;"	f
-stat_cache_get_entry	stat_cache.c	/^stat_cache_get_entry(server * srv, connection * con, buffer * name,$/;"	f
+stat_cache_get_entry	stat_cache.c	/^handler_t stat_cache_get_entry(server * srv, connection * con, buffer * name,$/;"	f
 stat_cache_handle_fdevent	stat_cache.c	/^handler_t stat_cache_handle_fdevent(void *_srv, void *_fce, int revent)$/;"	f
 stat_cache_init	stat_cache.c	/^stat_cache *stat_cache_init(void)$/;"	f
 stat_cache_lstat	stat_cache.c	/^static int stat_cache_lstat(server * srv, buffer * dname, struct stat *lst)$/;"	f	file:
@@ -3041,7 +3041,7 @@ stat_cache_tag_old_entries	stat_cache.c	/^stat_cache_tag_old_entries(server * sr
 stat_cache_trigger_cleanup	stat_cache.c	/^int stat_cache_trigger_cleanup(server * srv)$/;"	f
 stat_fn	mod_ssi.h	/^	buffer *stat_fn;$/;"	m	struct:__anon168
 stat_ts	base.h	/^	time_t stat_ts; 	\/\/结构体的时间$/;"	m	struct:__anon29
-state	base.h	/^	connection_state_t state;$/;"	m	struct:__anon35
+state	base.h	/^	connection_state_t state; 			\/\/连接的状态$/;"	m	struct:__anon35
 state	lemon.c	/^	} state;					\/* The state of the parser *\/$/;"	m	struct:pstate	typeref:enum:pstate::e_state	file:
 state	lemon.c	/^struct state {$/;"	s	file:
 state	md5.h	/^	UINT4 state[4];				\/* state (ABCD) *\/$/;"	m	struct:__anon135
@@ -3146,7 +3146,7 @@ type	base.h	/^	connection_type type;$/;"	m	struct:__anon21
 type	chunk.h	/^	enum { UNUSED_CHUNK, MEM_CHUNK, FILE_CHUNK } type;$/;"	m	struct:chunk	typeref:enum:chunk::__anon8
 type	fastcgi.h	/^	unsigned char type;$/;"	m	struct:__anon116
 type	fastcgi.h	/^	unsigned char type;$/;"	m	struct:__anon121
-type	fdevent.h	/^	fdevent_handler_t type;$/;"	m	struct:fdevents
+type	fdevent.h	/^	fdevent_handler_t type; \/\/多路IO类型$/;"	m	struct:fdevents
 type	keyvalue.h	/^	httpauth_type type;$/;"	m	struct:__anon163
 type	lemon.c	/^	} type;						\/* Symbols are all either TERMINALS or NTs *\/$/;"	m	struct:symbol	typeref:enum:symbol::__anon198	file:
 type	lemon.c	/^	} type;$/;"	m	struct:action	typeref:enum:action::e_action	file:
@@ -3164,7 +3164,7 @@ unixsocket	mod_fastcgi.c	/^	buffer *unixsocket;			\/* config.socket + "-" + id *
 unixsocket	mod_fastcgi.c	/^	buffer *unixsocket;$/;"	m	struct:__anon183	file:
 unixsocket	mod_scgi.c	/^	buffer *unixsocket;$/;"	m	struct:__anon171	file:
 unused	chunk.h	/^	chunk *unused;$/;"	m	struct:__anon11
-unused	fdevent.h	/^	buffer_int unused;$/;"	m	struct:fdevents
+unused	fdevent.h	/^	buffer_int unused; 	$/;"	m	struct:fdevents
 unused_chunks	chunk.h	/^	size_t unused_chunks;$/;"	m	struct:__anon11
 unused_procs	mod_fastcgi.c	/^	fcgi_proc *unused_procs;$/;"	m	struct:__anon183	file:
 unused_procs	mod_scgi.c	/^	scgi_proc *unused_procs;$/;"	m	struct:__anon171	file:
@@ -3188,9 +3188,9 @@ used	base.h	/^	size_t used;$/;"	m	struct:__anon45
 used	buffer.h	/^	size_t used;				\/* output-pointer *\/$/;"	m	struct:__anon90
 used	buffer.h	/^	size_t used; 	\/\/buffer中数据的长度$/;"	m	struct:__anon88
 used	buffer.h	/^	size_t used; 	\/\/buffer数组中数据的个数$/;"	m	struct:__anon89
+used	fdevent.h	/^	size_t used; 				\/\/数组的大小$/;"	m	struct:fdevents
+used	fdevent.h	/^	size_t used; 	\/\/数组中数据个数。$/;"	m	struct:__anon7
 used	fdevent.h	/^	size_t used;$/;"	m	struct:__anon6
-used	fdevent.h	/^	size_t used;$/;"	m	struct:__anon7
-used	fdevent.h	/^	size_t used;$/;"	m	struct:fdevents
 used	mod_accesslog.c	/^	size_t used;$/;"	m	struct:__anon68	file:
 used	mod_cgi.c	/^	size_t used;$/;"	m	struct:__anon110	file:
 used	mod_cgi.c	/^	size_t used;$/;"	m	struct:__anon111	file:
@@ -3227,7 +3227,7 @@ vartype	lemon.c	/^	char *vartype;				\/* The default type of non-terminal symbol
 version	fastcgi.h	/^	unsigned char version;$/;"	m	struct:__anon116
 version	plugin.h	/^	size_t version;$/;"	m	struct:__anon79
 version	stat_cache.c	/^	int version;$/;"	m	struct:__anon133	file:
-want_fds	base.h	/^	int want_fds;				\/* waiting fds *\/$/;"	m	struct:server
+want_fds	base.h	/^	int want_fds;				\/* waiting fds 等待使用的文件描述符*\/$/;"	m	struct:server
 wb	mod_fastcgi.c	/^	chunkqueue *wb;				\/* write queue *\/$/;"	m	struct:__anon191	file:
 wb	mod_proxy.c	/^	chunkqueue *wb;$/;"	m	struct:__anon105	file:
 wb	mod_scgi.c	/^	chunkqueue *wb;$/;"	m	struct:__anon178	file:
@@ -3247,7 +3247,7 @@ webdav_properties	mod_webdav.c	/^} webdav_properties;$/;"	t	typeref:struct:__ano
 webdav_property	mod_webdav.c	/^} webdav_property;$/;"	t	typeref:struct:__anon53	file:
 write_fd	mod_rrdtool.c	/^	int read_fd, write_fd;$/;"	m	struct:__anon218	file:
 write_queue	base.h	/^	chunkqueue *write_queue;	\/* a large queue for low-level write ( HTTP $/;"	m	struct:__anon35
-write_request_ts	base.h	/^	time_t write_request_ts;$/;"	m	struct:__anon35
+write_request_ts	base.h	/^	time_t write_request_ts; 			\/\/写请求的时间$/;"	m	struct:__anon35
 x	lemon.c	/^	} x;$/;"	m	struct:action	typeref:union:action::__anon200	file:
 x1a	lemon.c	/^static struct s_x1 *x1a;$/;"	v	typeref:struct:s_x1	file:
 x1node	lemon.c	/^} x1node;$/;"	t	typeref:struct:s_x1node	file:
