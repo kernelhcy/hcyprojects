@@ -125,6 +125,10 @@ typedef struct {
 } fcgi_connections;
 
 
+/**
+ * socket地址。在使用的时候，这几种地址都统一的转化成sockaddr类型。
+ * 因此，使用这个联合体可以方便很多。
+ */
 typedef union {
 #ifdef HAVE_IPV6
 	struct sockaddr_in6 ipv6;
@@ -145,7 +149,11 @@ typedef union {
 #define HTTP_DATE           BV(3)
 #define HTTP_LOCATION       BV(4)
 
-typedef struct {
+/**
+ * 定义一个请求
+ */
+typedef struct 
+{
 	/** HEADER */
 	/*
 	 * the request-line 
@@ -333,8 +341,10 @@ typedef struct {
 /*
  * the order of the items should be the same as they are processed read before
  * write as we use this later 
+ * 网络连接的状态
  */
-typedef enum {
+typedef enum 
+{
 	CON_STATE_CONNECT,
 	CON_STATE_REQUEST_START,
 	CON_STATE_READ,
@@ -348,10 +358,16 @@ typedef enum {
 	CON_STATE_CLOSE
 } connection_state_t;
 
-typedef enum { COND_RESULT_UNSET, COND_RESULT_FALSE,
+//网络连接运行的结果状态
+typedef enum 
+{ 
+	COND_RESULT_UNSET, 
+	COND_RESULT_FALSE,
 	COND_RESULT_TRUE
 } cond_result_t;
-typedef struct {
+
+typedef struct 
+{
 	cond_result_t result;
 	int patterncount;
 	int matches[3 * 10];
@@ -360,34 +376,40 @@ typedef struct {
 	comp_key_t comp_type;
 } cond_cache_t;
 
-typedef struct {
-	connection_state_t state;
+/**
+ * 定义网络连接
+ */
+typedef struct 
+{
+	connection_state_t state; 			//连接的状态
 
 	/*
 	 * timestamps 
 	 */
-	time_t read_idle_ts;
-	time_t close_timeout_ts;
-	time_t write_request_ts;
+	time_t read_idle_ts; 				//读操作的发呆时间
+	time_t close_timeout_ts; 			//
+	time_t write_request_ts; 			//写请求的时间
+	//上面的三个时间用于判断连接超时！
 
-	time_t connection_start;
-	time_t request_start;
+	time_t connection_start; 			//连接建立开始的时间
+	time_t request_start;  				//请求开始的时间
 
 	struct timeval start_tv;
 
 	size_t request_count;		/* number of requests handled in this
-								 * connection */
+								 * connection 这个连接所处理的请求的数量*/
 	size_t loops_per_request;	/* to catch endless loops in a single
 								 * request used by mod_rewrite,
 								 * mod_fastcgi, ... and others this is
 								 * self-protection */
 
-	int fd;						/* the FD for this connection */
-	int fde_ndx;				/* index for the fdevent-handler */
+	int fd;						/* the FD for this connection 连接的描述符*/
+	int fde_ndx;				/* index for the fdevent-handler  */
+	//在连接数组connections中的下标位置。
 	int ndx;					/* reverse mapping to server->connection[ndx] */
 
 	/*
-	 * fd states 
+	 * fd states  描述符的状态，可写？可读？
 	 */
 	int is_readable;
 	int is_writable;
@@ -476,7 +498,9 @@ typedef struct {
 	int conditional_is_valid[COMP_LAST_ELEMENT];
 } connection;
 
-typedef struct {
+//连接数组
+typedef struct 
+{
 	connection **ptr;
 	size_t size;
 	size_t used;
@@ -552,6 +576,10 @@ typedef struct {
 	unsigned short enable_cores;
 } server_config;
 
+/**
+ * 服务器使用的socket连接。
+ * 包含socket地址，socket的fd以及有关ssl的一些变量。
+ */
 typedef struct {
 	sock_addr addr;
 	int fd;
@@ -572,14 +600,17 @@ typedef struct {
 	unsigned short is_proxy_ssl;
 } server_socket;
 
-typedef struct {
+//socket连接数组。
+typedef struct 
+{
 	server_socket **ptr;
 
 	size_t size;
 	size_t used;
 } server_socket_array;
 
-typedef struct server {
+typedef struct server 
+{
 	server_socket_array srv_sockets;
 
 	/*
@@ -604,12 +635,12 @@ typedef struct server {
 
 	int ssl_is_init;
 
-	int max_fds;				/* max possible fds */
-	int cur_fds;				/* currently used fds */
-	int want_fds;				/* waiting fds */
-	int sockets_disabled;
+	int max_fds;				/* max possible fds 可以使用的最大文件描述符*/
+	int cur_fds;				/* currently used fds 当前所使用的文件描述符*/
+	int want_fds;				/* waiting fds 等待使用的文件描述符*/
+	int sockets_disabled; 		/* socket连接失效 */
 
-	size_t max_conns;
+	size_t max_conns; 			//允许的最大连接数
 
 	/*
 	 * buffers 
@@ -638,10 +669,10 @@ typedef struct server {
 	/*
 	 * Timestamps 
 	 */
-	time_t cur_ts;
-	time_t last_generated_date_ts;
-	time_t last_generated_debug_ts;
-	time_t startup_ts;
+	time_t cur_ts; 					//当前时间戳
+	time_t last_generated_date_ts; 	//前一个日期的时间戳
+	time_t last_generated_debug_ts; //前一个调试时间戳
+	time_t startup_ts; 				//服务器启动的时间戳
 
 	buffer *ts_debug_str;
 	buffer *ts_date_str;
@@ -660,9 +691,9 @@ typedef struct server {
 	short int config_deprecated;
 	short int config_unsupported;
 
-	connections *conns;
-	connections *joblist;
-	connections *fdwaitqueue;
+	connections *conns; 			//连接数组
+	connections *joblist; 			//作业列表
+	connections *fdwaitqueue; 		//描述符等待队列
 
 	stat_cache *stat_cache;
 
@@ -683,17 +714,11 @@ typedef struct server {
 
 	fdevent_handler_t event_handler;
 
-	int (*network_backend_write) (struct server * srv,
-								  connection * con, int fd, chunkqueue * cq);
-	int (*network_backend_read) (struct server * srv, connection * con,
-								 int fd, chunkqueue * cq);
+	int (*network_backend_write) (struct server * srv, connection * con, int fd, chunkqueue * cq);
+	int (*network_backend_read) (struct server * srv, connection * con, int fd, chunkqueue * cq);
 #ifdef USE_OPENSSL
-	int (*network_ssl_backend_write) (struct server * srv,
-									  connection * con, SSL * ssl,
-									  chunkqueue * cq);
-	int (*network_ssl_backend_read) (struct server * srv,
-									 connection * con, SSL * ssl,
-									 chunkqueue * cq);
+	int (*network_ssl_backend_write) (struct server * srv, connection * con, SSL * ssl, chunkqueue * cq);
+	int (*network_ssl_backend_read) (struct server * srv, connection * con, SSL * ssl, chunkqueue * cq);
 #endif
 
 	uid_t uid;

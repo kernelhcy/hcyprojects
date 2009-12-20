@@ -26,11 +26,13 @@
  *
  */
 
-typedef struct {
+typedef struct 
+{
 	PLUGIN_DATA;
 } plugin_data;
 
-typedef enum {
+typedef enum 
+{
 	PLUGIN_FUNC_UNSET,
 	PLUGIN_FUNC_HANDLE_URI_CLEAN,
 	PLUGIN_FUNC_HANDLE_URI_RAW,
@@ -93,7 +95,8 @@ static int plugins_register(server * srv, plugin * p)
 		srv->plugins.size = 4;
 		srv->plugins.ptr = malloc(srv->plugins.size * sizeof(*ps));
 		srv->plugins.used = 0;
-	} else if (srv->plugins.used == srv->plugins.size)
+	} 
+	else if (srv->plugins.used == srv->plugins.size)
 	{
 		srv->plugins.size += 4;
 		srv->plugins.ptr =

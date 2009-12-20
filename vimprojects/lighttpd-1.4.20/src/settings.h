@@ -23,7 +23,7 @@
 #define MAX_HTTP_REQUEST_HEADER  (32 * 1024)
 
 /**
- * 
+ * 在server.c中的worker的主循环开始的时候，使用了这个枚举类型。用来标记SIGHUP信号的处理方式。
  */
 typedef enum 
 { 

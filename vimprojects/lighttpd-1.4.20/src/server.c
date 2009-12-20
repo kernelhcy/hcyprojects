@@ -1524,8 +1524,7 @@ int main(int argc, char **argv)
 		 */
 		if (-1 == fdevent_fcntl_set(srv->ev, srv_socket->fd))
 		{
-			log_error_write(srv, __FILE__, __LINE__, "ss",
-							"fcntl failed:", strerror(errno));
+			log_error_write(srv, __FILE__, __LINE__, "ss", "fcntl failed:", strerror(errno));
 			return -1;
 		}
 	}
@@ -1535,9 +1534,6 @@ int main(int argc, char **argv)
 	 * *******************
 	 * worker工作的主循环。
 	 * *******************
-	 *
-	 *
-	 * here............
 	 */
 	while (!srv_shutdown)
 	{
@@ -1545,17 +1541,24 @@ int main(int argc, char **argv)
 		size_t ndx;
 		time_t min_ts;
 
+		/**
+		 * 收到SIGHUP信号。主要是重新开始日志的周期并提示插件。
+		 * 这个信号表示连接已经断开，通常是做一些清理和准备工作，等待下一次的连接。
+		 */
 		if (handle_sig_hup)
 		{
 			handler_t r;
 
 			/*
-			 * reset notification 
+			 * reset notification 重置
 			 */
 			handle_sig_hup = 0;
 
 			/*
 			 * cycle logfiles 
+			 * 重新开始新一轮日志。
+			 * 这里使用了switch而不是if语句，有意思。。。
+			 * 调用插件关于SIGHUP信号的处理函数。
 			 */
 
 			switch (r = plugins_call_handle_sighup(srv))
@@ -1584,24 +1587,34 @@ int main(int argc, char **argv)
 			}
 		}
 
+		/**
+		 * alarm函数发出的信号，表示一秒钟已经过去了。
+		 */
 		if (handle_sig_alarm)
 		{
 			/*
-			 * a new second 
+			 * a new second  新的一秒开始了。。。
 			 */
 
 #ifdef USE_ALARM
 			/*
-			 * reset notification 
+			 * reset notification 重置
 			 */
 			handle_sig_alarm = 0;
 #endif
 
 			/*
-			 * get current time 
+			 * get current time  当前时间。精确到一秒
 			 */
 			min_ts = time(NULL);
 
+			/**
+			 * 这里判断和服务器记录的当前时间是否相同。
+			 * 相同，则表示服务器还在这一秒中，继续处理请求等。
+			 * 如果不相同，则进入了一个新的周期（当然周期是一秒）。这就要做一些触发和检查以及清理的动作。
+			 * 如插件的触发连接的超时清理状态缓存等。
+			 * 其中，最主要的工作是检查连接的超时。
+			 */
 			if (min_ts != srv->cur_ts)
 			{
 				int cs = 0;
@@ -1613,8 +1626,7 @@ int main(int argc, char **argv)
 					case HANDLER_GO_ON:
 						break;
 					case HANDLER_ERROR:
-						log_error_write(srv, __FILE__, __LINE__, "s",
-									"one of the triggers failed");
+						log_error_write(srv, __FILE__, __LINE__, "s", "one of the triggers failed");
 						break;
 					default:
 						log_error_write(srv, __FILE__, __LINE__, "d", r);
@@ -1622,17 +1634,17 @@ int main(int argc, char **argv)
 				}
 
 				/*
-				 * trigger waitpid 
+				 * trigger waitpid 么意思？？
 				 */
 				srv->cur_ts = min_ts;
 
 				/*
-				 * cleanup stat-cache 
+				 * cleanup stat-cache 清理状态缓存。每秒钟清理一次。
 				 */
 				stat_cache_trigger_cleanup(srv);
+
 				/**
-				 * check all connections for timeouts
-				 *
+				 * check all connections for timeouts 检查所有的连接是否超时。
 				 */
 				for (ndx = 0; ndx < conns->used; ndx++)
 				{
@@ -1642,40 +1654,34 @@ int main(int argc, char **argv)
 
 					con = conns->ptr[ndx];
 
-					if (con->state == CON_STATE_READ ||
-						con->state == CON_STATE_READ_POST)
+					//连接的状态是在读
+					if (con->state == CON_STATE_READ || con->state == CON_STATE_READ_POST)
 					{
-						if (con->request_count == 1)
+						if (con->request_count == 1) //连接正在处理一个请求
 						{
-							if (srv->cur_ts - con->read_idle_ts >
-								con->conf.max_read_idle)
+							if (srv->cur_ts - con->read_idle_ts > con->conf.max_read_idle)
 							{
 								/*
 								 * time - out 
 								 */
 #if 0
-								log_error_write(srv, __FILE__,
-												__LINE__, "sd",
-												"connection closed - read-timeout:",
-												con->fd);
+								log_error_write(srv, __FILE__, __LINE__, "sd",
+												"connection closed - read-timeout:", con->fd);
 #endif
 								connection_set_state(srv, con, CON_STATE_ERROR);
 								changed = 1;
 							}
-						} 
+						}  //这个连接同时处理多个请求
 						else
 						{
-							if (srv->cur_ts - con->read_idle_ts >
-								con->conf.max_keep_alive_idle)
+							if (srv->cur_ts - con->read_idle_ts > con->conf.max_keep_alive_idle)
 							{
 								/*
 								 * time - out 
 								 */
 #if 0
-								log_error_write(srv, __FILE__,
-												__LINE__, "sd",
-												"connection closed - read-timeout:",
-												con->fd);
+								log_error_write(srv, __FILE__, __LINE__, "sd",
+												"connection closed - read-timeout:", con->fd);
 #endif
 								connection_set_state(srv, con, CON_STATE_ERROR);
 								changed = 1;
@@ -1683,59 +1689,50 @@ int main(int argc, char **argv)
 						}
 					}
 
-					if ((con->state == CON_STATE_WRITE) &&
-						(con->write_request_ts != 0))
+					//连接的状态是写
+					if ((con->state == CON_STATE_WRITE) && (con->write_request_ts != 0))
 					{
 #if 0
 						if (srv->cur_ts - con->write_request_ts > 60)
 						{
-							log_error_write(srv, __FILE__,
-											__LINE__, "sdd",
+							log_error_write(srv, __FILE__, __LINE__, "sdd",
 											"connection closed - pre-write-request-timeout:",
-											con->fd,
-											srv->cur_ts -
-											con->write_request_ts);
+											con->fd, srv->cur_ts - con->write_request_ts);
 						}
 #endif
 
-						if (srv->cur_ts - con->write_request_ts >
-							con->conf.max_write_idle)
+						if (srv->cur_ts - con->write_request_ts > con->conf.max_write_idle)
 						{
 							/*
 							 * time - out 
 							 */
 #if 1
-							log_error_write(srv, __FILE__,
-											__LINE__, "sbsosds",
-											"NOTE: a request for",
-											con->request.uri,
-											"timed out after writing",
-											con->bytes_written,
-											"bytes. We waited",
-											(int) con->conf.
-											max_write_idle,
+							log_error_write(srv, __FILE__, __LINE__, "sbsosds", "NOTE: a request for",
+											con->request.uri, "timed out after writing", con->bytes_written, "bytes. We waited",
+											(int) con->conf. max_write_idle,
 											"seconds. If this a problem increase server.max-write-idle");
 #endif
 							connection_set_state(srv, con, CON_STATE_ERROR);
 							changed = 1;
 						}
 					}
+
 					/*
-					 * we don't like div by zero 
+					 * we don't like div by zero 防止除0。。。
 					 */
 					if (0 == (t_diff = srv->cur_ts - con->connection_start))
 						t_diff = 1;
 
+					/**
+					 * 
+					 */
 					if (con->traffic_limit_reached &&
-						(con->conf.kbytes_per_second == 0 ||
-						 ((con->bytes_written / t_diff) <
-						  con->conf.kbytes_per_second * 1024)))
+						(con->conf.kbytes_per_second == 0 || ((con->bytes_written / t_diff) < con->conf.kbytes_per_second * 1024)))
 					{
 						/*
 						 * enable connection again 
 						 */
 						con->traffic_limit_reached = 0;
-
 						changed = 1;
 					}
 
@@ -1752,64 +1749,52 @@ int main(int argc, char **argv)
 						fprintf(stderr, "connection-state: ");
 						cs = 1;
 					}
-
-					fprintf(stderr, "c[%d,%d]: %s ",
-							con->fd,
-							con->fcgi.fd, connection_get_state(con->state));
+					fprintf(stderr, "c[%d,%d]: %s ", con->fd, con->fcgi.fd, connection_get_state(con->state));
 #endif
 				}
 
 				if (cs == 1)
 					fprintf(stderr, "\n");
 			}
-		}
+		}//end of if (handle_sig_alarm)...
 
 		if (srv->sockets_disabled)
 		{
 			/*
 			 * our server sockets are disabled, why ? 
+			 * 服务器socket连接失效。为什么捏？？？后面的服务器过载处理中。。。
+			 *
+			 * 将所有连接重新加入的fdevent中。
 			 */
 
-			if ((srv->cur_fds + srv->want_fds < srv->max_fds * 0.8) &&	/* we
-																		 * have 
-																		 * enough 
-																		 * unused 
-																		 * fds */
-				(srv->conns->used < srv->max_conns * 0.9) &&
-				(0 == graceful_shutdown))
+			if ((srv->cur_fds + srv->want_fds < srv->max_fds * 0.8) &&	/* we have enough unused fds */
+				(srv->conns->used < srv->max_conns * 0.9) && (0 == graceful_shutdown))
 			{
 				for (i = 0; i < srv->srv_sockets.used; i++)
 				{
 					server_socket *srv_socket = srv->srv_sockets.ptr[i];
-					fdevent_event_add(srv->ev,
-									  &(srv_socket->fde_ndx),
-									  srv_socket->fd, FDEVENT_IN);
+					fdevent_event_add(srv->ev, &(srv_socket->fde_ndx), srv_socket->fd, FDEVENT_IN);
 				}
-
-				log_error_write(srv, __FILE__, __LINE__, "s",
-								"[note] sockets enabled again");
-
+				log_error_write(srv, __FILE__, __LINE__, "s", "[note] sockets enabled again");
 				srv->sockets_disabled = 0;
 			}
 		} 
 		else
 		{
-			if ((srv->cur_fds + srv->want_fds > srv->max_fds * 0.9) ||	/* out
-																		 * of
-																		 * fds */
+			/*
+			 * 下面处理服务器过载的情况。
+			 */
+			if ((srv->cur_fds + srv->want_fds > srv->max_fds * 0.9) ||	/* out of fds */
 				(srv->conns->used > srv->max_conns) ||	/* out of connections */
-				(graceful_shutdown))
-			{					/* graceful_shutdown */
-
+				(graceful_shutdown)) /* graceful_shutdown */
+			{
 				/*
-				 * disable server-fds 
+				 * disable server-fds 关闭所有的服务socket
 				 */
-
 				for (i = 0; i < srv->srv_sockets.used; i++)
 				{
 					server_socket *srv_socket = srv->srv_sockets.ptr[i];
-					fdevent_event_del(srv->ev,
-									  &(srv_socket->fde_ndx), srv_socket->fd);
+					fdevent_event_del(srv->ev, &(srv_socket->fde_ndx), srv_socket->fd);
 
 					if (graceful_shutdown)
 					{
@@ -1827,43 +1812,34 @@ int main(int argc, char **argv)
 						 * network_close() will cleanup after us 
 						 */
 
-						if (srv->srvconf.pid_file->used &&
-							srv->srvconf.changeroot->used == 0)
+						if (srv->srvconf.pid_file->used && srv->srvconf.changeroot->used == 0)
 						{
 							if (0 != unlink(srv->srvconf.pid_file->ptr))
 							{
 								if (errno != EACCES && errno != EPERM)
 								{
-									log_error_write(srv,
-													__FILE__,
-													__LINE__,
-													"sbds",
-													"unlink failed for:",
-													srv->
-													srvconf.
-													pid_file,
-													errno, strerror(errno));
+									log_error_write(srv, __FILE__, __LINE__, "sbds", "unlink failed for:",
+													srv -> srvconf.pid_file, errno, strerror(errno));
 								}
 							}
 						}
 					}
-				}
+				}//end of for(i = 0; ...
 
 				if (graceful_shutdown)
 				{
-					log_error_write(srv, __FILE__, __LINE__, "s",
-									"[note] graceful shutdown started");
-				} else if (srv->conns->used > srv->max_conns)
+					log_error_write(srv, __FILE__, __LINE__, "s", "[note] graceful shutdown started");
+				} 
+				else if (srv->conns->used > srv->max_conns)
 				{
-					log_error_write(srv, __FILE__, __LINE__, "s",
-									"[note] sockets disabled, connection limit reached");
-				} else
+					log_error_write(srv, __FILE__, __LINE__, "s","[note] sockets disabled, connection limit reached");
+				} 
+				else
 				{
-					log_error_write(srv, __FILE__, __LINE__, "s",
-									"[note] sockets disabled, out-of-fds");
+					log_error_write(srv, __FILE__, __LINE__, "s", "[note] sockets disabled, out-of-fds");
 				}
 
-				srv->sockets_disabled = 1;
+				srv->sockets_disabled = 1; //服务器过载了，socket失效。
 			}
 		}
 
@@ -1887,22 +1863,25 @@ int main(int argc, char **argv)
 			int free_fds = srv->max_fds - srv->cur_fds - 16;
 			connection *con;
 
-			for (;
-				 free_fds > 0
-				 && NULL != (con =
-							 fdwaitqueue_unshift(srv, srv->fdwaitqueue));
-				 free_fds--)
+			for (; free_fds > 0 && NULL != (con = fdwaitqueue_unshift(srv, srv->fdwaitqueue)); free_fds--)
 			{
 				connection_state_machine(srv, con);
-
 				srv->want_fds--;
 			}
 		}
 
+		/**
+		 **********************************************************
+		 * 至此，上面那些杂七杂八的事全部处理结束。下面，干正事！！
+		 * 也就是处理服务请求。
+		 **********************************************************
+		 */
+
+		//启动事件轮询。底层使用的是IO多路转接。
 		if ((n = fdevent_poll(srv->ev, 1000)) > 0)
 		{
 			/*
-			 * n is the number of events 
+			 * n is the number of events n是事件的数量（服务请求啦，文件读写啦什么的。。。）
 			 */
 			int revents;
 			int fd_ndx;
@@ -1913,6 +1892,9 @@ int main(int argc, char **argv)
 			}
 #endif
 			fd_ndx = -1;
+			/**
+			 * 这个循环中逐个的处理已经准备好的请求，知道所有的请求处理结束。
+			 */
 			do
 			{
 				fdevent_handler handler;
@@ -1932,6 +1914,10 @@ int main(int argc, char **argv)
 				log_error_write(srv, __FILE__, __LINE__, "sdd",
 								"event for", fd, revents);
 #endif
+				/**
+				 * 这里，调用请求的处理函数handler处理请求！
+				 * 这才是重点中的重点！！
+				 */
 				switch (r = (*handler) (srv, context, revents))
 				{
 				case HANDLER_FINISHED:
@@ -1949,15 +1935,17 @@ int main(int argc, char **argv)
 					log_error_write(srv, __FILE__, __LINE__, "d", r);
 					break;
 				}
-			}
-			while (--n > 0);
+			}while (--n > 0);
+
+			//到这里，本次的请求都处理结束了。。。累啊！
 		} 
 		else if (n < 0 && errno != EINTR)
 		{
-			log_error_write(srv, __FILE__, __LINE__, "ss",
-							"fdevent_poll failed:", strerror(errno));
+			log_error_write(srv, __FILE__, __LINE__, "ss", "fdevent_poll failed:", strerror(errno));
 		}
 
+		//这里折腾一下作业列表。
+		//检查作业列表 
 		for (ndx = 0; ndx < srv->joblist->used; ndx++)
 		{
 			connection *con = srv->joblist->ptr[ndx];
@@ -1984,24 +1972,20 @@ int main(int argc, char **argv)
 	 * 主循环的结束
 	 */
 
-	if (srv->srvconf.pid_file->used &&
-		srv->srvconf.changeroot->used == 0 && 0 == graceful_shutdown)
+	if (srv->srvconf.pid_file->used && srv->srvconf.changeroot->used == 0 && 0 == graceful_shutdown)
 	{
 		if (0 != unlink(srv->srvconf.pid_file->ptr))
 		{
 			if (errno != EACCES && errno != EPERM)
 			{
-				log_error_write(srv, __FILE__, __LINE__, "sbds",
-								"unlink failed for:",
+				log_error_write(srv, __FILE__, __LINE__, "sbds", "unlink failed for:",
 								srv->srvconf.pid_file, errno, strerror(errno));
 			}
 		}
 	}
 #ifdef HAVE_SIGACTION
-	log_error_write(srv, __FILE__, __LINE__, "sdsd",
-					"server stopped by UID =",
-					last_sigterm_info.si_uid,
-					"PID =", last_sigterm_info.si_pid);
+	log_error_write(srv, __FILE__, __LINE__, "sdsd", "server stopped by UID =",
+					last_sigterm_info.si_uid,"PID =", last_sigterm_info.si_pid);
 #else
 	log_error_write(srv, __FILE__, __LINE__, "s", "server stopped");
 #endif
