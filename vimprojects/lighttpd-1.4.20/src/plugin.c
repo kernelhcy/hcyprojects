@@ -31,6 +31,7 @@ typedef struct
 	PLUGIN_DATA;
 } plugin_data;
 
+//插件的类型
 typedef enum 
 {
 	PLUGIN_FUNC_UNSET,
@@ -73,6 +74,7 @@ static void plugin_free(plugin * p)
 	 */
 #endif
 
+//卸载动态链接库
 #ifndef LIGHTTPD_STATIC
 	if (use_dlclose && p->lib)
 	{
@@ -110,11 +112,16 @@ static int plugins_register(server * srv, plugin * p)
 }
 
 /**
+ * 加载插件。
+ * 插件是动态链接库，因此这个函数中需要动态的加载库。
+ * 在linux中使用函数dpopen,dlclose和dlsym函数进行动态链接库
+ * 的加载卸载等操作。
  *
- *
- *
+ * 另外，对于进行静态链接的动态库，函数中通过LIGHTTPD_STATIC宏进行判断
+ * 并进行不同的处理。
  */
 
+//静态链接
 #ifdef LIGHTTPD_STATIC
 int plugins_load(server * srv)
 {
@@ -133,6 +140,7 @@ int plugins_load(server * srv)
 	return 0;
 }
 #else
+//动态链接
 int plugins_load(server * srv)
 {
 	plugin *p;
@@ -142,12 +150,14 @@ int plugins_load(server * srv)
 
 	for (i = 0; i < srv->srvconf.modules->used; i++)
 	{
+		//获得动态链接库的完整的路径名称。
 		data_string *d = (data_string *) srv->srvconf.modules->data[i];
 		char *modules = d->value->ptr;
-
+		//库的路径
 		buffer_copy_string_buffer(srv->tmp_buf, srv->srvconf.modules_dir);
 
 		buffer_append_string_len(srv->tmp_buf, CONST_STR_LEN("/"));
+		//拼接库的名称。windows下是.dll结尾，linux下是.so结尾。
 		buffer_append_string(srv->tmp_buf, modules);
 #if defined(__WIN32) || defined(__CYGWIN__)
 		buffer_append_string_len(srv->tmp_buf, CONST_STR_LEN(".dll"));
@@ -157,6 +167,7 @@ int plugins_load(server * srv)
 
 		p = plugin_init();
 #ifdef __WIN32
+		//windows中加载动态库
 		if (NULL == (p->lib = LoadLibrary(srv->tmp_buf->ptr)))
 		{
 			LPVOID lpMsgBuf;
@@ -176,17 +187,15 @@ int plugins_load(server * srv)
 
 		}
 #else
-		if (NULL ==
-			(p->lib = dlopen(srv->tmp_buf->ptr, RTLD_NOW | RTLD_GLOBAL)))
+		//linux调用函数dlopen加载动态库
+		if (NULL == ( p->lib = dlopen(srv->tmp_buf->ptr, RTLD_NOW | RTLD_GLOBAL)))
 		{
-			log_error_write(srv, __FILE__, __LINE__, "sbs",
-							"dlopen() failed for:", srv->tmp_buf, dlerror());
-
+			log_error_write(srv, __FILE__, __LINE__, "sbs", "dlopen() failed for:", srv->tmp_buf, dlerror());
 			plugin_free(p);
-
 			return -1;
 		}
 #endif
+		//调用动态库中的XXX_plugin_init函数。
 		buffer_reset(srv->tmp_buf);
 		buffer_copy_string(srv->tmp_buf, modules);
 		buffer_append_string_len(srv->tmp_buf, CONST_STR_LEN("_plugin_init"));
@@ -211,7 +220,9 @@ int plugins_load(server * srv)
 			return -1;
 		}
 #else
+
 #if 1
+		//调用dlsym函数获得XXX_plugin_init函数的地址。
 		init = (int (*)(plugin *)) (intptr_t) dlsym(p->lib, srv->tmp_buf->ptr);
 #else
 		*(void **) (&init) = dlsym(p->lib, srv->tmp_buf->ptr);
@@ -224,11 +235,10 @@ int plugins_load(server * srv)
 			return -1;
 		}
 #endif
+		//初始化插件
 		if ((*init) (p))
 		{
-			log_error_write(srv, __FILE__, __LINE__, "ss", modules,
-							"plugin init failed");
-
+			log_error_write(srv, __FILE__, __LINE__, "ss", modules, "plugin init failed");
 			plugin_free(p);
 			return -1;
 		}
@@ -243,6 +253,16 @@ int plugins_load(server * srv)
 }
 #endif
 
+/**
+ * 下面的宏PLUGIN_TO_SLOT（不止一个哦）实际上是定义了一些函数模板
+ * 函数的名称为plugins_call_XXX，也就是执行插件的一些功能的函数。
+ */
+
+/*
+ * 这个宏中的switch语句中，p -> y(srv, con, p -> data)是整个函数的重点。
+ * 它执行相应的动作。
+ * x仅仅用于日志输出。
+ */
 #define PLUGIN_TO_SLOT(x, y) \
 	handler_t plugins_call_##y(server *srv, connection *con) {\
 		plugin **slot;\
@@ -289,6 +309,12 @@ PLUGIN_TO_SLOT(PLUGIN_FUNC_HANDLE_DOCROOT, handle_docroot)
 PLUGIN_TO_SLOT(PLUGIN_FUNC_HANDLE_PHYSICAL, handle_physical)
 PLUGIN_TO_SLOT(PLUGIN_FUNC_CONNECTION_RESET, connection_reset)
 #undef PLUGIN_TO_SLOT
+
+/*
+ * 右一个宏。
+ * 和上一个宏的参数不同。这个主要做一些插件的初始化和清理工作。
+ *
+ */
 #define PLUGIN_TO_SLOT(x, y) \
 	handler_t plugins_call_##y(server *srv) {\
 		plugin **slot;\
@@ -321,7 +347,7 @@ PLUGIN_TO_SLOT(PLUGIN_FUNC_CONNECTION_RESET, connection_reset)
  * - server *srv
  * - void *p_d (plugin_data *)
  */
-	PLUGIN_TO_SLOT(PLUGIN_FUNC_HANDLE_TRIGGER, handle_trigger)
+PLUGIN_TO_SLOT(PLUGIN_FUNC_HANDLE_TRIGGER, handle_trigger)
 PLUGIN_TO_SLOT(PLUGIN_FUNC_HANDLE_SIGHUP, handle_sighup)
 PLUGIN_TO_SLOT(PLUGIN_FUNC_CLEANUP, cleanup)
 PLUGIN_TO_SLOT(PLUGIN_FUNC_SET_DEFAULTS, set_defaults)
@@ -394,6 +420,16 @@ handler_t plugins_call_init(server * srv)
 
 		plugin *p = ps[i];
 
+	/**
+	 * 这个宏中可以看出，srv -> plugin_slots是一个二维数组。
+	 * 也就是说，它是plugin数组的数组。
+	 * 每一行代表这一个插件的功能，如果某个插件有这个功能，也就是plugin结构体中对应的函数指针非空，
+	 * 那么这个插件的指针(plugin结构体指针)就会被加入到这行中。
+	 * 	
+	 * 最外面的if(p -> y)判断插件是否有功能y。
+	 * 如果有，则在下面的for循环中将其加入到这一行中。
+	 * 里面的if是初始化还没有初始化的行。
+	 */
 #define PLUGIN_TO_SLOT(x, y) \
 	if (p->y) { \
 		plugin **slot = ((plugin ***)(srv->plugin_slots))[x]; \
@@ -412,13 +448,11 @@ handler_t plugins_call_init(server * srv)
 		PLUGIN_TO_SLOT(PLUGIN_FUNC_HANDLE_URI_CLEAN, handle_uri_clean);
 		PLUGIN_TO_SLOT(PLUGIN_FUNC_HANDLE_URI_RAW, handle_uri_raw);
 		PLUGIN_TO_SLOT(PLUGIN_FUNC_HANDLE_REQUEST_DONE, handle_request_done);
-		PLUGIN_TO_SLOT(PLUGIN_FUNC_HANDLE_CONNECTION_CLOSE,
-					   handle_connection_close);
+		PLUGIN_TO_SLOT(PLUGIN_FUNC_HANDLE_CONNECTION_CLOSE,  handle_connection_close);
 		PLUGIN_TO_SLOT(PLUGIN_FUNC_HANDLE_TRIGGER, handle_trigger);
 		PLUGIN_TO_SLOT(PLUGIN_FUNC_HANDLE_SIGHUP, handle_sighup);
 		PLUGIN_TO_SLOT(PLUGIN_FUNC_HANDLE_SUBREQUEST, handle_subrequest);
-		PLUGIN_TO_SLOT(PLUGIN_FUNC_HANDLE_SUBREQUEST_START,
-					   handle_subrequest_start);
+		PLUGIN_TO_SLOT(PLUGIN_FUNC_HANDLE_SUBREQUEST_START, handle_subrequest_start);
 		PLUGIN_TO_SLOT(PLUGIN_FUNC_HANDLE_JOBLIST, handle_joblist);
 		PLUGIN_TO_SLOT(PLUGIN_FUNC_HANDLE_DOCROOT, handle_docroot);
 		PLUGIN_TO_SLOT(PLUGIN_FUNC_HANDLE_PHYSICAL, handle_physical);
@@ -431,8 +465,7 @@ handler_t plugins_call_init(server * srv)
 		{
 			if (NULL == (p->data = p->init()))
 			{
-				log_error_write(srv, __FILE__, __LINE__, "sb",
-								"plugin-init failed for module", p->name);
+				log_error_write(srv, __FILE__, __LINE__, "sb", "plugin-init failed for module", p->name);
 				return HANDLER_ERROR;
 			}
 
@@ -444,11 +477,11 @@ handler_t plugins_call_init(server * srv)
 			if (p->version != LIGHTTPD_VERSION_ID)
 			{
 				log_error_write(srv, __FILE__, __LINE__, "sb",
-								"plugin-version doesn't match lighttpd-version for",
-								p->name);
+								"plugin-version doesn't match lighttpd-version for", p->name);
 				return HANDLER_ERROR;
 			}
-		} else
+		} 
+		else
 		{
 			p->data = NULL;
 		}

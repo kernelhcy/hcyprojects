@@ -1,6 +1,11 @@
 #ifndef _PLUGIN_H_
 #define _PLUGIN_H_
 
+/**
+ * 定义了插件的公共接口。
+ */
+
+
 #include "base.h"
 #include "buffer.h"
 
