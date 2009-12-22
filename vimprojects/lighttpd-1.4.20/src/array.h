@@ -61,7 +61,8 @@ typedef enum {
  */
 
 /* 定义UNSET数据类型，UNSET类 */
-typedef struct data_unset {
+typedef struct data_unset 
+{
 	DATA_UNSET;
 } data_unset;
 
@@ -80,7 +81,8 @@ typedef struct {
 	int is_weakref;				/* data is weakref, don't bother the data */
 } array;
 
-typedef struct {
+typedef struct 
+{
 	DATA_UNSET;
 
 	int count;
@@ -90,7 +92,8 @@ typedef struct {
  */
 data_count *data_count_init(void);
 
-typedef struct {
+typedef struct 
+{
 	DATA_UNSET;
 
 	buffer *value;

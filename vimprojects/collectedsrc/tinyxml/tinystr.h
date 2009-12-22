@@ -237,6 +237,10 @@ class TiXmlString
 
 	TiXmlString& assign (const char* str, size_type len);
 
+	/**
+	 * 这个函数是核心。
+	 * 大部分的其他函数都由其实现。
+	 */
 	TiXmlString& append (const char* str, size_type len);
 
 	void swap (TiXmlString& other)
@@ -259,9 +263,14 @@ class TiXmlString
 	struct Rep
 	{
 		size_type size, capacity;
-		char str[1];
+		char str[1]; 	//字符串以NULL结尾，因此空串是一个NULL。
 	};
 
+	/**
+	 * 初始化字符串并分配空间。
+	 * sz为初始化后字符串的长度。
+	 * cap为初始化后字符串的容量。
+	 */
 	void init(size_type sz, size_type cap)
 	{
 		if (cap)

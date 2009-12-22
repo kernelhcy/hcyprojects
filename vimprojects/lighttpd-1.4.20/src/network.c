@@ -37,9 +37,7 @@ handler_t network_server_handle_fdevent(void *s, void *context, int revents)
 
 	if (revents != FDEVENT_IN)
 	{
-		log_error_write(srv, __FILE__, __LINE__, "sdd",
-						"strange event for server socket",
-						srv_socket->fd, revents);
+		log_error_write(srv, __FILE__, __LINE__, "sdd", "strange event for server socket", srv_socket->fd, revents);
 		return HANDLER_ERROR;
 	}
 
@@ -115,12 +113,11 @@ int network_server_init(server * srv, buffer * host_token, specific_config * s)
 
 	/*
 	 * ipv4:port [ipv6]:port 
+	 * ipv6的地址要用[]引起来，以区分v4和v6的地址。
 	 */
 	if (NULL == (sp = strrchr(b->ptr, ':')))
 	{
-		log_error_write(srv, __FILE__, __LINE__, "sb",
-						"value of $SERVER[\"socket\"] has to be \"ip:port\".",
-						b);
+		log_error_write(srv, __FILE__, __LINE__, "sb", "value of $SERVER[\"socket\"] has to be \"ip:port\".", b);
 
 		return -1;
 	}
@@ -128,7 +125,7 @@ int network_server_init(server * srv, buffer * host_token, specific_config * s)
 	host = b->ptr;
 
 	/*
-	 * check for [ and ] 
+	 * check for [ and ]  获得ipv6的host地址。
 	 */
 	if (b->ptr[0] == '[' && *(sp - 1) == ']')
 	{
@@ -148,11 +145,10 @@ int network_server_init(server * srv, buffer * host_token, specific_config * s)
 		 * host is a unix-domain-socket 
 		 */
 		is_unix_domain_socket = 1;
-	} else if (port == 0 || port > 65535)
+	} 
+	else if (port == 0 || port > 65535)
 	{
-		log_error_write(srv, __FILE__, __LINE__, "sd",
-						"port out of range:", port);
-
+		log_error_write(srv, __FILE__, __LINE__, "sd", "port out of range:", port);
 		return -1;
 	}
 
@@ -165,17 +161,13 @@ int network_server_init(server * srv, buffer * host_token, specific_config * s)
 
 		srv_socket->addr.plain.sa_family = AF_UNIX;
 
-		if (-1 ==
-			(srv_socket->fd =
-			 socket(srv_socket->addr.plain.sa_family, SOCK_STREAM, 0)))
+		if (-1 == (srv_socket->fd = socket(srv_socket->addr.plain.sa_family, SOCK_STREAM, 0)))
 		{
-			log_error_write(srv, __FILE__, __LINE__, "ss",
-							"socket failed:", strerror(errno));
+			log_error_write(srv, __FILE__, __LINE__, "ss", "socket failed:", strerror(errno));
 			return -1;
 		}
 #else
-		log_error_write(srv, __FILE__, __LINE__, "s",
-						"ERROR: Unix Domain sockets are not supported.");
+		log_error_write(srv, __FILE__, __LINE__, "s", "ERROR: Unix Domain sockets are not supported.");
 		return -1;
 #endif
 	}
@@ -184,29 +176,24 @@ int network_server_init(server * srv, buffer * host_token, specific_config * s)
 	{
 		srv_socket->addr.plain.sa_family = AF_INET6;
 
-		if (-1 ==
-			(srv_socket->fd =
-			 socket(srv_socket->addr.plain.sa_family, SOCK_STREAM,
-					IPPROTO_TCP)))
+		if (-1 == (srv_socket->fd = socket(srv_socket->addr.plain.sa_family, SOCK_STREAM, IPPROTO_TCP)))
 		{
-			log_error_write(srv, __FILE__, __LINE__, "ss",
-							"socket failed:", strerror(errno));
+			log_error_write(srv, __FILE__, __LINE__, "ss", "socket failed:", strerror(errno));
 			return -1;
 		}
 		srv_socket->use_ipv6 = 1;
 	}
 #endif
 
+	/**
+	 * Unix domain和ipv6都不是，那只能是ipv4了。
+	 */
 	if (srv_socket->fd == -1)
 	{
 		srv_socket->addr.plain.sa_family = AF_INET;
-		if (-1 ==
-			(srv_socket->fd =
-			 socket(srv_socket->addr.plain.sa_family, SOCK_STREAM,
-					IPPROTO_TCP)))
+		if (-1 == (srv_socket->fd = socket(srv_socket->addr.plain.sa_family, SOCK_STREAM, IPPROTO_TCP)))
 		{
-			log_error_write(srv, __FILE__, __LINE__, "ss",
-							"socket failed:", strerror(errno));
+			log_error_write(srv, __FILE__, __LINE__, "ss", "socket failed:", strerror(errno));
 			return -1;
 		}
 	}
@@ -216,11 +203,9 @@ int network_server_init(server * srv, buffer * host_token, specific_config * s)
 	srv->cur_fds = srv_socket->fd;
 
 	val = 1;
-	if (setsockopt
-		(srv_socket->fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) < 0)
+	if (setsockopt(srv_socket->fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) < 0)
 	{
-		log_error_write(srv, __FILE__, __LINE__, "ss",
-						"socketsockopt failed:", strerror(errno));
+		log_error_write(srv, __FILE__, __LINE__, "ss", "socketsockopt failed:", strerror(errno));
 		return -1;
 	}
 
@@ -233,7 +218,8 @@ int network_server_init(server * srv, buffer * host_token, specific_config * s)
 		if (host == NULL)
 		{
 			srv_socket->addr.ipv6.sin6_addr = in6addr_any;
-		} else
+		} 
+		else
 		{
 			struct addrinfo hints, *res;
 			int r;
@@ -246,15 +232,12 @@ int network_server_init(server * srv, buffer * host_token, specific_config * s)
 
 			if (0 != (r = getaddrinfo(host, NULL, &hints, &res)))
 			{
-				log_error_write(srv, __FILE__, __LINE__,
-								"sssss", "getaddrinfo failed: ",
-								gai_strerror(r), "'", host, "'");
+				log_error_write(srv, __FILE__, __LINE__, "sssss", "getaddrinfo failed: ", gai_strerror(r), "'", host, "'");
 
 				return -1;
 			}
 
 			memcpy(&(srv_socket->addr), res->ai_addr, res->ai_addrlen);
-
 			freeaddrinfo(res);
 		}
 		srv_socket->addr.ipv6.sin6_port = htons(port);
@@ -267,36 +250,31 @@ int network_server_init(server * srv, buffer * host_token, specific_config * s)
 		if (host == NULL)
 		{
 			srv_socket->addr.ipv4.sin_addr.s_addr = htonl(INADDR_ANY);
-		} else
+		} 
+		else
 		{
 			struct hostent *he;
 			if (NULL == (he = gethostbyname(host)))
 			{
-				log_error_write(srv, __FILE__, __LINE__,
-								"sds", "gethostbyname failed: ", h_errno, host);
+				log_error_write(srv, __FILE__, __LINE__, "sds", "gethostbyname failed: ", h_errno, host);
 				return -1;
 			}
 
 			if (he->h_addrtype != AF_INET)
 			{
-				log_error_write(srv, __FILE__, __LINE__, "sd",
-								"addr-type != AF_INET: ", he->h_addrtype);
+				log_error_write(srv, __FILE__, __LINE__, "sd", "addr-type != AF_INET: ", he->h_addrtype);
 				return -1;
 			}
 
 			if (he->h_length != sizeof(struct in_addr))
 			{
-				log_error_write(srv, __FILE__, __LINE__, "sd",
-								"addr-length != sizeof(in_addr): ",
-								he->h_length);
+				log_error_write(srv, __FILE__, __LINE__, "sd", "addr-length != sizeof(in_addr): ", he->h_length);
 				return -1;
 			}
 
-			memcpy(&(srv_socket->addr.ipv4.sin_addr.s_addr),
-				   he->h_addr_list[0], he->h_length);
+			memcpy(&(srv_socket->addr.ipv4.sin_addr.s_addr),  he->h_addr_list[0], he->h_length);
 		}
 		srv_socket->addr.ipv4.sin_port = htons(port);
-
 		addr_len = sizeof(struct sockaddr_in);
 
 		break;
@@ -316,17 +294,10 @@ int network_server_init(server * srv, buffer * host_token, specific_config * s)
 		/*
 		 * check if the socket exists and try to connect to it. 
 		 */
-		if (-1 !=
-			(fd =
-			 connect(srv_socket->fd,
-					 (struct sockaddr *) &(srv_socket->addr), addr_len)))
+		if (-1 != (fd = connect(srv_socket->fd, (struct sockaddr *) &(srv_socket->addr), addr_len)))
 		{
 			close(fd);
-
-			log_error_write(srv, __FILE__, __LINE__, "ss",
-							"server socket is still in use:", host);
-
-
+			log_error_write(srv, __FILE__, __LINE__, "ss", "server socket is still in use:", host);
 			return -1;
 		}
 
@@ -341,9 +312,7 @@ int network_server_init(server * srv, buffer * host_token, specific_config * s)
 		case ENOENT:
 			break;
 		default:
-			log_error_write(srv, __FILE__, __LINE__, "sds",
-							"testing socket failed:", host, strerror(errno));
-
+			log_error_write(srv, __FILE__, __LINE__, "sds", "testing socket failed:", host, strerror(errno));
 			return -1;
 		}
 
@@ -354,18 +323,15 @@ int network_server_init(server * srv, buffer * host_token, specific_config * s)
 		return -1;
 	}
 
-	if (0 !=
-		bind(srv_socket->fd, (struct sockaddr *) &(srv_socket->addr), addr_len))
+	if (0 != bind(srv_socket->fd, (struct sockaddr *) &(srv_socket->addr), addr_len))
 	{
 		switch (srv_socket->addr.plain.sa_family)
 		{
 		case AF_UNIX:
-			log_error_write(srv, __FILE__, __LINE__, "sds",
-							"can't bind to socket:", host, strerror(errno));
+			log_error_write(srv, __FILE__, __LINE__, "sds", "can't bind to socket:", host, strerror(errno));
 			break;
 		default:
-			log_error_write(srv, __FILE__, __LINE__, "ssds",
-							"can't bind to port:", host, port, strerror(errno));
+			log_error_write(srv, __FILE__, __LINE__, "ssds", "can't bind to port:", host, port, strerror(errno));
 			break;
 		}
 		return -1;
@@ -373,8 +339,7 @@ int network_server_init(server * srv, buffer * host_token, specific_config * s)
 
 	if (-1 == listen(srv_socket->fd, 128 * 8))
 	{
-		log_error_write(srv, __FILE__, __LINE__, "ss", "listen failed: ",
-						strerror(errno));
+		log_error_write(srv, __FILE__, __LINE__, "ss", "listen failed: ", strerror(errno));
 		return -1;
 	}
 
@@ -389,16 +354,14 @@ int network_server_init(server * srv, buffer * host_token, specific_config * s)
 
 			if (0 == RAND_status())
 			{
-				log_error_write(srv, __FILE__, __LINE__, "ss", "SSL:",
-								"not enough entropy in the pool");
+				log_error_write(srv, __FILE__, __LINE__, "ss", "SSL:", "not enough entropy in the pool");
 				return -1;
 			}
 		}
 
 		if (NULL == (s->ssl_ctx = SSL_CTX_new(SSLv23_server_method())))
 		{
-			log_error_write(srv, __FILE__, __LINE__, "ss", "SSL:",
-							ERR_error_string(ERR_get_error(), NULL));
+			log_error_write(srv, __FILE__, __LINE__, "ss", "SSL:", ERR_error_string(ERR_get_error(), NULL));
 			return -1;
 		}
 
@@ -490,12 +453,12 @@ int network_server_init(server * srv, buffer * host_token, specific_config * s)
 
 		buffer_free(b);
 
-		log_error_write(srv, __FILE__, __LINE__, "ss", "SSL:",
-						"ssl requested but openssl support is not compiled in");
+		log_error_write(srv, __FILE__, __LINE__, "ss", "SSL:", "ssl requested but openssl support is not compiled in");
 
 		return -1;
 #endif
-	} else
+	} 
+	else
 	{
 #ifdef SO_ACCEPTFILTER
 		/*
@@ -504,14 +467,11 @@ int network_server_init(server * srv, buffer * host_token, specific_config * s)
 		 */
 		memset(&afa, 0, sizeof(afa));
 		strcpy(afa.af_name, "httpready");
-		if (setsockopt
-			(srv_socket->fd, SOL_SOCKET, SO_ACCEPTFILTER, &afa,
-			 sizeof(afa)) < 0)
+		if (setsockopt(srv_socket->fd, SOL_SOCKET, SO_ACCEPTFILTER, &afa, sizeof(afa)) < 0)
 		{
 			if (errno != ENOENT)
 			{
-				log_error_write(srv, __FILE__, __LINE__, "ss",
-								"can't set accept-filter 'httpready': ",
+				log_error_write(srv, __FILE__, __LINE__, "ss", "can't set accept-filter 'httpready': ",
 								strerror(errno));
 			}
 		}
@@ -525,14 +485,13 @@ int network_server_init(server * srv, buffer * host_token, specific_config * s)
 	{
 		srv->srv_sockets.size = 4;
 		srv->srv_sockets.used = 0;
-		srv->srv_sockets.ptr =
-			malloc(srv->srv_sockets.size * sizeof(server_socket));
-	} else if (srv->srv_sockets.used == srv->srv_sockets.size)
+		srv->srv_sockets.ptr = malloc(srv->srv_sockets.size * sizeof(server_socket));
+	} 
+	else if (srv->srv_sockets.used == srv->srv_sockets.size)
 	{
 		srv->srv_sockets.size += 4;
 		srv->srv_sockets.ptr =
-			realloc(srv->srv_sockets.ptr,
-					srv->srv_sockets.size * sizeof(server_socket));
+			realloc(srv->srv_sockets.ptr, srv->srv_sockets.size * sizeof(server_socket));
 	}
 
 	srv->srv_sockets.ptr[srv->srv_sockets.used++] = srv_socket;
@@ -556,8 +515,7 @@ int network_close(server * srv)
 			 */
 			if (srv_socket->fde_ndx != -1)
 			{
-				fdevent_event_del(srv->ev, &(srv_socket->fde_ndx),
-								  srv_socket->fd);
+				fdevent_event_del(srv->ev, &(srv_socket->fde_ndx), srv_socket->fd);
 				fdevent_unregister(srv->ev, srv_socket->fd);
 			}
 
@@ -574,7 +532,8 @@ int network_close(server * srv)
 	return 0;
 }
 
-typedef enum {
+typedef enum 
+{
 	NETWORK_BACKEND_UNSET,
 	NETWORK_BACKEND_WRITE,
 	NETWORK_BACKEND_WRITEV,
@@ -589,7 +548,8 @@ int network_init(server * srv)
 	size_t i;
 	network_backend_t backend;
 
-	struct nb_map {
+	struct nb_map 
+	{
 		network_backend_t nb;
 		const char *name;
 	} network_backends[] =
@@ -598,25 +558,19 @@ int network_init(server * srv)
 		 * lowest id wins 
 		 */
 #if defined USE_LINUX_SENDFILE
-		{
-		NETWORK_BACKEND_LINUX_SENDFILE, "linux-sendfile"},
+		{NETWORK_BACKEND_LINUX_SENDFILE, "linux-sendfile"},
 #endif
 #if defined USE_FREEBSD_SENDFILE
-		{
-		NETWORK_BACKEND_FREEBSD_SENDFILE, "freebsd-sendfile"},
+		{NETWORK_BACKEND_FREEBSD_SENDFILE, "freebsd-sendfile"},
 #endif
 #if defined USE_SOLARIS_SENDFILEV
-		{
-		NETWORK_BACKEND_SOLARIS_SENDFILEV, "solaris-sendfilev"},
+		{NETWORK_BACKEND_SOLARIS_SENDFILEV, "solaris-sendfilev"},
 #endif
 #if defined USE_WRITEV
-		{
-		NETWORK_BACKEND_WRITEV, "writev"},
+		{NETWORK_BACKEND_WRITEV, "writev"},
 #endif
-		{
-		NETWORK_BACKEND_WRITE, "write"},
-		{
-		NETWORK_BACKEND_UNSET, NULL}
+		{NETWORK_BACKEND_WRITE, "write"},
+		{NETWORK_BACKEND_UNSET, NULL}
 	};
 
 	b = buffer_init();
@@ -760,10 +714,8 @@ int network_register_fdevents(server * srv)
 	{
 		server_socket *srv_socket = srv->srv_sockets.ptr[i];
 
-		fdevent_register(srv->ev, srv_socket->fd,
-						 network_server_handle_fdevent, srv_socket);
-		fdevent_event_add(srv->ev, &(srv_socket->fde_ndx), srv_socket->fd,
-						  FDEVENT_IN);
+		fdevent_register(srv->ev, srv_socket->fd, network_server_handle_fdevent, srv_socket);
+		fdevent_event_add(srv->ev, &(srv_socket->fde_ndx), srv_socket->fd, FDEVENT_IN);
 	}
 	return 0;
 }

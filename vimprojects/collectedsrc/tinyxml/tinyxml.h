@@ -43,6 +43,7 @@ distribution.
 #define DEBUG
 #endif
 
+//通过下面的宏来判断使用谁的字符串类。
 #ifdef TIXML_USE_STL
 	#include <string>
  	#include <iostream>

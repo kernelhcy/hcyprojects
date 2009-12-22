@@ -119,10 +119,12 @@ static chunk *chunkqueue_get_unused_chunk(chunkqueue * cq)
 	if (!cq->unused)
 	{
 		c = chunk_init();
-	} else
+	} 
+	else
 	{
 		/*
 		 * take the first element from the list (a stack) 
+		 * 从ununsed的chunk的栈顶返回一个未用的chunk。
 		 */
 		c = cq->unused;
 		cq->unused = c->next;
@@ -133,6 +135,9 @@ static chunk *chunkqueue_get_unused_chunk(chunkqueue * cq)
 	return c;
 }
 
+/**
+ * 将c追加到cp的开始位置。
+ */
 static int chunkqueue_prepend_chunk(chunkqueue * cq, chunk * c)
 {
 	c->next = cq->first;
@@ -177,10 +182,10 @@ void chunkqueue_reset(chunkqueue * cq)
 		switch (c->type)
 		{
 		case MEM_CHUNK:
-			c->offset = c->mem->used - 1;
+			c->offset = c->mem->used - 1; 	//表示块已经处理完毕
 			break;
 		case FILE_CHUNK:
-			c->offset = c->file.length;
+			c->offset = c->file.length;  	//表示处理完毕
 			break;
 		default:
 			break;
@@ -192,8 +197,12 @@ void chunkqueue_reset(chunkqueue * cq)
 	cq->bytes_out = 0;
 }
 
-int
-chunkqueue_append_file(chunkqueue * cq, buffer * fn, off_t offset, off_t len)
+
+/**
+ * 将文件fn的从offset开始，长度为len的数据放到一个块中，并把块加到cq中。
+ * 这里仅仅是标记了一下，实际的数据并没有没存储到块中。
+ */
+int chunkqueue_append_file(chunkqueue * cq, buffer * fn, off_t offset, off_t len)
 {
 	chunk *c;
 
@@ -214,6 +223,13 @@ chunkqueue_append_file(chunkqueue * cq, buffer * fn, off_t offset, off_t len)
 	return 0;
 }
 
+/**
+ * 将mem中的数据加到cq中。
+ * mem中的数据被实际的拷贝到了块中。
+ *
+ * 注意后面的chunkqueue_append_buffer_week函数，其仅仅是将mem指针赋值给了
+ * 块中的mem变量，没有进行实际的数据拷贝！
+ */
 int chunkqueue_append_buffer(chunkqueue * cq, buffer * mem)
 {
 	chunk *c;
@@ -231,6 +247,9 @@ int chunkqueue_append_buffer(chunkqueue * cq, buffer * mem)
 	return 0;
 }
 
+/**
+ * 仅仅是指针赋值，没有实际的数据拷贝
+ */
 int chunkqueue_append_buffer_weak(chunkqueue * cq, buffer * mem)
 {
 	chunk *c;
@@ -250,6 +269,7 @@ int chunkqueue_append_buffer_weak(chunkqueue * cq, buffer * mem)
 	return 0;
 }
 
+//加到前面
 int chunkqueue_prepend_buffer(chunkqueue * cq, buffer * mem)
 {
 	chunk *c;
@@ -285,6 +305,9 @@ int chunkqueue_append_mem(chunkqueue * cq, const char *mem, size_t len)
 	return 0;
 }
 
+/**
+ * 将一个未使用的块加到cq的前面并返回这个块。
+ */
 buffer *chunkqueue_get_prepend_buffer(chunkqueue * cq)
 {
 	chunk *c;
@@ -300,6 +323,7 @@ buffer *chunkqueue_get_prepend_buffer(chunkqueue * cq)
 	return c->mem;
 }
 
+//后面
 buffer *chunkqueue_get_append_buffer(chunkqueue * cq)
 {
 	chunk *c;
@@ -341,6 +365,7 @@ chunk *chunkqueue_get_append_tempfile(chunkqueue * cq)
 
 		/*
 		 * we have several tempdirs, only if all of them fail we jump out 
+		 * 已经有一个临时目录列表，试试哪个可以使用。
 		 */
 
 		for (i = 0; i < cq->tempdirs->used; i++)
@@ -349,20 +374,24 @@ chunk *chunkqueue_get_append_tempfile(chunkqueue * cq)
 
 			buffer_copy_string_buffer(template, ds->value);
 			BUFFER_APPEND_SLASH(template);
-			buffer_append_string_len(template,
-									 CONST_STR_LEN("lighttpd-upload-XXXXXX"));
+			buffer_append_string_len(template, CONST_STR_LEN("lighttpd-upload-XXXXXX"));
 
+			/**
+			 * mkstemp函数根据参数模板生成一个唯一的临时文件。
+			 * 参数必须是一个可以修改的数组切最后六个字符为XXXXXX。
+			 * 可以保证只有我们一个用户。
+			 */
 			if (-1 != (c->file.fd = mkstemp(template->ptr)))
 			{
 				/*
-				 * only trigger the unlink if we created the temp-file
-				 * successfully 
+				 * only trigger the unlink if we created the temp-file successfully 
 				 */
 				c->file.is_temp = 1;
 				break;
 			}
 		}
-	} else
+	} 
+	else
 	{
 		if (-1 != (c->file.fd = mkstemp(template->ptr)))
 		{
@@ -407,6 +436,9 @@ off_t chunkqueue_length(chunkqueue * cq)
 	return len;
 }
 
+/**
+ * 返回cq中所有的块已经写入的长度之和
+ */
 off_t chunkqueue_written(chunkqueue * cq)
 {
 	off_t len = 0;
@@ -433,6 +465,9 @@ int chunkqueue_is_empty(chunkqueue * cq)
 	return cq->first ? 0 : 1;
 }
 
+/**
+ * 删除已经处理完毕的块。
+ */
 int chunkqueue_remove_finished_chunks(chunkqueue * cq)
 {
 	chunk *c;
@@ -466,11 +501,14 @@ int chunkqueue_remove_finished_chunks(chunkqueue * cq)
 
 		/*
 		 * keep at max 4 chunks in the 'unused'-cache 
+		 * 将块放到未使用栈中。
+		 * 保持栈中至多有四个空闲块。
 		 */
 		if (cq->unused_chunks > 4)
 		{
 			chunk_free(c);
-		} else
+		} 
+		else
 		{
 			c->next = cq->unused;
 			cq->unused = c;

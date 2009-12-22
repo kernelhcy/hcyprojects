@@ -580,7 +580,8 @@ typedef struct {
  * 服务器使用的socket连接。
  * 包含socket地址，socket的fd以及有关ssl的一些变量。
  */
-typedef struct {
+typedef struct 
+{
 	sock_addr addr;
 	int fd;
 	int fde_ndx;

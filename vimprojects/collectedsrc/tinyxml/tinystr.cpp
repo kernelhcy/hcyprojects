@@ -39,6 +39,10 @@ const TiXmlString::size_type TiXmlString::npos = static_cast< TiXmlString::size_
 TiXmlString::Rep TiXmlString::nullrep_ = { 0, 0, { '\0' } };
 
 
+/**
+ * 相当与扩充容量到cap。
+ * 同样使用临时变量tmp来达到释放以前的内存的目的。
+ */
 void TiXmlString::reserve (size_type cap)
 {
 	if (cap > capacity())
@@ -54,6 +58,15 @@ void TiXmlString::reserve (size_type cap)
 TiXmlString& TiXmlString::assign(const char* str, size_type len)
 {
 	size_type cap = capacity();
+	/**
+	 * 如果str的长度大于当前的容量，那么直接生成一个临时的TiXmlString对象tmp，并赋值str，
+	 * 然后将tmp的数据和本对象的交换。
+	 * 这样在此函数中返回时，以前的数据空间将在销毁tmp时同时销毁，可防止内存泄漏。
+	 *
+	 * 第二个判断条件是当当前容量过大时也这么做，有助于节省空间。
+	 *
+	 * 这里面tmp对象很有意思，可以帮助销毁以前的空间，防止内存泄漏！
+	 */
 	if (len > cap || cap > 3*(len + 8))
 	{
 		TiXmlString tmp;
@@ -73,10 +86,15 @@ TiXmlString& TiXmlString::assign(const char* str, size_type len)
 TiXmlString& TiXmlString::append(const char* str, size_type len)
 {
 	size_type newsize = length() + len;
+
+	/**
+	 * 扩充容量
+	 */
 	if (newsize > capacity())
 	{
 		reserve (newsize + capacity());
 	}
+
 	memmove(finish(), str, len);
 	set_size(newsize);
 	return *this;

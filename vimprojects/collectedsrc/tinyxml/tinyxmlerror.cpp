@@ -29,6 +29,7 @@ distribution.
 // english error messages, but the could now be translated.
 //
 // It also cleans up the code a bit.
+// 将错误提示独立出来可以实现多语言的错误提示。
 //
 
 const char* TiXmlBase::errorString[ TIXML_ERROR_STRING_COUNT ] =
