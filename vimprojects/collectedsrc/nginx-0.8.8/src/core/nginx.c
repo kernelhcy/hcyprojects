@@ -460,6 +460,7 @@ ngx_set_environment(ngx_cycle_t *cycle, ngx_uint_t *last)
             || ngx_strncmp(var[i].data, "TZ=", 3) == 0)
         {
             goto tz_found;
+	--n;
         }
     }
 

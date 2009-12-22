@@ -46,6 +46,30 @@ distribution.
 	required - it is used to check that the TiXmlString class isn't incorrectly
 	used. Be nice to old compilers and macro it here:
 */
+
+/**
+ * explicit关键字：
+ * 	修饰类的构造函数。
+ * 	表示不可以通过类的这个构造函数进行隐式转换。
+ * 	如：
+ * 	class A
+ * 	{
+ * 		A(int n);
+ * 	}
+ * 	A::A(int n)
+ * 	{
+ * 	 	...
+ * 	}
+ *
+ * 	那么类A就可以通过下面的语句进行初始化：
+ * 	A a = 10;
+ * 	相当于 A tmp(10); A a =tmp;
+ * 	如果在A的构造函数前面加上explicit关键字，那么第一种情况的默认转换就不被允许。
+ */
+/*
+ * 下面的宏就是在定义explicit关键字。
+ * 由于explicit关键字支持的并不是很广泛，对于一些老的编译器不支持这个关键字，因此通过下面的宏进行处理。
+ */
 #if defined(_MSC_VER) && (_MSC_VER >= 1200 )
 	// Microsoft visual studio, version 6 and higher.
 	#define TIXML_EXPLICIT explicit
@@ -64,6 +88,12 @@ distribution.
    The buffer allocation is made by a simplistic power of 2 like mechanism : if we increase
    a string and there's no more room, we allocate a buffer twice as big as we need.
 */
+/**
+ * TiXmlString是std::string模板的一个模仿。这样允许TinyXml在一些对STL支持不是很好的编译器上进行编译。
+ * 只实现了一些和TinyXML项目相关的函数。
+ * 缓存的分配使用的是简单的2次方机制：如果增加一个字符串而又没有足够的空间，那么我们分配给缓存两倍于
+ * 我们需求的空间。
+ */
 class TiXmlString
 {
   public :
@@ -80,6 +110,7 @@ class TiXmlString
 	}
 
 	// TiXmlString copy constructor
+	// 拷贝构造函数参数是引用！！防止无限递归。
 	TiXmlString ( const TiXmlString & copy) : rep_(0)
 	{
 		init(copy.length());
@@ -128,7 +159,7 @@ class TiXmlString
 	// += operator. Maps to append
 	TiXmlString& operator += (char single)
 	{
-		return append(&single, 1);
+		return append(&single, 1); //一个字符，对其取地址就得到了一个长度为1的字符串，但是不已'\0'结尾！
 	}
 
 	// += operator. Maps to append
@@ -222,6 +253,9 @@ class TiXmlString
 	char* start() const { return rep_->str; }
 	char* finish() const { return rep_->str + rep_->size; }
 
+	/**
+	 * 存储字符串。
+	 */
 	struct Rep
 	{
 		size_type size, capacity;
@@ -239,6 +273,16 @@ class TiXmlString
 			// that are overly picky about structure alignment.
 			const size_type bytesNeeded = sizeof(Rep) + cap;
 			const size_type intsNeeded = ( bytesNeeded + sizeof(int) - 1 ) / sizeof( int ); 
+			
+			/**
+			 * reinterpret_cast<type> 强制类型转换。
+			 * 重新解释变量的底层二进制表示模式。
+			 * 在这里，创建的是一个int类型的数组，通过类型转换，将其占用的空间转换成Rep类型。
+			 * 通过reinterpret_cast强制类型转换，只需要进行一次空间分配。
+			 * 通常情况下需要两次空间分配：
+			 * 	第一次分配Rep类型的空间，
+			 * 	第二次根据cap分配str的空间。
+			 */
 			rep_ = reinterpret_cast<Rep*>( new int[ intsNeeded ] );
 
 			rep_->str[ rep_->size = sz ] = '\0';
