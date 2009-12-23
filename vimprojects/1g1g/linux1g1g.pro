@@ -16,3 +16,4 @@ HEADERS += mainwindow.h \
     config.h \
     env.h
 RESOURCES += application.qrc
+FORMS += 
