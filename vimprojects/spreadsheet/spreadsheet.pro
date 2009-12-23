@@ -15,7 +15,8 @@ HEADERS += fd.h \
     gotocelldialog.h \
     hexspinbox.h \
     cell.h \
-    heads.h
+    heads.h \
+    gotocelldialog.h
 SOURCES += finddialog.cpp \
     main.cpp \
     mainwindow.cpp \
@@ -23,4 +24,6 @@ SOURCES += finddialog.cpp \
     spreadsheet.cpp \
     gotocelldialog.cpp \
     hexspinbox.cpp \
-    cell.cpp
+    cell.cpp \
+    gotocelldialog.cpp
+FORMS += gotocelldialog.ui

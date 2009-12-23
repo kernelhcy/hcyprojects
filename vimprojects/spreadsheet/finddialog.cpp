@@ -4,12 +4,12 @@
 FindDialog::FindDialog(QWidget * parent)
 	: QDialog(parent)
 {
-	label = new QLabel(tr("Find & What:"));
+    label = new QLabel(tr("Find &What:"));
 	lineEdit = new QLineEdit;
 	label -> setBuddy(lineEdit);
 
-	caseCheckBox = new QCheckBox(tr("Match & Case"));
-	backwardCheckBox = new QCheckBox(tr("Search & Backward"));
+    caseCheckBox = new QCheckBox(tr("Match &Case"));
+    backwardCheckBox = new QCheckBox(tr("Search &Backward"));
 	
 	findButton = new QPushButton(tr("&Find"));
 	findButton -> setDefault(true);

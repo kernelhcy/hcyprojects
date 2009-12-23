@@ -1,31 +1,25 @@
 #ifndef GOTOCELLDIALOG_H
 #define GOTOCELLDIALOG_H
 
-#include <QtGui>
-#include <QDialog>
-#include "hexspinbox.h"
-#include "heads.h"
+#include <QtGui/QDialog>
 
-class HexSpinBox;
-class QLabel;
-class QPushButton;
+namespace Ui
+{
+    class GoToCellDialog;
+}
 
 class GoToCellDialog : public QDialog
 {
     Q_OBJECT
-
 public:
     GoToCellDialog(QWidget *parent = 0);
     ~GoToCellDialog();
-    int line;
-    int column;
+
+protected:
+    void changeEvent(QEvent *e);
+
 private:
-    HexSpinBox *col_edit, *line_edit;
-    QLabel *col_label, * line_label;
-    QPushButton *ok, *cancel;
-private slots:
-    void okAction();
-    void cancelAction();
+    Ui::GoToCellDialog *m_ui;
 };
 
 #endif // GOTOCELLDIALOG_H
