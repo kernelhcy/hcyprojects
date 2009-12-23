@@ -2,6 +2,7 @@
 #include "tipwindow.h"
 #include <QDialog>
 #include "gotocelldialog.h"
+#include "sortdialog.h"
 
 int main(int argc, char *argv[])
 {
@@ -15,6 +16,11 @@ int main(int argc, char *argv[])
 
     GoToCellDialog *dialog = new GoToCellDialog;
     dialog->show();
+
+    SortDialog *sortdialog = new SortDialog;
+    sortdialog->setColumnRange('C', 'F');
+    sortdialog->show();
+
     return a.exec();
 
 }
