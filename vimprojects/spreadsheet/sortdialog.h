@@ -1,27 +1,15 @@
 #ifndef SORTDIALOG_H
 #define SORTDIALOG_H
+
 #include <QDialog>
-#include "spreadsheet.h"
-#include <iostream>
-#include "heads.h"
+#include "ui_sortdialog.h"
 
-class QLabel;
-class QPushButton;
-
-class SortDialog : public QDialog
+class SortDialog : public QDialog, public Ui::SortDialog
 {
-
-	Q_OBJECT
-	public:
-		SortDialog(QWidget *parent = 0);
-		void setSpreadsheet(Spreadsheet *spreadSheet);
-	private slots:
-		void sort();
-	private: 
-		Spreadsheet *spreadSheet;
-		QLabel *label;
-		QPushButton *sortButton;
-		QPushButton *closeButton;
+    Q_OBJECT
+public:
+    SortDialog(QWidget *parent = 0);
+    void setColumnRange(QChar first, QChar last);
 };
 
-#endif
+#endif // SORTDIALOG_H

@@ -1,0 +1,21 @@
+<RCC>
+    <qresource prefix="/images">
+        <file>pics/copy.png</file>
+        <file>pics/cut.png</file>
+        <file>pics/new.png</file>
+        <file>pics/open.png</file>
+        <file>pics/paste.png</file>
+        <file>pics/save.png</file>
+        <file>pics/about.png</file>
+        <file>pics/quit.png</file>
+        <file>pics/search.png</file>
+        <file>pics/cal.png</file>
+        <file>pics/delete.png</file>
+        <file>pics/edit.png</file>
+        <file>pics/gotocell.png</file>
+        <file>pics/qt.png</file>
+        <file>pics/sort.png</file>
+        <file>pics/ss.png</file>
+        <file>pics/splash.png</file>
+    </qresource>
+</RCC>

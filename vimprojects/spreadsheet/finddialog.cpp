@@ -4,6 +4,8 @@
 FindDialog::FindDialog(QWidget * parent)
 	: QDialog(parent)
 {
+    setWindowIcon(QIcon(tr(":/images/pics/search.png")));
+
     label = new QLabel(tr("Find &What:"));
 	lineEdit = new QLineEdit;
 	label -> setBuddy(lineEdit);

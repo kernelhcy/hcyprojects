@@ -13,13 +13,17 @@
   <property name="windowTitle">
    <string>Go To Cell</string>
   </property>
+  <property name="windowIcon">
+   <iconset resource="spreadsheet.qrc">
+    <normaloff>:/images/pics/gotocell.png</normaloff>:/images/pics/gotocell.png</iconset>
+  </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
-      <widget class="QLabel" name="label">
+      <widget class="QLabel" name="textlabel">
        <property name="text">
-        <string>&amp;Cell Location:</string>
+        <string>&amp;Go To Cell:</string>
        </property>
        <property name="buddy">
         <cstring>lineEdit</cstring>
@@ -75,6 +79,8 @@
   <tabstop>cancelButton</tabstop>
   <tabstop>okButton</tabstop>
  </tabstops>
- <resources/>
+ <resources>
+  <include location="spreadsheet.qrc"/>
+ </resources>
  <connections/>
 </ui>

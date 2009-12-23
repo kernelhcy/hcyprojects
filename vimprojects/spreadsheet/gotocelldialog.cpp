@@ -1,26 +1,26 @@
+#include <QtGui>
 #include "gotocelldialog.h"
-#include "ui_gotocelldialog.h"
 
-GoToCellDialog::GoToCellDialog(QWidget *parent) :
-    QDialog(parent),
-    m_ui(new Ui::GoToCellDialog)
+GoToCellDialog::GoToCellDialog(QWidget *parent)
+    : QDialog(parent)
 {
-    m_ui->setupUi(this);
+    /*
+      setupUi函数自动完成了下面的信号槽链接。
+
+      onnect(lineEdit, SIGNAL(textChanged(const QString &)),
+        this, SLOT(on_lineEdit_textChanged()));
+
+      After creating the user interface, setupUi() will also automatically connect any slots
+      that follow the naming convention on_objectName_signalName() to the corresponding
+      objectName's signalName() signal.
+     */
+    setupUi(this);
+    QRegExp regExp("[A-Za-z][1-9][0-9]{0,2}");
+    lineEdit->setValidator(new QRegExpValidator(regExp, this));
+    connect(okButton, SIGNAL(clicked()), this, SLOT(accept()));
+    connect(cancelButton, SIGNAL(clicked()), this, SLOT(reject()));
 }
-
-GoToCellDialog::~GoToCellDialog()
+void GoToCellDialog::on_lineEdit_textChanged()
 {
-    delete m_ui;
-}
-
-void GoToCellDialog::changeEvent(QEvent *e)
-{
-    QDialog::changeEvent(e);
-    switch (e->type()) {
-    case QEvent::LanguageChange:
-        m_ui->retranslateUi(this);
-        break;
-    default:
-        break;
-    }
+    okButton->setEnabled(lineEdit->hasAcceptableInput());
 }

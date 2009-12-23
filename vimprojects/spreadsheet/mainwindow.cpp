@@ -1,4 +1,5 @@
 #include "mainwindow.h"
+#include <iostream>
 
 MainWindow::MainWindow()
 {
@@ -11,88 +12,123 @@ MainWindow::MainWindow()
 	createStatusBar();
 	readSettings();
 	findDialog = 0;
-	//setWindowIcon(QIcon(":/images/icon.png"));
+    setWindowIcon(QIcon(":/images/pics/ss.png"));
 	setCurrentFile("");
-	
+
+    //test
+    setWindowModified(true);
+    setCurrentFile(tr("data.sp"));
+    setCurrentFile(tr("money.sp"));
+    setCurrentFile(tr("students.sp"));
+    setCurrentFile(tr("teachers.sp"));
+    setCurrentFile(tr("total.sp"));
 }
 
 
 void MainWindow::createActions()
 {
-	newAction = new QAction(tr("&新建"), this );
-	//newAction->setIcon(QIcon(":/images/new.png"));
+    newAction = new QAction(tr("&New"), this );
+    newAction->setIcon(QIcon(":/images/pics/new.png"));
 	newAction->setShortcut(tr("Ctrl+N"));
-    newAction->setStatusTip(tr("创建一个新的表格文件"));
+    newAction->setStatusTip(tr("Create a new spreadsheet."));
 	connect(newAction, SIGNAL(triggered()), this , SLOT(newFile()));
 	// 其他相关 action
 	for ( int i = 0; i < MaxRecentFiles; ++i)
 	{
-		recentFileActions[i] = new QAction( this );
-		recentFileActions[i]->setVisible( false );
+        recentFileActions[i] = new QAction(this);
+        recentFileActions[i]->setVisible(false);
 		connect(recentFileActions[i], SIGNAL(triggered()), this , SLOT(openRecentFile()));
 	}
 	
-    selectAllAction = new QAction(tr("&全选"), this );
+    selectAllAction = new QAction(tr("&Select All"), this );
 	selectAllAction->setShortcut(tr("Ctrl+A"));
-    selectAllAction->setStatusTip(tr("选择全部数据" "spreadsheet"));
+    selectAllAction->setStatusTip(tr("Select all the data" "spreadsheet"));
 	//connect(selectAllAction, SIGNAL(triggered()), spreadsheet, SLOT(selectAll())) ;
 	
-    showGridAction = new QAction(tr("&显示网格"), this );
-	showGridAction->setCheckable( true );
-	//showGridAction->setChecked(spreadsheet->showGrid());
-    showGridAction->setStatusTip(tr("显示或隐藏网格"));
-	//connect(showGridAction, SIGNAL(toggled( bool )),spreadsheet, SLOT(setShowGrid( bool )));
-	
-    aboutQtAction = new QAction(tr("关于&Qt"), this );
-    aboutQtAction->setStatusTip(tr("显示Qt库的关于框"));
+    aboutQtAction = new QAction(tr("About &Qt"), this );
+    aboutQtAction -> setIcon(QIcon(":/images/pics/qt.png"));
+    aboutQtAction->setStatusTip(tr("Show the Qt library's About box"));
 	connect(aboutQtAction, SIGNAL(triggered()), qApp, SLOT(aboutQt()));
 	
-    saveAction = new QAction(tr("&保存"), this );
+    saveAction = new QAction(tr("&Save"), this );
+    saveAction -> setShortcut(tr("Ctrl+S"));
+    saveAction -> setIcon(QIcon(":/images/pics/save.png"));
 	connect(saveAction, SIGNAL(triggered()), this, SLOT(save())) ;
 	
-    saveAsAction = new QAction(tr("另存为"), this );
+    saveAsAction = new QAction(tr("Save &As"), this );
 	connect(saveAsAction, SIGNAL(triggered()), this, SLOT(saveAs())) ;
 	
-    openAction = new QAction(tr("&打开"), this);
+    openAction = new QAction(tr("&Open"), this);
+    openAction -> setShortcut(tr("Ctrl+O"));
+    openAction -> setIcon(QIcon(":/images/pics/open.png"));
 	connect(openAction, SIGNAL(triggered()), this, SLOT(open()));
 	
-    cutAction = new QAction(tr("剪切"), this );
+    cutAction = new QAction(tr("C&ut"), this );
+    cutAction -> setShortcut(tr("Ctrl+X"));
+    cutAction -> setIcon(QIcon(":/images/pics/cut.png"));
 	//connect(cutAction, SIGNAL(triggered()), this, SLOT(cut())) ;
 	
-    copyAction = new QAction(tr("&复制"), this );
+    copyAction = new QAction(tr("&Copy"), this );
+    copyAction -> setShortcut(tr("Ctrl+X"));
+    copyAction -> setIcon(QIcon(":/images/pics/copy.png"));
 	//connect(copyAction, SIGNAL(triggered()), this, SLOT(copy())) ;
 	
-    pasteAction = new QAction(tr("&粘贴"), this );
+    pasteAction = new QAction(tr("&Past"), this );
+    pasteAction -> setShortcut(tr("Ctrl+P"));
+    pasteAction -> setIcon(QIcon(":/images/pics/paste.png"));
 	//connect(pasteAction, SIGNAL(triggered()), this, SLOT(paste())) ;
 	
-    deleteAction = new QAction(tr("删除"), this );
+    deleteAction = new QAction(tr("&Delete"), this );
+    deleteAction -> setShortcut(tr("Ctrl+D"));
+    deleteAction -> setIcon(QIcon(":/images/pics/delete.png"));
 	//connect(deleteAction, SIGNAL(triggered()), this, SLOT(del())) ;
 	
-    findAction = new QAction(tr("&查找"), this );
+    findAction = new QAction(tr("&Find"), this );
+    findAction -> setShortcut(tr("Ctrl+F"));
+    findAction -> setIcon(QIcon(":/images/pics/search.png"));
 	connect(findAction, SIGNAL(triggered()), this, SLOT(find())) ;
 	
-    goToCellAction = new QAction(tr("&跳至格(cell)"), this );
+    goToCellAction = new QAction(tr("Go &to Cell"), this );
+    goToCellAction -> setShortcut(tr("Ctrl+G"));
+    goToCellAction -> setIcon(QIcon(":/images/pics/gotocell.png"));
     connect(goToCellAction, SIGNAL(triggered()), this, SLOT(goToCell()));
 
-    exitAction = new QAction(tr("&退出"), this );
+    exitAction = new QAction(tr("&Quit"), this );
+    exitAction -> setShortcut(tr("Ctrl+Q"));
+    exitAction -> setIcon(QIcon(":/images/pics/quit.png"));
 	connect(exitAction, SIGNAL(triggered()), this, SLOT(close()));
 	
-    aboutAction = new QAction(tr("&关于Spreadsheet"), this );
+    aboutAction = new QAction(tr("&About Spreadsheet"), this );
+    aboutAction -> setIcon(QIcon(":/images/pics/about.png"));
 	connect(aboutAction, SIGNAL(triggered()), this, SLOT(about()));
 	
-    selectRowAction = new QAction(tr("选择行"), this );
-    selectColumnAction = new QAction(tr("选择列"), this );
-    recalculateAction = new QAction(tr("重新计算"), this);
-    sortAction = new QAction(tr("排序"), this);
+    selectRowAction = new QAction(tr("Select &row"), this );
+    selectColumnAction = new QAction(tr("Select &column"), this );
+
+    recalculateAction = new QAction(tr("&ReCalculate"), this);
+    recalculateAction -> setShortcut(tr("Ctrl+R"));
+    recalculateAction -> setIcon(QIcon(":/images/pics/cal.png"));
+
+    sortAction = new QAction(tr("&Sort"), this);
+    sortAction -> setShortcut(tr("Ctrl+T"));
+    sortAction -> setIcon(QIcon(":/images/pics/sort.png"));
 	connect(sortAction, SIGNAL(triggered()), this, SLOT(sort()));
 	
-	autoRecalcAction = new QAction(tr("Auto RecalcAction"), this);
+    showGridAction = new QAction(tr("Show &Grid"), this );
+    showGridAction->setCheckable( true );
+    //showGridAction->setChecked(spreadsheet->showGrid());
+    showGridAction->setStatusTip(tr("Show or hide the grid"));
+    //connect(showGridAction, SIGNAL(toggled( bool )),spreadsheet, SLOT(setShowGrid( bool )));
+
+    autoRecalcAction = new QAction(tr("&Auto RecalcAction"), this);
+    autoRecalcAction -> setCheckable(true);
+    autoRecalcAction -> setChecked(true);
 }
 
 
 void MainWindow::createMenus()
 {
-    fileMenu = menuBar() -> addMenu(tr("&文件"));
+    fileMenu = menuBar() -> addMenu(tr("&File"));
 	fileMenu -> addAction(newAction);
 	fileMenu -> addAction(openAction);
 	fileMenu -> addAction(saveAction);
@@ -108,13 +144,14 @@ void MainWindow::createMenus()
 	fileMenu -> addSeparator();
 	
 	fileMenu -> addAction(exitAction);
-    editMenu = menuBar() -> addMenu(tr("&编辑"));
+    editMenu = menuBar() -> addMenu(tr("&Edit"));
 	editMenu -> addAction(cutAction);
 	editMenu -> addAction(copyAction);
 	editMenu -> addAction(pasteAction);
 	editMenu -> addAction(deleteAction);
+    editMenu -> addSeparator();
 	
-    selectSubMenu = editMenu -> addMenu(tr("&选择"));
+    selectSubMenu = editMenu -> addMenu(tr("&Select"));
 	selectSubMenu -> addAction(selectRowAction);
 	selectSubMenu -> addAction(selectColumnAction);
 	selectSubMenu -> addAction(selectAllAction);
@@ -124,45 +161,53 @@ void MainWindow::createMenus()
 	editMenu -> addAction(findAction);
 	editMenu -> addAction(goToCellAction);
 	
-    toolsMenu = menuBar() -> addMenu(tr("&工具"));
+    toolsMenu = menuBar() -> addMenu(tr("&Tools"));
 	toolsMenu -> addAction(recalculateAction);
 	toolsMenu -> addAction(sortAction);
 	
-    optionsMenu = menuBar() -> addMenu(tr("&选项"));
+    optionsMenu = menuBar() -> addMenu(tr("&Options"));
 	optionsMenu -> addAction(showGridAction);
 	optionsMenu -> addAction(autoRecalcAction);
 	menuBar() -> addSeparator();
 	
-    helpMenu = menuBar() -> addMenu(tr("&帮助"));
+    helpMenu = menuBar() -> addMenu(tr("A&bout"));
 	helpMenu -> addAction(aboutAction);
 	helpMenu -> addAction(aboutQtAction);
 }
 
 void MainWindow::createContextMenu()
 {
-	std::cout << "create context menu\n";
-	//spreadsheet -> addAction(cutAction);
-	//spreadsheet -> addAction(copyAction);
-	//spreadsheet -> addAction(pasteAction);
-	//spreadsheet -> setContextMenuPolicy(Qt::ActionsContextMenu);
+    spreadsheet -> addAction(cutAction);
+    spreadsheet -> addAction(copyAction);
+    spreadsheet -> addAction(pasteAction);
+    spreadsheet -> addAction(separatorAction);
+    spreadsheet -> addAction(deleteAction);
+    spreadsheet -> setContextMenuPolicy(Qt::ActionsContextMenu);
 }
 
 void MainWindow::createToolBars()
 {
-    fileToolBar = addToolBar(tr("&文件"));
+    fileToolBar = addToolBar(tr("&File"));
 	fileToolBar -> addAction(newAction);
 	fileToolBar -> addAction(openAction);	
 	fileToolBar -> addAction(saveAction);
 	
-    editToolBar = addToolBar(tr("&编辑"));
+    editToolBar = addToolBar(tr("&Edit"));
 	editToolBar -> addAction(cutAction);
 	editToolBar -> addAction(copyAction);
 	editToolBar -> addAction(pasteAction);
-	
 	editToolBar -> addSeparator();
-	
-	editToolBar -> addAction(findAction);
-	editToolBar -> addAction(goToCellAction);
+    editToolBar -> addAction(deleteAction);
+
+    actionToolBar = addToolBar(tr("&Acion"));
+    actionToolBar -> addAction(findAction);
+    actionToolBar -> addAction(goToCellAction);
+    actionToolBar -> addSeparator();
+    actionToolBar -> addAction(sortAction);
+    actionToolBar -> addAction(recalculateAction);
+    actionToolBar -> addSeparator();
+    actionToolBar -> addAction(exitAction);
+    actionToolBar -> addAction(aboutAction);
 }
 
 void MainWindow::createStatusBar()
@@ -174,7 +219,8 @@ void MainWindow::createStatusBar()
 	formulaLabel -> setIndent(3);
 	statusBar() -> addWidget(locationLabel);
 	statusBar() -> addWidget(formulaLabel, 1);
-	//connect(spreadsheet, SIGNAL(currentCellChanged( int , int , int , int )), this , SLOT(updateStatusBar()));
+    //connect(spreadsheet, SIGNAL(currentCellChanged( int , int , int , int ))
+    //                              , this , SLOT(updateStatusBar()));
 	//connect(spreadsheet, SIGNAL(modified()), this , SLOT(spreadsheetModified()));
 	updateStatusBar();
 }
@@ -190,7 +236,7 @@ void MainWindow::updateStatusBar()
 
 void MainWindow::spreadsheetModified()
 {
-	setWindowModified( true );
+    setWindowModified(true);
 	updateStatusBar();
 }
 
@@ -210,7 +256,7 @@ bool MainWindow::okToContinue()
 	if (isWindowModified()) 
 	{
 		int r = QMessageBox::warning( this , tr("Spreadsheet")
-                        , tr("文件已经被修改。""你想保存修改么？"),
+                        , tr("The file has been modified。""Do you want to save it？"),
 						QMessageBox::Yes | QMessageBox::Default,
 						QMessageBox::No, QMessageBox::Cancel | QMessageBox::Escape);
 		if (r == QMessageBox::Yes) 
@@ -230,8 +276,8 @@ void MainWindow::open()
 	if (okToContinue()) 
 	{
 		QString fileName = QFileDialog::getOpenFileName( this ,
-                    tr("打开"), ".",
-                    tr("Spreadsheet文件(*.sp)"));
+                    tr("Open"), ".",
+                    tr("Spreadsheet files (*.sp)""All files (*.*)"));
 		if (!fileName.isEmpty())
 		{
 			loadFile(fileName);
@@ -306,10 +352,10 @@ void MainWindow::closeEvent(QCloseEvent * event )
 }
 
 
-void MainWindow::setCurrentFile( const QString &fileName)
+void MainWindow::setCurrentFile(const QString &fileName)
 {
 	curFile = fileName;
-	setWindowModified( false );
+    setWindowModified(false);
 	QString shownName = "Untitled";
 	if (!curFile.isEmpty()) 
 	{
@@ -379,16 +425,14 @@ void MainWindow::find()
 void MainWindow::goToCell()
 {
     GoToCellDialog *goToCellDialog = new GoToCellDialog(this);
-
-
+    goToCellDialog -> exec();
 
 }
 
 void MainWindow::sort()
 {
 	SortDialog *dialog = new SortDialog(this);
-	dialog -> setSpreadsheet(spreadsheet);
-	dialog -> exec();
+    dialog -> exec();
 }
 
 

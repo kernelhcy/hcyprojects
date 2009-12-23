@@ -1,35 +1,28 @@
-#include "sortdialog.h"
 #include <QtGui>
-
-SortDialog::SortDialog(QWidget * parent)
-	: QDialog(parent)
+#include "sortdialog.h"
+SortDialog::SortDialog(QWidget *parent)
+   : QDialog(parent)
 {
-	label = new QLabel(tr("Find & What:"));
-
-	sortButton = new QPushButton(tr("&Sort"));
-	sortButton -> setDefault(true);
-		
-	closeButton = new QPushButton(tr("Close"));
-	
-	connect(sortButton, SIGNAL(clicked()), this, SLOT(sort()));
-	
-	connect(closeButton, SIGNAL(clicked()), this, SLOT(close()));
-	
-	QVBoxLayout *rightLayout = new QVBoxLayout;
-	rightLayout -> addWidget(sortButton);
-	rightLayout -> addWidget(closeButton);
-	rightLayout -> addStretch();
-
-	setLayout(rightLayout);
-	setWindowTitle(tr("Sort"));
-	setFixedHeight(sizeHint().height());
+    setupUi(this);
+    secondaryGroupBox->hide();
+    tertiaryGroupBox->hide();
+    layout()->setSizeConstraint(QLayout::SetFixedSize);
+    setColumnRange('A', 'Z');
 }
-
-void SortDialog::sort()
+void SortDialog::setColumnRange(QChar first, QChar last)
 {
-	std::cout << "sort\n";
-}
-void SortDialog::setSpreadsheet(Spreadsheet *spreadSheet)
-{
-	this -> spreadSheet = spreadSheet;
+    primaryColumnCombo->clear();
+    secondaryColumnCombo->clear();
+    tertiaryColumnCombo->clear();
+    secondaryColumnCombo->addItem(tr("None"));
+    tertiaryColumnCombo->addItem(tr("None"));
+    primaryColumnCombo->setMinimumSize(secondaryColumnCombo->sizeHint());
+    QChar ch = first;
+    while (ch <= last)
+    {
+        primaryColumnCombo->addItem(QString(ch));
+        secondaryColumnCombo->addItem(QString(ch));
+        tertiaryColumnCombo->addItem(QString(ch));
+        ch = ch.unicode() + 1;
+    }
 }

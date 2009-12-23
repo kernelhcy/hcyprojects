@@ -63,9 +63,11 @@ class MainWindow : public QMainWindow
 		QMenu *optionsMenu;
 		QMenu *helpMenu;
 		QMenu *selectSubMenu;
+
 		QToolBar *fileToolBar;
-		
 		QToolBar *editToolBar;
+        QToolBar *actionToolBar;
+
 		QAction *newAction;
 		QAction *openAction;
 		QAction *aboutQtAction;
