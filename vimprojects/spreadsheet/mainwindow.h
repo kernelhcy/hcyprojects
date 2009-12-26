@@ -7,7 +7,7 @@
 #include "gotocelldialog.h"
 #include "sortdialog.h"
 #include "spreadsheet.h"
-#include "ss_mdiarea.h"
+#include "ss_tab_mdiarea.h"
 
 class QAction;
 class QLabel;
@@ -93,7 +93,7 @@ class MainWindow : public QMainWindow
 		QAction *sortAction;
 		QAction *autoRecalcAction;
 
-        SS_MdiArea *mdiArea;
+        SS_TabMdiArea *mdiArea;
 };
 
 #endif

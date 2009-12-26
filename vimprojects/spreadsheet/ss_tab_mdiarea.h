@@ -4,23 +4,31 @@
 #include <QWidget>
 #include <QTabBar>
 
-class SS_MdiArea : public QMdiArea
+class SS_TabMdiArea : public QMdiArea
 {
+    Q_OBJECT
 public:
-    SS_MdiArea(QWidget *parent):QMdiArea(parent)
+    SS_TabMdiArea(QWidget *parent):QMdiArea(parent)
     {
         tabBar = new QTabBar;
         tabBar ->setShape(QTabBar::RoundedSouth);
+        //setViewMode(QMdiArea::TabbedView);
+        //setDocumentMode(true);
+        //show the tabbar in the status bar
 
     }
 
-    ~SS_MdiArea()
+    ~SS_TabMdiArea()
     {
         delete tabBar;
     }
 
     QMdiSubWindow* newWindow(QWidget *widget, Qt::WindowFlags flags=0);
 
+    QTabBar *getTabBar()
+    {
+        return tabBar;
+    }
 private:
     QTabBar *tabBar;
 };

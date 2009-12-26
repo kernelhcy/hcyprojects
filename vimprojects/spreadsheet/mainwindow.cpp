@@ -5,19 +5,14 @@ MainWindow::MainWindow()
 {
 	spreadsheet = new Spreadsheet;
 
-    mdiArea = new SS_MdiArea(this);
-
+    mdiArea = new SS_TabMdiArea(this);
+    setCentralWidget(mdiArea);
     //使用tabviewmode时，菜单拦中的关闭最大最小化按钮不显示。
 //    mdiArea -> setViewMode(QMdiArea::TabbedView);
 //    mdiArea -> setTabPosition(QTabWidget::South);
 //    mdiArea -> setTabShape(QTabWidget::Rounded);
-
-    setCentralWidget(mdiArea);
-
-
-    mdiArea->newWindow(spreadsheet);
-    mdiArea -> newWindow(new QPushButton(tr("test")));
-
+    mdiArea -> newWindow(spreadsheet);
+    mdiArea -> newWindow(new Spreadsheet);
 
 	createActions();
 	createMenus();
@@ -188,12 +183,6 @@ void MainWindow::createMenus()
 	helpMenu -> addAction(aboutAction);
 	helpMenu -> addAction(aboutQtAction);
 
-
-    menuBar() -> addAction(new QAction("_", this));
-    menuBar() -> addAction(new QAction("[]", this));
-    menuBar() -> addAction(new QAction("X", this));
-
-
 }
 
 void MainWindow::createContextMenu()
@@ -238,11 +227,23 @@ void MainWindow::createStatusBar()
 	locationLabel -> setMinimumSize(locationLabel -> sizeHint());
 	formulaLabel = new QLabel;
 	formulaLabel -> setIndent(3);
+    formulaLabel -> setMaximumSize(formulaLabel -> sizeHint());
 	statusBar() -> addWidget(locationLabel);
 	statusBar() -> addWidget(formulaLabel, 1);
     //connect(spreadsheet, SIGNAL(currentCellChanged( int , int , int , int ))
     //                              , this , SLOT(updateStatusBar()));
 	//connect(spreadsheet, SIGNAL(modified()), this , SLOT(spreadsheetModified()));
+
+    //show the tabbar in the status bar
+//    QWidget *hb = new QWidget(statusBar());
+//    hb->setObjectName("taskbar");
+//    QHBoxLayout *hbLayout = new QHBoxLayout(hb);
+//    hbLayout->setMargin(0);
+//    hbLayout->setObjectName("tasklayout");
+//    statusBar()->addWidget(hb);
+//    //create a tabbar in the hbox
+//    hbLayout->addWidget(mdiArea->getTabBar());
+
 	updateStatusBar();
 }
 

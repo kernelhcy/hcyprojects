@@ -10,6 +10,7 @@ Spreadsheet::Spreadsheet(QWidget *parent)
     setSelectionMode(ContiguousSelection);
     connect(this, SIGNAL(itemChanged(QTableWidgetItem*)), this, SLOT(somethingChanged()));
     clear();
+    setMinimumSize(sizeHint());
 }
 
 void Spreadsheet::clear()
