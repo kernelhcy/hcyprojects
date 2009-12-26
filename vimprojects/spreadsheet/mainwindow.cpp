@@ -1,18 +1,26 @@
 #include "mainwindow.h"
 #include <iostream>
+#include <QtGui>
 
 MainWindow::MainWindow()
 {
 	spreadsheet = new Spreadsheet;
-
-    mdiArea = new SS_TabMdiArea(this);
-    setCentralWidget(mdiArea);
+    documents.append(spreadsheet);
+//    mdiArea = new SS_TabMdiArea(this);
+//    setCentralWidget(mdiArea);
     //使用tabviewmode时，菜单拦中的关闭最大最小化按钮不显示。
 //    mdiArea -> setViewMode(QMdiArea::TabbedView);
 //    mdiArea -> setTabPosition(QTabWidget::South);
 //    mdiArea -> setTabShape(QTabWidget::Rounded);
-    mdiArea -> newWindow(spreadsheet);
-    mdiArea -> newWindow(new Spreadsheet);
+//    mdiArea -> newWindow(spreadsheet);
+//    mdiArea -> newWindow(new Spreadsheet);
+
+    tabWidget = new QTabWidget(this);
+    tabWidget -> setTabsClosable(true);
+    tabWidget -> setUsesScrollButtons(true);
+    setCentralWidget(tabWidget);
+    tabWidget -> addTab(spreadsheet, tr("spreadsheet"));
+    tabWidget -> addTab(new Spreadsheet, tr("spreadsheet"));
 
 	createActions();
 	createMenus();
@@ -435,10 +443,10 @@ void MainWindow::find()
 {
 	if (!findDialog) {
 		findDialog = new FindDialog( this );
-        //connect(findDialog, SIGNAL (findNext( const QString &, Qt::CaseSensitivity)),
-        //        spreadsheet, SLOT (findNext( const QString &, Qt::CaseSensitivity)));
-        //connect(findDialog, SIGNAL(findPrevious( const QString &,Qt::CaseSensitivity)),
-        //        spreadsheet, SLOT(findPrevious( const QString &,Qt::CaseSensitivity)));
+        connect(findDialog, SIGNAL (findNext( const QString &, Qt::CaseSensitivity)),
+                spreadsheet, SLOT (findNext( const QString &, Qt::CaseSensitivity)));
+        connect(findDialog, SIGNAL(findPrevious( const QString &,Qt::CaseSensitivity)),
+                spreadsheet, SLOT(findPrevious( const QString &,Qt::CaseSensitivity)));
 	}
 	findDialog -> show();
 	findDialog -> activateWindow();
@@ -446,15 +454,29 @@ void MainWindow::find()
 
 void MainWindow::goToCell()
 {
-    GoToCellDialog *goToCellDialog = new GoToCellDialog(this);
-    goToCellDialog -> exec();
-
+    GoToCellDialog dialog(this);
+    if (dialog.exec()) {
+        QString str = dialog.lineEdit->text().toUpper();
+        spreadsheet -> setCurrentCell(str.mid(1).toInt() - 1, str[0].unicode() - 'A');
+    }
 }
 
 void MainWindow::sort()
 {
-	SortDialog *dialog = new SortDialog(this);
-    dialog -> exec();
+    SortDialog dialog(this);
+    QTableWidgetSelectionRange range = spreadsheet -> selectedRange();
+    dialog.setColumnRange('A' + range.leftColumn(), 'A' + range.rightColumn());
+    if (dialog.exec())
+    {
+        SpreadsheetCompare compare;
+        compare.keys[0] = dialog.primaryColumnCombo->currentIndex();
+        compare.keys[1] = dialog.secondaryColumnCombo->currentIndex() - 1;
+        compare.keys[2] = dialog.tertiaryColumnCombo->currentIndex() - 1;
+        compare.ascending[0] = (dialog.primaryOrderCombo->currentIndex() == 0);
+        compare.ascending[1] = (dialog.secondaryOrderCombo->currentIndex() == 0);
+        compare.ascending[2] = (dialog.tertiaryOrderCombo->currentIndex() == 0);
+        spreadsheet->sort(compare);
+    }
 }
 
 

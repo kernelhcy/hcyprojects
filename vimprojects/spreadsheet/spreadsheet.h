@@ -1,20 +1,20 @@
 #ifndef SPREADSHEET_H
 #define SPREADSHEET_H
 
-#include <QtGui>
 #include <QTableWidget>
 #include "cell.h"
 #include "heads.h"
+#include "document.h"
 
-class Cell;
 class SpreadsheetCompare;
+
 /*
  * Spreadsheet继承自QTableWidget,是整个程序的核心控件。
  * 负责处理表格。
  * 表格的每一个单元格都是一个Cell对象。Cell继承自QTableWidgetItem，用来存放每个单元格中的数据。
  *
  */
-class Spreadsheet : public QTableWidget
+class Spreadsheet : public QTableWidget, public Document
 {
     Q_OBJECT
 
@@ -38,6 +38,9 @@ class Spreadsheet : public QTableWidget
 
         void sort(const SpreadsheetCompare &compare);
         QString currentFormula() const;
+
+        void setCurrentCell(int row, int column);
+
     public slots:
         //void cut();
         //void copy();
@@ -47,10 +50,11 @@ class Spreadsheet : public QTableWidget
         //void selectCurrentColumn();
         void recalculate();
         //void setAutoRecalculate(bool recalc);
-        //void findNext(const QString &str, Qt::CaseSensitivity cs);
-        //void findPrevioue(const QString &str, Qt::CaseSensitivity cs);
+        void findNext(const QString &str, Qt::CaseSensitivity cs);
+        void findPrevious(const QString &str, Qt::CaseSensitivity cs);
     signals:
         void modified();
+
     private slots:
         void somethingChanged();
     private:

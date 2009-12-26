@@ -1,21 +1,18 @@
 #ifndef MAINWINDOW_H
 #define MAIhNWINDOW_H
 #include <QMainWindow>
-#include <QtGui>
+#include <QAction>
+#include <QLabel>
+#include <QMdiArea>
+#include <QTabWidget>
+
 #include "heads.h"
 #include "finddialog.h"
 #include "gotocelldialog.h"
 #include "sortdialog.h"
 #include "spreadsheet.h"
 #include "ss_tab_mdiarea.h"
-
-class QAction;
-class QLabel;
-class FindDialog;
-class Spreadsheet;
-class GoToCellDialog;
-class QMdiArea;
-class SS_MdiArea;
+#include "document.h"
 
 class MainWindow : public QMainWindow
 {
@@ -94,6 +91,9 @@ class MainWindow : public QMainWindow
 		QAction *autoRecalcAction;
 
         SS_TabMdiArea *mdiArea;
+        QTabWidget *tabWidget;
+
+        QVector<Document*> documents;
 };
 
 #endif

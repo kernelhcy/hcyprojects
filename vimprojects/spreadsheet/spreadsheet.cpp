@@ -1,7 +1,8 @@
 #include "spreadsheet.h"
+#include <QtGui>
 
 Spreadsheet::Spreadsheet(QWidget *parent)
-        :QTableWidget(parent)
+    :QTableWidget(parent), Document(Document::DOC_SS)
 {
     autoRecalc = true;
     rowCount = 150;
@@ -142,4 +143,59 @@ void Spreadsheet::somethingChanged()
 void Spreadsheet::recalculate()
 {
     return;
+}
+
+void Spreadsheet::findNext(const QString &str, Qt::CaseSensitivity cs)
+{
+    QTextStream out(stdout);
+    out << "Find next: " << str;
+    switch (cs)
+    {
+    case Qt::CaseInsensitive:
+        out << " Case Insensitive.\n";
+        break;
+    case Qt::CaseSensitive:
+        out << " Case Sensitive.\n";
+        break;
+    default:
+        out << " ERROR! Unknown case sensitivity.\n";
+        break;
+    }
+
+}
+void Spreadsheet::findPrevious(const QString &str, Qt::CaseSensitivity cs)
+{
+    QTextStream out(stdout);
+    out << "Find Previous: " << str;
+    switch (cs)
+    {
+    case Qt::CaseInsensitive:
+        out << " Case Insensitive.\n";
+        break;
+    case Qt::CaseSensitive:
+        out << " Case Sensitive.\n";
+        break;
+    default:
+        out << " ERROR! Unknown case sensitivity.\n";
+        break;
+    }
+}
+
+void Spreadsheet::setCurrentCell(int row, int column)
+{
+    QTextStream out(stdout);
+    out << "Spreadsheet set current cell to ( "<< row << "," << column <<" ).\n";
+    return;
+}
+
+void Spreadsheet::sort(const SpreadsheetCompare &compare)
+{
+    QTextStream out(stdout);
+    out << "SpreadSheet sort: " << "\n";
+    return;
+}
+QTableWidgetSelectionRange Spreadsheet::selectedRange() const
+{
+   QTableWidgetSelectionRange selectrange(0,0,5,5);
+   return selectrange;
 }
