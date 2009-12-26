@@ -15,7 +15,8 @@ HEADERS += cell.h \
     hexspinbox.h \
     mainwindow.h \
     sortdialog.h \
-    spreadsheet.h
+    spreadsheet.h \
+    ss_mdiarea.h
 FORMS += gotocelldialog.ui \
     sortdialog.ui
 SOURCES += cell.cpp \
@@ -25,5 +26,6 @@ SOURCES += cell.cpp \
     main.cpp \
     mainwindow.cpp \
     sortdialog.cpp \
-    spreadsheet.cpp
+    spreadsheet.cpp \
+    ss_mdiarea.cpp
 RESOURCES += spreadsheet.qrc

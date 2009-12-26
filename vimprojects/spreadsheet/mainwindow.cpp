@@ -4,7 +4,21 @@
 MainWindow::MainWindow()
 {
 	spreadsheet = new Spreadsheet;
-    setCentralWidget(spreadsheet);
+
+    mdiArea = new SS_MdiArea(this);
+
+    //使用tabviewmode时，菜单拦中的关闭最大最小化按钮不显示。
+//    mdiArea -> setViewMode(QMdiArea::TabbedView);
+//    mdiArea -> setTabPosition(QTabWidget::South);
+//    mdiArea -> setTabShape(QTabWidget::Rounded);
+
+    setCentralWidget(mdiArea);
+
+
+    mdiArea->newWindow(spreadsheet);
+    mdiArea -> newWindow(new QPushButton(tr("test")));
+
+
 	createActions();
 	createMenus();
 	createContextMenu();
@@ -173,6 +187,13 @@ void MainWindow::createMenus()
     helpMenu = menuBar() -> addMenu(tr("A&bout"));
 	helpMenu -> addAction(aboutAction);
 	helpMenu -> addAction(aboutQtAction);
+
+
+    menuBar() -> addAction(new QAction("_", this));
+    menuBar() -> addAction(new QAction("[]", this));
+    menuBar() -> addAction(new QAction("X", this));
+
+
 }
 
 void MainWindow::createContextMenu()

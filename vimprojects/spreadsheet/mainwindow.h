@@ -7,12 +7,15 @@
 #include "gotocelldialog.h"
 #include "sortdialog.h"
 #include "spreadsheet.h"
+#include "ss_mdiarea.h"
 
 class QAction;
 class QLabel;
 class FindDialog;
 class Spreadsheet;
 class GoToCellDialog;
+class QMdiArea;
+class SS_MdiArea;
 
 class MainWindow : public QMainWindow
 {
@@ -89,6 +92,8 @@ class MainWindow : public QMainWindow
 		QAction *recalculateAction;
 		QAction *sortAction;
 		QAction *autoRecalcAction;
+
+        SS_MdiArea *mdiArea;
 };
 
 #endif

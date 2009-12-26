@@ -46,7 +46,7 @@ int main(int argc, char **argv)
     MainWindow mainWin;
     splash->showMessage(QObject::tr("Loading modules..."), topRight, Qt::white);
     //loadModules();
-    sleep(2);
+    //sleep(2);
     mainWin.show();
     splash->finish(&mainWin);
     delete splash;
