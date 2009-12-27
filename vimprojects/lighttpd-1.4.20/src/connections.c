@@ -40,6 +40,12 @@ typedef struct {
 	PLUGIN_DATA;
 } plugin_data;
 
+/**
+ * 获取一个新的连接。
+ * 在srv的connections中，返回一个未使用的connection。
+ * 根据情况进行一些可能的空间分配工作。
+ * reset分配的connection。
+ */
 static connection *connections_get_new_connection(server * srv)
 {
 	connections *conns = srv->conns;
@@ -54,7 +60,8 @@ static connection *connections_get_new_connection(server * srv)
 		{
 			conns->ptr[i] = connection_init(srv);
 		}
-	} else if (conns->size == conns->used)
+	} 
+	else if (conns->size == conns->used)
 	{
 		conns->size += 128;
 		conns->ptr = realloc(conns->ptr, sizeof(*conns->ptr) * conns->size);
@@ -1559,7 +1566,10 @@ handler_t connection_handle_fdevent(void *s, void *context, int revents)
 	return HANDLER_FINISHED;
 }
 
-
+/**
+ * 接收一个请求并创建一个连接。
+ * socket为srv_socket 
+ */
 connection *connection_accept(server * srv, server_socket * srv_socket)
 {
 	/*
@@ -1578,7 +1588,7 @@ connection *connection_accept(server * srv, server_socket * srv_socket)
 
 	/**
 	 * check if we can still open a new connections
-	 *
+	 * 判断是否已经达到最大连接数了。
 	 * see #1216
 	 */
 
@@ -1589,8 +1599,8 @@ connection *connection_accept(server * srv, server_socket * srv_socket)
 
 	cnt_len = sizeof(cnt_addr);
 
-	if (-1 ==
-		(cnt = accept(srv_socket->fd, (struct sockaddr *) &cnt_addr, &cnt_len)))
+	//接收一个请求。cnt是请求方的fd。
+	if (-1 == (cnt = accept(srv_socket->fd, (struct sockaddr *) &cnt_addr, &cnt_len)))
 	{
 		switch (errno)
 		{
@@ -1613,11 +1623,11 @@ connection *connection_accept(server * srv, server_socket * srv_socket)
 			 */
 			break;
 		default:
-			log_error_write(srv, __FILE__, __LINE__, "ssd",
-							"accept failed:", strerror(errno), errno);
+			log_error_write(srv, __FILE__, __LINE__, "ssd", "accept failed:", strerror(errno), errno);
 		}
 		return NULL;
-	} else
+	} 
+	else
 	{
 		connection *con;
 
@@ -1631,6 +1641,7 @@ connection *connection_accept(server * srv, server_socket * srv_socket)
 #endif
 		srv->con_opened++;
 
+		//创建一个新的连接。
 		con = connections_get_new_connection(srv);
 
 		con->fd = cnt;
@@ -1643,15 +1654,14 @@ connection *connection_accept(server * srv, server_socket * srv_socket)
 		connection_set_state(srv, con, CON_STATE_REQUEST_START);
 
 		con->connection_start = srv->cur_ts;
+
 		con->dst_addr = cnt_addr;
-		buffer_copy_string(con->dst_addr_buf,
-						   inet_ntop_cache_get_ip(srv, &(con->dst_addr)));
+		buffer_copy_string(con->dst_addr_buf, inet_ntop_cache_get_ip(srv, &(con->dst_addr)));
 		con->srv_socket = srv_socket;
 
 		if (-1 == (fdevent_fcntl_set(srv->ev, con->fd)))
 		{
-			log_error_write(srv, __FILE__, __LINE__, "ss",
-							"fcntl failed: ", strerror(errno));
+			log_error_write(srv, __FILE__, __LINE__, "ss", "fcntl failed: ", strerror(errno));
 			return NULL;
 		}
 #ifdef USE_OPENSSL
@@ -1683,7 +1693,14 @@ connection *connection_accept(server * srv, server_socket * srv_socket)
 	}
 }
 
-
+/**
+ * 连接的状态机。
+ * 是整个网络连接事件的核心函数！！
+ * 在整个lighttpd中也起到核心的作用。
+ *
+ * lighttpd中，使用状态机来处理网络连接。这个函数就是根据当前的状态改变连接的状态并
+ * 进行相应的处理。
+ */
 int connection_state_machine(server * srv, connection * con)
 {
 	int done = 0, r;
@@ -1693,14 +1710,12 @@ int connection_state_machine(server * srv, connection * con)
 
 	if (srv->srvconf.log_state_handling)
 	{
-		log_error_write(srv, __FILE__, __LINE__, "sds",
-						"state at start",
-						con->fd, connection_get_state(con->state));
+		log_error_write(srv, __FILE__, __LINE__, "sds", "state at start", con->fd, connection_get_state(con->state));
 	}
 
 	while (done == 0)
 	{
-		size_t ostate = con->state;
+		size_t ostate = con -> state;
 		int b;
 
 		switch (con->state)
@@ -1708,8 +1723,7 @@ int connection_state_machine(server * srv, connection * con)
 		case CON_STATE_REQUEST_START:	/* transient */
 			if (srv->srvconf.log_state_handling)
 			{
-				log_error_write(srv, __FILE__, __LINE__, "sds",
-								"state for fd", con->fd,
+				log_error_write(srv, __FILE__, __LINE__, "sds", "state for fd", con->fd,
 								connection_get_state(con->state));
 			}
 
@@ -1724,7 +1738,6 @@ int connection_state_machine(server * srv, connection * con)
 			/*
 			 * patch con->conf.is_ssl if the connection is a ssl-socket already 
 			 */
-
 #ifdef USE_OPENSSL
 			con->conf.is_ssl = srv_sock->is_ssl;
 #endif
@@ -1733,8 +1746,7 @@ int connection_state_machine(server * srv, connection * con)
 		case CON_STATE_REQUEST_END:	/* transient */
 			if (srv->srvconf.log_state_handling)
 			{
-				log_error_write(srv, __FILE__, __LINE__, "sds",
-								"state for fd", con->fd,
+				log_error_write(srv, __FILE__, __LINE__, "sds", "state for fd", con->fd,
 								connection_get_state(con->state));
 			}
 
@@ -1743,29 +1755,21 @@ int connection_state_machine(server * srv, connection * con)
 				/*
 				 * we have to read some data from the POST request 
 				 */
-
 				connection_set_state(srv, con, CON_STATE_READ_POST);
-
 				break;
 			}
-
 			connection_set_state(srv, con, CON_STATE_HANDLE_REQUEST);
-
 			break;
 		case CON_STATE_HANDLE_REQUEST:
 			/*
 			 * the request is parsed
-			 *
 			 * decided what to do with the request
 			 * -
-			 *
-			 *
 			 */
 
 			if (srv->srvconf.log_state_handling)
 			{
-				log_error_write(srv, __FILE__, __LINE__, "sds",
-								"state for fd", con->fd,
+				log_error_write(srv, __FILE__, __LINE__, "sds", "state for fd", con->fd,
 								connection_get_state(con->state));
 			}
 
@@ -1879,15 +1883,13 @@ int connection_state_machine(server * srv, connection * con)
 
 			if (srv->srvconf.log_state_handling)
 			{
-				log_error_write(srv, __FILE__, __LINE__, "sds",
-								"state for fd", con->fd,
+				log_error_write(srv, __FILE__, __LINE__, "sds", "state for fd", con->fd,
 								connection_get_state(con->state));
 			}
 
 			if (-1 == connection_handle_write_prepare(srv, con))
 			{
 				connection_set_state(srv, con, CON_STATE_ERROR);
-
 				break;
 			}
 
@@ -1900,24 +1902,21 @@ int connection_state_machine(server * srv, connection * con)
 
 			if (srv->srvconf.log_state_handling)
 			{
-				log_error_write(srv, __FILE__, __LINE__, "sds",
-								"state for fd", con->fd,
+				log_error_write(srv, __FILE__, __LINE__, "sds", "state for fd", con->fd,
 								connection_get_state(con->state));
 			}
 
 			plugins_call_handle_request_done(srv, con);
-
 			srv->con_written++;
-
 			if (con->keep_alive)
 			{
 				connection_set_state(srv, con, CON_STATE_REQUEST_START);
-
 #if 0
 				con->request_start = srv->cur_ts;
 				con->read_idle_ts = srv->cur_ts;
 #endif
-			} else
+			} 
+			else
 			{
 				switch (r = plugins_call_handle_connection_close(srv, con))
 				{
@@ -1925,8 +1924,7 @@ int connection_state_machine(server * srv, connection * con)
 				case HANDLER_FINISHED:
 					break;
 				default:
-					log_error_write(srv, __FILE__, __LINE__, "sd",
-									"unhandling return value", r);
+					log_error_write(srv, __FILE__, __LINE__, "sd", "unhandling return value", r);
 					break;
 				}
 
@@ -1948,15 +1946,12 @@ int connection_state_machine(server * srv, connection * con)
 
 						break;
 					default:
-						log_error_write(srv, __FILE__, __LINE__,
-										"ss", "SSL:",
-										ERR_error_string
+						log_error_write(srv, __FILE__, __LINE__, "ss", "SSL:", ERR_error_string
 										(ERR_get_error(), NULL));
 					}
 				}
 #endif
 				connection_close(srv, con);
-
 				srv->con_closed++;
 			}
 
@@ -1966,13 +1961,11 @@ int connection_state_machine(server * srv, connection * con)
 		case CON_STATE_CONNECT:
 			if (srv->srvconf.log_state_handling)
 			{
-				log_error_write(srv, __FILE__, __LINE__, "sds",
-								"state for fd", con->fd,
+				log_error_write(srv, __FILE__, __LINE__, "sds", "state for fd", con->fd,
 								connection_get_state(con->state));
 			}
 
 			chunkqueue_reset(con->read_queue);
-
 			con->request_count = 0;
 
 			break;
@@ -1988,19 +1981,18 @@ int connection_state_machine(server * srv, connection * con)
 			{
 				if (ioctl(con->fd, FIONREAD, &b))
 				{
-					log_error_write(srv, __FILE__, __LINE__, "ss",
-									"ioctl() failed", strerror(errno));
+					log_error_write(srv, __FILE__, __LINE__, "ss", "ioctl() failed", strerror(errno));
 				}
 				if (b > 0)
 				{
 					char buf[1024];
-					log_error_write(srv, __FILE__, __LINE__, "sdd",
-									"CLOSE-read()", con->fd, b);
+					log_error_write(srv, __FILE__, __LINE__, "sdd", "CLOSE-read()", con->fd, b);
 
 					/*
 					 */
 					read(con->fd, buf, sizeof(buf));
-				} else
+				} 
+				else
 				{
 					/*
 					 * nothing to read 
@@ -2008,7 +2000,8 @@ int connection_state_machine(server * srv, connection * con)
 
 					con->close_timeout_ts = 0;
 				}
-			} else
+			} 
+			else
 			{
 				con->close_timeout_ts = 0;
 			}
@@ -2019,8 +2012,7 @@ int connection_state_machine(server * srv, connection * con)
 
 				if (srv->srvconf.log_state_handling)
 				{
-					log_error_write(srv, __FILE__, __LINE__, "sd",
-									"connection closed for fd", con->fd);
+					log_error_write(srv, __FILE__, __LINE__, "sd", "connection closed for fd", con->fd);
 				}
 			}
 
@@ -2029,8 +2021,7 @@ int connection_state_machine(server * srv, connection * con)
 		case CON_STATE_READ:
 			if (srv->srvconf.log_state_handling)
 			{
-				log_error_write(srv, __FILE__, __LINE__, "sds",
-								"state for fd", con->fd,
+				log_error_write(srv, __FILE__, __LINE__, "sds", "state for fd", con->fd,
 								connection_get_state(con->state));
 			}
 
@@ -2039,8 +2030,7 @@ int connection_state_machine(server * srv, connection * con)
 		case CON_STATE_WRITE:
 			if (srv->srvconf.log_state_handling)
 			{
-				log_error_write(srv, __FILE__, __LINE__, "sds",
-								"state for fd", con->fd,
+				log_error_write(srv, __FILE__, __LINE__, "sds", "state for fd", con->fd,
 								connection_get_state(con->state));
 			}
 
@@ -2059,8 +2049,7 @@ int connection_state_machine(server * srv, connection * con)
 			{
 				if (-1 == connection_handle_write(srv, con))
 				{
-					log_error_write(srv, __FILE__, __LINE__, "ds",
-									con->fd, "handle write failed.");
+					log_error_write(srv, __FILE__, __LINE__, "ds", con->fd, "handle write failed.");
 					connection_set_state(srv, con, CON_STATE_ERROR);
 				} else if (con->state == CON_STATE_WRITE)
 				{
@@ -2194,9 +2183,7 @@ int connection_state_machine(server * srv, connection * con)
 
 			break;
 		default:
-			log_error_write(srv, __FILE__, __LINE__, "sdd",
-							"unknown state:", con->fd, con->state);
-
+			log_error_write(srv, __FILE__, __LINE__, "sdd", "unknown state:", con->fd, con->state);
 			break;
 		}
 
@@ -2211,8 +2198,7 @@ int connection_state_machine(server * srv, connection * con)
 
 	if (srv->srvconf.log_state_handling)
 	{
-		log_error_write(srv, __FILE__, __LINE__, "sds",
-						"state at exit:",
+		log_error_write(srv, __FILE__, __LINE__, "sds", "state at exit:",
 						con->fd, connection_get_state(con->state));
 	}
 

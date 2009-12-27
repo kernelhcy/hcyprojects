@@ -1,7 +1,7 @@
 /**
- * bookmarks:
- *  	1535
- *
+ * 书签：
+ *    connection.c中的con_state_machine函数。
+ *    连接的状态机。
  */
 #include <sys/types.h>
 #include <sys/time.h>

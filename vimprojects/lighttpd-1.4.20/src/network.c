@@ -26,6 +26,9 @@
 # include <openssl/rand.h>
 #endif
 
+/**
+ * 处理fd事件。
+ */
 handler_t network_server_handle_fdevent(void *s, void *context, int revents)
 {
 	server *srv = (server *) s;
@@ -45,12 +48,10 @@ handler_t network_server_handle_fdevent(void *s, void *context, int revents)
 	 * accept()s at most 100 connections directly we jump out after 100 to
 	 * give the waiting connections a chance 
 	 */
-	for (loops = 0;
-		 loops < 100 && NULL != (con = connection_accept(srv, srv_socket));
-		 loops++)
+	for (loops = 0; loops < 100 && NULL != (con = connection_accept(srv, srv_socket)); loops++)
 	{
 		handler_t r;
-
+		
 		connection_state_machine(srv, con);
 
 		switch (r = plugins_call_handle_joblist(srv, con))
@@ -66,6 +67,15 @@ handler_t network_server_handle_fdevent(void *s, void *context, int revents)
 	return HANDLER_GO_ON;
 }
 
+/**
+ * 初始化网络，建立socket并监听端口。
+ * 根据设置确定是否使用openSSL。
+ *
+ * 建立socket和监听端口分别处理windows，linux和BSD的情况。
+ * 还要判断是否使用ipv6或者Unix domain。
+ * 根据host的格式来判断是ipv4,ipv6还是Unix domain。
+ * ipv6的host是用[]引起来的，Unix domain的host以/开头。 
+ */
 int network_server_init(server * srv, buffer * host_token, specific_config * s)
 {
 	int val;
@@ -199,6 +209,7 @@ int network_server_init(server * srv, buffer * host_token, specific_config * s)
 	}
 
 	/*
+	 * 设置当前描述符
 	 */
 	srv->cur_fds = srv_socket->fd;
 
@@ -209,6 +220,10 @@ int network_server_init(server * srv, buffer * host_token, specific_config * s)
 		return -1;
 	}
 
+
+	/**
+	 * 获取主机的信息。并校验。
+	 */
 	switch (srv_socket->addr.plain.sa_family)
 	{
 #ifdef HAVE_IPV6
@@ -293,6 +308,7 @@ int network_server_init(server * srv, buffer * host_token, specific_config * s)
 
 		/*
 		 * check if the socket exists and try to connect to it. 
+		 * 检查socket是否已经存在。
 		 */
 		if (-1 != (fd = connect(srv_socket->fd, (struct sockaddr *) &(srv_socket->addr), addr_len)))
 		{
@@ -323,7 +339,9 @@ int network_server_init(server * srv, buffer * host_token, specific_config * s)
 		return -1;
 	}
 
+	//绑定地址。
 	if (0 != bind(srv_socket->fd, (struct sockaddr *) &(srv_socket->addr), addr_len))
+ * bookmarks:
 	{
 		switch (srv_socket->addr.plain.sa_family)
 		{
@@ -337,12 +355,15 @@ int network_server_init(server * srv, buffer * host_token, specific_config * s)
 		return -1;
 	}
 
+	//开始监听端口。
+	//第二个参数是设定所监听的端口的排队请求数。如果等待的请求数量大于这个值则将拒绝连接请求。
 	if (-1 == listen(srv_socket->fd, 128 * 8))
 	{
 		log_error_write(srv, __FILE__, __LINE__, "ss", "listen failed: ", strerror(errno));
 		return -1;
 	}
 
+	//设置ssl。
 	if (s->is_ssl)
 	{
 #ifdef USE_OPENSSL
@@ -481,6 +502,7 @@ int network_server_init(server * srv, buffer * host_token, specific_config * s)
 	srv_socket->is_ssl = s->is_ssl;
 	srv_socket->fde_ndx = -1;
 
+	//保存srv_socket到srv的srv_sockets中。
 	if (srv->srv_sockets.size == 0)
 	{
 		srv->srv_sockets.size = 4;
@@ -542,6 +564,11 @@ typedef enum
 	NETWORK_BACKEND_SOLARIS_SENDFILEV
 } network_backend_t;
 
+/**
+ * 对网络连接进行初始化。
+ * 网络的第一个动作。
+ */
+
 int network_init(server * srv)
 {
 	buffer *b;
@@ -556,6 +583,7 @@ int network_init(server * srv)
 	{
 		/*
 		 * lowest id wins 
+		 * 将使用下标为0的是默认设置。
 		 */
 #if defined USE_LINUX_SENDFILE
 		{NETWORK_BACKEND_LINUX_SENDFILE, "linux-sendfile"},
@@ -575,6 +603,7 @@ int network_init(server * srv)
 
 	b = buffer_init();
 
+	//将bindhost:port拷贝到b中。
 	buffer_copy_string_buffer(b, srv->srvconf.bindhost);
 	buffer_append_string_len(b, CONST_STR_LEN(":"));
 	buffer_append_long(b, srv->srvconf.port);
@@ -596,15 +625,14 @@ int network_init(server * srv)
 
 	/*
 	 * match name against known types 
+	 * 查找设定的设置。
 	 */
 	if (!buffer_is_empty(srv->srvconf.network_backend))
 	{
 		for (i = 0; network_backends[i].name; i++)
 		{
 			 /**/
-				if (buffer_is_equal_string
-					(srv->srvconf.network_backend,
-					 network_backends[i].name,
+				if (buffer_is_equal_string(srv->srvconf.network_backend, network_backends[i].name,
 					 strlen(network_backends[i].name)))
 			{
 				backend = network_backends[i].nb;
@@ -617,10 +645,8 @@ int network_init(server * srv)
 			 * we don't know it 
 			 */
 
-			log_error_write(srv, __FILE__, __LINE__, "sb",
-							"server.network-backend has a unknown value:",
+			log_error_write(srv, __FILE__, __LINE__, "sb", "server.network-backend has a unknown value:",
 							srv->srvconf.network_backend);
-
 			return -1;
 		}
 	}
@@ -671,9 +697,7 @@ int network_init(server * srv)
 
 		if (dc->cond != CONFIG_COND_EQ)
 		{
-			log_error_write(srv, __FILE__, __LINE__, "s",
-							"only == is allowed for $SERVER[\"socket\"].");
-
+			log_error_write(srv, __FILE__, __LINE__, "s", "only == is allowed for $SERVER[\"socket\"].");
 			return -1;
 		}
 
