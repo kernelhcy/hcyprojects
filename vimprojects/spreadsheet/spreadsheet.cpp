@@ -1,19 +1,23 @@
 #include "spreadsheet.h"
 #include <QtGui>
 
-Spreadsheet::Spreadsheet(QWidget *parent)
-    :QTableWidget(parent), Document(Document::DOC_SS)
+Spreadsheet::Spreadsheet(QWidget *parent, const QString &fileName)
+    :QTableWidget(parent), Document(Document::DOC_SS, fileName)
 {
     autoRecalc = true;
-    rowCount = 150;
-    columnCount = 2500;
+    rowCount = 50;
+    columnCount = 60;
     setItemPrototype(new Cell);
     setSelectionMode(ContiguousSelection);
     connect(this, SIGNAL(itemChanged(QTableWidgetItem*)), this, SLOT(somethingChanged()));
     clear();
     setMinimumSize(sizeHint());
+    //setWindowTitle(fileName + tr("[*]"));
 }
+Spreadsheet::~Spreadsheet()
+{
 
+}
 void Spreadsheet::clear()
 {
     setColumnCount(0);
@@ -102,7 +106,7 @@ QString Spreadsheet::formula( int row, int column) const
     Cell *c = cell(row, column);
     if (c)
     {
-        return c->formula();
+        return c -> formula();
     }
     else
     {
@@ -137,6 +141,7 @@ void Spreadsheet::somethingChanged()
 {
     if (autoRecalc)
         recalculate();
+    //setWindowModified(true);
     emit modified();
 }
 
@@ -147,20 +152,25 @@ void Spreadsheet::recalculate()
 
 void Spreadsheet::findNext(const QString &str, Qt::CaseSensitivity cs)
 {
-    QTextStream out(stdout);
-    out << "Find next: " << str;
-    switch (cs)
+    int row = currentRow();
+    int column = currentColumn() + 1;
+    while (row < rowCount)
     {
-    case Qt::CaseInsensitive:
-        out << " Case Insensitive.\n";
-        break;
-    case Qt::CaseSensitive:
-        out << " Case Sensitive.\n";
-        break;
-    default:
-        out << " ERROR! Unknown case sensitivity.\n";
-        break;
+        while (column < columnCount)
+        {
+            if (text(row, column).contains(str, cs))
+            {
+                clearSelection();
+                setCurrentCell(row, column);
+                activateWindow();
+                return;
+            }
+            ++column;
+        }
+        column = 0;
+        ++row;
     }
+    QApplication::beep();
 
 }
 void Spreadsheet::findPrevious(const QString &str, Qt::CaseSensitivity cs)
@@ -196,6 +206,159 @@ void Spreadsheet::sort(const SpreadsheetCompare &compare)
 }
 QTableWidgetSelectionRange Spreadsheet::selectedRange() const
 {
-   QTableWidgetSelectionRange selectrange(0,0,5,5);
-   return selectrange;
+    QList<QTableWidgetSelectionRange> ranges = QTableWidget::selectedRanges();
+    if (ranges.isEmpty())
+        return QTableWidgetSelectionRange();
+    return ranges.first();
 }
+
+bool Spreadsheet::save()
+{
+    if (!writeFile(fileName))
+    {
+        return false;
+    }
+    return true;
+}
+
+bool Spreadsheet::load()
+{
+    if (!readFile(fileName))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+bool Spreadsheet::writeFile(const QString &fileName)
+{
+    QFile file(fileName);
+    if (!file.open(QIODevice::WriteOnly)) {
+        QMessageBox::warning(this, tr("Spreadsheet"),
+                             tr("Cannot write file %1:\n%2.")
+                             .arg(file.fileName())
+                             .arg(file.errorString()));
+        return false;
+    }
+    QDataStream out(&file);
+    out.setVersion(QDataStream::Qt_4_1);
+    out << quint32(MagicNumber);
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+    for (int row = 0; row < rowCount; ++row) {
+        for (int column = 0; column < columnCount; ++column) {
+            QString str = formula(row, column);
+            if (!str.isEmpty())
+                out << quint16(row) << quint16(column) << str;
+        }
+    }
+    QApplication::restoreOverrideCursor();
+    return true;
+}
+
+bool Spreadsheet::readFile(const QString &fileName)
+{
+    QFile file(fileName);
+    if (!file.open(QIODevice::ReadOnly)) {
+        QMessageBox::warning(this, tr("Spreadsheet"),
+                             tr("Cannot read file %1:\n%2.")
+                             .arg(file.fileName())
+                             .arg(file.errorString()));
+        return false;
+    }
+    QDataStream in(&file);
+    in.setVersion(QDataStream::Qt_4_1);
+    quint32 magic;
+    in >> magic;
+    if (magic != MagicNumber) {
+        QMessageBox::warning(this, tr("Spreadsheet"),
+                             tr("The file is not a Spreadsheet file."));
+        return false;
+    }
+    clear();
+    quint16 row;
+    quint16 column;
+    QString str;
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+    while (!in.atEnd()) {
+        in >> row >> column >> str;
+        setFormula(row, column, str);
+    }
+    QApplication::restoreOverrideCursor();
+    return true;
+}
+
+void Spreadsheet::copy()
+{
+    QTableWidgetSelectionRange range = selectedRange();
+    QString str;
+    for (int i = 0; i < range.rowCount(); ++i)
+    {
+        if (i > 0)
+            str += "\n";
+        for (int j = 0; j < range.columnCount(); ++j)
+        {
+            if (j > 0)
+                str += "\t";
+            str += formula(range.topRow() + i, range.leftColumn() + j);
+        }
+    }
+    QApplication::clipboard()->setText(str);
+}
+
+void Spreadsheet::paste()
+{
+    QTableWidgetSelectionRange range = selectedRange();
+    QString str = QApplication::clipboard()->text();
+    QStringList rows = str.split('\n');
+    int numRows = rows.count();
+    int numColumns = rows.first().count('\t') + 1;
+    if (range.rowCount() * range.columnCount() != 1
+            && (range.rowCount() != numRows
+                || range.columnCount() != numColumns))
+    {
+        QMessageBox::information(this, tr("Spreadsheet"),
+                tr("The information cannot be pasted because the copy "
+                   "and paste areas aren't the same size."));
+        return;
+    }
+
+    for (int i = 0; i < numRows; ++i)
+    {
+        QStringList columns = rows[i].split('\t');
+        for (int j = 0; j < numColumns; ++j)
+        {
+            int row = range.topRow() + i;
+            int column = range.leftColumn() + j;
+            if (row < rowCount && column < columnCount)
+                setFormula(row, column, columns[j]);
+        }
+    }
+    somethingChanged();
+}
+
+void Spreadsheet::del()
+{
+    foreach (QTableWidgetItem *item, selectedItems())
+        delete item;
+}
+
+void Spreadsheet::cut()
+{
+    copy();
+    del();
+}
+
+
+//QTableWidget's selectRow() and selectColumn() functions
+void Spreadsheet::selectCurrentRow()
+{
+    selectRow(currentRow());
+}
+
+void Spreadsheet::selectCurrentColumn()
+{
+    selectColumn(currentColumn());
+}
+
+

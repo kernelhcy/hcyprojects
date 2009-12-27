@@ -17,7 +17,8 @@ HEADERS += cell.h \
     sortdialog.h \
     spreadsheet.h \
     ss_tab_mdiarea.h \
-    document.h
+    document.h \
+    word.h
 FORMS += gotocelldialog.ui \
     sortdialog.ui
 SOURCES += cell.cpp \
@@ -29,5 +30,6 @@ SOURCES += cell.cpp \
     sortdialog.cpp \
     spreadsheet.cpp \
     ss_tab_mdiarea.cpp \
-    document.cpp
+    document.cpp \
+    word.cpp
 RESOURCES += spreadsheet.qrc

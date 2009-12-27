@@ -4,7 +4,7 @@
 
 MainWindow::MainWindow()
 {
-	spreadsheet = new Spreadsheet;
+    spreadsheet = new Spreadsheet;
     documents.append(spreadsheet);
 //    mdiArea = new SS_TabMdiArea(this);
 //    setCentralWidget(mdiArea);
@@ -18,9 +18,12 @@ MainWindow::MainWindow()
     tabWidget = new QTabWidget(this);
     tabWidget -> setTabsClosable(true);
     tabWidget -> setUsesScrollButtons(true);
+    tabWidget -> setDocumentMode(true);
+    connect(tabWidget, SIGNAL(tabCloseRequested(int)), this, SLOT(closeTab(int)));
+    connect(tabWidget, SIGNAL(currentChanged(int)), this, SLOT(currentTabChanged(int)));
     setCentralWidget(tabWidget);
-    tabWidget -> addTab(spreadsheet, tr("spreadsheet"));
-    tabWidget -> addTab(new Spreadsheet, tr("spreadsheet"));
+    newTab(spreadsheet, tr("students"));
+    newTab(new Word, tr("teacher"));
 
 	createActions();
 	createMenus();
@@ -28,7 +31,7 @@ MainWindow::MainWindow()
 	createToolBars();
 	createStatusBar();
 	readSettings();
-	findDialog = 0;
+    findDialog = 0;
     setWindowIcon(QIcon(":/images/pics/ss.png"));
 	setCurrentFile("");
 
@@ -41,7 +44,10 @@ MainWindow::MainWindow()
     setCurrentFile(tr("total.sp"));
 }
 
-
+MainWindow::~MainWindow()
+{
+    return;
+}
 void MainWindow::createActions()
 {
     newAction = new QAction(tr("&New"), this );
@@ -60,7 +66,7 @@ void MainWindow::createActions()
     selectAllAction = new QAction(tr("&Select All"), this );
 	selectAllAction->setShortcut(tr("Ctrl+A"));
     selectAllAction->setStatusTip(tr("Select all the data" "spreadsheet"));
-	//connect(selectAllAction, SIGNAL(triggered()), spreadsheet, SLOT(selectAll())) ;
+    connect(selectAllAction, SIGNAL(triggered()), spreadsheet, SLOT(selectAll())) ;
 	
     aboutQtAction = new QAction(tr("About &Qt"), this );
     aboutQtAction -> setIcon(QIcon(":/images/pics/qt.png"));
@@ -83,22 +89,22 @@ void MainWindow::createActions()
     cutAction = new QAction(tr("C&ut"), this );
     cutAction -> setShortcut(tr("Ctrl+X"));
     cutAction -> setIcon(QIcon(":/images/pics/cut.png"));
-	//connect(cutAction, SIGNAL(triggered()), this, SLOT(cut())) ;
+    connect(cutAction, SIGNAL(triggered()), this, SLOT(cut())) ;
 	
     copyAction = new QAction(tr("&Copy"), this );
     copyAction -> setShortcut(tr("Ctrl+X"));
     copyAction -> setIcon(QIcon(":/images/pics/copy.png"));
-	//connect(copyAction, SIGNAL(triggered()), this, SLOT(copy())) ;
+    connect(copyAction, SIGNAL(triggered()), this, SLOT(copy())) ;
 	
     pasteAction = new QAction(tr("&Past"), this );
     pasteAction -> setShortcut(tr("Ctrl+P"));
     pasteAction -> setIcon(QIcon(":/images/pics/paste.png"));
-	//connect(pasteAction, SIGNAL(triggered()), this, SLOT(paste())) ;
+    connect(pasteAction, SIGNAL(triggered()), this, SLOT(paste())) ;
 	
     deleteAction = new QAction(tr("&Delete"), this );
     deleteAction -> setShortcut(tr("Ctrl+D"));
     deleteAction -> setIcon(QIcon(":/images/pics/delete.png"));
-	//connect(deleteAction, SIGNAL(triggered()), this, SLOT(del())) ;
+    connect(deleteAction, SIGNAL(triggered()), this, SLOT(del())) ;
 	
     findAction = new QAction(tr("&Find"), this );
     findAction -> setShortcut(tr("Ctrl+F"));
@@ -238,9 +244,9 @@ void MainWindow::createStatusBar()
     formulaLabel -> setMaximumSize(formulaLabel -> sizeHint());
 	statusBar() -> addWidget(locationLabel);
 	statusBar() -> addWidget(formulaLabel, 1);
-    //connect(spreadsheet, SIGNAL(currentCellChanged( int , int , int , int ))
-    //                              , this , SLOT(updateStatusBar()));
-	//connect(spreadsheet, SIGNAL(modified()), this , SLOT(spreadsheetModified()));
+    connect(spreadsheet, SIGNAL(currentCellChanged( int , int , int , int ))
+                                  , this , SLOT(updateStatusBar()));
+    connect(spreadsheet, SIGNAL(modified()), this , SLOT(spreadsheetModified()));
 
     //show the tabbar in the status bar
 //    QWidget *hb = new QWidget(statusBar());
@@ -258,9 +264,9 @@ void MainWindow::createStatusBar()
 
 void MainWindow::updateStatusBar()
 {
-	std::cout << "update status bar\n";
-	//locationLabel->setText(spreadsheet->currentLocation());
-	//formulaLabel->setText(spreadsheet->currentFormula());
+    //std::cout << "update status bar\n";
+    locationLabel->setText(spreadsheet->currentLocation());
+    formulaLabel->setText(spreadsheet->currentFormula());
 }
 
 
@@ -274,10 +280,10 @@ void MainWindow::newFile()
 {
 	if (okToContinue()) 
 	{
-		//spreadsheet -> clear();
+        spreadsheet -> clear();
 		setCurrentFile("");
 	}
-	std::cout << "create a new window\n";
+    //std::cout << "create a new window\n";
 
 }
 
@@ -318,14 +324,15 @@ void MainWindow::open()
 
 bool MainWindow::loadFile( const QString &fileName)
 {
-	std::cout << "load file\n";
-	//if (!spreadsheet -> readFile(fileName)) 
-	//{
-		//statusBar() -> showMessage(tr("Loading canceled"), 2000);
-		//return false ;
-	//}
-	//setCurrentFile(fileName);
-	//statusBar() -> showMessage(tr("File loaded"), 2000);
+    //std::cout << "load file\n";
+    spreadsheet -> setFileName(fileName);
+    if (!spreadsheet -> load())
+    {
+        statusBar() -> showMessage(tr("Loading canceled"), 2000);
+        return false ;
+    }
+    setCurrentFile(fileName);
+    statusBar() -> showMessage(tr("File loaded"), 2000);
 	return true ;
 }
 
@@ -343,14 +350,14 @@ bool MainWindow::save()
 
 bool MainWindow::saveFile( const QString &fileName)
 {
-	std::cout << "save file\n";
-	
-	//if (!spreadsheet->writeFile(fileName)) 
-	//{
-	//	statusBar()->showMessage(tr("Saving canceled"), 2000);
-	//	return false ;
-	//}
-	//setCurrentFile(fileName);
+    //std::cout << "save file\n";
+    spreadsheet -> setFileName(fileName);
+    if (!spreadsheet -> save())
+    {
+        statusBar() -> showMessage(tr("Saving canceled"), 2000);
+        return false ;
+    }
+    setCurrentFile(fileName);
 	statusBar()->showMessage(tr("File saved"), 2000);
 	return true ;
 }
@@ -515,5 +522,76 @@ void MainWindow::readSettings()
 	autoRecalcAction->setChecked(autoRecalc);
 }
 
+void MainWindow::closeTab(int index)
+{
+    if (index > tabWidget -> count())
+    {
+        return;
+    }
 
+    QWidget *widget = tabWidget -> widget(index);
+
+    if (widget -> isWindowModified())
+    {
+        int r = QMessageBox::warning( this , tr("Spreadsheet")
+                        , tr("The file has been modified。""Do you want to save it？"),
+                        QMessageBox::Yes | QMessageBox::Default,
+                        QMessageBox::No, QMessageBox::Cancel | QMessageBox::Escape);
+        if (r == QMessageBox::Yes)
+        {
+            save();
+        }
+        else if (r == QMessageBox::Cancel)
+        {
+            return ;
+        }
+    }
+
+    tabWidget -> removeTab(index);
+}
+
+void MainWindow::currentTabChanged(int index)
+{
+    QString title = tabWidget -> tabText(index);
+    setWindowTitle(tr("%1[*] - %2").arg(title).arg(tr("Spreadsheet")));
+}
+
+int MainWindow::newTab(QWidget *w, const QString &title)
+{
+    if (w == 0)
+    {
+        return 0;
+    }
+    if (w -> isWindowModified())
+    {
+        setWindowModified(true);
+    }
+
+    setWindowTitle(tr("%1[*] - %2").arg(title).arg(tr("Spreadsheet")));
+    int index = tabWidget -> addTab(w, title);
+    tabWidget -> setTabText(index, title);
+    return index;
+}
+
+/************
+ * 封装文档的slot
+ *
+ ************
+ */
+void MainWindow::cut()
+{
+    spreadsheet -> cut();
+}
+void MainWindow::copy()
+{
+    spreadsheet -> copy();
+}
+void MainWindow::del()
+{
+    spreadsheet -> del();
+}
+void MainWindow::paste()
+{
+    spreadsheet -> paste();
+}
 

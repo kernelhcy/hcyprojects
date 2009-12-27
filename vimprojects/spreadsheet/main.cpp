@@ -41,10 +41,10 @@ int main(int argc, char **argv)
     QSplashScreen *splash = new QSplashScreen;
     splash->setPixmap(QPixmap(":/images/pics/splash.png"));
     splash->show();
-    Qt::Alignment topRight = Qt::AlignRight | Qt::AlignTop;
-    splash->showMessage(QObject::tr("Setting up the main window..."), topRight, Qt::white);
+    Qt::Alignment bottomRight = Qt::AlignRight | Qt::AlignBottom;
+    splash->showMessage(QObject::tr("Setting up the main window..."), bottomRight, Qt::blue);
     MainWindow mainWin;
-    splash->showMessage(QObject::tr("Loading modules..."), topRight, Qt::white);
+    splash->showMessage(QObject::tr("Loading modules..."), bottomRight, Qt::blue);
     //loadModules();
     //sleep(2);
     mainWin.show();

@@ -19,7 +19,8 @@ class Spreadsheet : public QTableWidget, public Document
     Q_OBJECT
 
     public:
-        Spreadsheet(QWidget *parent = 0);
+        Spreadsheet(QWidget *parent = 0, const QString &fileName = "");
+        ~Spreadsheet();
         //内联函数
         bool autoRecalculate()const
         {
@@ -32,9 +33,8 @@ class Spreadsheet : public QTableWidget, public Document
          */
         void clear();
 
-
-        bool readFile(const QString &fileName);
-        bool writeFile(const QString &fileName);
+        bool load();
+        bool save();
 
         void sort(const SpreadsheetCompare &compare);
         QString currentFormula() const;
@@ -42,21 +42,26 @@ class Spreadsheet : public QTableWidget, public Document
         void setCurrentCell(int row, int column);
 
     public slots:
-        //void cut();
-        //void copy();
-        //void paste();
-        //void del();
-        //void selectCurrentRow();
-        //void selectCurrentColumn();
+        void cut();
+        void copy();
+        void paste();
+        void del();
+        void selectCurrentRow();
+        void selectCurrentColumn();
         void recalculate();
-        //void setAutoRecalculate(bool recalc);
+        void setAutoRecalculate(bool recalc)
+        {
+            autoRecalc = recalc;
+        }
         void findNext(const QString &str, Qt::CaseSensitivity cs);
         void findPrevious(const QString &str, Qt::CaseSensitivity cs);
+
     signals:
         void modified();
 
     private slots:
         void somethingChanged();
+
     private:
         enum
         {
@@ -66,6 +71,7 @@ class Spreadsheet : public QTableWidget, public Document
         Cell* cell(int row, int column)const;
         QString text(int row, int column)const;
         QString formula(int row, int column)const;
+
         /*
          * 将列号（index）转换成由字母计数的形式。
          * 如：
@@ -82,6 +88,9 @@ class Spreadsheet : public QTableWidget, public Document
          * 设置（row，column）单元格的计算公式为formula。
          */
         void setFormula(int row, int column, const QString &formula);
+
+        bool readFile(const QString &fileName);
+        bool writeFile(const QString &fileName);
 
         //是否自动计算公式的结果。
         bool autoRecalc;
