@@ -121,10 +121,6 @@ long long range_sum(long long x, long long y, long long x1, long long y1)
 	return s2 - s3 - s4 + s1;
 }
 
-long long abs(long long x)
-{
-	return x > 0 ? x : 0 - x;
-}
 
 int main(int argc, char *argv[])
 {
@@ -153,7 +149,7 @@ int main(int argc, char *argv[])
 				break;
 			case 2:
 				scanf("%d%d%d%d", &l, &b, &r, &t);
-				printf("%lld\n", abs(range_sum(l + 1, b + 1, r + 1, t + 1)));
+				printf("%lld\n", range_sum(l + 1, b + 1, r + 1, t + 1));
 				break;
 			default:
 				break;
