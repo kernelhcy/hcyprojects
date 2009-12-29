@@ -19,6 +19,7 @@ char *help_info = "\n用法： sfi [-h] [-s 源文件类型] [-o 输出文件名
 				  "\t\t\ttext 	: 文本格式\n"
 				  "\t\t\tjpg 	: jpg图片格式\n"
 				  "\t\t\tpng 	: png图片格式\n"
+				  "\t\t\tdot 	: dot语言格式\n"
 				  "\n"
 				  "如果包含-h，则直接输出帮助信息，其他选项都无效。bug报告：sfibug@126.com\n";
 
@@ -36,7 +37,7 @@ int main(int argc, char *argv[])
 		show_help();
 	}
 	src_t type;
-	type_t out_type = JPG_T;
+	type_t out_type = DOT_T;
 	char out_filename[MAXFILENAMELEN] = "result.sfi";
 
 	int c;
@@ -47,7 +48,7 @@ int main(int argc, char *argv[])
 			case 'h':
 				show_help();//exit program
 			case 's':
-				log_info("The source file type : %s\n", optarg);
+				log_info("The source file type : %s", optarg);
 				if (strcmp(optarg, "cpp") == 0)
 				{
 					type = CPP_T;
@@ -89,10 +90,14 @@ int main(int argc, char *argv[])
 				{
 					out_type = PNG_T;
 				}
+				else if (strcmp(optarg, "dot") == 0)
+				{
+					out_type = DOT_T;
+				}
 				else 
 				{
-					log_info("Unknown out type : %s \n", optarg);
-					exit(1);
+					out_type = DOT_T;
+					log_info("Default out put format DOT language");
 				}
 				break;
 			default:
@@ -109,28 +114,6 @@ int main(int argc, char *argv[])
 	}
 
 	digraph *dg = create_digraph(argv[argc - 1], CPP_T);
-	/*
-	//test	
-	char *test[7] = {"aa", "bb", "cc", "dd", "ee", "ff", "gg"};
-
-	digraph *dg = digraph_init();
-	
-	digraph_build_edge_string(dg, test[0], test[1]);
-	digraph_build_edge_string(dg, test[0], test[2]);
-	digraph_build_edge_string(dg, test[0], test[3]);
-	digraph_build_edge_string(dg, test[0], test[4]);
-	digraph_build_edge_string(dg, test[1], test[4]);
-	digraph_build_edge_string(dg, test[1], test[3]);
-	digraph_build_edge_string(dg, test[2], test[4]);
-	digraph_build_edge_string(dg, test[3], test[1]);
-	digraph_build_edge_string(dg, test[4], test[2]);
-	digraph_build_edge_string(dg, test[5], test[3]);
-	digraph_build_edge_string(dg, test[6], test[4]);
-	digraph_build_edge_string(dg, test[6], test[3]);
-	digraph_build_edge_string(dg, test[6], test[2]);
-	*/
-
-//	digraph_show(dg);	
 	create_out(dg, out_type, out_filename);
 	digraph_free(dg);
 	

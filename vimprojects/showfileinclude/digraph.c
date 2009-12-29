@@ -12,8 +12,7 @@ node *node_init()
 		return NULL;
 	}
 
-	n -> name = NULL;
-	n -> name_len = 0;
+	n -> name = buffer_init();
 	n -> including_cnt = 0;
 	n -> included_cnt = 0;
 
@@ -30,13 +29,12 @@ node *node_init_name(const char *name, size_t name_len)
 		return NULL;
 	}
 
-	n -> name = (char *)malloc(name_len + 1);
-	
+	n -> name = buffer_init_string(name);
 	assert(n -> name);
-
-	strcpy(n -> name, name);
-	n -> name[name_len] = '\0';
-	n -> name_len = name_len;
+	if (name_len != n -> name -> used)
+	{
+		return NULL;
+	}
 
 	n -> including_cnt = 0;
 	n -> included_cnt = 0;
@@ -48,7 +46,7 @@ node *node_init_name(const char *name, size_t name_len)
 
 void node_free(node *n)
 {
-	free(n -> name);
+	buffer_free(n -> name);
 	free(n);
 }
 
@@ -59,15 +57,15 @@ void node_reset(node *n)
 		return;
 	}
 	
-	if (n -> name_len == 0)
+	if (n -> name -> used == 0)
 	{
 		n -> including_cnt = 0;
 		n -> included_cnt = 0;
 		return;
 	}
 
-	n -> name[0] = '\0';
-	n -> name_len = 0;
+	n -> name -> ptr[0] = '\0';
+	n -> name -> used = 0;
 	n -> including_cnt = 0;
 	n -> included_cnt = 0;
 
@@ -86,7 +84,7 @@ int node_is_equal(node *a, node *b)
 		return 0;
 	}
 
-	return (strcmp(a -> name, b -> name) == 0);
+	return (strcpy(a -> name -> ptr, b -> name -> ptr) == 0);
 }
 
 //node ptr操作函数

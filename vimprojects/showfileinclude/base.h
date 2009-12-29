@@ -18,7 +18,8 @@ typedef enum
 {
 	TXT_T, 		//普通文本格式
 	JPG_T, 		//jpg图片格式
-	PNG_T 		//png图片格式
+	PNG_T, 		//png图片格式
+	DOT_T 		//dot语言格式
 }type_t;
 
 //定义最长的文件名

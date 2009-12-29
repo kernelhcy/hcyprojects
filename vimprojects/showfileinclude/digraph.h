@@ -2,6 +2,7 @@
 #define _DIGRAPH_H
 #include "headers.h"
 #include "log.h"
+#include "buffer.h"
 /*
  * 定义一个有向图接口
  * 有向图采用邻接表的形式保存。
@@ -19,8 +20,7 @@
  */
 typedef struct _node
 {
-	char 	*name; 			//结点的名称。也就是文件名称
-	size_t 	name_len; 		//名字的长度。
+	buffer 	*name; 			//结点的名称。也就是文件名称
 
 	size_t 	including_cnt; 	//包含的文件数目。
 	size_t 	included_cnt; 	//被包含的文件数目。

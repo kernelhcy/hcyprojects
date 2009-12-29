@@ -50,6 +50,9 @@ int buffer_cmp(buffer *a, buffer *b);
 //释放buffer占用的空间
 void buffer_free(buffer *buf);
 
+//删除文件名中的路径名。
+int buffer_path_simple(buffer *buf);
+
 buffer_array* buffer_array_init();
 //初始化数组的大小为n
 buffer_array* buffer_array_init_n(size_t n);

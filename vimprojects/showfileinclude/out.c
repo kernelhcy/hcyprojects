@@ -8,6 +8,7 @@ static int create_txt(digraph *dg);
 //
 static type_t pic_type;
 static int create_pic(digraph *dg);
+static buffer* create_dot_lan(digraph *dg);
 
 
 int create_out(digraph *dg, type_t t, const char *n)
@@ -19,20 +20,29 @@ int create_out(digraph *dg, type_t t, const char *n)
 
 	name = n;
 
+	buffer *buf = NULL;
 	int state;
 	switch(t)
 	{
 		case TXT_T:
+			log_info("Out put format : text");
 			state = create_txt(dg);		
 			break;
 		case JPG_T:
+			log_info("Out put format : jpeg/png");
 			pic_type = t;
 		case PNG_T:
 			pic_type = t;
 			state = create_pic(dg);
 			break;
+		case DOT_T:
+			log_info("Out put format : dot language");
+			buf = create_dot_lan(dg);
+			printf("\n%s\n\n\n", buf -> ptr);	
+			buffer_free(buf);
+			break;
 		default:
-			log_err("Unknown type %d. File: %s, Line %d \n", t, __FILE__, __LINE__);
+			log_err("Unknown type %d. File: %s, Line %d", t, __FILE__, __LINE__);
 			exit(1);
 	}
 	return state;
@@ -77,7 +87,8 @@ static int create_txt(digraph *dg)
 	close(fd);
 	return;
 }
-static int create_pic(digraph *dg)
+
+static buffer* create_dot_lan(digraph *dg)
 {
 	buffer *buf = buffer_init_n(128);
 	buffer_append(buf, "digraph ", strlen("digraph "));
@@ -92,11 +103,13 @@ static int create_pic(digraph *dg)
 		while(NULL != p)
 		{
 			buffer_append(buf, "\"", 1);
-			buffer_append(buf, dg -> nodes[i] -> name, dg -> nodes[i] -> name_len);
+			buffer_path_simple(dg -> nodes[i] -> name);
+			buffer_append(buf, dg -> nodes[i] -> name -> ptr, dg -> nodes[i] -> name -> used);
 			buffer_append(buf, "\"", 1);
 			buffer_append(buf, " -> ", strlen(" -> "));
 			buffer_append(buf, "\"", 1);
-			buffer_append(buf, p -> ptr -> name, p -> ptr -> name_len);
+			buffer_path_simple(p -> ptr -> name);
+			buffer_append(buf, p -> ptr -> name -> ptr, p -> ptr -> name -> used);
 			buffer_append(buf, "\"", 1);
 			buffer_append(buf, ";\n", strlen(";\n"));
 			//log_info("Create pic insert edge: %s --> %s", dg -> nodes[i] -> name, p -> ptr -> name);
@@ -105,7 +118,15 @@ static int create_pic(digraph *dg)
 	}
 
 	buffer_append(buf, "}\n", strlen("}\n"));
-	printf("\n%s\n\n\n", buf -> ptr);	
+	return buf;
+}
+
+
+static int create_pic(digraph *dg)
+{
+	
+	buffer *buf = create_dot_lan(dg);
+
 	/*
 	 * 拼接dot所需要的参数。
 	 * 一个是-Ttype
@@ -160,6 +181,7 @@ static int create_pic(digraph *dg)
 			log_err("write to pipe error. %s %d", __FILE__, __LINE__);
 			exit(1);
 		}
+		buffer_free(buf);
 		close(fd[1]);
 		//等待子进程运行结束
 		if (waitpid(pid, NULL, 0) < 0)

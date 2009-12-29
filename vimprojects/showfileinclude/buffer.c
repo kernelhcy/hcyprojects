@@ -306,6 +306,27 @@ int buffer_array_delete_string(buffer_array* ba, const char *s)
 	return 0;
 }
 
+int buffer_path_simple(buffer *buf)
+{
+	int cnt = buf -> used;
+	while(cnt >= 0 &&  buf -> ptr[cnt] != '/')
+	{
+		--cnt;
+	}
+
+	if (cnt < 0)
+	{
+		return 0;
+	}
+
+	++cnt;
+	memmove(buf -> ptr, buf -> ptr + cnt, buf -> used - cnt);
+	buf -> used -= cnt;
+
+	return 0;
+}
+
+
 /*
  * 将字符串以"/"为分割符进行分割。
  * 将分割的结果保存在buffer数组中返回。
