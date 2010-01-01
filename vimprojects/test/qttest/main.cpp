@@ -14,12 +14,16 @@ int main(int argc, char *argv[])
 //    tip -> move(100, 200);
 
 
-    GoToCellDialog *dialog = new GoToCellDialog;
-    dialog->show();
+//    GoToCellDialog *dialog = new GoToCellDialog;
+//    dialog->show();
+//
+//    SortDialog *sortdialog = new SortDialog;
+//    sortdialog->setColumnRange('C', 'F');
+//    sortdialog->show();
 
-    SortDialog *sortdialog = new SortDialog;
-    sortdialog->setColumnRange('C', 'F');
-    sortdialog->show();
+    QWidget widget;
+    widget.resize(100,100);
+    widget.show();
 
     return a.exec();
 

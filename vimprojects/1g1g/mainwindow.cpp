@@ -64,6 +64,7 @@ void MainWindow::startPlayer()
     connect(player, SIGNAL(titleChanged(QString)), this, SLOT(changeTitle(QString)));
     connect(player, SIGNAL(titleChanged(QString)), this, SLOT(changeTrayIconTooltip(QString)));
     connect(player, SIGNAL(statusBarMessage ( const QString &)), this, SLOT(playerStatusBarMsgChange(const QString)));
+    player ->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     this->setCentralWidget(player);
 
 }
@@ -78,13 +79,11 @@ void MainWindow::setViewMode(ENV1G::viewMode mode)
     case ENV1G::V_NORMAL:
         //out<< tr("正常模式\n");
         this->setFixedSize(QSize(800, 600));
-        player->reload();
         config->mode = ENV1G::V_NORMAL;
         break;
     case ENV1G::V_SIMPLE:
         //out<< tr("精简模式\n");
         this->setFixedSize(QSize(320, 450));
-        player->reload();
         config->mode = ENV1G::V_SIMPLE;
         //player->resize(this->centralWidget()->size());
         //this->centralWidget()->resize(this->size());
@@ -92,15 +91,16 @@ void MainWindow::setViewMode(ENV1G::viewMode mode)
     case ENV1G::V_LISTEN:
         //out<< tr("听歌模式\n");
         this->setFixedSize(QSize(300, 60));
-        player->reload();
         config->mode = ENV1G::V_LISTEN;
         break;
     default:
         this->setFixedSize(QSize(800, 600));
-        player->reload();
         config->mode = ENV1G::V_NORMAL;
         break;
     }
+
+    //player->reload();
+
 }
 
 void MainWindow::setNormalViewMode()
