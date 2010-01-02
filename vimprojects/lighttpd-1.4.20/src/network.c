@@ -38,6 +38,9 @@ handler_t network_server_handle_fdevent(void *s, void *context, int revents)
 
 	UNUSED(context);
 
+	/*
+	 * 只有fd事件是FDEVENT_IN时，才进行事件处理。
+	 */
 	if (revents != FDEVENT_IN)
 	{
 		log_error_write(srv, __FILE__, __LINE__, "sdd", "strange event for server socket", srv_socket->fd, revents);
@@ -45,13 +48,15 @@ handler_t network_server_handle_fdevent(void *s, void *context, int revents)
 	}
 
 	/*
-	 * accept()s at most 100 connections directly we jump out after 100 to
-	 * give the waiting connections a chance 
+	 * accept()s at most 100 connections directly we jump out after 100 to give the waiting connections a chance 
+	 * 对于每一个连接，只处理100次的请求，当请求大于100次时，停止处理此连接的请求，以处理等待其他连接。
+	 * 如果此时没有其他连接，那么，紧接着处理的连接仍是上一个连接。
 	 */
 	for (loops = 0; loops < 100 && NULL != (con = connection_accept(srv, srv_socket)); loops++)
 	{
 		handler_t r;
 		
+		//根据当前状态，改变con的状态机，并做出相应的动作。
 		connection_state_machine(srv, con);
 
 		switch (r = plugins_call_handle_joblist(srv, con))

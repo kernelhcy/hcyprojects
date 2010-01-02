@@ -247,16 +247,21 @@ int fdevent_fcntl_set(fdevents * ev, int fd)
 #ifdef FD_CLOEXEC
 	/*
 	 * close fd on exec (cgi) 
+	 * 当运行exec()系列函数的时候，在子进程中关闭这个fd。主要是运行cgi。
 	 */
 	fcntl(fd, F_SETFD, FD_CLOEXEC);
 #endif
+
 	if ((ev) && (ev->fcntl_set))
 		return ev->fcntl_set(ev, fd);
+
 #ifdef O_NONBLOCK
+	//非阻塞
 	return fcntl(fd, F_SETFL, O_NONBLOCK | O_RDWR);
 #else
 	return 0;
 #endif
+
 }
 
 

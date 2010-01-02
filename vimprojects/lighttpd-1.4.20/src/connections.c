@@ -1575,9 +1575,9 @@ connection *connection_accept(server * srv, server_socket * srv_socket)
 	/*
 	 * accept everything 
 	 */
-
 	/*
 	 * search an empty place 
+	 * cnt是accept时获得的socket的fd。
 	 */
 	int cnt;
 	sock_addr cnt_addr;
@@ -1585,7 +1585,6 @@ connection *connection_accept(server * srv, server_socket * srv_socket)
 	/*
 	 * accept it and register the fd 
 	 */
-
 	/**
 	 * check if we can still open a new connections
 	 * 判断是否已经达到最大连接数了。
@@ -1630,7 +1629,6 @@ connection *connection_accept(server * srv, server_socket * srv_socket)
 	else
 	{
 		connection *con;
-
 		srv->cur_fds++;
 
 		/*
@@ -1649,16 +1647,24 @@ connection *connection_accept(server * srv, server_socket * srv_socket)
 #if 0
 		gettimeofday(&(con->start_tv), NULL);
 #endif
+
+		//在IO事件系统中注册这个socket fd。
+		//这个socket fd是client创建的socket的fd。accept的返回值。
 		fdevent_register(srv->ev, con->fd, connection_handle_fdevent, con);
 
+		/*
+		 * 启动这个连接的状态机。
+		 * 并将状态自动机设置为读取请求的状态。
+		 */
 		connection_set_state(srv, con, CON_STATE_REQUEST_START);
-
-		con->connection_start = srv->cur_ts;
+		con->connection_start = srv->cur_ts; 	//记录启动的事件。
 
 		con->dst_addr = cnt_addr;
+		//将地址转换成文本形式，并保存在con -> dst_addr_buf中。
 		buffer_copy_string(con->dst_addr_buf, inet_ntop_cache_get_ip(srv, &(con->dst_addr)));
 		con->srv_socket = srv_socket;
 
+		//对socket fd进行设置
 		if (-1 == (fdevent_fcntl_set(srv->ev, con->fd)))
 		{
 			log_error_write(srv, __FILE__, __LINE__, "ss", "fcntl failed: ", strerror(errno));
@@ -1672,8 +1678,7 @@ connection *connection_accept(server * srv, server_socket * srv_socket)
 		{
 			if (NULL == (con->ssl = SSL_new(srv_socket->ssl_ctx)))
 			{
-				log_error_write(srv, __FILE__, __LINE__, "ss", "SSL:",
-								ERR_error_string(ERR_get_error(), NULL));
+				log_error_write(srv, __FILE__, __LINE__, "ss", "SSL:", ERR_error_string(ERR_get_error(), NULL));
 
 				return NULL;
 			}
@@ -1683,8 +1688,7 @@ connection *connection_accept(server * srv, server_socket * srv_socket)
 
 			if (1 != (SSL_set_fd(con->ssl, cnt)))
 			{
-				log_error_write(srv, __FILE__, __LINE__, "ss", "SSL:",
-								ERR_error_string(ERR_get_error(), NULL));
+				log_error_write(srv, __FILE__, __LINE__, "ss", "SSL:", ERR_error_string(ERR_get_error(), NULL));
 				return NULL;
 			}
 		}
@@ -1700,6 +1704,12 @@ connection *connection_accept(server * srv, server_socket * srv_socket)
  *
  * lighttpd中，使用状态机来处理网络连接。这个函数就是根据当前的状态改变连接的状态并
  * 进行相应的处理。
+ *
+ * 关于这个状态机的状态的设置及转移，可参见doc中的state.dot文件，利用这个文件，使用如下命令
+ * 		dot state.dot -Tpng -o state.png 
+ * 可以生成状态机图。
+ *
+ *
  */
 int connection_state_machine(server * srv, connection * con)
 {
@@ -1718,21 +1728,25 @@ int connection_state_machine(server * srv, connection * con)
 		size_t ostate = con -> state;
 		int b;
 
+		//这个大switch语句根据当前状态机的状态进行相应的处理和状态转换。
 		switch (con->state)
 		{
-		case CON_STATE_REQUEST_START:	/* transient */
+		case CON_STATE_REQUEST_START:	/* transient 这个状态瞬间改变。*/
 			if (srv->srvconf.log_state_handling)
 			{
+				//connection_get_state()函数获取状态的字符串描述
 				log_error_write(srv, __FILE__, __LINE__, "sds", "state for fd", con->fd,
 								connection_get_state(con->state));
 			}
 
+			//记录请求开始的时间，用于判断请求超时。
 			con->request_start = srv->cur_ts;
 			con->read_idle_ts = srv->cur_ts;
 
 			con->request_count++;
 			con->loops_per_request = 0;
 
+			//状态机设为read，连接进入读取请求的状态。
 			connection_set_state(srv, con, CON_STATE_READ);
 
 			/*
@@ -1743,36 +1757,41 @@ int connection_state_machine(server * srv, connection * con)
 #endif
 
 			break;
-		case CON_STATE_REQUEST_END:	/* transient */
+		case CON_STATE_REQUEST_END:	/* transient  读取请求结束。解析所得到的请求。*/
 			if (srv->srvconf.log_state_handling)
 			{
 				log_error_write(srv, __FILE__, __LINE__, "sds", "state for fd", con->fd,
 								connection_get_state(con->state));
 			}
 
+			//解析http请求。如果此函数返回1,表示还有一些post数据需要读取。
 			if (http_request_parse(srv, con))
 			{
 				/*
 				 * we have to read some data from the POST request 
+				 * 读取POST的数据。将状态机设置为readpost。
 				 */
 				connection_set_state(srv, con, CON_STATE_READ_POST);
 				break;
 			}
+			//没有post数据，状态机进入处理请求的状态。
 			connection_set_state(srv, con, CON_STATE_HANDLE_REQUEST);
 			break;
 		case CON_STATE_HANDLE_REQUEST:
 			/*
-			 * the request is parsed
-			 * decided what to do with the request
-			 * -
+			 * the request is parsed ，decided what to do with the request
+			 * 请求已经被解析，开始处理请求。
 			 */
 
 			if (srv->srvconf.log_state_handling)
 			{
-				log_error_write(srv, __FILE__, __LINE__, "sds", "state for fd", con->fd,
-								connection_get_state(con->state));
+				log_error_write(srv, __FILE__, __LINE__, "sds", "state for fd", con->fd, connection_get_state(con->state));
 			}
 
+			/*
+			 * 准备response。
+			 * 这个函数做了大部分的请求处理工作。有700多行。
+			 */
 			switch (r = http_response_prepare(srv, con))
 			{
 			case HANDLER_FINISHED:
@@ -1784,49 +1803,41 @@ int connection_state_machine(server * srv, connection * con)
 						 * 404 error-handler 
 						 */
 
-						if (con->in_error_handler == 0 &&
-							(!buffer_is_empty(con->conf.error_handler)
+						if (con->in_error_handler == 0 && (!buffer_is_empty(con->conf.error_handler)
 							 || !buffer_is_empty(con->error_handler)))
 						{
 							/*
 							 * call error-handler 
 							 */
-
 							con->error_handler_saved_status = con->http_status;
 							con->http_status = 0;
 
 							if (buffer_is_empty(con->error_handler))
 							{
-								buffer_copy_string_buffer(con->
-														  request.
-														  uri,
-														  con->
-														  conf.error_handler);
-							} else
+								buffer_copy_string_buffer(con -> request.uri, con->conf.error_handler);
+							} 
+							else
 							{
-								buffer_copy_string_buffer(con->
-														  request.
-														  uri,
-														  con->error_handler);
+								buffer_copy_string_buffer(con->request.uri, con->error_handler);
 							}
 							buffer_reset(con->physical.path);
 
 							con->in_error_handler = 1;
 
-							connection_set_state(srv, con,
-												 CON_STATE_HANDLE_REQUEST);
+							connection_set_state(srv, con, CON_STATE_HANDLE_REQUEST);
 
 							done = -1;
 							break;
-						} else if (con->in_error_handler)
+						} 
+						else if (con->in_error_handler)
 						{
 							/*
 							 * error-handler is a 404 
 							 */
-
 							con->http_status = con->error_handler_saved_status;
 						}
-					} else if (con->in_error_handler)
+					} 
+					else if (con->in_error_handler)
 					{
 						/*
 						 * error-handler is back and has generated content 
@@ -1846,11 +1857,8 @@ int connection_state_machine(server * srv, connection * con)
 				break;
 			case HANDLER_WAIT_FOR_FD:
 				srv->want_fds++;
-
 				fdwaitqueue_append(srv, con);
-
 				connection_set_state(srv, con, CON_STATE_HANDLE_REQUEST);
-
 				break;
 			case HANDLER_COMEBACK:
 				done = -1;
@@ -1859,7 +1867,6 @@ int connection_state_machine(server * srv, connection * con)
 				 * come back here 
 				 */
 				connection_set_state(srv, con, CON_STATE_HANDLE_REQUEST);
-
 				break;
 			case HANDLER_ERROR:
 				/*
@@ -1868,8 +1875,7 @@ int connection_state_machine(server * srv, connection * con)
 				connection_set_state(srv, con, CON_STATE_ERROR);
 				break;
 			default:
-				log_error_write(srv, __FILE__, __LINE__, "sdd",
-								"unknown ret-value: ", con->fd, r);
+				log_error_write(srv, __FILE__, __LINE__, "sdd",	"unknown ret-value: ", con->fd, r);
 				break;
 			}
 
@@ -1908,6 +1914,8 @@ int connection_state_machine(server * srv, connection * con)
 
 			plugins_call_handle_request_done(srv, con);
 			srv->con_written++;
+
+			//是否继续保持连接。
 			if (con->keep_alive)
 			{
 				connection_set_state(srv, con, CON_STATE_REQUEST_START);
@@ -2172,7 +2180,8 @@ int connection_state_machine(server * srv, connection * con)
 					log_error_write(srv, __FILE__, __LINE__, "sd",
 									"shutdown for fd", con->fd);
 				}
-			} else
+			} 
+			else
 			{
 				connection_close(srv, con);
 			}
@@ -2185,12 +2194,13 @@ int connection_state_machine(server * srv, connection * con)
 		default:
 			log_error_write(srv, __FILE__, __LINE__, "sdd", "unknown state:", con->fd, con->state);
 			break;
-		}
+		}//end of switch(con -> state) ...
 
 		if (done == -1)
 		{
 			done = 0;
-		} else if (ostate == con->state)
+		} 
+		else if (ostate == con->state)
 		{
 			done = 1;
 		}

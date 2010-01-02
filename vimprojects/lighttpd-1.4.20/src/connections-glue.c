@@ -1,5 +1,8 @@
 #include "base.h"
-
+/**
+ * 将状态机的状态对应到字符串描述上。
+ * 用于打印日志的功能。
+ */
 const char *connection_get_state(connection_state_t state)
 {
 	switch (state)

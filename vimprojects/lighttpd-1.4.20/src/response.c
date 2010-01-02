@@ -168,8 +168,7 @@ handler_t http_response_prepare(server * srv, connection * con)
 	/*
 	 * looks like someone has already done a decision 
 	 */
-	if (con->mode == DIRECT &&
-		(con->http_status != 0 && con->http_status != 200))
+	if (con -> mode == DIRECT && (con -> http_status != 0 && con -> http_status != 200))
 	{
 		/*
 		 * remove a packets in the queue 
@@ -198,15 +197,13 @@ handler_t http_response_prepare(server * srv, connection * con)
 		 */
 
 		config_cond_cache_reset(srv, con);
-		config_setup_connection(srv, con);	/* Perhaps this could be removed at 
-											 * other places. */
+		config_setup_connection(srv, con);	/* Perhaps this could be removed at other places. */
 
 		if (con->conf.log_condition_handling)
 		{
 			log_error_write(srv, __FILE__, __LINE__, "s", "run condition");
 		}
-		config_patch_connection(srv, con, COMP_SERVER_SOCKET);	/* SERVERsocket 
-																 */
+		config_patch_connection(srv, con, COMP_SERVER_SOCKET);	/* SERVERsocket */
 
 		/**
 		 * prepare strings
@@ -233,7 +230,8 @@ handler_t http_response_prepare(server * srv, connection * con)
 		if (con->conf.is_ssl)
 		{
 			buffer_copy_string_len(con->uri.scheme, CONST_STR_LEN("https"));
-		} else
+		} 
+		else
 		{
 			buffer_copy_string_len(con->uri.scheme, CONST_STR_LEN("http"));
 		}
@@ -244,11 +242,9 @@ handler_t http_response_prepare(server * srv, connection * con)
 		config_patch_connection(srv, con, COMP_HTTP_HOST);	/* Host: */
 		config_patch_connection(srv, con, COMP_HTTP_REMOTE_IP);	/* Client-IP */
 		config_patch_connection(srv, con, COMP_HTTP_REFERER);	/* Referer: */
-		config_patch_connection(srv, con, COMP_HTTP_USER_AGENT);	/* User-Agent: 
-																	 */
+		config_patch_connection(srv, con, COMP_HTTP_USER_AGENT);	/* User-Agent:*/
 		config_patch_connection(srv, con, COMP_HTTP_COOKIE);	/* Cookie: */
-		config_patch_connection(srv, con, COMP_HTTP_REQUEST_METHOD);	/* REQUEST_METHOD 
-																		 */
+		config_patch_connection(srv, con, COMP_HTTP_REQUEST_METHOD);	/* REQUEST_METHOD */
 
 		/** their might be a fragment which has to be cut away */
 		if (NULL != (qstr = strchr(con->request.uri->ptr, '#')))
@@ -261,10 +257,9 @@ handler_t http_response_prepare(server * srv, connection * con)
 		if (NULL != (qstr = strchr(con->request.uri->ptr, '?')))
 		{
 			buffer_copy_string(con->uri.query, qstr + 1);
-			buffer_copy_string_len(con->uri.path_raw,
-								   con->request.uri->ptr,
-								   qstr - con->request.uri->ptr);
-		} else
+			buffer_copy_string_len(con->uri.path_raw, con->request.uri->ptr, qstr - con->request.uri->ptr);
+		} 
+		else
 		{
 			buffer_reset(con->uri.query);
 			buffer_copy_string_buffer(con->uri.path_raw, con->request.uri);
@@ -272,18 +267,12 @@ handler_t http_response_prepare(server * srv, connection * con)
 
 		if (con->conf.log_request_handling)
 		{
-			log_error_write(srv, __FILE__, __LINE__, "s",
-							"-- splitting Request-URI");
-			log_error_write(srv, __FILE__, __LINE__, "sb",
-							"Request-URI  : ", con->request.uri);
-			log_error_write(srv, __FILE__, __LINE__, "sb",
-							"URI-scheme   : ", con->uri.scheme);
-			log_error_write(srv, __FILE__, __LINE__, "sb",
-							"URI-authority: ", con->uri.authority);
-			log_error_write(srv, __FILE__, __LINE__, "sb",
-							"URI-path     : ", con->uri.path_raw);
-			log_error_write(srv, __FILE__, __LINE__, "sb",
-							"URI-query    : ", con->uri.query);
+			log_error_write(srv, __FILE__, __LINE__, "s", "-- splitting Request-URI");
+			log_error_write(srv, __FILE__, __LINE__, "sb", "Request-URI  : ", con->request.uri);
+			log_error_write(srv, __FILE__, __LINE__, "sb", "URI-scheme   : ", con->uri.scheme);
+			log_error_write(srv, __FILE__, __LINE__, "sb", "URI-authority: ", con->uri.authority);
+			log_error_write(srv, __FILE__, __LINE__, "sb", "URI-path     : ", con->uri.path_raw);
+			log_error_write(srv, __FILE__, __LINE__, "sb", "URI-query    : ", con->uri.query);
 		}
 
 		/*
@@ -302,15 +291,15 @@ handler_t http_response_prepare(server * srv, connection * con)
 		 */
 
 
-		if (con->request.http_method == HTTP_METHOD_OPTIONS &&
-			con->uri.path_raw->ptr[0] == '*'
+		if (con->request.http_method == HTTP_METHOD_OPTIONS && con->uri.path_raw->ptr[0] == '*'
 			&& con->uri.path_raw->ptr[1] == '\0')
 		{
 			/*
 			 * OPTIONS * ... 
 			 */
 			buffer_copy_string_buffer(con->uri.path, con->uri.path_raw);
-		} else
+		} 
+		else
 		{
 			buffer_copy_string_buffer(srv->tmp_buf, con->uri.path_raw);
 			buffer_urldecode_path(srv->tmp_buf);
@@ -320,8 +309,7 @@ handler_t http_response_prepare(server * srv, connection * con)
 		if (con->conf.log_request_handling)
 		{
 			log_error_write(srv, __FILE__, __LINE__, "s", "-- sanatising URI");
-			log_error_write(srv, __FILE__, __LINE__, "sb",
-							"URI-path     : ", con->uri.path);
+			log_error_write(srv, __FILE__, __LINE__, "sb", "URI-path     : ", con->uri.path);
 		}
 
 
@@ -343,8 +331,7 @@ handler_t http_response_prepare(server * srv, connection * con)
 		case HANDLER_ERROR:
 			return r;
 		default:
-			log_error_write(srv, __FILE__, __LINE__, "sd",
-							"handle_uri_raw: unknown return value", r);
+			log_error_write(srv, __FILE__, __LINE__, "sd", "handle_uri_raw: unknown return value", r);
 			break;
 		}
 
@@ -403,13 +390,7 @@ handler_t http_response_prepare(server * srv, connection * con)
 		 * border
 		 *
 		 * logical filename (URI) becomes a physical filename here
-		 *
-		 *
-		 *
 		 */
-
-
-
 
 		/*
 		 * 1. stat() ... ISREG() -> ok, go on ... ISDIR() -> index-file ->
@@ -424,8 +405,7 @@ handler_t http_response_prepare(server * srv, connection * con)
 		 * set a default 
 		 */
 
-		buffer_copy_string_buffer(con->physical.doc_root,
-								  con->conf.document_root);
+		buffer_copy_string_buffer(con->physical.doc_root, con->conf.document_root);
 		buffer_copy_string_buffer(con->physical.rel_path, con->uri.path);
 
 #if defined(__WIN32) || defined(__CYGWIN__)
@@ -442,8 +422,7 @@ handler_t http_response_prepare(server * srv, connection * con)
 			buffer *b = con->physical.rel_path;
 			size_t i;
 
-			if (b->used > 2 &&
-				b->ptr[b->used - 2] == '/' &&
+			if (b->used > 2 && b->ptr[b->used - 2] == '/' &&
 				(b->ptr[b->used - 3] == ' ' || b->ptr[b->used - 3] == '.'))
 			{
 				b->ptr[b->used--] = '\0';
@@ -454,7 +433,8 @@ handler_t http_response_prepare(server * srv, connection * con)
 				if (b->ptr[i] == ' ' || b->ptr[i] == '.')
 				{
 					b->ptr[b->used--] = '\0';
-				} else
+				} 
+				else
 				{
 					break;
 				}
@@ -465,12 +445,9 @@ handler_t http_response_prepare(server * srv, connection * con)
 		if (con->conf.log_request_handling)
 		{
 			log_error_write(srv, __FILE__, __LINE__, "s", "-- before doc_root");
-			log_error_write(srv, __FILE__, __LINE__, "sb", "Doc-Root     :",
-							con->physical.doc_root);
-			log_error_write(srv, __FILE__, __LINE__, "sb", "Rel-Path     :",
-							con->physical.rel_path);
-			log_error_write(srv, __FILE__, __LINE__, "sb", "Path         :",
-							con->physical.path);
+			log_error_write(srv, __FILE__, __LINE__, "sb", "Doc-Root     :", con->physical.doc_root);
+			log_error_write(srv, __FILE__, __LINE__, "sb", "Rel-Path     :", con->physical.rel_path);
+			log_error_write(srv, __FILE__, __LINE__, "sb", "Path         :", con->physical.path);
 		}
 		/*
 		 * the docroot plugin should set the doc_root and might also set the
@@ -524,21 +501,18 @@ handler_t http_response_prepare(server * srv, connection * con)
 			buffer_append_string_len(con->physical.path,
 									 con->physical.rel_path->ptr + 1,
 									 con->physical.rel_path->used - 2);
-		} else
+		} 
+		else
 		{
-			buffer_append_string_buffer(con->physical.path,
-										con->physical.rel_path);
+			buffer_append_string_buffer(con->physical.path, con->physical.rel_path);
 		}
 
 		if (con->conf.log_request_handling)
 		{
 			log_error_write(srv, __FILE__, __LINE__, "s", "-- after doc_root");
-			log_error_write(srv, __FILE__, __LINE__, "sb", "Doc-Root     :",
-							con->physical.doc_root);
-			log_error_write(srv, __FILE__, __LINE__, "sb", "Rel-Path     :",
-							con->physical.rel_path);
-			log_error_write(srv, __FILE__, __LINE__, "sb", "Path         :",
-							con->physical.path);
+			log_error_write(srv, __FILE__, __LINE__, "sb", "Doc-Root     :", con->physical.doc_root);
+			log_error_write(srv, __FILE__, __LINE__, "sb", "Rel-Path     :", con->physical.rel_path);
+			log_error_write(srv, __FILE__, __LINE__, "sb", "Path         :", con->physical.path);
 		}
 
 		switch (r = plugins_call_handle_physical(srv, con))
@@ -557,14 +531,10 @@ handler_t http_response_prepare(server * srv, connection * con)
 
 		if (con->conf.log_request_handling)
 		{
-			log_error_write(srv, __FILE__, __LINE__, "s",
-							"-- logical -> physical");
-			log_error_write(srv, __FILE__, __LINE__, "sb",
-							"Doc-Root     :", con->physical.doc_root);
-			log_error_write(srv, __FILE__, __LINE__, "sb",
-							"Rel-Path     :", con->physical.rel_path);
-			log_error_write(srv, __FILE__, __LINE__, "sb",
-							"Path         :", con->physical.path);
+			log_error_write(srv, __FILE__, __LINE__, "s", "-- logical -> physical");
+			log_error_write(srv, __FILE__, __LINE__, "sb", "Doc-Root     :", con->physical.doc_root);
+			log_error_write(srv, __FILE__, __LINE__, "sb", "Rel-Path     :", con->physical.rel_path);
+			log_error_write(srv, __FILE__, __LINE__, "sb", "Path         :", con->physical.path);
 		}
 	}
 
@@ -583,14 +553,11 @@ handler_t http_response_prepare(server * srv, connection * con)
 
 		if (con->conf.log_request_handling)
 		{
-			log_error_write(srv, __FILE__, __LINE__, "s",
-							"-- handling physical path");
-			log_error_write(srv, __FILE__, __LINE__, "sb",
-							"Path         :", con->physical.path);
+			log_error_write(srv, __FILE__, __LINE__, "s", "-- handling physical path");
+			log_error_write(srv, __FILE__, __LINE__, "sb", "Path         :", con->physical.path);
 		}
 
-		if (HANDLER_ERROR !=
-			stat_cache_get_entry(srv, con, con->physical.path, &sce))
+		if (HANDLER_ERROR != stat_cache_get_entry(srv, con, con->physical.path, &sce))
 		{
 			/*
 			 * file exists 
@@ -599,8 +566,7 @@ handler_t http_response_prepare(server * srv, connection * con)
 			if (con->conf.log_request_handling)
 			{
 				log_error_write(srv, __FILE__, __LINE__, "s", "-- file found");
-				log_error_write(srv, __FILE__, __LINE__, "sb",
-								"Path         :", con->physical.path);
+				log_error_write(srv, __FILE__, __LINE__, "sb", "Path         :", con->physical.path);
 			}
 #ifdef HAVE_LSTAT
 			if ((sce->is_symlink != 0) && !con->conf.follow_symlink)
@@ -609,10 +575,8 @@ handler_t http_response_prepare(server * srv, connection * con)
 
 				if (con->conf.log_request_handling)
 				{
-					log_error_write(srv, __FILE__, __LINE__, "s",
-									"-- access denied due symlink restriction");
-					log_error_write(srv, __FILE__, __LINE__, "sb",
-									"Path         :", con->physical.path);
+					log_error_write(srv, __FILE__, __LINE__, "s", "-- access denied due symlink restriction");
+					log_error_write(srv, __FILE__, __LINE__, "sb", "Path         :", con->physical.path);
 				}
 
 				buffer_reset(con->physical.path);
@@ -633,10 +597,12 @@ handler_t http_response_prepare(server * srv, connection * con)
 					return HANDLER_FINISHED;
 				}
 #ifdef HAVE_LSTAT
-			} else if (!S_ISREG(sce->st.st_mode) && !sce->is_symlink)
+			} 
+			else if (!S_ISREG(sce->st.st_mode) && !sce->is_symlink)
 			{
 #else
-			} else if (!S_ISREG(sce->st.st_mode))
+			} 
+			else if (!S_ISREG(sce->st.st_mode))
 			{
 #endif
 				/*
@@ -645,7 +611,8 @@ handler_t http_response_prepare(server * srv, connection * con)
 
 
 			}
-		} else
+		} 
+		else
 		{
 			switch (errno)
 			{
@@ -654,10 +621,8 @@ handler_t http_response_prepare(server * srv, connection * con)
 
 				if (con->conf.log_request_handling)
 				{
-					log_error_write(srv, __FILE__, __LINE__, "s",
-									"-- access denied");
-					log_error_write(srv, __FILE__, __LINE__, "sb",
-									"Path         :", con->physical.path);
+					log_error_write(srv, __FILE__, __LINE__, "s", "-- access denied");
+					log_error_write(srv, __FILE__, __LINE__, "sb", "Path         :", con->physical.path);
 				}
 
 				buffer_reset(con->physical.path);
@@ -667,10 +632,8 @@ handler_t http_response_prepare(server * srv, connection * con)
 
 				if (con->conf.log_request_handling)
 				{
-					log_error_write(srv, __FILE__, __LINE__, "s",
-									"-- file not found");
-					log_error_write(srv, __FILE__, __LINE__, "sb",
-									"Path         :", con->physical.path);
+					log_error_write(srv, __FILE__, __LINE__, "s", "-- file not found");
+					log_error_write(srv, __FILE__, __LINE__, "sb", "Path         :", con->physical.path);
 				}
 
 				buffer_reset(con->physical.path);
@@ -708,13 +671,13 @@ handler_t http_response_prepare(server * srv, connection * con)
 					buffer_copy_string_len(con->physical.path,
 										   srv->tmp_buf->ptr,
 										   slash - srv->tmp_buf->ptr);
-				} else
+				} 
+				else
 				{
 					buffer_copy_string_buffer(con->physical.path, srv->tmp_buf);
 				}
 
-				if (HANDLER_ERROR !=
-					stat_cache_get_entry(srv, con, con->physical.path, &sce))
+				if (HANDLER_ERROR != stat_cache_get_entry(srv, con, con->physical.path, &sce))
 				{
 					found = S_ISREG(sce->st.st_mode);
 					break;
@@ -750,8 +713,7 @@ handler_t http_response_prepare(server * srv, connection * con)
 
 				if (con->conf.log_file_not_found)
 				{
-					log_error_write(srv, __FILE__, __LINE__, "sbsb",
-									"file not found:", con->uri.path,
+					log_error_write(srv, __FILE__, __LINE__, "sbsb", "file not found:", con->uri.path,
 									"->", con->physical.path);
 				}
 
@@ -766,10 +728,8 @@ handler_t http_response_prepare(server * srv, connection * con)
 
 				if (con->conf.log_request_handling)
 				{
-					log_error_write(srv, __FILE__, __LINE__, "s",
-									"-- access denied due symlink restriction");
-					log_error_write(srv, __FILE__, __LINE__, "sb",
-									"Path         :", con->physical.path);
+					log_error_write(srv, __FILE__, __LINE__, "s", "-- access denied due symlink restriction");
+					log_error_write(srv, __FILE__, __LINE__, "sb", "Path         :", con->physical.path);
 				}
 
 				buffer_reset(con->physical.path);
@@ -794,23 +754,17 @@ handler_t http_response_prepare(server * srv, connection * con)
 
 			if (con->conf.log_request_handling)
 			{
-				log_error_write(srv, __FILE__, __LINE__, "s",
-								"-- after pathinfo check");
-				log_error_write(srv, __FILE__, __LINE__, "sb",
-								"Path         :", con->physical.path);
-				log_error_write(srv, __FILE__, __LINE__, "sb",
-								"URI          :", con->uri.path);
-				log_error_write(srv, __FILE__, __LINE__, "sb",
-								"Pathinfo     :", con->request.pathinfo);
+				log_error_write(srv, __FILE__, __LINE__, "s", "-- after pathinfo check");
+				log_error_write(srv, __FILE__, __LINE__, "sb", "Path         :", con->physical.path);
+				log_error_write(srv, __FILE__, __LINE__, "sb", "URI          :", con->uri.path);
+				log_error_write(srv, __FILE__, __LINE__, "sb", "Pathinfo     :", con->request.pathinfo);
 			}
 		}
 
 		if (con->conf.log_request_handling)
 		{
-			log_error_write(srv, __FILE__, __LINE__, "s",
-							"-- handling subrequest");
-			log_error_write(srv, __FILE__, __LINE__, "sb",
-							"Path         :", con->physical.path);
+			log_error_write(srv, __FILE__, __LINE__, "s", "-- handling subrequest");
+			log_error_write(srv, __FILE__, __LINE__, "sb", "Path         :", con->physical.path);
 		}
 
 		/*
@@ -827,8 +781,7 @@ handler_t http_response_prepare(server * srv, connection * con)
 		default:
 			if (con->conf.log_request_handling)
 			{
-				log_error_write(srv, __FILE__, __LINE__, "s",
-								"-- subrequest finished");
+				log_error_write(srv, __FILE__, __LINE__, "s", "-- subrequest finished");
 			}
 
 			/*

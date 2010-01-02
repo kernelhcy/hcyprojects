@@ -341,21 +341,21 @@ typedef struct {
 /*
  * the order of the items should be the same as they are processed read before
  * write as we use this later 
- * 网络连接的状态
+ * 对应网络连接的状态自动机的状态。
  */
 typedef enum 
 {
-	CON_STATE_CONNECT,
-	CON_STATE_REQUEST_START,
-	CON_STATE_READ,
-	CON_STATE_REQUEST_END,
-	CON_STATE_READ_POST,
-	CON_STATE_HANDLE_REQUEST,
-	CON_STATE_RESPONSE_START,
-	CON_STATE_WRITE,
-	CON_STATE_RESPONSE_END,
-	CON_STATE_ERROR,
-	CON_STATE_CLOSE
+	CON_STATE_CONNECT, 			//connect 连接开始 
+	CON_STATE_REQUEST_START, 	//reqstart 开始读取请求
+	CON_STATE_READ, 			//read 读取并解析请求
+	CON_STATE_REQUEST_END, 		//reqend 读取请求结束
+	CON_STATE_READ_POST, 		//readpost 读取post数据
+	CON_STATE_HANDLE_REQUEST, 	//handelreq 处理请求
+	CON_STATE_RESPONSE_START, 	//respstart 开始回复
+	CON_STATE_WRITE, 			//write 回复写数据
+	CON_STATE_RESPONSE_END, 	//respend 回复结束
+	CON_STATE_ERROR, 			//error 出错
+	CON_STATE_CLOSE 			//close 连接关闭
 } connection_state_t;
 
 //网络连接运行的结果状态

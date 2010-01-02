@@ -1,7 +1,7 @@
 /**
  * 书签：
- *    connection.c中的con_state_machine函数。
- *    连接的状态机。
+ * 		状态机的后几个状态。
+ * 		request和response
  */
 #include <sys/types.h>
 #include <sys/time.h>
