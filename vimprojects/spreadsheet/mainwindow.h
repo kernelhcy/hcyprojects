@@ -67,7 +67,7 @@ class MainWindow : public QMainWindow
         //创建菜单
 		void createMenus();
         //创建pop菜单，右击显示。
-		void createContextMenu();
+        void createContextMenu(QWidget *w);
 		void createToolBars();
 
         void createStatusBar();
@@ -141,14 +141,12 @@ class MainWindow : public QMainWindow
 		QAction *autoRecalcAction;
 
         //中央组件，用于控制和显示文档。
-        SS_TabMdiArea *mdiArea;
         QTabWidget *tabWidget;
 
         //所有文档
         QVector<Document*> documents;
 
         FindDialog *findDialog;
-        Spreadsheet *spreadsheet;
-};
+    };
 
 #endif

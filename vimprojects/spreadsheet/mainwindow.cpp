@@ -4,17 +4,6 @@
 
 MainWindow::MainWindow()
 {
-    spreadsheet = new Spreadsheet;
-    documents.append(spreadsheet);
-//    mdiArea = new SS_TabMdiArea(this);
-//    setCentralWidget(mdiArea);
-    //使用tabviewmode时，菜单拦中的关闭最大最小化按钮不显示。
-//    mdiArea -> setViewMode(QMdiArea::TabbedView);
-//    mdiArea -> setTabPosition(QTabWidget::South);
-//    mdiArea -> setTabShape(QTabWidget::Rounded);
-//    mdiArea -> newWindow(spreadsheet);
-//    mdiArea -> newWindow(new Spreadsheet);
-
     tabWidget = new QTabWidget(this);
     tabWidget -> setTabsClosable(true);
     tabWidget -> setUsesScrollButtons(true);
@@ -22,12 +11,10 @@ MainWindow::MainWindow()
     connect(tabWidget, SIGNAL(tabCloseRequested(int)), this, SLOT(closeTab(int)));
     connect(tabWidget, SIGNAL(currentChanged(int)), this, SLOT(currentTabChanged(int)));
     setCentralWidget(tabWidget);
-    newTab(spreadsheet, tr("students"));
-    newTab(new Word, tr("teacher"));
 
 	createActions();
 	createMenus();
-	createContextMenu();
+    createContextMenu(0);
 	createToolBars();
 	createStatusBar();
 	readSettings();
@@ -66,7 +53,7 @@ void MainWindow::createActions()
     selectAllAction = new QAction(tr("&Select All"), this );
 	selectAllAction->setShortcut(tr("Ctrl+A"));
     selectAllAction->setStatusTip(tr("Select all the data" "spreadsheet"));
-    connect(selectAllAction, SIGNAL(triggered()), spreadsheet, SLOT(selectAll())) ;
+    //connect(selectAllAction, SIGNAL(triggered()), spreadsheet, SLOT(selectAll())) ;
 	
     aboutQtAction = new QAction(tr("About &Qt"), this );
     aboutQtAction -> setIcon(QIcon(":/images/pics/qt.png"));
@@ -199,14 +186,19 @@ void MainWindow::createMenus()
 
 }
 
-void MainWindow::createContextMenu()
+void MainWindow::createContextMenu(QWidget *w)
 {
-    spreadsheet -> addAction(cutAction);
-    spreadsheet -> addAction(copyAction);
-    spreadsheet -> addAction(pasteAction);
-    spreadsheet -> addAction(separatorAction);
-    spreadsheet -> addAction(deleteAction);
-    spreadsheet -> setContextMenuPolicy(Qt::ActionsContextMenu);
+    if (!w)
+    {
+        return;
+    }
+
+    w -> addAction(cutAction);
+    w -> addAction(copyAction);
+    w -> addAction(pasteAction);
+    w -> addAction(separatorAction);
+    w -> addAction(deleteAction);
+    w -> setContextMenuPolicy(Qt::ActionsContextMenu);
 }
 
 void MainWindow::createToolBars()
@@ -244,9 +236,10 @@ void MainWindow::createStatusBar()
     formulaLabel -> setMaximumSize(formulaLabel -> sizeHint());
 	statusBar() -> addWidget(locationLabel);
 	statusBar() -> addWidget(formulaLabel, 1);
-    connect(spreadsheet, SIGNAL(currentCellChanged( int , int , int , int ))
+    Spreadsheet *ss = static_cast<Spreadsheet *> (tabWidget ->currentWidget());
+    connect(ss, SIGNAL(currentCellChanged( int , int , int , int ))
                                   , this , SLOT(updateStatusBar()));
-    connect(spreadsheet, SIGNAL(modified()), this , SLOT(spreadsheetModified()));
+    connect(ss, SIGNAL(modified()), this , SLOT(spreadsheetModified()));
 
     //show the tabbar in the status bar
 //    QWidget *hb = new QWidget(statusBar());
@@ -265,8 +258,9 @@ void MainWindow::createStatusBar()
 void MainWindow::updateStatusBar()
 {
     //std::cout << "update status bar\n";
-    locationLabel->setText(spreadsheet->currentLocation());
-    formulaLabel->setText(spreadsheet->currentFormula());
+    Spreadsheet *ss = static_cast<Spreadsheet *> (tabWidget ->currentWidget());
+    locationLabel->setText(ss->currentLocation());
+    formulaLabel->setText(ss->currentFormula());
 }
 
 
@@ -280,8 +274,12 @@ void MainWindow::newFile()
 {
 	if (okToContinue()) 
 	{
-        spreadsheet -> clear();
-		setCurrentFile("");
+        //we just create a spreatsheet file.
+        Spreadsheet *ss = new Spreadsheet(this);
+        documents.append(ss);
+        tabWidget -> addTab(ss, tr("untitled"));
+        ss -> clear();
+        createContextMenu(ss);
 	}
     //std::cout << "create a new window\n";
 
@@ -313,7 +311,7 @@ void MainWindow::open()
 	{
 		QString fileName = QFileDialog::getOpenFileName( this ,
                     tr("Open"), ".",
-                    tr("Spreadsheet files (*.sp)""All files (*.*)"));
+                    tr("Spreadsheet files (*.sp),""All files (*.*)"));
 		if (!fileName.isEmpty())
 		{
 			loadFile(fileName);
@@ -322,11 +320,16 @@ void MainWindow::open()
 }
 
 
-bool MainWindow::loadFile( const QString &fileName)
+bool MainWindow::loadFile(const QString &fileName)
 {
     //std::cout << "load file\n";
-    spreadsheet -> setFileName(fileName);
-    if (!spreadsheet -> load())
+    Spreadsheet *ss = new Spreadsheet();
+    ss -> setFileName(fileName);
+    createContextMenu(ss);
+    documents.append(ss);
+    tabWidget -> addTab(ss, fileName);
+
+    if (!ss -> load())
     {
         statusBar() -> showMessage(tr("Loading canceled"), 2000);
         return false ;
@@ -348,11 +351,14 @@ bool MainWindow::save()
 	}
 }
 
-bool MainWindow::saveFile( const QString &fileName)
+bool MainWindow::saveFile(const QString &fileName)
 {
     //std::cout << "save file\n";
-    spreadsheet -> setFileName(fileName);
-    if (!spreadsheet -> save())
+    //just deal with spreadsheet
+    Spreadsheet *ss = static_cast<Spreadsheet *> (tabWidget ->currentWidget());
+    ss -> setFileName(fileName);
+
+    if (!ss -> save())
     {
         statusBar() -> showMessage(tr("Saving canceled"), 2000);
         return false ;
@@ -448,13 +454,15 @@ void MainWindow::openRecentFile()
 
 void MainWindow::find()
 {
-	if (!findDialog) {
+    if (!findDialog)
+    {
 		findDialog = new FindDialog( this );
-        connect(findDialog, SIGNAL (findNext( const QString &, Qt::CaseSensitivity)),
-                spreadsheet, SLOT (findNext( const QString &, Qt::CaseSensitivity)));
-        connect(findDialog, SIGNAL(findPrevious( const QString &,Qt::CaseSensitivity)),
-                spreadsheet, SLOT(findPrevious( const QString &,Qt::CaseSensitivity)));
 	}
+    Spreadsheet *ss = static_cast<Spreadsheet *> (tabWidget ->currentWidget());
+    connect(findDialog, SIGNAL (findNext( const QString &, Qt::CaseSensitivity)),
+            ss, SLOT (findNext( const QString &, Qt::CaseSensitivity)));
+    connect(findDialog, SIGNAL(findPrevious( const QString &,Qt::CaseSensitivity)),
+            ss, SLOT(findPrevious( const QString &,Qt::CaseSensitivity)));
 	findDialog -> show();
 	findDialog -> activateWindow();
 }
@@ -464,14 +472,16 @@ void MainWindow::goToCell()
     GoToCellDialog dialog(this);
     if (dialog.exec()) {
         QString str = dialog.lineEdit->text().toUpper();
-        spreadsheet -> setCurrentCell(str.mid(1).toInt() - 1, str[0].unicode() - 'A');
+        Spreadsheet *ss = static_cast<Spreadsheet *> (tabWidget ->currentWidget());
+        ss -> setCurrentCell(str.mid(1).toInt() - 1, str[0].unicode() - 'A');
     }
 }
 
 void MainWindow::sort()
 {
     SortDialog dialog(this);
-    QTableWidgetSelectionRange range = spreadsheet -> selectedRange();
+    Spreadsheet *ss = static_cast<Spreadsheet *> (tabWidget ->currentWidget());
+    QTableWidgetSelectionRange range = ss -> selectedRange();
     dialog.setColumnRange('A' + range.leftColumn(), 'A' + range.rightColumn());
     if (dialog.exec())
     {
@@ -482,7 +492,7 @@ void MainWindow::sort()
         compare.ascending[0] = (dialog.primaryOrderCombo->currentIndex() == 0);
         compare.ascending[1] = (dialog.secondaryOrderCombo->currentIndex() == 0);
         compare.ascending[2] = (dialog.tertiaryOrderCombo->currentIndex() == 0);
-        spreadsheet->sort(compare);
+        ss->sort(compare);
     }
 }
 
@@ -580,18 +590,22 @@ int MainWindow::newTab(QWidget *w, const QString &title)
  */
 void MainWindow::cut()
 {
-    spreadsheet -> cut();
+    Spreadsheet *ss = static_cast<Spreadsheet *> (tabWidget ->currentWidget());
+    ss -> cut();
 }
 void MainWindow::copy()
 {
-    spreadsheet -> copy();
+    Spreadsheet *ss = static_cast<Spreadsheet *> (tabWidget ->currentWidget());
+    ss -> copy();
 }
 void MainWindow::del()
 {
-    spreadsheet -> del();
+    Spreadsheet *ss = static_cast<Spreadsheet *> (tabWidget ->currentWidget());
+    ss -> del();
 }
 void MainWindow::paste()
 {
-    spreadsheet -> paste();
+    Spreadsheet *ss = static_cast<Spreadsheet *> (tabWidget ->currentWidget());
+    ss -> paste();
 }
 
