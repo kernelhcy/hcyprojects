@@ -56,6 +56,8 @@ private:
     QMap<int, QVector<QPointF> > curveMap;
     QVector<PlotSettings> zoomStack;
     int curZoom;
+
+    //
     bool rubberBandIsShown;
     QRect rubberBandRect;
 
@@ -94,6 +96,7 @@ public:
     double minX;
     double maxX;
     int numXTicks;
+
     double minY;
     double maxY;
     int numYTicks;
