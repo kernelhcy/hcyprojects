@@ -3,6 +3,7 @@
 #include <QtGui>
 
 MainWindow::MainWindow()
+    :documents()
 {
     tabWidget = new QTabWidget(this);
     tabWidget -> setTabsClosable(true);
@@ -276,8 +277,8 @@ void MainWindow::newFile()
 	{
         //we just create a spreatsheet file.
         Spreadsheet *ss = new Spreadsheet(this);
-        documents.append(ss);
-        tabWidget -> addTab(ss, tr("untitled"));
+        int index = tabWidget -> addTab(ss, tr("untitled"));
+        documents[index] = ss;
         ss -> clear();
         createContextMenu(ss);
 	}
@@ -326,9 +327,8 @@ bool MainWindow::loadFile(const QString &fileName)
     Spreadsheet *ss = new Spreadsheet();
     ss -> setFileName(fileName);
     createContextMenu(ss);
-    documents.append(ss);
-    tabWidget -> addTab(ss, fileName);
-
+    int index = tabWidget -> addTab(ss, fileName);
+    document[index] = ss;
     if (!ss -> load())
     {
         statusBar() -> showMessage(tr("Loading canceled"), 2000);

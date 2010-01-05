@@ -3,6 +3,9 @@
 #include <QDialog>
 #include "gotocelldialog.h"
 #include "sortdialog.h"
+#include "iconeditor.h"
+#include <QImage>
+#include "plotter.h"
 
 int main(int argc, char *argv[])
 {
@@ -21,10 +24,13 @@ int main(int argc, char *argv[])
 //    sortdialog->setColumnRange('C', 'F');
 //    sortdialog->show();
 
-    QWidget widget;
-    widget.resize(100,100);
-    widget.show();
-
+    QMainWindow win;
+//    QImage image("a.png");
+//    IconEditor ie;
+//    ie.setIconImage(image);
+    Plotter plotter;
+    win.setCentralWidget(&plotter);
+    win.show();
     return a.exec();
 
 }

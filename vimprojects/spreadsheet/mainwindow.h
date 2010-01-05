@@ -5,6 +5,7 @@
 #include <QLabel>
 #include <QMdiArea>
 #include <QTabWidget>
+#include <QMap>
 
 #include "heads.h"
 #include "finddialog.h"
@@ -144,7 +145,8 @@ class MainWindow : public QMainWindow
         QTabWidget *tabWidget;
 
         //所有文档
-        QVector<Document*> documents;
+        //用一个整型值标记文档，这个值通常是tabWidget的addTab返回的值。
+        QMap<int, Document*> documents;
 
         FindDialog *findDialog;
     };
