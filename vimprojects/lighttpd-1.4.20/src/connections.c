@@ -36,7 +36,8 @@
 
 #include "sys-socket.h"
 
-typedef struct {
+typedef struct 
+{
 	PLUGIN_DATA;
 } plugin_data;
 
@@ -1436,8 +1437,11 @@ int connection_handle_read_state(server * srv, connection * con)
 	chunkqueue_remove_finished_chunks(cq);
 
 	return 0;
-}
+}//end of int connection_handle_read_state(...
 
+/**
+ *
+ */
 handler_t connection_handle_fdevent(void *s, void *context, int revents)
 {
 	server *srv = (server *) s;

@@ -158,7 +158,8 @@ int buffer_copy_string(buffer *b, const char *s) {
 /**
  * 将s复制到b的数据区中，s_len是s的长度
  */
-int buffer_copy_string_len(buffer *b, const char *s, size_t s_len) {
+int buffer_copy_string_len(buffer *b, const char *s, size_t s_len) 
+{
 	if (!s || !b) return -1;
 #if 0
 	/* removed optimization as we have to keep the empty string
@@ -1255,33 +1256,41 @@ int buffer_path_simplify(buffer *dest, buffer *src)
 	return 0;
 }
 
-int light_isdigit(int c) {
+int light_isdigit(int c) 
+{
 	return (c >= '0' && c <= '9');
 }
 
-int light_isxdigit(int c) {
-	if (light_isdigit(c)) return 1;
+int light_isxdigit(int c) 
+{
+	if (light_isdigit(c)) 
+		return 1;
 
 	c |= 32;
 	return (c >= 'a' && c <= 'f');
 }
 
-int light_isalpha(int c) {
+int light_isalpha(int c) 
+{
 	c |= 32;
 	return (c >= 'a' && c <= 'z');
 }
 
-int light_isalnum(int c) {
+int light_isalnum(int c) 
+{
 	return light_isdigit(c) || light_isalpha(c);
 }
 
-int buffer_to_lower(buffer *b) {
+int buffer_to_lower(buffer *b) 
+{
 	char *c;
 
 	if (b->used == 0) return 0;
 
-	for (c = b->ptr; *c; c++) {
-		if (*c >= 'A' && *c <= 'Z') {
+	for (c = b->ptr; *c; c++) 
+	{
+		if (*c >= 'A' && *c <= 'Z') 
+		{
 			*c |= 32;
 		}
 	}
@@ -1290,13 +1299,16 @@ int buffer_to_lower(buffer *b) {
 }
 
 
-int buffer_to_upper(buffer *b) {
+int buffer_to_upper(buffer *b) 
+{
 	char *c;
 
 	if (b->used == 0) return 0;
 
-	for (c = b->ptr; *c; c++) {
-		if (*c >= 'a' && *c <= 'z') {
+	for (c = b->ptr; *c; c++) 
+	{
+		if (*c >= 'a' && *c <= 'z') 
+		{
 			*c &= ~32;
 		}
 	}

@@ -1,6 +1,6 @@
 /**
  * 书签：
- * 		状态机的后几个状态。
+ * 		状态机的详细分析。
  * 		request和response
  */
 #include <sys/types.h>

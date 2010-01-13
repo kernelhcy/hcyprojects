@@ -139,7 +139,8 @@ data_unset *array_get_element(array *a, const char *key) {
 	return NULL;
 }
 
-data_unset *array_get_unused_element(array *a, data_type_t t) {
+data_unset *array_get_unused_element(array *a, data_type_t t) 
+{
 	data_unset *ds = NULL;
 
 	UNUSED(t);//#define UNUSED(x) ( (void)(x) )

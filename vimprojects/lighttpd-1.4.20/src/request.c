@@ -30,7 +30,7 @@ static int request_check_hostname(server * srv, connection * con, buffer * host)
 	 *       domainlabel   = alphanum | alphanum *( alphanum | "-" ) alphanum
 	 *       toplabel      = alpha | alpha *( alphanum | "-" ) alphanum
 	 *       IPv4address   = 1*digit "." 1*digit "." 1*digit "." 1*digit
-	 *       IPv6address   = "[" ... "]"
+	 *       IPv6address   = "[" ... "]" //IPv6地址用[]包围.
 	 *       port          = *digit
 	 */
 
@@ -57,11 +57,13 @@ static int request_check_hostname(server * srv, connection * con, buffer * host)
 		{
 			if (*c == ':')
 			{
+				//至多7个分号。
 				if (++colon_cnt > 7)
 				{
 					return -1;
 				}
-			} else if (!light_isxdigit(*c))
+			} 
+			else if (!light_isxdigit(*c))
 			{
 				return -1;
 			}
@@ -153,13 +155,16 @@ static int request_check_hostname(server * srv, connection * con, buffer * host)
 						{
 							return -1;
 						}
-					} else if (!light_isdigit(host->ptr[i + 1]))
+					} 
+					else if (!light_isdigit(host->ptr[i + 1]))
 					{
 						is_ip = 0;
-					} else if ('-' == host->ptr[i + 1])
+					} 
+					else if ('-' == host->ptr[i + 1])
 					{
 						return -1;
-					} else
+					} 
+					else
 					{
 						/*
 						 * just digits 
@@ -171,14 +176,16 @@ static int request_check_hostname(server * srv, connection * con, buffer * host)
 
 					label_len = 0;
 					level++;
-				} else if (i == 0)
+				} 
+				else if (i == 0)
 				{
 					/*
 					 * just a dot and nothing else is evil 
 					 */
 					return -1;
 				}
-			} else if (i == 0)
+			} 
+			else if (i == 0)
 			{
 				/*
 				 * the first character of the hostname 
@@ -188,7 +195,8 @@ static int request_check_hostname(server * srv, connection * con, buffer * host)
 					return -1;
 				}
 				label_len++;
-			} else
+			} 
+			else
 			{
 				if (c != '-' && !light_isalnum(c))
 				{
@@ -215,14 +223,17 @@ static int request_check_hostname(server * srv, connection * con, buffer * host)
 
 					label_len = 0;
 					level++;
-				} else if (!light_isdigit(c))
+				} 
+				else if (!light_isdigit(c))
 				{
 					return -1;
-				} else
+				} 
+				else
 				{
 					label_len++;
 				}
-			} else
+			} 
+			else
 			{
 				if (c == '.')
 				{
@@ -241,14 +252,16 @@ static int request_check_hostname(server * srv, connection * con, buffer * host)
 
 					label_len = 0;
 					level++;
-				} else if (i == 0)
+				} 
+				else if (i == 0)
 				{
 					if (!light_isalnum(c))
 					{
 						return -1;
 					}
 					label_len++;
-				} else
+				} 
+				else
 				{
 					if (c != '-' && !light_isalnum(c))
 					{
@@ -730,6 +743,9 @@ int http_request_parse(server * srv, connection * con)
 
 	/*
 	 * 下面开始分析header lines
+	 * 注：
+	 * 	first 用于标记key开始的位置。
+	 * 	cut 用于标记value开始的位置。
 	 */
 	for (; i < con->parse_request->used && !done; i++)
 	{
@@ -748,9 +764,9 @@ int http_request_parse(server * srv, connection * con)
 			{
 			case ':':
 				is_key = 0;
-
-				value = cur + 1;
-
+				value = cur + 1; //value指向的是一个空格。
+				//其实，自始至终，is_ws_after_key的值都没有变。
+				//本来打算用其标记key后面是否有空格，但line802的循环保证删除这些空格。
 				if (is_ws_after_key == 0)
 				{
 					key_len = i - first;
@@ -777,7 +793,6 @@ int http_request_parse(server * srv, connection * con)
 				con->http_status = 400;
 				con->keep_alive = 0;
 				con->response.keep_alive = 0;
-
 				log_error_write(srv, __FILE__, __LINE__, "sbsds", "invalid character in key",
 								con->request.request, cur, *cur, "-> 400");
 				return 0;
@@ -788,7 +803,6 @@ int http_request_parse(server * srv, connection * con)
 					is_key = 0;
 					in_folding = 1;
 					value = cur;
-
 					break;
 				}
 
@@ -812,8 +826,7 @@ int http_request_parse(server * srv, connection * con)
 						/*
 						 * ok, done 
 						 */
-
-						i += j - 1;
+						i += j - 1; //保证外面的switch仍然遇到的是 : 
 						got_colon = 1;
 
 						break;
@@ -824,15 +837,10 @@ int http_request_parse(server * srv, connection * con)
 
 						if (srv->srvconf.log_request_header_on_error)
 						{
-							log_error_write(srv, __FILE__,
-											__LINE__, "s",
-											"WS character in key -> 400");
-							log_error_write(srv, __FILE__,
-											__LINE__, "Sb",
-											"request-header:\n",
+							log_error_write(srv, __FILE__, __LINE__, "s","WS character in key -> 400");
+							log_error_write(srv, __FILE__,__LINE__, "Sb", "request-header:\n",
 											con->request.request);
 						}
-
 						con->http_status = 400;
 						con->response.keep_alive = 0;
 						con->keep_alive = 0;
@@ -852,21 +860,16 @@ int http_request_parse(server * srv, connection * con)
 					con->parse_request->ptr[i + 1] = '\0';
 
 					i++;
-
 					done = 1;
-
 					break;
-				} else
+				} 
+				else
 				{
 					if (srv->srvconf.log_request_header_on_error)
 					{
-						log_error_write(srv, __FILE__, __LINE__,
-										"s", "CR without LF -> 400");
-						log_error_write(srv, __FILE__, __LINE__,
-										"Sb", "request-header:\n",
-										con->request.request);
+						log_error_write(srv, __FILE__, __LINE__, "s", "CR without LF -> 400");
+						log_error_write(srv, __FILE__, __LINE__,"Sb", "request-header:\n",con->request.request);
 					}
-
 					con->http_status = 400;
 					con->keep_alive = 0;
 					con->response.keep_alive = 0;
@@ -912,12 +915,9 @@ int http_request_parse(server * srv, connection * con)
 
 				if (srv->srvconf.log_request_header_on_error)
 				{
-					log_error_write(srv, __FILE__, __LINE__, "sbsds",
-									"CTL character in key",
+					log_error_write(srv, __FILE__, __LINE__, "sbsds", "CTL character in key",
 									con->request.request, cur, *cur, "-> 400");
-
-					log_error_write(srv, __FILE__, __LINE__, "Sb",
-									"request-header:\n", con->request.request);
+					log_error_write(srv, __FILE__, __LINE__, "Sb","request-header:\n", con->request.request);
 				}
 
 				return 0;
@@ -1014,6 +1014,12 @@ int http_request_parse(server * srv, connection * con)
 							/*
 							 * retreive values the list of options is sorted
 							 * to simplify the search 
+							 * 下面开始分析header的值。
+							 * 只分析了Connection, Content-Type, Content-Length , Expect, Host, If-Modified-Since,
+							 * 	If-None-Match和Range.
+							 * 
+							 * 分析所得到的值都以data_string的形式存入了con->request.headers中。
+							 * data_string中有key和value两个值。
 							 */
 							if (0 == (cmp = buffer_caseless_compare(CONST_BUF_LEN(ds->key), CONST_STR_LEN("Connection"))))
 							{
@@ -1029,6 +1035,7 @@ int http_request_parse(server * srv, connection * con)
 								vals = srv->split_vals;
 								array_reset(vals);
 								//value可能是","分割的多个值，分割之。
+								//同时，将ds->value前面存在的空格去掉。
 								http_request_split_value(vals, ds->value);
 
 								for (vi = 0; vi < vals->used; vi++)
@@ -1169,8 +1176,7 @@ int http_request_parse(server * srv, connection * con)
 									con->http_status = 400;
 									con->keep_alive = 0;
 
-									if (srv->srvconf.
-										log_request_header_on_error)
+									if (srv->srvconf.log_request_header_on_error)
 									{
 										log_error_write(srv, __FILE__, __LINE__, "s", "duplicate Host-header -> 400");
 										log_error_write(srv, __FILE__, __LINE__, "Sb", "request-header:\n",
@@ -1223,6 +1229,7 @@ int http_request_parse(server * srv, connection * con)
 								/*
 								 * If-None-Match : XXXXXX
 								 * if dup, only the first one will survive 
+								 *     判断资源的属性是否改变。可以是MD5等信息。
 								 */
 								if (!con->request.http_if_none_match)
 								{
@@ -1242,13 +1249,19 @@ int http_request_parse(server * srv, connection * con)
 									array_insert_unique(con->request.headers,(data_unset *) ds);
 									return 0;
 								}
-							} else if (cmp > 0 && 0 == (cmp =buffer_caseless_compare
+							} 
+							else if (cmp > 0 && 0 == (cmp =buffer_caseless_compare
 												(CONST_BUF_LEN(ds->key),CONST_STR_LEN("Range"))))
 							{
+								/*
+								 * Range : XXXXXX
+								 *  多线程下载的核心。
+								 */
 								if (!con->request.http_range)
 								{
 									/*
-									 * bytes=.*-.* 
+									 * bytes=.*-.*
+									 * ds -> value 以空格开头，这个比较会失败？？？？？？？
 									 */
 									if (0 == strncasecmp(ds->value->ptr,"bytes=", 6)
 										&& NULL != strchr(ds->value->ptr + 6, '-'))
@@ -1324,10 +1337,10 @@ int http_request_parse(server * srv, connection * con)
 				 */
 				if (value == cur)
 					value = cur + 1;
-			//非法字符
 			default:
 				if (*cur >= 0 && *cur < 32)
 				{
+					//非法字符
 					if (srv->srvconf.log_request_header_on_error)
 					{
 						log_error_write(srv, __FILE__, __LINE__, "sds",	"invalid char in header",
