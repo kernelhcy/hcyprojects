@@ -282,6 +282,10 @@ static int request_check_hostname(server * srv, connection * con, buffer * host)
 #define DUMP_HEADER
 #endif
 
+/**
+ * header lines中的value，可以是以","分割的多个value。
+ * 这个函数将v中value，按照","分割成多个值，存放在vals中。
+ */
 int http_request_split_value(array * vals, buffer * b)
 {
 	char *s;
@@ -289,17 +293,13 @@ int http_request_split_value(array * vals, buffer * b)
 	int state = 0;
 	/*
 	 * parse
-	 *
 	 * val1, val2, val3, val4
-	 *
 	 * into a array (more or less a explode() incl. striping of whitespaces
 	 */
 
 	if (b->used == 0)
 		return 0;
-
 	s = b->ptr;
-
 	for (i = 0; i < b->used - 1;)
 	{
 		char *start = NULL, *end = NULL;
@@ -314,7 +314,6 @@ int http_request_split_value(array * vals, buffer * b)
 			 */
 			for (; (*s == ' ' || *s == '\t') && i < b->used - 1; i++, s++);
 
-
 			state = 1;
 			break;
 		case 1:				/* value */
@@ -322,12 +321,10 @@ int http_request_split_value(array * vals, buffer * b)
 
 			for (; *s != ',' && i < b->used - 1; i++, s++);
 			end = s - 1;
-
+			//去掉空格
 			for (; (*end == ' ' || *end == '\t') && end > start; end--);
 
-			if (NULL ==
-				(ds =
-				 (data_string *) array_get_unused_element(vals, TYPE_STRING)))
+			if (NULL ==	(ds = (data_string *) array_get_unused_element(vals, TYPE_STRING)))
 			{
 				ds = data_string_init();
 			}
@@ -340,12 +337,12 @@ int http_request_split_value(array * vals, buffer * b)
 				state = 0;
 				i++;
 				s++;
-			} else
+			} 
+			else
 			{
 				/*
 				 * end of string 
 				 */
-
 				state = 2;
 			}
 			break;
@@ -369,33 +366,68 @@ int request_uri_is_valid_char(unsigned char c)
 	return 1;
 }
 
+/**
+ * 解析HTTP请求
+ * HTTP请求的内容存放在con->request.request中。
+ * 解析的时候，请求内容被复制到con->parse_request中。
+ *
+ * HTTP Request Message的格式：
+ * ---------------------------------------
+ * | methods |sp| URL |sp| Version |cr|lf|  -----> Request line (Request)
+ * ---------------------------------------
+ * | header field name: |sp| value |cr|lf|  -]
+ * ---------------------------------------   ]
+ * // ...                                    |---> Header lines (Option)
+ * ---------------------------------------   ]
+ * | header field name: |sp| value |cr|lf|  -]
+ * ---------------------------------------  
+ * |cr|lf|                                  -----> This blank line is very important!! (End)
+ * ---------------------------------------
+ * |                                     |
+ * | Data...                             |  -----> Entity body
+ * |                                     |
+ * ---------------------------------------
+ *
+ *  cr = \r ; lf = \n
+ *
+ */
 int http_request_parse(server * srv, connection * con)
 {
 	char *uri = NULL, *proto = NULL, *method = NULL, con_length_set;
 	int is_key = 1, key_len = 0, is_ws_after_key = 0, in_folding;
 	char *value = NULL, *key = NULL;
 
-	enum { HTTP_CONNECTION_UNSET, HTTP_CONNECTION_KEEPALIVE,
+	enum 
+	{ 
+		HTTP_CONNECTION_UNSET, 
+		HTTP_CONNECTION_KEEPALIVE,
 		HTTP_CONNECTION_CLOSE
 	} keep_alive_set = HTTP_CONNECTION_UNSET;
 
 	int line = 0;
 
+	//标记在解析request line时，在当前空格之前，遇到了几个空格。
+	//根据rfc2616,request line里面只可能有两个空格。
+	//因此，这个值只可能是0和1.
 	int request_line_stage = 0;
+
+	//first用来标记当前字段的开始位置。
 	size_t i, first;
 
 	int done = 0;
 
 	/*
 	 * Request: "^(GET|POST|HEAD) ([^ ]+(\\?[^ ]+|)) (HTTP/1\\.[01])$"
+	 *             method            url              version
 	 * Option : "^([-a-zA-Z]+): (.+)$"
+	 *             fieldname:   value
 	 * End    : "^$"
+	 *           a blank line.
 	 */
 
 	if (con->conf.log_request_header)
 	{
-		log_error_write(srv, __FILE__, __LINE__, "sdsdSb",
-						"fd:", con->fd,
+		log_error_write(srv, __FILE__, __LINE__, "sdsdSb", "fd:", con->fd,
 						"request-len:", con->request.request->used,
 						"\n", con->request.request);
 	}
@@ -405,14 +437,13 @@ int http_request_parse(server * srv, connection * con)
 		con->request.request->ptr[1] == '\n')
 	{
 		/*
-		 * we are in keep-alive and might get \r\n after a previous POST
-		 * request. 
+		 * we are in keep-alive and might get \r\n after a previous POST request. 
 		 */
-
 		buffer_copy_string_len(con->parse_request,
 							   con->request.request->ptr + 2,
-							   con->request.request->used - 1 - 2);
-	} else
+							   con->request.request->used - 1 - 2); //减去\r\n和"\0"
+	} 
+	else
 	{
 		/*
 		 * fill the local request buffer 
@@ -424,8 +455,9 @@ int http_request_parse(server * srv, connection * con)
 	con_length_set = 0;
 
 	/*
-	 * parse the first line of the request should be: <method> <uri>
-	 * <protocol>\r\n 
+	 * parse the first line of the request should be: 
+	 * <method> <uri> <protocol>\r\n
+	 * POST|GET|HEAD uri HTTP/1(.0)
 	 */
 	for (i = 0, first = 0; i < con->parse_request->used && line == 0; i++)
 	{
@@ -434,6 +466,9 @@ int http_request_parse(server * srv, connection * con)
 		switch (*cur)
 		{
 		case '\r':
+			/*
+			 * Request line.
+			 */
 			if (con->parse_request->ptr[i + 1] == '\n')
 			{
 				http_method_t r;
@@ -446,8 +481,7 @@ int http_request_parse(server * srv, connection * con)
 				con->parse_request->ptr[i] = '\0';
 				con->parse_request->ptr[i + 1] = '\0';
 
-				buffer_copy_string_len(con->request.request_line,
-									   con->parse_request->ptr, i);
+				buffer_copy_string_len(con->request.request_line, con->parse_request->ptr, i);
 
 				if (request_line_stage != 2)
 				{
@@ -457,10 +491,8 @@ int http_request_parse(server * srv, connection * con)
 
 					if (srv->srvconf.log_request_header_on_error)
 					{
-						log_error_write(srv, __FILE__, __LINE__,
-										"s", "incomplete request line -> 400");
-						log_error_write(srv, __FILE__, __LINE__, "Sb",
-										"request-header:\n",
+						log_error_write(srv, __FILE__, __LINE__, "s", "incomplete request line -> 400");
+						log_error_write(srv, __FILE__, __LINE__, "Sb", "request-header:\n",
 										con->request.request);
 					}
 					return 0;
@@ -474,6 +506,8 @@ int http_request_parse(server * srv, connection * con)
 				/*
 				 * we got the first one :) 
 				 */
+				//get_http_method_key() 根据method字符串所表示的HTTP方法，返回一个对应的
+				//枚举类型的http_method_t
 				if (-1 == (r = get_http_method_key(method)))
 				{
 					con->http_status = 501;
@@ -482,13 +516,10 @@ int http_request_parse(server * srv, connection * con)
 
 					if (srv->srvconf.log_request_header_on_error)
 					{
-						log_error_write(srv, __FILE__, __LINE__,
-										"s", "unknown http-method -> 501");
-						log_error_write(srv, __FILE__, __LINE__, "Sb",
-										"request-header:\n",
+						log_error_write(srv, __FILE__, __LINE__, "s", "unknown http-method -> 501");
+						log_error_write(srv, __FILE__, __LINE__, "Sb", "request-header:\n",
 										con->request.request);
 					}
-
 					return 0;
 				}
 
@@ -496,7 +527,6 @@ int http_request_parse(server * srv, connection * con)
 
 				/*
 				 * RFC2616 says:
-				 *
 				 * HTTP-Version   = "HTTP" "/" 1*DIGIT "." 1*DIGIT
 				 *
 				 * */
@@ -505,6 +535,7 @@ int http_request_parse(server * srv, connection * con)
 					char *major = proto + sizeof("HTTP/") - 1;
 					char *minor = strchr(major, '.');
 					char *err = NULL;
+					//major_num和minor_num分别存储版本号中"."之前和之后的数字。
 					int major_num = 0, minor_num = 0;
 
 					int invalid_version = 0;
@@ -514,7 +545,8 @@ int http_request_parse(server * srv, connection * con)
 						*(minor + 1) == '\0' /* no minor */ )
 					{
 						invalid_version = 1;
-					} else
+					} 
+					else
 					{
 						*minor = '\0';
 						major_num = strtol(major, &err, 10);
@@ -536,12 +568,8 @@ int http_request_parse(server * srv, connection * con)
 
 						if (srv->srvconf.log_request_header_on_error)
 						{
-							log_error_write(srv, __FILE__,
-											__LINE__, "s",
-											"unknown protocol -> 400");
-							log_error_write(srv, __FILE__,
-											__LINE__, "Sb",
-											"request-header:\n",
+							log_error_write(srv, __FILE__, __LINE__, "s", "unknown protocol -> 400");
+							log_error_write(srv, __FILE__,__LINE__, "Sb", "request-header:\n",
 											con->request.request);
 						}
 						return 0;
@@ -549,64 +577,56 @@ int http_request_parse(server * srv, connection * con)
 
 					if (major_num == 1 && minor_num == 1)
 					{
-						con->request.http_version =
-							con->conf.
-							allow_http11 ? HTTP_VERSION_1_1 : HTTP_VERSION_1_0;
-					} else if (major_num == 1 && minor_num == 0)
+						con->request.http_version = con->conf.allow_http11 ? HTTP_VERSION_1_1 : HTTP_VERSION_1_0;
+					} 
+					else if (major_num == 1 && minor_num == 0)
 					{
 						con->request.http_version = HTTP_VERSION_1_0;
-					} else
+					} 
+					else
 					{
 						con->http_status = 505;
-
 						if (srv->srvconf.log_request_header_on_error)
 						{
-							log_error_write(srv, __FILE__,
-											__LINE__, "s",
-											"unknown HTTP version -> 505");
-							log_error_write(srv, __FILE__,
-											__LINE__, "Sb",
-											"request-header:\n",
+							log_error_write(srv, __FILE__,__LINE__, "s","unknown HTTP version -> 505");
+							log_error_write(srv, __FILE__,__LINE__, "Sb","request-header:\n",
 											con->request.request);
 						}
 						return 0;
 					}
-				} else
+				} 
+				else //if (0 == strncpy(proto, ...
 				{
 					con->http_status = 400;
 					con->keep_alive = 0;
 
 					if (srv->srvconf.log_request_header_on_error)
 					{
-						log_error_write(srv, __FILE__, __LINE__,
-										"s", "unknown protocol -> 400");
-						log_error_write(srv, __FILE__, __LINE__, "Sb",
-										"request-header:\n",
+						log_error_write(srv, __FILE__, __LINE__, "s", "unknown protocol -> 400");
+						log_error_write(srv, __FILE__, __LINE__, "Sb","request-header:\n",
 										con->request.request);
 					}
 					return 0;
 				}
 
-				if (0 == strncmp(uri, "http://", 7) &&
-					NULL != (nuri = strchr(uri + 7, '/')))
+				if (0 == strncmp(uri, "http://", 7) && NULL != (nuri = strchr(uri + 7, '/')))
 				{
 					/*
 					 * ignore the host-part 
 					 */
-
-					buffer_copy_string_len(con->request.uri, nuri,
-										   proto - nuri - 1);
-				} else
+					buffer_copy_string_len(con->request.uri, nuri, proto - nuri - 1);
+				} 
+				else
 				{
 					/*
 					 * everything looks good so far 
 					 */
-					buffer_copy_string_len(con->request.uri, uri,
-										   proto - uri - 1);
+					buffer_copy_string_len(con->request.uri, uri, proto - uri - 1);
 				}
 
 				/*
 				 * check uri for invalid characters 
+				 * 检查uri地址是否含有非法字符。
 				 */
 				for (j = 0; j < con->request.uri->used - 1; j++)
 				{
@@ -621,30 +641,24 @@ int http_request_parse(server * srv, connection * con)
 							buf[0] = con->request.uri->ptr[j];
 							buf[1] = '\0';
 
-							if (con->request.uri->ptr[j] > 32 &&
-								con->request.uri->ptr[j] != 127)
+							if (con->request.uri->ptr[j] > 32 && con->request.uri->ptr[j] != 127)
 							{
 								/*
 								 * the character is printable -> print it 
 								 */
-								log_error_write(srv, __FILE__,
-												__LINE__, "ss",
-												"invalid character in URI -> 400",
+								log_error_write(srv, __FILE__, __LINE__, "ss", "invalid character in URI -> 400",
 												buf);
-							} else
+							} 
+							else
 							{
 								/*
 								 * a control-character, print ascii-code 
 								 */
-								log_error_write(srv, __FILE__,
-												__LINE__, "sd",
-												"invalid character in URI -> 400",
+								log_error_write(srv, __FILE__,__LINE__, "sd", "invalid character in URI -> 400",
 												con->request.uri->ptr[j]);
 							}
 
-							log_error_write(srv, __FILE__,
-											__LINE__, "Sb",
-											"request-header:\n",
+							log_error_write(srv, __FILE__,__LINE__, "Sb","request-header:\n",
 											con->request.request);
 						}
 
@@ -652,9 +666,7 @@ int http_request_parse(server * srv, connection * con)
 					}
 				}
 
-				buffer_copy_string_buffer(con->request.orig_uri,
-										  con->request.uri);
-
+				buffer_copy_string_buffer(con->request.orig_uri, con->request.uri);
 				con->http_status = 0;
 
 				i++;
@@ -662,7 +674,7 @@ int http_request_parse(server * srv, connection * con)
 				first = i + 1;
 			}
 			break;
-		case ' ':
+		case ' ': //遇到了空格。
 			switch (request_line_stage)
 			{
 			case 0:
@@ -674,14 +686,14 @@ int http_request_parse(server * srv, connection * con)
 				break;
 			case 1:
 				/*
-				 * /foobar/... 
-				 */
+				 * /foobar/...  rul地址
+				 */ 
 				uri = con->parse_request->ptr + first;
 				first = i + 1;
 				break;
 			default:
 				/*
-				 * ERROR, one space to much 
+				 * ERROR, one space to much 出错。多了一个空格。
 				 */
 				con->http_status = 400;
 				con->response.keep_alive = 0;
@@ -689,10 +701,8 @@ int http_request_parse(server * srv, connection * con)
 
 				if (srv->srvconf.log_request_header_on_error)
 				{
-					log_error_write(srv, __FILE__, __LINE__, "s",
-									"overlong request line -> 400");
-					log_error_write(srv, __FILE__, __LINE__, "Sb",
-									"request-header:\n", con->request.request);
+					log_error_write(srv, __FILE__, __LINE__, "s", "overlong request line -> 400");
+					log_error_write(srv, __FILE__, __LINE__, "Sb", "request-header:\n", con->request.request);
 				}
 				return 0;
 			}
@@ -710,17 +720,17 @@ int http_request_parse(server * srv, connection * con)
 		con->response.keep_alive = 0;
 		con->keep_alive = 0;
 
-		log_error_write(srv, __FILE__, __LINE__, "s",
-						"no uri specified -> 400");
+		log_error_write(srv, __FILE__, __LINE__, "s", "no uri specified -> 400");
 		if (srv->srvconf.log_request_header_on_error)
 		{
-			log_error_write(srv, __FILE__, __LINE__, "Sb",
-							"request-header:\n", con->request.request);
+			log_error_write(srv, __FILE__, __LINE__, "Sb", "request-header:\n", con->request.request);
 		}
 		return 0;
 	}
 
-
+	/*
+	 * 下面开始分析header lines
+	 */
 	for (; i < con->parse_request->used && !done; i++)
 	{
 		char *cur = con->parse_request->ptr + i;
@@ -733,7 +743,6 @@ int http_request_parse(server * srv, connection * con)
 			/**
 			 * 1*<any CHAR except CTLs or separators>
 			 * CTLs == 0-31 + 127
-			 *
 			 */
 			switch (*cur)
 			{
@@ -769,8 +778,7 @@ int http_request_parse(server * srv, connection * con)
 				con->keep_alive = 0;
 				con->response.keep_alive = 0;
 
-				log_error_write(srv, __FILE__, __LINE__, "sbsds",
-								"invalid character in key",
+				log_error_write(srv, __FILE__, __LINE__, "sbsds", "invalid character in key",
 								con->request.request, cur, *cur, "-> 400");
 				return 0;
 			case ' ':
@@ -919,13 +927,21 @@ int http_request_parse(server * srv, connection * con)
 				 */
 				break;
 			}
-		} else
+		} // if (is_key) ...
+		else
 		{
 			switch (*cur)
 			{
+			/*
+			 * 每个field和value对都是以\r\n结尾的。遇到\r说明当前已经扫描了一个
+			 * 完整的field-value对。开始对这个对进行解析。
+			 */
 			case '\r':
 				if (con->parse_request->ptr[i + 1] == '\n')
 				{
+					/*
+					 * 开始分析！巨长。。。
+					 */
 					data_string *ds = NULL;
 
 					/*
@@ -951,20 +967,12 @@ int http_request_parse(server * srv, connection * con)
 							/*
 							 * 400 
 							 */
-
 							if (srv->srvconf.log_request_header_on_error)
 							{
-								log_error_write(srv, __FILE__,
-												__LINE__, "s",
-												"WS at the start of first line -> 400");
-
-								log_error_write(srv, __FILE__,
-												__LINE__, "Sb",
-												"request-header:\n",
+								log_error_write(srv, __FILE__, __LINE__, "s", "WS at the start of first line -> 400");
+								log_error_write(srv, __FILE__,__LINE__, "Sb", "request-header:\n",
 												con->request.request);
 							}
-
-
 							con->http_status = 400;
 							con->keep_alive = 0;
 							con->response.keep_alive = 0;
@@ -974,15 +982,13 @@ int http_request_parse(server * srv, connection * con)
 						key_b = buffer_init();
 						buffer_copy_string_len(key_b, key, key_len);
 
-						if (NULL != (ds = (data_string *)
-									 array_get_element(con->request.
-													   headers, key_b->ptr)))
+						if (NULL != (ds = (data_string *)array_get_element(con->request.headers, key_b->ptr)))
 						{
 							buffer_append_string(ds->value, value);
 						}
-
 						buffer_free(key_b);
-					} else
+					} 
+					else
 					{
 						int s_len;
 						key = con->parse_request->ptr + first;
@@ -992,18 +998,13 @@ int http_request_parse(server * srv, connection * con)
 						/*
 						 * strip trailing white-spaces 
 						 */
-						for (; s_len > 0 &&
-							 (value[s_len - 1] == ' ' ||
-							  value[s_len - 1] == '\t'); s_len--);
+						for (; s_len > 0 && (value[s_len - 1] == ' ' || value[s_len - 1] == '\t'); s_len--);
 
 						value[s_len] = '\0';
-
 						if (s_len > 0)
 						{
 							int cmp = 0;
-							if (NULL == (ds = (data_string *)
-										 array_get_unused_element
-										 (con->request.headers, TYPE_STRING)))
+							if (NULL == (ds = (data_string *)array_get_unused_element(con->request.headers, TYPE_STRING)))
 							{
 								ds = data_string_init();
 							}
@@ -1014,111 +1015,76 @@ int http_request_parse(server * srv, connection * con)
 							 * retreive values the list of options is sorted
 							 * to simplify the search 
 							 */
-
-							if (0 ==
-								(cmp =
-								 buffer_caseless_compare
-								 (CONST_BUF_LEN(ds->key),
-								  CONST_STR_LEN("Connection"))))
+							if (0 == (cmp = buffer_caseless_compare(CONST_BUF_LEN(ds->key), CONST_STR_LEN("Connection"))))
 							{
+								/*
+								 * Connection : XXXXXX
+								 *              keep-alive or close
+								 */
 								array *vals;
 								size_t vi;
-
 								/*
 								 * split on , 
 								 */
-
 								vals = srv->split_vals;
-
 								array_reset(vals);
-
+								//value可能是","分割的多个值，分割之。
 								http_request_split_value(vals, ds->value);
 
 								for (vi = 0; vi < vals->used; vi++)
 								{
-									data_string *dsv =
-										(data_string *) vals->data[vi];
+									data_string *dsv = (data_string *) vals->data[vi];
 
-									if (0 ==
-										buffer_caseless_compare
-										(CONST_BUF_LEN
-										 (dsv->value),
-										 CONST_STR_LEN("keep-alive")))
+									if (0 == buffer_caseless_compare(CONST_BUF_LEN(dsv->value), CONST_STR_LEN("keep-alive")))
 									{
-										keep_alive_set =
-											HTTP_CONNECTION_KEEPALIVE;
-
+										keep_alive_set = HTTP_CONNECTION_KEEPALIVE;
 										break;
-									} else if (0 ==
-											   buffer_caseless_compare
-											   (CONST_BUF_LEN
-												(dsv->value),
-												CONST_STR_LEN("close")))
+									} 
+									else if (0 == buffer_caseless_compare(CONST_BUF_LEN(dsv->value),CONST_STR_LEN("close")))
 									{
 										keep_alive_set = HTTP_CONNECTION_CLOSE;
-
 										break;
 									}
 								}
 
-							} else if (cmp > 0
-									   && 0 == (cmp =
-												buffer_caseless_compare
-												(CONST_BUF_LEN
-												 (ds->key),
-												 CONST_STR_LEN
-												 ("Content-Length"))))
+							} 
+							else if (cmp > 0 && 0 == (cmp = buffer_caseless_compare
+																(CONST_BUF_LEN(ds->key), CONST_STR_LEN("Content-Length"))))
 							{
 								char *err;
 								unsigned long int r;
 								size_t j;
 
-								if (con_length_set)
+								if (con_length_set) //已经有content-length了...
 								{
 									con->http_status = 400;
 									con->keep_alive = 0;
 
-									if (srv->srvconf.
-										log_request_header_on_error)
+									if (srv->srvconf.log_request_header_on_error)
 									{
-										log_error_write
-											(srv, __FILE__,
-											 __LINE__, "s",
+										log_error_write(srv, __FILE__, __LINE__, "s",
 											 "duplicate Content-Length-header -> 400");
-										log_error_write
-											(srv, __FILE__,
-											 __LINE__, "Sb",
-											 "request-header:\n",
-											 con->request.request);
+										log_error_write(srv, __FILE__, __LINE__, "Sb",
+											 "request-header:\n", con->request.request);
 									}
-									array_insert_unique(con->
-														request.
-														headers,
-														(data_unset *) ds);
+									array_insert_unique(con->request.headers,(data_unset *) ds);
 									return 0;
 								}
 
+								//得到一个空的value。直接退出这个进程。
 								if (ds->value->used == 0)
-									SEGFAULT();
+									SEGFAULT(); //输出信息并调用abort()
 
 								for (j = 0; j < ds->value->used - 1; j++)
 								{
 									char c = ds->value->ptr[j];
 									if (!isdigit((unsigned char) c))
 									{
-										log_error_write
-											(srv, __FILE__,
-											 __LINE__,
-											 "sbs",
-											 "content-length broken:",
-											 ds->value, "-> 400");
-
+										log_error_write	(srv, __FILE__, __LINE__, "sbs", "content-length broken:",
+											 					ds->value, "-> 400");
 										con->http_status = 400;
 										con->keep_alive = 0;
-
-										array_insert_unique
-											(con->request.
-											 headers, (data_unset *) ds);
+										array_insert_unique	(con->request.headers, (data_unset *) ds);
 										return 0;
 									}
 								}
@@ -1129,99 +1095,76 @@ int http_request_parse(server * srv, connection * con)
 								{
 									con_length_set = 1;
 									con->request.content_length = r;
-								} else
+								} 
+								else
 								{
-									log_error_write(srv,
-													__FILE__,
-													__LINE__,
-													"sbs",
-													"content-length broken:",
+									log_error_write(srv,__FILE__,__LINE__,"sbs","content-length broken:",
 													ds->value, "-> 400");
-
 									con->http_status = 400;
 									con->keep_alive = 0;
-
-									array_insert_unique(con->
-														request.
-														headers,
-														(data_unset *) ds);
+									array_insert_unique(con->request.headers,(data_unset *) ds);
 									return 0;
 								}
-							} else if (cmp > 0
-									   && 0 == (cmp =
-												buffer_caseless_compare
-												(CONST_BUF_LEN
-												 (ds->key),
-												 CONST_STR_LEN
-												 ("Content-Type"))))
+							} 
+							else if (cmp > 0 && 0 == (cmp = buffer_caseless_compare
+												(CONST_BUF_LEN(ds->key), CONST_STR_LEN ("Content-Type"))))
 							{
 								/*
+								 * Content-Type: XXXXXX
+								 *               text/plain text/html and so on
 								 * if dup, only the first one will survive 
+								 * 如果重复设置了content-type 则，使用第一个。
 								 */
 								if (!con->request.http_content_type)
 								{
-									con->request.
-										http_content_type = ds->value->ptr;
-								} else
+									con->request.http_content_type = ds->value->ptr;
+								} 
+								else
 								{
 									con->http_status = 400;
 									con->keep_alive = 0;
-
-									if (srv->srvconf.
-										log_request_header_on_error)
+									if (srv->srvconf.log_request_header_on_error)
 									{
-										log_error_write
-											(srv, __FILE__,
-											 __LINE__, "s",
-											 "duplicate Content-Type-header -> 400");
-										log_error_write
-											(srv, __FILE__,
-											 __LINE__, "Sb",
-											 "request-header:\n",
+										log_error_write(srv, __FILE__, __LINE__, "s","duplicate Content-Type-header -> 400");
+										log_error_write(srv, __FILE__, __LINE__, "Sb","request-header:\n",
 											 con->request.request);
 									}
-									array_insert_unique(con->
-														request.
-														headers,
-														(data_unset *) ds);
+									array_insert_unique(con->request.headers,(data_unset *) ds);
 									return 0;
 								}
-							} else if (cmp > 0
-									   && 0 == (cmp =
-												buffer_caseless_compare
-												(CONST_BUF_LEN
-												 (ds->key),
-												 CONST_STR_LEN("Expect"))))
+							} 
+							else if (cmp > 0 && 0 == (cmp = buffer_caseless_compare
+															(CONST_BUF_LEN(ds->key), CONST_STR_LEN("Expect"))))
 							{
 								/*
-								 * HTTP 2616 8.2.3 Expect: 100-continue ->
-								 * (10.1.1) 100 (read content, process request, 
-								 * send final status-code) -> (10.4.18) 417
-								 * (close) (not handled at all yet, we always
-								 * send 417 here) What has to be added ? 1.
-								 * handling of chunked request body 2.
-								 * out-of-order sending from the HTTP/1.1 100
-								 * Continue header 
+								 * HTTP 2616 8.2.3 Expect: 100-continue -> (10.1.1) 100 (read content, process request, 
+								 * send final status-code) -> (10.4.18) 417 (close) (not handled at all yet, we always
+								 * send 417 here) What has to be added ? 
+								 * 1. handling of chunked request body 
+								 * 2. out-of-order sending from the HTTP/1.1 100
+								 * Continue header
+								 *
+								 * 不支持Expect field . 返回417错误(Expectation Failed)
 								 */
 
 								con->http_status = 417;
 								con->keep_alive = 0;
-
-								array_insert_unique(con->
-													request.
-													headers, (data_unset *) ds);
+								array_insert_unique(con->request.headers, (data_unset *) ds);
 								return 0;
-							} else if (cmp > 0
-									   && 0 == (cmp =
-												buffer_caseless_compare
-												(CONST_BUF_LEN
-												 (ds->key),
-												 CONST_STR_LEN("Host"))))
+							} 
+							else if (cmp > 0 && 0 == (cmp = buffer_caseless_compare
+															(CONST_BUF_LEN(ds->key), CONST_STR_LEN("Host"))))
 							{
+								/*
+								 * Host : XXXXXX
+								 *        host : port
+								 * Request line 中的URI所表示的地址的host。
+								 */
 								if (!con->request.http_host)
 								{
 									con->request.http_host = ds->value;
-								} else
+								} 
+								else
 								{
 									con->http_status = 400;
 									con->keep_alive = 0;
@@ -1229,178 +1172,120 @@ int http_request_parse(server * srv, connection * con)
 									if (srv->srvconf.
 										log_request_header_on_error)
 									{
-										log_error_write
-											(srv, __FILE__,
-											 __LINE__, "s",
-											 "duplicate Host-header -> 400");
-										log_error_write
-											(srv, __FILE__,
-											 __LINE__, "Sb",
-											 "request-header:\n",
+										log_error_write(srv, __FILE__, __LINE__, "s", "duplicate Host-header -> 400");
+										log_error_write(srv, __FILE__, __LINE__, "Sb", "request-header:\n",
 											 con->request.request);
 									}
-									array_insert_unique(con->
-														request.
-														headers,
-														(data_unset *) ds);
+									array_insert_unique(con->request.headers,(data_unset *) ds);
 									return 0;
 								}
-							} else if (cmp > 0
-									   && 0 == (cmp =
-												buffer_caseless_compare
-												(CONST_BUF_LEN
-												 (ds->key),
-												 CONST_STR_LEN
-												 ("If-Modified-Since"))))
+							} 
+							else if (cmp > 0 && 0 == (cmp =	buffer_caseless_compare
+												(CONST_BUF_LEN(ds->key), CONST_STR_LEN("If-Modified-Since"))))
 							{
 								/*
-								 * Proxies sometimes send dup headers if they
-								 * are the same we ignore the second if not, we 
-								 * raise an error 
+								 * If-Modified-Since : XXXXXX
+								 *
+								 * Proxies sometimes send dup headers 
+								 * if they are the same we ignore the second if not, we raise an error 
+								 * 一些代理会发重复的这个域值。如果相同则忽略，否则报错。
 								 */
 								if (!con->request.http_if_modified_since)
 								{
-									con->request.
-										http_if_modified_since = ds->value->ptr;
-								} else if (0 ==
-										   strcasecmp(con->
-													  request.
-													  http_if_modified_since,
-													  ds->value->ptr))
+									con->request.http_if_modified_since = ds->value->ptr;
+								} 
+								else if (0 == strcasecmp(con->request.http_if_modified_since, ds->value->ptr))
 								{
 									/*
 									 * ignore it if they are the same 
 									 */
-
 									ds->free((data_unset *) ds);
 									ds = NULL;
-								} else
+								} 
+								else
 								{
 									con->http_status = 400;
 									con->keep_alive = 0;
-
-									if (srv->srvconf.
-										log_request_header_on_error)
+									if (srv->srvconf.log_request_header_on_error)
 									{
-										log_error_write
-											(srv, __FILE__,
-											 __LINE__, "s",
+										log_error_write(srv, __FILE__, __LINE__, "s",
 											 "duplicate If-Modified-Since header -> 400");
-										log_error_write
-											(srv, __FILE__,
-											 __LINE__, "Sb",
-											 "request-header:\n",
+										log_error_write(srv, __FILE__, __LINE__, "Sb", "request-header:\n",
 											 con->request.request);
 									}
-									array_insert_unique(con->
-														request.
-														headers,
-														(data_unset *) ds);
+									array_insert_unique(con->request.headers,(data_unset *) ds);
 									return 0;
 								}
-							} else if (cmp > 0
-									   && 0 == (cmp =
-												buffer_caseless_compare
-												(CONST_BUF_LEN
-												 (ds->key),
-												 CONST_STR_LEN
-												 ("If-None-Match"))))
+							} 
+							else if (cmp > 0 && 0 == (cmp =	buffer_caseless_compare
+												(CONST_BUF_LEN(ds->key), CONST_STR_LEN("If-None-Match"))))
 							{
 								/*
+								 * If-None-Match : XXXXXX
 								 * if dup, only the first one will survive 
 								 */
 								if (!con->request.http_if_none_match)
 								{
-									con->request.
-										http_if_none_match = ds->value->ptr;
-								} else
+									con->request.http_if_none_match = ds->value->ptr;
+								} 
+								else
 								{
 									con->http_status = 400;
 									con->keep_alive = 0;
-
-									if (srv->srvconf.
-										log_request_header_on_error)
+									if (srv->srvconf.log_request_header_on_error)
 									{
-										log_error_write
-											(srv, __FILE__,
-											 __LINE__, "s",
+										log_error_write(srv, __FILE__, __LINE__, "s",
 											 "duplicate If-None-Match-header -> 400");
-										log_error_write
-											(srv, __FILE__,
-											 __LINE__, "Sb",
-											 "request-header:\n",
+										log_error_write(srv, __FILE__, __LINE__, "Sb", "request-header:\n",
 											 con->request.request);
 									}
-									array_insert_unique(con->
-														request.
-														headers,
-														(data_unset *) ds);
+									array_insert_unique(con->request.headers,(data_unset *) ds);
 									return 0;
 								}
-							} else if (cmp > 0
-									   && 0 == (cmp =
-												buffer_caseless_compare
-												(CONST_BUF_LEN
-												 (ds->key),
-												 CONST_STR_LEN("Range"))))
+							} else if (cmp > 0 && 0 == (cmp =buffer_caseless_compare
+												(CONST_BUF_LEN(ds->key),CONST_STR_LEN("Range"))))
 							{
 								if (!con->request.http_range)
 								{
 									/*
 									 * bytes=.*-.* 
 									 */
-
-									if (0 ==
-										strncasecmp(ds->value->
-													ptr,
-													"bytes=", 6)
-										&& NULL !=
-										strchr(ds->value->ptr + 6, '-'))
+									if (0 == strncasecmp(ds->value->ptr,"bytes=", 6)
+										&& NULL != strchr(ds->value->ptr + 6, '-'))
 									{
-
 										/*
 										 * if dup, only the first one will
 										 * survive 
 										 */
-										con->request.
-											http_range = ds->value->ptr + 6;
+										con->request.http_range = ds->value->ptr + 6;
 									}
-								} else
+								} 
+								else
 								{
 									con->http_status = 400;
 									con->keep_alive = 0;
-
-									if (srv->srvconf.
-										log_request_header_on_error)
+									if (srv->srvconf.log_request_header_on_error)
 									{
-										log_error_write
-											(srv, __FILE__,
-											 __LINE__, "s",
+										log_error_write(srv, __FILE__, __LINE__, "s",
 											 "duplicate Range-header -> 400");
-										log_error_write
-											(srv, __FILE__,
-											 __LINE__, "Sb",
-											 "request-header:\n",
+										log_error_write(srv, __FILE__, __LINE__, "Sb", "request-header:\n",
 											 con->request.request);
 									}
-									array_insert_unique(con->
-														request.
-														headers,
-														(data_unset *) ds);
+									array_insert_unique(con->request.headers,(data_unset *) ds);
 									return 0;
 								}
 							}
-
 							if (ds)
-								array_insert_unique(con->request.
-													headers, (data_unset *) ds);
-						} else
+								array_insert_unique(con->request.headers, (data_unset *) ds);
+						} 
+						else
 						{
 							/*
 							 * empty header-fields are not allowed by HTTP-RFC, 
 							 * we just ignore them 
 							 */
 						}
+						//解析header lines 结束。
 					}
 
 					i++;
@@ -1414,12 +1299,12 @@ int http_request_parse(server * srv, connection * con)
 					key_len = 0;
 #endif
 					in_folding = 0;
-				} else
+				} 
+				else //\r后面不是\n。出错！
 				{
 					if (srv->srvconf.log_request_header_on_error)
 					{
-						log_error_write(srv, __FILE__, __LINE__,
-										"sbs", "CR without LF",
+						log_error_write(srv, __FILE__, __LINE__, "sbs", "CR without LF",
 										con->request.request, "-> 400");
 					}
 
@@ -1429,33 +1314,33 @@ int http_request_parse(server * srv, connection * con)
 					return 0;
 				}
 				break;
+			/*
+			 * 遇到空格。下面开始是value值。
+			 */
 			case ' ':
 			case '\t':
 				/*
-				 * strip leading WS 
+				 * strip leading WS 跳过空格
 				 */
 				if (value == cur)
 					value = cur + 1;
+			//非法字符
 			default:
 				if (*cur >= 0 && *cur < 32)
 				{
 					if (srv->srvconf.log_request_header_on_error)
 					{
-						log_error_write(srv, __FILE__, __LINE__,
-										"sds",
-										"invalid char in header",
+						log_error_write(srv, __FILE__, __LINE__, "sds",	"invalid char in header",
 										(int) *cur, "-> 400");
 					}
-
 					con->http_status = 400;
 					con->keep_alive = 0;
-
 					return 0;
 				}
 				break;
 			}
 		}
-	}
+	}//end of for (;i < con ...
 
 	con->header_len = i;
 
@@ -1470,12 +1355,12 @@ int http_request_parse(server * srv, connection * con)
 			/*
 			 * no Connection-Header sent 
 			 */
-
 			/*
 			 * HTTP/1.1 -> keep-alive default TRUE 
 			 */
 			con->keep_alive = 1;
-		} else
+		} 
+		else
 		{
 			con->keep_alive = 0;
 		}
@@ -1483,8 +1368,7 @@ int http_request_parse(server * srv, connection * con)
 		/*
 		 * RFC 2616, 14.23 
 		 */
-		if (con->request.http_host == NULL ||
-			buffer_is_empty(con->request.http_host))
+		if (con->request.http_host == NULL || buffer_is_empty(con->request.http_host))
 		{
 			con->http_status = 400;
 			con->response.keep_alive = 0;
@@ -1492,14 +1376,13 @@ int http_request_parse(server * srv, connection * con)
 
 			if (srv->srvconf.log_request_header_on_error)
 			{
-				log_error_write(srv, __FILE__, __LINE__, "s",
-								"HTTP/1.1 but Host missing -> 400");
-				log_error_write(srv, __FILE__, __LINE__, "Sb",
-								"request-header:\n", con->request.request);
+				log_error_write(srv, __FILE__, __LINE__, "s","HTTP/1.1 but Host missing -> 400");
+				log_error_write(srv, __FILE__, __LINE__, "Sb","request-header:\n", con->request.request);
 			}
 			return 0;
 		}
-	} else
+	} 
+	else
 	{
 		if (keep_alive_set == HTTP_CONNECTION_KEEPALIVE)
 		{
@@ -1511,7 +1394,8 @@ int http_request_parse(server * srv, connection * con)
 			 * HTTP/1.0 -> keep-alive default FALSE 
 			 */
 			con->keep_alive = 1;
-		} else
+		} 
+		else
 		{
 			con->keep_alive = 0;
 		}
@@ -1520,22 +1404,17 @@ int http_request_parse(server * srv, connection * con)
 	/*
 	 * check hostname field if it is set 
 	 */
-	if (NULL != con->request.http_host &&
-		0 != request_check_hostname(srv, con, con->request.http_host))
+	if (NULL != con->request.http_host && 0 != request_check_hostname(srv, con, con->request.http_host))
 	{
 
 		if (srv->srvconf.log_request_header_on_error)
 		{
-			log_error_write(srv, __FILE__, __LINE__, "s",
-							"Invalid Hostname -> 400");
-			log_error_write(srv, __FILE__, __LINE__, "Sb",
-							"request-header:\n", con->request.request);
+			log_error_write(srv, __FILE__, __LINE__, "s","Invalid Hostname -> 400");
+			log_error_write(srv, __FILE__, __LINE__, "Sb","request-header:\n", con->request.request);
 		}
-
 		con->http_status = 400;
 		con->response.keep_alive = 0;
 		con->keep_alive = 0;
-
 		return 0;
 	}
 
@@ -1551,8 +1430,7 @@ int http_request_parse(server * srv, connection * con)
 			/*
 			 * content-length is missing 
 			 */
-			log_error_write(srv, __FILE__, __LINE__, "s",
-							"GET/HEAD with content-length -> 400");
+			log_error_write(srv, __FILE__, __LINE__, "s","GET/HEAD with content-length -> 400");
 
 			con->keep_alive = 0;
 			con->http_status = 400;
@@ -1568,13 +1446,10 @@ int http_request_parse(server * srv, connection * con)
 			/*
 			 * content-length is missing 
 			 */
-			log_error_write(srv, __FILE__, __LINE__, "s",
-							"POST-request, but content-length missing -> 411");
-
+			log_error_write(srv, __FILE__, __LINE__, "s","POST-request, but content-length missing -> 411");
 			con->keep_alive = 0;
 			con->http_status = 411;
 			return 0;
-
 		}
 		break;
 	default:
@@ -1597,10 +1472,7 @@ int http_request_parse(server * srv, connection * con)
 		{
 			con->http_status = 413;
 			con->keep_alive = 0;
-
-			log_error_write(srv, __FILE__, __LINE__, "sds",
-							"request-size too long:",
-							con->request.content_length, "-> 413");
+			log_error_write(srv, __FILE__, __LINE__, "sds",	"request-size too long:", con->request.content_length, "-> 413");
 			return 0;
 		}
 
@@ -1613,12 +1485,9 @@ int http_request_parse(server * srv, connection * con)
 			/*
 			 * the request body itself is larger then our our max_request_size 
 			 */
-
 			con->http_status = 413;
 			con->keep_alive = 0;
-
-			log_error_write(srv, __FILE__, __LINE__, "sds",
-							"request-size too long:",
+			log_error_write(srv, __FILE__, __LINE__, "sds",	"request-size too long:",
 							con->request.content_length, "-> 413");
 			return 0;
 		}

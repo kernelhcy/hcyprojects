@@ -58,12 +58,15 @@ void array_free(array *a) {
 	free(a);
 }
 
-void array_reset(array *a) {
+void array_reset(array *a) 
+{
 	size_t i;
 	if (!a) return;
 
-	if (!a->is_weakref) {
-		for (i = 0; i < a->used; i++) {
+	if (!a->is_weakref) 
+	{
+		for (i = 0; i < a->used; i++) 
+		{
 			a->data[i]->reset(a->data[i]);
 		}
 	}
@@ -168,23 +171,29 @@ data_unset *array_replace(array *a, data_unset *du) {
 	}
 }
 
-int array_insert_unique(array *a, data_unset *str) {
+int array_insert_unique(array *a, data_unset *str) 
+{
 	int ndx = -1;
 	int pos = 0;
 	size_t j;
 
 	/* generate unique index if neccesary */
-	if (str->key->used == 0 || str->is_index_key) {
+	if (str->key->used == 0 || str->is_index_key) 
+	{
 		buffer_copy_long(str->key, a->unique_ndx++);
 		str->is_index_key = 1;
 	}
 
 	/* try to find the string */
-	if (-1 != (ndx = array_get_index(a, str->key->ptr, str->key->used, &pos))) {
+	if (-1 != (ndx = array_get_index(a, str->key->ptr, str->key->used, &pos))) 
+	{
 		/* found, leave here */
-		if (a->data[ndx]->type == str->type) {
+		if (a->data[ndx]->type == str->type) 
+		{
 			str->insert_dup(a->data[ndx], str);
-		} else {
+		} 
+		else 
+		{
 			fprintf(stderr, "a\n");
 		}
 		return 0;
@@ -192,40 +201,47 @@ int array_insert_unique(array *a, data_unset *str) {
 
 	/* insert */
 
-	if (a->used+1 > INT_MAX) {
+	if (a->used+1 > INT_MAX) 
+	{
 		/* we can't handle more then INT_MAX entries: see array_get_index() */
 		return -1;
 	}
 
-	if (a->size == 0) {
+	if (a->size == 0) 
+	{
 		a->size   = 16;
 		a->data   = malloc(sizeof(*a->data)     * a->size);
 		a->sorted = malloc(sizeof(*a->sorted)   * a->size);
 		assert(a->data);
 		assert(a->sorted);
-		for (j = a->used; j < a->size; j++) a->data[j] = NULL;
-	} else if (a->size == a->used) {
+		for (j = a->used; j < a->size; j++) 
+			a->data[j] = NULL;
+	} 
+	else if (a->size == a->used) 
+	{
 		a->size  += 16;
 		a->data   = realloc(a->data,   sizeof(*a->data)   * a->size);
 		a->sorted = realloc(a->sorted, sizeof(*a->sorted) * a->size);
 		assert(a->data);
 		assert(a->sorted);
-		for (j = a->used; j < a->size; j++) a->data[j] = NULL;
+		for (j = a->used; j < a->size; j++) 
+			a->data[j] = NULL;
 	}
 
 	ndx = (int) a->used;
 
 	a->data[a->used++] = str;
 	/* 在上面调用函数array_get_index的时候，已将str应该在数组sorted中位置存放在了pos中。 */
-	if (pos != ndx &&
-	    ((pos < 0) ||
-	     buffer_caseless_compare(str->key->ptr, str->key->used, a->data[a->sorted[pos]]->key->ptr, a->data[a->sorted[pos]]->key->used) > 0)) {
+	if (pos != ndx && ((pos < 0) || buffer_caseless_compare(str->key->ptr, str->key->used, a->data[a->sorted[pos]]->key->ptr
+											 					, a->data[a->sorted[pos]]->key->used) > 0)) 
+	{
 		/* 判断当前pos所对应的元素是否比str小，若是，这pos后移一位 */
 		pos++;
 	}
 
 	/* move everything on step to the right */
-	if (pos != ndx) {
+	if (pos != ndx) 
+	{
 		memmove(a->sorted + (pos + 1), a->sorted + (pos), (ndx - pos) * sizeof(*a->sorted));
 	}
 

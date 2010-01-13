@@ -251,6 +251,11 @@ int log_error_close(server * srv)
  * 			size_t strftime(char *s, size_t smax, const char *fmt, const struct tm *tp)
  * 	根据fmt中的格式把结构体*tp中的日期与时间信息转换成指定的格式，并存储在s中。返回实际写到s中的字符个数，不包括'\0'.
  *
+ * 	参数fmt的说明如下：
+ *  's':字符串   'b':buffer   'd':int   'o':off_t   'x':int的十六进制
+ *  上面的几个参数，在输出相应的值后都追加一个空格' '。
+ *  如果参数为大写，则不追加空格。
+ *
  */
 int log_error_write(server * srv, const char *filename, unsigned int line,
 				const char *fmt, ...)
