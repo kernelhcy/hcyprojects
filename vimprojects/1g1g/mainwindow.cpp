@@ -17,24 +17,36 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
-
+#include <QtGui>
 #include "mainwindow.h"
 
 MainWindow::MainWindow(QWidget *parent, ControlThread* ct)
-    : QMainWindow(parent)
+    : YGMainWindow(parent)
 {
+    //setMouseTracking(true);
     this->ct = ct;
     setProxy();
     setTrayIcon();
     startPlayer();
 
     this -> setWindowIcon(QIcon(":images/icon.png"));
-    this -> resize(800, 600);
+    this -> resize(800, 620);
     this -> setFixedSize(this->size());
-    this -> setFixedSize(QSize(800, 600));
+
     Config *config = Config::getInstance();
     this -> setViewMode(config->mode);
     this -> move(config -> pos_x, config -> pos_y);
+
+    //获取根窗口
+    QDesktopWidget *desktop = QApplication::desktop();
+    //获取屏幕可用区域的大小。
+    avaGeometry = desktop -> availableGeometry(this);
+    //获取标题栏高度
+    //虽然标题栏是自定义的，但是在将窗口自动靠边到底部时，系统还是按照有默认标题栏
+    //进行处理，导致不能移到底部。
+    titleBarHeight = style()->pixelMetric(QStyle::PM_TitleBarHeight);
+    //获取窗口边框的宽度
+    frameWidth = style() -> pixelMetric(QStyle::PM_DefaultFrameWidth);
 }
 
 MainWindow::~MainWindow()
@@ -61,9 +73,10 @@ void MainWindow::startPlayer()
     player->settings()->setAttribute(QWebSettings::PluginsEnabled, true);
     player->load(QUrl("http://www.1g1g.com/"));
     //player -> load(QUrl("http://commander.1g1g.com/test.html"));
-    connect(player, SIGNAL(titleChanged(QString)), this, SLOT(changeTitle(QString)));
+    connect(player, SIGNAL(titleChanged(QString)), this, SLOT(changingTitle(QString)));
     connect(player, SIGNAL(titleChanged(QString)), this, SLOT(changeTrayIconTooltip(QString)));
-    connect(player, SIGNAL(statusBarMessage ( const QString &)), this, SLOT(playerStatusBarMsgChange(const QString)));
+    connect(player, SIGNAL(statusBarMessage(const QString&)),
+            this, SLOT(playerStatusBarMsgChange(const QString)));
     player ->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     this->setCentralWidget(player);
 
@@ -78,28 +91,30 @@ void MainWindow::setViewMode(ENV1G::viewMode mode)
     {
     case ENV1G::V_NORMAL:
         //out<< tr("正常模式\n");
-        this->setFixedSize(QSize(800, 600));
+        this->setFixedSize(QSize(800, 620));
         config->mode = ENV1G::V_NORMAL;
         break;
     case ENV1G::V_SIMPLE:
         //out<< tr("精简模式\n");
-        this->setFixedSize(QSize(320, 450));
+        this->setFixedSize(QSize(320, 470));
         config->mode = ENV1G::V_SIMPLE;
         //player->resize(this->centralWidget()->size());
         //this->centralWidget()->resize(this->size());
         break;
     case ENV1G::V_LISTEN:
         //out<< tr("听歌模式\n");
-        this->setFixedSize(QSize(300, 60));
+        this->setFixedSize(QSize(300, 80));
         config->mode = ENV1G::V_LISTEN;
         break;
     default:
-        this->setFixedSize(QSize(800, 600));
+        this->setFixedSize(QSize(800, 620));
         config->mode = ENV1G::V_NORMAL;
         break;
     }
 
-    //player->reload();
+    player->reload();
+    //防止鼠标第一次进入窗口时，窗口变化未知。
+    oldSize = size();
 
 }
 
@@ -118,6 +133,16 @@ void MainWindow::setListenViewMode()
 
 void MainWindow::playerStatusBarMsgChange(const QString msg)
 {
+    trayIcon->showMessage(tr("播放器状态："),msg,QSystemTrayIcon::Information,2000);
+}
+
+void MainWindow::showLrc(bool checked)
+{
+    if (checked)
+    {
+
+    }
+    processCommand("openLyricWindow", "");
 
 }
 
@@ -163,6 +188,10 @@ void MainWindow::setTrayIcon()
     connect(vlistenAction, SIGNAL(triggered()), this, SLOT(setListenViewMode()));
     vlistenAction ->setCheckable(true);
 
+    showLrcAction = new QAction(tr("显示歌词"), this);
+    showLrcAction -> setCheckable(true);
+    connect(showLrcAction, SIGNAL(toggled(bool)), this, SLOT(showLrc(bool)));
+
     minimizeAction = new QAction(QIcon(":images/mini.png"),tr("最小化"), this);
     connect(minimizeAction, SIGNAL(triggered()), this, SLOT(hideWindow()));
     showAction = new QAction(QIcon(":images/nor.png"),tr("显示窗口"), this);
@@ -201,9 +230,12 @@ void MainWindow::setTrayIcon()
     traymenu->addAction(vlistenAction);
 
     traymenu->addSeparator();
-    traymenu->addAction(showAction);
+    traymenu->addAction(showLrcAction);
+
+    traymenu->addSeparator();
+    //traymenu->addAction(showAction);
     traymenu->addAction(settingAction);
-    traymenu->addAction(minimizeAction);
+    //traymenu->addAction(minimizeAction);
     traymenu->addSeparator();
     traymenu->addAction(quitAction);
 
@@ -217,8 +249,19 @@ void MainWindow::setting()
     new SettingDialog(this);
 }
 
-void MainWindow::processCommand(QString command){   
-    QString jscode = "get1g1gPlayer().sendNotification('"+command+"')";
+void MainWindow::processCommand(QString command, QString arg)
+{
+    QString jscode;
+    if (arg.isEmpty())
+    {
+        jscode = "get1g1gPlayer().sendNotification('" + command + "')";
+    }
+    else
+    {
+        jscode = "get1g1gPlayer().sendNotification('"
+                 + command + "," + arg +"')";
+    }
+
     //QString jscode = "get1gCommander().command('play','An Angel-Declan Galbraith');";
 
     player->page()->mainFrame()->evaluateJavaScript(jscode);
@@ -297,33 +340,27 @@ void MainWindow::trayActived(QSystemTrayIcon::ActivationReason reason)
 
 void MainWindow::moveEvent(QMoveEvent *event)
 {
-    QPoint pos = event->pos();
+    QPoint pos = event -> pos();
     QPoint toPos = pos;
 
-    //获取桌面大小
-    QDesktopWidget *desktop = QApplication::desktop();
-    int screenWidth = desktop->width();
-    int screenHeight = desktop->height();
-
-    if (pos.x() < 0)
+    if (pos.x() < 50 && pos.x() > frameWidth + 1)
     {
-        toPos.setX(0);
+        toPos.setX(avaGeometry.left());
     }
 
-    if (pos.y() < 100 && pos.y() > 30)
+    if (pos.y() < 50 && pos.y() > avaGeometry.top() + 1)
     {
-        toPos.setY(0);
+        toPos.setY(avaGeometry.top() + 1);
     }
 
-
-    if (pos.x() + this->size().width() > screenWidth - 50)
+    if (pos.x() + this->size().width() > avaGeometry.width() - 50)
     {
-        toPos.setX(screenWidth - this->size().width() -5);
+        toPos.setX(avaGeometry.width() - this -> size().width());
     }
 
-    if (pos.y() + this->size().height() > screenHeight - 50)
+    if (pos.y() + this->size().height() > avaGeometry.height() - 50 + titleBarHeight)
     {
-        toPos.setY(screenHeight - this->size().height() - 5);
+        toPos.setY(avaGeometry.height() - this -> size().height() + titleBarHeight - 1);
     }
 
     if ( pos != toPos)
@@ -339,38 +376,94 @@ void MainWindow::moveEvent(QMoveEvent *event)
 
 void MainWindow::leaveEvent(QEvent *event)
 {
-    if (this->pos().y() < 30)
-    {
-        //this->hideWindow();
-    }
+    shrinkWindow();
     event->accept();
 }
 
 void MainWindow::enterEvent(QEvent *event)
 {
-//    printf("鼠标进入\n");
-//    if (this->pos().y() < 30)
-//    {
-//        QSize size = this->size();
-//        Config *config = Config::getInstance();
-//
-//        switch(config -> mode)
-//        {
-//        case ENV1G::V_NORMAL:
-//            size.setHeight(600);
-//            break;
-//        case ENV1G::V_SIMPLE:
-//            size.setHeight(450);
-//            break;
-//        case ENV1G::V_LISTEN:
-//            size.setHeight(60);
-//            break;
-//        default:
-//            size.setHeight(600);
-//            break;
-//        }
-//
-//        this->setFixedSize(size);
-//    }
+    setFixedSize(oldSize);
+    moveSuitable();
     event->accept();
+}
+void MainWindow::mouseMoveEvent(QMouseEvent *event)
+{
+    Q_UNUSED(event);
+    /*
+    QRect area = geometry();
+    printf("mouse move to (%d, %d)\n", event ->x() , event ->x());
+    if (area.contains(event -> globalX(), event -> globalY()))
+    {
+        setFixedSize(oldSize);
+        moveSuitable();
+    }
+    */
+}
+void MainWindow::shrinkWindow()
+{
+    oldSize = size();
+    QSize newSize = oldSize;
+    newSize.setWidth(5);
+    //newSize.setHeight(80);
+
+    QRect area = this -> geometry();
+    QPoint pos = QCursor::pos(); //获取鼠标的当前位置。
+    //判断是否真的出了窗口
+    if (!area.contains(pos.x(), pos.y()))
+    {
+        setFixedSize(newSize);
+        moveSuitable();
+    }
+    moveSuitable();
+
+}
+void MainWindow::moveSuitable()
+{
+    int midX = (avaGeometry.right() + avaGeometry.left()) / 2;
+    int midY = (avaGeometry.bottom() + avaGeometry.top()) / 2;
+    QSize sz = size();
+    /*
+      首先将屏幕分成四个区域：A B C D.如图：
+                      midX
+          -------------------------------> x
+          |*            |           *|
+          |      A      |     B      |
+          |             |            |
+      midY|---------------------------
+          |             |            |
+          |      C      |     D      |
+          |*            |           *|
+          ----------------------------
+          |
+          V
+          y
+      当窗口位于这四个区域中时，将分别将窗口移动到各个区域中标*的地方。
+
+     */
+    /* 区域A */
+    if (pos().x() < midX && pos().y() < midY)
+    {
+        move(avaGeometry.left(), avaGeometry.top() + 1);
+    }
+    /* 区域B */
+    else if (pos().x() >= midX && pos().y() < midY)
+    {
+        move(avaGeometry.right() - sz.width(), avaGeometry.top() + 1);
+    }
+    /* 区域C */
+    else if (pos().x() < midX && pos().y() >= midY)
+    {
+        move(avaGeometry.left(), avaGeometry.bottom() - sz.height() - 1);
+    }
+    /* 区域D */
+    else if (pos().x() >= midX && pos().y() >= midY)
+    {
+        move(avaGeometry.right() - sz.width()
+             , avaGeometry.bottom() - sz.height() - 1);
+    }
+    else
+    {
+        move(avaGeometry.right() - sz.width() - 1, avaGeometry.top() + 1);
+    }
+
 }

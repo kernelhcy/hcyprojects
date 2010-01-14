@@ -37,7 +37,7 @@ public:
     ControlThread();
     void run();
     signals:
-        void recvcommand(QString);
+        void recvcommand(QString, QString);
 protected:    
     bool isValidCommand(char*);
 };

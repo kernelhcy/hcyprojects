@@ -51,7 +51,9 @@ int main(int argc, char *argv[])
 
     ControlThread ct;
     MainWindow w((QWidget*)0,&ct);
-    QObject::connect((QObject*)&ct, SIGNAL(recvcommand(QString)), (QObject*)&w, SLOT(processCommand(QString)), Qt::QueuedConnection);
+    QObject::connect((QObject*)&ct, SIGNAL(recvcommand(QString, QString))
+                     , (QObject*)&w, SLOT(processCommand(QString, QString))
+                     , Qt::QueuedConnection);
     w.show();
     ct.start();    
     return a.exec();;

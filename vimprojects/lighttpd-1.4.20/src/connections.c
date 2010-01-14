@@ -1,3 +1,8 @@
+/**
+ * 状态机：
+ * line : 1721
+ *
+ */
 #include <sys/stat.h>
 
 #include <stdlib.h>
@@ -1712,8 +1717,6 @@ connection *connection_accept(server * srv, server_socket * srv_socket)
  * 关于这个状态机的状态的设置及转移，可参见doc中的state.dot文件，利用这个文件，使用如下命令
  * 		dot state.dot -Tpng -o state.png 
  * 可以生成状态机图。
- *
- *
  */
 int connection_state_machine(server * srv, connection * con)
 {

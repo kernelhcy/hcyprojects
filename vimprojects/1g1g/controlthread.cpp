@@ -40,16 +40,23 @@ void ControlThread::run(){
         fgets(buf, sizeof(buf), fp);        
         buf[strlen(buf)-1] = '\0';        
         if(isValidCommand(buf))
-            emit recvcommand(QString(buf));
+            emit recvcommand(QString(buf), QString(""));
         fclose(fp);
     }
 }
 
-bool ControlThread::isValidCommand(char* buf){
-    if(strcmp(buf, "next")==0) return true;
-    if(strcmp(buf, "playPause")==0) return true;
-    if(strcmp(buf, "volumeOnOff")==0) return true;
-    if(strcmp(buf, "volumeUp")==0) return true;
-    if(strcmp(buf, "volumeDown")==0) return true;
+bool ControlThread::isValidCommand(char* buf)
+{
+    if(strcmp(buf, "next")==0)
+        return true;
+    if(strcmp(buf, "playPause")==0)
+        return true;
+    if(strcmp(buf, "volumeOnOff")==0)
+        return true;
+    if(strcmp(buf, "volumeUp")==0)
+        return true;
+    if(strcmp(buf, "volumeDown")==0)
+        return true;
+
     return false;
 }

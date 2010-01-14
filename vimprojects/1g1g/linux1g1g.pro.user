@@ -88,16 +88,16 @@
    <value key="ProjectExplorer.BuildConfiguration.DisplayName" type="QString">Debug</value>
    <valuelist key="abstractProcess.Environment" type="QVariantList">
     <value type="QString">CLASSPATH=.:/usr/lib/jvm/java-6-sun/lib</value>
-    <value type="QString">DBUS_SESSION_BUS_ADDRESS=unix:abstract=/tmp/dbus-TMePw9ufvA,guid=7594b7bf54206efb8edaae4d4b3ac2df</value>
+    <value type="QString">DBUS_SESSION_BUS_ADDRESS=unix:abstract=/tmp/dbus-7mExhgzRAY,guid=1daa8736a917e5c65b81ce7d4b4e6d82</value>
     <value type="QString">DESKTOP_SESSION=gnome</value>
     <value type="QString">DISPLAY=:0.0</value>
     <value type="QString">GDMSESSION=gnome</value>
     <value type="QString">GDM_LANG=zh_CN.UTF-8</value>
     <value type="QString">GDM_XSERVER_LOCATION=local</value>
     <value type="QString">GNOME_DESKTOP_SESSION_ID=Default</value>
-    <value type="QString">GNOME_KEYRING_PID=6153</value>
-    <value type="QString">GNOME_KEYRING_SOCKET=/tmp/keyring-A09ZfS/socket</value>
-    <value type="QString">GPG_AGENT_INFO=/tmp/seahorse-8Q9wts/S.gpg-agent:6212:1</value>
+    <value type="QString">GNOME_KEYRING_PID=6002</value>
+    <value type="QString">GNOME_KEYRING_SOCKET=/tmp/keyring-eRj0u5/socket</value>
+    <value type="QString">GPG_AGENT_INFO=/tmp/seahorse-moKj2N/S.gpg-agent:6061:1</value>
     <value type="QString">GTK_IM_MODULE=xim</value>
     <value type="QString">GTK_RC_FILES=/etc/gtk/gtkrc:/home/hcy/.gtkrc-1.2-gnome2</value>
     <value type="QString">HOME=/home/hcy</value>
@@ -107,18 +107,18 @@
     <value type="QString">LOGNAME=hcy</value>
     <value type="QString">MANPATH=/home/hcy/ProgramFiles/qtsdk/qt//doc/html:</value>
     <value type="QString">PATH=/home/hcy/ProgramFiles/qtsdk200905/qt/bin:/home/hcy/ProgramFiles/qtsdk/qt//bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/home/hcy/ProgramFiles/bin</value>
-    <value type="QString">PWD=/home/hcy/ProgramFiles/qtsdk200905/bin</value>
+    <value type="QString">PWD=/home/hcy</value>
     <value type="QString">QTDIR=/home/hcy/ProgramFiles/qtsdk200905/qt</value>
     <value type="QString">QT_IM_MODULE=xim</value>
-    <value type="QString">SESSION_MANAGER=local/hcy-desktop:/tmp/.ICE-unix/6154</value>
+    <value type="QString">SESSION_MANAGER=local/hcy-desktop:/tmp/.ICE-unix/6003</value>
     <value type="QString">SHELL=/bin/bash</value>
-    <value type="QString">SSH_AUTH_SOCK=/tmp/keyring-A09ZfS/ssh</value>
+    <value type="QString">SSH_AUTH_SOCK=/tmp/keyring-eRj0u5/ssh</value>
     <value type="QString">USER=hcy</value>
     <value type="QString">USERNAME=hcy</value>
     <value type="QString">WINDOWPATH=7</value>
     <value type="QString">XAUTHORITY=/home/hcy/.Xauthority</value>
     <value type="QString">XDG_DATA_DIRS=/usr/local/share/:/usr/share/:/usr/share/gdm/</value>
-    <value type="QString">XDG_SESSION_COOKIE=cd82a6d253641cf45f1e152a4a8feef4-1262142171.858064-906673566</value>
+    <value type="QString">XDG_SESSION_COOKIE=cd82a6d253641cf45f1e152a4a8feef4-1263431037.60128-1995662337</value>
     <value type="QString">XMODIFIERS=@im=fcitx</value>
    </valuelist>
    <valuelist key="abstractProcess.arguments" type="QVariantList">
@@ -128,7 +128,7 @@
     <value type="QString">-r</value>
    </valuelist>
    <value key="abstractProcess.command" type="QString">/home/hcy/ProgramFiles/qtsdk200905/qt/bin/qmake</value>
-   <value key="abstractProcess.enabled" type="bool">true</value>
+   <value key="abstractProcess.enabled" type="bool">false</value>
    <value key="abstractProcess.workingDirectory" type="QString">/home/hcy/vimprojects/1g1g</value>
    <value key="buildConfiguration" type=""></value>
   </valuemap>
@@ -139,16 +139,16 @@
    <value key="ProjectExplorer.BuildConfiguration.DisplayName" type="QString">Debug</value>
    <valuelist key="abstractProcess.Environment" type="QVariantList">
     <value type="QString">CLASSPATH=.:/usr/lib/jvm/java-6-sun/lib</value>
-    <value type="QString">DBUS_SESSION_BUS_ADDRESS=unix:abstract=/tmp/dbus-TMePw9ufvA,guid=7594b7bf54206efb8edaae4d4b3ac2df</value>
+    <value type="QString">DBUS_SESSION_BUS_ADDRESS=unix:abstract=/tmp/dbus-7mExhgzRAY,guid=1daa8736a917e5c65b81ce7d4b4e6d82</value>
     <value type="QString">DESKTOP_SESSION=gnome</value>
     <value type="QString">DISPLAY=:0.0</value>
     <value type="QString">GDMSESSION=gnome</value>
     <value type="QString">GDM_LANG=zh_CN.UTF-8</value>
     <value type="QString">GDM_XSERVER_LOCATION=local</value>
     <value type="QString">GNOME_DESKTOP_SESSION_ID=Default</value>
-    <value type="QString">GNOME_KEYRING_PID=6153</value>
-    <value type="QString">GNOME_KEYRING_SOCKET=/tmp/keyring-A09ZfS/socket</value>
-    <value type="QString">GPG_AGENT_INFO=/tmp/seahorse-8Q9wts/S.gpg-agent:6212:1</value>
+    <value type="QString">GNOME_KEYRING_PID=6002</value>
+    <value type="QString">GNOME_KEYRING_SOCKET=/tmp/keyring-eRj0u5/socket</value>
+    <value type="QString">GPG_AGENT_INFO=/tmp/seahorse-moKj2N/S.gpg-agent:6061:1</value>
     <value type="QString">GTK_IM_MODULE=xim</value>
     <value type="QString">GTK_RC_FILES=/etc/gtk/gtkrc:/home/hcy/.gtkrc-1.2-gnome2</value>
     <value type="QString">HOME=/home/hcy</value>
@@ -158,18 +158,18 @@
     <value type="QString">LOGNAME=hcy</value>
     <value type="QString">MANPATH=/home/hcy/ProgramFiles/qtsdk/qt//doc/html:</value>
     <value type="QString">PATH=/home/hcy/ProgramFiles/qtsdk200905/qt/bin:/home/hcy/ProgramFiles/qtsdk/qt//bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/home/hcy/ProgramFiles/bin</value>
-    <value type="QString">PWD=/home/hcy/ProgramFiles/qtsdk200905/bin</value>
+    <value type="QString">PWD=/home/hcy</value>
     <value type="QString">QTDIR=/home/hcy/ProgramFiles/qtsdk200905/qt</value>
     <value type="QString">QT_IM_MODULE=xim</value>
-    <value type="QString">SESSION_MANAGER=local/hcy-desktop:/tmp/.ICE-unix/6154</value>
+    <value type="QString">SESSION_MANAGER=local/hcy-desktop:/tmp/.ICE-unix/6003</value>
     <value type="QString">SHELL=/bin/bash</value>
-    <value type="QString">SSH_AUTH_SOCK=/tmp/keyring-A09ZfS/ssh</value>
+    <value type="QString">SSH_AUTH_SOCK=/tmp/keyring-eRj0u5/ssh</value>
     <value type="QString">USER=hcy</value>
     <value type="QString">USERNAME=hcy</value>
     <value type="QString">WINDOWPATH=7</value>
     <value type="QString">XAUTHORITY=/home/hcy/.Xauthority</value>
     <value type="QString">XDG_DATA_DIRS=/usr/local/share/:/usr/share/:/usr/share/gdm/</value>
-    <value type="QString">XDG_SESSION_COOKIE=cd82a6d253641cf45f1e152a4a8feef4-1262142171.858064-906673566</value>
+    <value type="QString">XDG_SESSION_COOKIE=cd82a6d253641cf45f1e152a4a8feef4-1263431037.60128-1995662337</value>
     <value type="QString">XMODIFIERS=@im=fcitx</value>
    </valuelist>
    <value key="abstractProcess.IgnoreReturnValue" type="bool">false</value>

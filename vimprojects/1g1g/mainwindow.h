@@ -21,7 +21,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QtGui>
+#include "ygmainwindow.h"
 #include <QtWebKit>
 #include <QSystemTrayIcon>
 #include <QIcon>
@@ -32,7 +32,7 @@
 #include "settingdialog.h"
 #include "env.h"
 
-class MainWindow : public QMainWindow
+class MainWindow : public YGMainWindow
 {
     Q_OBJECT
 
@@ -43,13 +43,15 @@ public:
     void reStartPlayer();
 
 public slots:
-    void processCommand(QString);
+    void processCommand(QString, QString);
     void changeTitle(QString);
     //设置显示模式
-    void setViewMode(ENV1G::viewMode mode);
+    void setViewMode(ENV1G::viewMode);
     void setNormalViewMode();
     void setSimpleViewMode();
     void setListenViewMode();
+
+    void showLrc(bool);
 protected slots:
     void exitProgram();
     void hideWindow();
@@ -59,10 +61,11 @@ protected slots:
     void playerStatusBarMsgChange(const QString);
 
 protected:
-    void closeEvent(QCloseEvent *event);
-    void moveEvent(QMoveEvent *event);
-    void leaveEvent(QEvent *event);
-    void enterEvent(QEvent *event);
+    void closeEvent(QCloseEvent *);
+    void moveEvent(QMoveEvent *);
+    void leaveEvent(QEvent *);
+    void enterEvent(QEvent *);
+    void mouseMoveEvent(QMouseEvent *);
 private:
     QWebView* player;   
     ControlThread* ct;
@@ -78,10 +81,28 @@ private:
     QAction *vlistenAction;
     QActionGroup *actiongroup;
 
+    QAction *showLrcAction;
+
+    //窗口所在的屏幕的可用区域的大小。
+    QRect avaGeometry;
+
+    //窗口的一些参数
+    int titleBarHeight;     //标题栏的高度
+    int frameWidth;         //窗口边框的宽度
+
+    //保存窗口靠边隐藏之前的大小。
+    QSize oldSize;
+
     void center();
     void setProxy();
     void setTrayIcon();
 
+    //缩小窗口。
+    void shrinkWindow();
+    //将窗口移动到合适的地方。
+    //在调用了上面缩小窗口函数，那么窗口要移动到合适的位置。
+    //如：屏幕边缘。
+    void moveSuitable();
 };
 
 #endif // MAINWINDOW_H
