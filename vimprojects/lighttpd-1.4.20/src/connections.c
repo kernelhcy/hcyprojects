@@ -230,6 +230,9 @@ static void dump_packet(const unsigned char *data, size_t len)
 }
 #endif
 
+/**
+ * 处理使用SSL时读取数据。
+ */
 static int connection_handle_read_ssl(server * srv, connection * con)
 {
 #ifdef USE_OPENSSL
@@ -238,7 +241,6 @@ static int connection_handle_read_ssl(server * srv, connection * con)
 
 	if (!con->conf.is_ssl)
 		return -1;
-
 	/*
 	 * don't resize the buffer if we were in SSL_ERROR_WANT_* 
 	 */
@@ -249,18 +251,13 @@ static int connection_handle_read_ssl(server * srv, connection * con)
 		if (!con->ssl_error_want_reuse_buffer)
 		{
 			b = buffer_init();
-			buffer_prepare_copy(b, SSL_pending(con->ssl) + (16 * 1024));	/* the 
-																			 * pending 
-																			 * bytes 
-																			 * + 
-																			 * 16kb 
-																			 */
-
+			buffer_prepare_copy(b, SSL_pending(con->ssl) + (16 * 1024));	/* the pending bytes + 16kb */
 			/*
 			 * overwrite everything with 0 
 			 */
 			memset(b->ptr, 0, b->size);
-		} else
+		} 
+		else
 		{
 			b = con->ssl_error_want_reuse_buffer;
 		}
@@ -318,15 +315,13 @@ static int connection_handle_read_ssl(server * srv, connection * con)
 				/*
 				 * get all errors from the error-queue 
 				 */
-				log_error_write(srv, __FILE__, __LINE__, "sds", "SSL:",
-								r, ERR_error_string(ssl_err, NULL));
+				log_error_write(srv, __FILE__, __LINE__, "sds", "SSL:", r, ERR_error_string(ssl_err, NULL));
 			}
 
 			switch (errno)
 			{
 			default:
-				log_error_write(srv, __FILE__, __LINE__, "sddds",
-								"SSL:", len, r, errno, strerror(errno));
+				log_error_write(srv, __FILE__, __LINE__, "sddds","SSL:", len, r, errno, strerror(errno));
 				break;
 			}
 
@@ -375,7 +370,8 @@ static int connection_handle_read_ssl(server * srv, connection * con)
 		buffer_free(b);
 
 		return -1;
-	} else if (len == 0)
+	} 
+	else if (len == 0)
 	{
 		con->is_readable = 0;
 		/*
@@ -398,6 +394,13 @@ static int connection_handle_read_ssl(server * srv, connection * con)
 #endif
 }
 
+/**
+ * 从con -> fd读取数据并存放到con -> read_queue中。
+ * 返回值：
+ *  0  正常完成。
+ *  -1 出错。
+ *  -2 读取到的数据长度为0,标明连接可能已经关闭
+ */
 static int connection_handle_read(server * srv, connection * con)
 {
 	int len;
@@ -413,24 +416,30 @@ static int connection_handle_read(server * srv, connection * con)
 	buffer_prepare_copy(b, 4 * 1024);
 	len = recv(con->fd, b->ptr, b->size - 1, 0);
 #else
+	/*
+	 * 通过iotcl函数获取获取接收缓存区中的字节数，存放与toread中。
+	 */
 	if (ioctl(con->fd, FIONREAD, &toread))
 	{
-		log_error_write(srv, __FILE__, __LINE__, "sd",
-						"unexpected end-of-file:", con->fd);
+		log_error_write(srv, __FILE__, __LINE__, "sd", "unexpected end-of-file:", con->fd);
 		return -1;
 	}
+	//从con->read_queue中获取一个空的chunk的mem（buffer类型）。
 	b = chunkqueue_get_append_buffer(con->read_queue);
 	buffer_prepare_copy(b, toread + 1);
 
-	len = read(con->fd, b->ptr, b->size - 1);
+	//从fd读取数据。
+	len = read(con -> fd, b -> ptr, b -> size - 1);
 #endif
 
 	if (len < 0)
 	{
 		con->is_readable = 0;
 
+		//非阻塞IO，但当前没有数据可读。
 		if (errno == EAGAIN)
 			return 0;
+		//被信号中断，没有读取到数据。
 		if (errno == EINTR)
 		{
 			/*
@@ -445,32 +454,29 @@ static int connection_handle_read(server * srv, connection * con)
 			/*
 			 * expected for keep-alive 
 			 */
-			log_error_write(srv, __FILE__, __LINE__, "ssd",
-							"connection closed - read failed: ",
+			log_error_write(srv, __FILE__, __LINE__, "ssd", "connection closed - read failed: ",
 							strerror(errno), errno);
 		}
 
 		connection_set_state(srv, con, CON_STATE_ERROR);
 
 		return -1;
-	} else if (len == 0)
+	} 
+	else if (len == 0)
 	{
 		con->is_readable = 0;
 		/*
 		 * the other end close the connection -> KEEP-ALIVE 
-		 */
-
-		/*
 		 * pipelining 
 		 */
-
 		return -2;
-	} else if ((size_t) len < b->size - 1)
+	} 
+	else if ((size_t) len < b->size - 1)
 	{
 		/*
 		 * we got less then expected, wait for the next fd-event 
+		 * 没有读取到所有数据，等待下一次fd事件。
 		 */
-
 		con->is_readable = 0;
 	}
 
@@ -1040,7 +1046,7 @@ int connection_reset(server * srv, connection * con)
 
 /**
  * handle all header and content read
- *
+ * 处理所有的读取数据事件。包括读取HTTP头和数据。
  * we get called by the state-engine and by the fdevent-handler
  */
 int connection_handle_read_state(server * srv, connection * con)
@@ -1055,6 +1061,7 @@ int connection_handle_read_state(server * srv, connection * con)
 
 	if (con->is_readable)
 	{
+		//记录开始读取数据的时间。
 		con->read_idle_ts = srv->cur_ts;
 
 		switch (connection_handle_read(srv, con))
@@ -1078,8 +1085,6 @@ int connection_handle_read_state(server * srv, connection * con)
 		{
 			/*
 			 * the first node is empty 
-			 */
-			/*
 			 * ... and it is empty, move it to unused 
 			 */
 
@@ -1092,13 +1097,12 @@ int connection_handle_read_state(server * srv, connection * con)
 			cq->unused_chunks++;
 
 			c = cq->first;
-		} else if (c->next && c->next->mem->used == 0)
+		} 
+		else if (c->next && c->next->mem->used == 0)
 		{
 			chunk *fc;
 			/*
 			 * next node is the last one 
-			 */
-			/*
 			 * ... and it is empty, move it to unused 
 			 */
 
@@ -1118,7 +1122,8 @@ int connection_handle_read_state(server * srv, connection * con)
 			}
 
 			c = c->next;
-		} else
+		} 
+		else
 		{
 			c = c->next;
 		}
@@ -1439,6 +1444,7 @@ int connection_handle_read_state(server * srv, connection * con)
 		connection_set_state(srv, con, CON_STATE_ERROR);
 	}
 
+	
 	chunkqueue_remove_finished_chunks(cq);
 
 	return 0;
