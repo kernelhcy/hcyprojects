@@ -1,0 +1,75 @@
+#! /usr/bin/python
+# -*- coding: utf-8 -*-
+
+#
+# 功能： 
+# 抓取一个网页的内容。也就是首先浏览器的另存为全部的功能。
+# 保存的同时申城索引文件，便于查阅。
+#
+
+from sys import argv
+from os import makedirs, unlink, sep #sep: 操作系统的路径分割符
+from os.path import dirname, exists, isdir, splitext, basename
+from string import replace, find, lower
+from htmllib import HTMLParser
+from urllib import urlretrieve
+from urlparse import urlparse, urljoin
+from formatter import DumbWriter, AbstractFormatter
+from cStringIO import StringIO
+from optparse import OptionParser
+
+class ParseExecCMD:
+	"""
+		解析命令行参数。
+	"""
+	def __init__(self, argv = None):
+		print("init ParseExecCMD class.")
+		
+		self.options = ''
+		self.args = ''
+		self.argv = argv[1:]
+		self.parser = OptionParser("usage:cachePage [options] title url");
+		self.parser.add_option('-o', '--out', help = 'Output file name',
+							action = 'store', type = 'string', dest = 'out')
+	def execCMD(self):
+		self.options, self.args = self.parser.parse_args(self.argv)
+		if self.options.out:
+			print(self.options.out)
+
+class Retriver(object):
+	"""
+		下载页面内容
+	"""
+	def __init__(self, url):
+		self.url = url;
+		self.file = self.filename(url)
+		print('file name : %s' % self.file)
+	
+	def filename(self, url):
+		parsedurl = urlparse(url, 'http:', 0)
+		path = parsedurl[1] + parsedurl[2]
+		name = basename(path)
+		
+		return name + '.html'
+		
+	def download(self):  # download Web page 
+		try: 
+			retval = urlretrieve(self.url, self.file) 
+		except IOError: 
+			retval = ('*** ERROR: invalid URL "%s"' % self.url,) 
+		return retval 
+		
+	def parseAndGetLinks(self):# parse HTML, save links 
+		self.parser = HTMLParser(AbstractFormatter(DumbWriter(StringIO()))) 
+		self.parser.feed(open(self.file).read()) 
+		self.parser.close() 
+		return self.parser.anchorlist 
+		
+if __name__ == '__main__':
+	cmd_parser = ParseExecCMD(argv)
+	cmd_parser.execCMD();
+	title=argv[1]
+	urlad=argv[2]
+	r = Retriver(urlad)
+	retval = r.download()
+	print(retval)
