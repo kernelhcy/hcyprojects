@@ -1,18 +1,26 @@
-digraph state {
-  edge [color=green];
-  connect -> reqstart -> read -> reqend -> handlereq -> respstart -> write -> respend -> connect;
-  edge [color=grey];
-  reqend -> readpost -> handlereq [ label="POST" ];
-  edge [ color=blue]
-  respend -> reqstart [ label="keep-alive" ];
-  edge [ color=lightblue]
-  handlereq -> handlereq [ label="sub-request" ];
-  edge [style=dashed, color=red];
-  error -> close -> connect;
-  error -> connect;
-  handlereq -> error;
-  read -> error;
-  readpost -> error;
-  write -> error;
-  connect [shape=box];
+digraph state 
+{
+  	edge [color=green];
+  	connect -> reqstart;
+	reqstart  -> read  [ label = "记录请求开始的时间" ];
+	read -> reqend; 
+	reqend -> handlereq; 
+	handlereg -> respstart ;
+	respstart -> write; 
+	write  -> respend; 
+	respend  -> connect;
+  	edge [color=grey];
+  	reqend -> readpost -> handlereq [ label="POST" ];
+  	edge [ color=blue]
+  	respend -> reqstart [ label="keep-alive" ];
+ 	edge [ color=lightblue]
+  	handlereq -> handlereq [ label="sub-request" ];
+  	edge [style=dashed, color=red];
+  	error -> close -> connect;
+  	error -> connect;
+  	handlereq -> error;
+  	read -> error;
+  	readpost -> error;
+  	write -> error;
+  	connect [shape=box];
 }

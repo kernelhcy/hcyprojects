@@ -23,6 +23,7 @@
 #include <cstdlib>
 #include <QTextStream>
 #include <QTextCodec>
+#include <QWindowsVistaStyle>
 #include "mainwindow.h"
 #include "controlthread.h"
 
@@ -31,6 +32,7 @@ int main(int argc, char *argv[])
     system("xbindkeys");
     QTextCodec::setCodecForTr(QTextCodec::codecForName("utf-8"));
     QApplication a(argc, argv);
+    //QApplication::setStyle(new QWindowsVistaStyle());
     /*
     QString proxy_s = "http://202.117.21.117:3128/";
 
