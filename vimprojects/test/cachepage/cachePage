@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#! /usr/local/bin/python3
 # -*- coding: utf-8 -*-
 
 #
@@ -8,14 +8,10 @@
 #
 
 from sys import argv
-from os import makedirs, unlink, sep #sep: 操作系统的路径分割符
+from os import renames, sep #sep: 操作系统的路径分割符
 from os.path import dirname, exists, isdir, splitext, basename
-from string import replace, find, lower
-from htmllib import HTMLParser
-from urllib import urlretrieve
-from urlparse import urlparse, urljoin
-from formatter import DumbWriter, AbstractFormatter
-from cStringIO import StringIO
+from urllib.request import urlretrieve
+from urllib.parse import urlparse
 from optparse import OptionParser
 
 from parsehtml import MyParser
@@ -42,45 +38,47 @@ class Retriver(object):
 	"""
 		下载页面内容
 	"""
-	def __init__(self, url):
-		self.url = url;
-		self.file = self.filename(url)
-		print('file name : %s' % self.file)
-	
-	def filename(self, url):
+	def __init__(self, url, base = 'cachepages'):
+		self.__base_dir = '.' + sep + base + sep
 		parsedurl = urlparse(url, 'http:', 0)
-		path = parsedurl[1] + parsedurl[2]
-		name = basename(path)
+		self.__netloc = parsedurl[0] + '://' + parsedurl[1]
+		self.__path = parsedurl[2]
+		print("netloc : %s" % self.__netloc)
+		print("path : %s" % self.__path)
 		
-		return name + '.html'
+	def __download(self, path, filename):  # download Web page
+		if path == None:
+			path = self.__path 
 		
-	def download(self):  # download Web page 
+		url = self.__netloc + path
 		try: 
-			retval = urlretrieve(self.url, self.file) 
+			print('downloading... %s' % url)
+			retval = urlretrieve(url, filename) 
 		except IOError: 
-			retval = ('*** ERROR: invalid URL "%s"' % self.url,) 
-		return retval 
+			retval = ('*** ERROR: invalid URL "%s"' % url,) 
+		return retval
+	
+	def do(self):
+		retval = self.__download(None, 'test.html')
+		print('saved as : %s .' % retval[0])
 		
-	def parseAndGetLinks(self):# parse HTML, save links 
-		self.parser = HTMLParser(AbstractFormatter(DumbWriter(StringIO()))) 
-		self.parser.feed(open(self.file).read()) 
-		self.parser.close() 
-		return self.parser.anchorlist 
+		parser = MyParser()
+		parser.feed(open('test.html').read())
+		parser.close()
+		title = parser.get_title()
+		
+		renames('test.html', self.__base_dir + title + '.html')
+		
+		links = parser.get_links()
+		for link in links:
+			retval = self.__download(link, self.__base_dir + title + sep + basename(link))
+			print('saved as : %s .' % retval[0])
+		
 		
 if __name__ == '__main__':
-	#cmd_parser = ParseExecCMD(argv)
-	#cmd_parser.execCMD();
-	#title=argv[1]
-	#urlad=argv[2]
-	#r = Retriver(urlad)
-	#retval = r.download()
-	#print(retval)
 	
-	urlretrieve(argv[1], 'test.html')
+	r = Retriver(argv[1])
+	r.do()
 	
-	parser = MyParser()
-	parser.feed(open('test.html').read())
-	links = parser.getLinks()
-	for link in links:
-		print(link)
+	
 	

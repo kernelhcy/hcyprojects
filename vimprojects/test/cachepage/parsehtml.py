@@ -1,7 +1,7 @@
-#! /usr/bin/python
+#! /usr/local/bin/python3
 # -*- coding: utf-8 -*-
 
-from HTMLParser import HTMLParser
+from html.parser import HTMLParser
 
 #
 #解析HTML文件
@@ -25,30 +25,64 @@ from HTMLParser import HTMLParser
 class MyParser(HTMLParser):
 	def __init__(self):
 		self.__links = [] 		#保存分析出来的连接地址。
+		self.__title = ''
+		self.__get_title = False
 		HTMLParser.__init__(self)
+		
+	def reset(self):
+		self.__links = []
+		self.__title = ''
+		self.__get_title = False
+		HTMLParser.reset(self)
 		
 	"""
 		当读取标签的开始时，解析器自动调用此函数。同时会读取标签的属性并存放在arrts中。
 		tag存放标签的名称。
 	"""
 	def handle_starttag(self, tag, attrs):
+		self.__parse_links(tag, attrs)
+			
+	"""
+		处理<a .../>的标签
+	"""
+	def handle_startendtag(self, tag, attrs):
+		self.__parse_links(tag, attrs)
+		
+	def handle_data(self, data):
+		if self.__get_title:
+			self.__title = data
+			self.__title = self.__title.replace('\n', '') #去掉所有的换行
+			self.__title = '_'.join(self.__title.split()) #空格用下划线代替
+			self.__get_title = False
+		
+	"""
+		获得img, link和script标签中的链接地址。
+	"""
+	def __parse_links(self, tag, attrs):
 		#图片
 		if tag == 'img':
 			for name,value in attrs:
-				if name == 'src' and self.__check(value):
-					self.__links.append(value)
+				if name == 'src' and self.__check(value)\
+					and value not in self.__links:
+					#去除？之后的字符串
+					self.__links.append(value.split('?')[0])
 		#css文件			
 		if tag == 'link':
 			for name,value in attrs:
-				if name == 'href' and self.__check(value):
-					self.__links.append(value)
+				if name == 'href' and self.__check(value)\
+					and value not in self.__links:
+					self.__links.append(value.split('?')[0])
 		#js文件			
 		if tag == 'script':
 			for name,value in attrs:
-				if name == 'src' and self.__check(value):
-					self.__links.append(value)
-			
-	
+				if name == 'src' and self.__check(value)\
+					and value not in self.__links:
+					self.__links.append(value.split('?')[0])
+		
+		if tag == 'title':
+			self.__get_title = True
+					
+					
 	def __check(self, link):
 		return 'http:' not in link	
 		
@@ -57,5 +91,8 @@ class MyParser(HTMLParser):
 		返回分析出来的连接。
 		返回的是个列表
 	"""
-	def getLinks(self):
+	def get_links(self):
 		return self.__links
+	
+	def get_title(self):
+		return self.__title;
