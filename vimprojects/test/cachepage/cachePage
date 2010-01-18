@@ -8,38 +8,22 @@
 #
 
 from sys import argv
-from os import renames, sep #sep: 操作系统的路径分割符
+from os import renames, makedirs, sep #sep: 操作系统的路径分割符
 from os.path import dirname, exists, isdir, splitext, basename
 from urllib.request import urlretrieve
 from urllib.parse import urlparse
 from optparse import OptionParser
 
 from parsehtml import MyParser
-
-class ParseExecCMD:
-	"""
-		解析命令行参数。
-	"""
-	def __init__(self, argv = None):
-		print("init ParseExecCMD class.")
-		
-		self.options = ''
-		self.args = ''
-		self.argv = argv[1:]
-		self.parser = OptionParser("usage:cachePage [options] title url");
-		self.parser.add_option('-o', '--out', help = 'Output file name',
-							action = 'store', type = 'string', dest = 'out')
-	def execCMD(self):
-		self.options, self.args = self.parser.parse_args(self.argv)
-		if self.options.out:
-			print(self.options.out)
+from updateindex import UpdateIndex
 
 class Retriver(object):
 	"""
 		下载页面内容
 	"""
-	def __init__(self, url, base = 'cachepages'):
+	def __init__(self, url, base = 'cachepages', out = None):
 		self.__base_dir = '.' + sep + base + sep
+		self.__out = out
 		parsedurl = urlparse(url, 'http:', 0)
 		self.__netloc = parsedurl[0] + '://' + parsedurl[1]
 		self.__path = parsedurl[2]
@@ -67,18 +51,41 @@ class Retriver(object):
 		parser.close()
 		title = parser.get_title()
 		
-		renames('test.html', self.__base_dir + title + '.html')
+		if self.__out == None:
+			self.__out = title
+		renames('test.html', self.__base_dir + self.__out + '.html')
 		
 		links = parser.get_links()
+		makedirs(self.__base_dir + self.__out + sep)
 		for link in links:
-			retval = self.__download(link, self.__base_dir + title + sep + basename(link))
+			retval = self.__download(link, self.__base_dir + self.__out + sep + basename(link))
 			print('saved as : %s .' % retval[0])
+
+class Main:
+	def __init__(self, argv):
+		print("init Main class")
 		
+		self.__argv = argv[1:]
+		self.__out = None
+		self.__cmd_parser = OptionParser("usage:cachePage [options] title url");
+		self.__cmd_parser.add_option('-o', '--out', help = 'Output file name',
+							action = 'store', type = 'string', dest = 'out')
 		
+		self.__execCMD()
+		
+	def get_page(self):
+		r = Retriver(self.__url, 'cachepages', self.__out)
+		r.do()
+		
+	def __execCMD(self):
+		options, args = self.__cmd_parser.parse_args(self.__argv)
+		self.__url = args[0]
+		
+		if options.out:
+			self.__out = options.out
+				
 if __name__ == '__main__':
 	
-	r = Retriver(argv[1])
-	r.do()
-	
-	
-	
+	#main = Main(argv)
+	#main.get_page()
+	ui = UpdateIndex('.')
