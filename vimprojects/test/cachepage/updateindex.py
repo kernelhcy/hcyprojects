@@ -117,6 +117,10 @@ class HTMLFile(object):
 		self.__html_str += '<a href='
 		self.__html_str += link
 		self.__html_str += '>'
+		index = link.rfind('.html')
+		if index != -1:
+			link = link[0: index]
+			
 		self.__html_str += link
 		self.__html_str += '</a><br/>\n'
 	
