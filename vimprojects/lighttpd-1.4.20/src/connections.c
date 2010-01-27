@@ -1798,7 +1798,8 @@ int connection_state_machine(server * srv, connection * con)
 
 			if (srv->srvconf.log_state_handling)
 			{
-				log_error_write(srv, __FILE__, __LINE__, "sds", "state for fd", con->fd, connection_get_state(con->state));
+				log_error_write(srv, __FILE__, __LINE__, "sds", "state for fd", con->fd
+										, connection_get_state(con->state));
 			}
 
 			/*
