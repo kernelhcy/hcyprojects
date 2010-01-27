@@ -1,4 +1,4 @@
-#! /usr/local/bin/python3
+#! /usr/bin/python
 # -*- coding: utf-8 -*-
 
 """
@@ -8,6 +8,8 @@
 
 from os import listdir, makedirs, chdir, getcwd
 from os.path import exists, isdir, sep
+from htmlfile import HTMLFile
+
 
 class UpdateIndex(object):
 	def __init__(self, base):
@@ -70,6 +72,8 @@ class UpdateIndex(object):
 		finally:
 			cf.close()
 		
+		#self.__now_files.sort()
+
 		htmlcreater = HTMLFile(self.__now_files)
 		htmlstr = htmlcreater.create()
 		f = open(self.__index_file_name, 'w')
@@ -94,44 +98,21 @@ class UpdateIndex(object):
 		调用此函数，更新索引
 	"""
 	def update(self):
+		old_dir = getcwd()
 		self.__list_files()
 		chdir(self.__base_dir) 	#切换目录
 		self.__get_cache_list()
 		if self.__have_new():
 			self.__update_index()
+		
+		chdir(old_dir)
+
 	"""
 		输出所读取到的文件名
 	"""
 	def __show_files(self):
 		for f in self.__now_files:
 			print(f)
-"""
-	根据获得的文件列表，生成索引文件index.html
-"""
-class HTMLFile(object):
-	def __init__(self, file_list):
-		self.__file_list = file_list
-		self.__html_str = ''
-		
-	def __add_a(self, link):
-		self.__html_str += '<a href='
-		self.__html_str += link
-		self.__html_str += '>'
-		index = link.rfind('.html')
-		if index != -1:
-			link = link[0: index]
-			
-		self.__html_str += link
-		self.__html_str += '</a><br/>\n'
-	
-	def create(self):
-		self.__html_str += '<html> <head><title>index of cache pages</title></head><br/>\n<body>\n'
-		self.__html_str += '<center><h2>Index of Cache Pages</h2></center>\n'
-		for link in self.__file_list:
-			self.__add_a(link)
-		self.__html_str += '</html>\n'
-		
-		return self.__html_str
 
 if __name__ == '__main__':
 	ui = UpdateIndex('cachepages')
