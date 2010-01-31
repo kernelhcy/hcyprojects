@@ -28,20 +28,27 @@ public class UDocFrame
 	public static void main(String[] args)
 	{
 		System.setProperty("java.net.useSystemProxies", "true");
+		//在调整 Container 大小时重新布置其组件
 		Toolkit.getDefaultToolkit().setDynamicLayout(true);
+		
 		JFrame frame = new JFrame("UDoc");
 		frame.setIconImage(IconManager.getImage("UDoc32x32.png"));
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		
 		ClassProcessorRegistry.register(new JavadocClassProcessor());
 		ClassProcessorRegistry.register(new BinaryClassProcessor());
 		ClassProcessorRegistry.register(new SourceClassProcessor());
+		
 		final ClassPane classPane = new ClassPane();
 		Container contentPane = frame.getContentPane();
 		contentPane.add(classPane, BorderLayout.CENTER);
+		
 		frame.setSize(800, 600);
+		//使容器失效。该容器及其之上的所有父容器被标记为需要重新布置。
 		contentPane.invalidate();
 		frame.doLayout();
 		frame.setVisible(true);
+		
 		if (args.length > 1)
 		{
 			String processorID = args[0];
