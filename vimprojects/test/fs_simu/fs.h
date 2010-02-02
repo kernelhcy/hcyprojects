@@ -1,5 +1,5 @@
-#ifndef _FS_H
-#define _FS_H
+#ifndef __HFS_FS_H
+#define __HFS_FS_H
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -16,28 +16,34 @@
 /*
  * 初始化文件系统。
  */
-int init();
+int hfs_init();
+
+/*
+ * 退出文件系统。
+ * 将数据写回文件。
+ */
+int hfs_halt();
 
 /*
  * 显示帮助信息
  */
-void show_help_info();
+void hfs_show_help_info();
 /*
  * 显示当前目录的内容
- * 参数path问目录路径。
+ * 参数path为目录路径。
  *
  * 返回目录内容，并以空格分开。
  * 执行失败返回NULL。
  *
  */
-char * ls_t(const char *path);
+char * hfs_ls(const char *path);
 
 /*
  * 创建目录
  * 参数path为目录名
  * 创建成功返回0,否则返回错误码。
  */
-int mkdir_t(const char *name);
+int hfs_mkdir(const char *name);
 
 /*
  * 删除目录
@@ -49,7 +55,7 @@ int mkdir_t(const char *name);
  * 只有对目录具有运行权限（X_R），才可以删除目录！！
  *
  */
-int rmdir_t(const char *name);
+int hfs_rmdir(const char *name);
 
 /*
  * 更换当前工作目录。
@@ -58,7 +64,7 @@ int rmdir_t(const char *name);
  * 更改成功放回0,否则返回其他错误码。
  *
  */
-int chdir_t(const char *path);
+int hfs_chdir(const char *path);
 
 /*
  * 创建文件。
@@ -82,7 +88,7 @@ int chdir_t(const char *path);
  *
  * 创建成功返回文件指针，否则返回NULL。
  */
-FILE_P* create_f(const char *name, int right);
+FILE_P* hfs_create(const char *name, int right);
 
 /*
  * 删除文件。
@@ -91,7 +97,7 @@ FILE_P* create_f(const char *name, int right);
  * 删除成功返回0,否则返回其他错误码。
  *
  */
-int delete_f(const char *name);
+int hfs_delete(const char *name);
 
 /*
  * 打开文件。
@@ -115,7 +121,7 @@ int delete_f(const char *name);
  * 		文件指针。
  * 		返回NULL，则打开失败。
  */
-FILE_P* open_f(const char *name, int mode);
+FILE_P* hfs_open(const char *name, int mode);
 
 /*
  * 关闭文件。
@@ -125,7 +131,7 @@ FILE_P* open_f(const char *name, int mode);
  * 		0：成功。
  * 		其他值失败。
  */
-int close_f(FILE_P* fp);
+int hfs_close(FILE_P* fp);
 /*
  * 向文件中写数据。
  * fp：文件指针。
@@ -136,7 +142,7 @@ int close_f(FILE_P* fp);
  * 		-1：写入失败。
  * 		写入成功则返回写入的数据长度。
  */
-int write_f(FILE_P* fp, char *buffer, int length);
+int hfs_write(FILE_P* fp, char *buffer, int length);
 /*
  * 读文件中的数据。
  * fp：文件指针。
@@ -147,14 +153,14 @@ int write_f(FILE_P* fp, char *buffer, int length);
  * 		-1：读取失败。
  * 		否则返回读取的数据的长度。
  */
-int read_f(FILE_P* fp, char *buffer, int length);
+int hfs_read(FILE_P* fp, char *buffer, int length);
 /*
  * 显示当前工作目录。
  * 
  * 返回值：
  * 		当前目录路径
  */
-char* pwd();
+char* hfs_pwd();
 /*
  * 登录或创建用户。
  *
@@ -166,7 +172,7 @@ char* pwd();
  * 登录或创建成功，返回0,否则返回其他错误码。
  *
  */
-int login(const char *username, const char *passwd);
+int hfs_login(const char *username, const char *passwd);
 /*
  * 用户登出。
  *
@@ -174,7 +180,7 @@ int login(const char *username, const char *passwd);
  *
  * 退出成功，放回0,否则返回其他错误码。
  */
-int logout(const char *username);
+int hfs_logout(const char *username);
 /*
  * 显示文件内容。
  * 
@@ -183,12 +189,11 @@ int logout(const char *username);
  * 返回文件的内容。
  *
  */
-char * cat(FILE_P* fp);
+char * hfs_cat(FILE_P* fp);
 
 /*
- * 退出文件系统。
- * 将数据写回文件。
+ * 以命令行的形式运行文件系统
  */
-int halt();
+void run(bool showdetails);
 
 #endif

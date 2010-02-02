@@ -26,7 +26,7 @@ int main(int argc, char** argv)
 //	char buffer[100];
 //	FILE_P * fp = NULL;
 
-//	init();
+	hfs_init();
 //	login("hcy","123456");
 	
 //	ls_t(NULL);

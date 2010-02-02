@@ -4,25 +4,47 @@
 //函数声明
 static int read_fs();
 static int format_fs();
+
 static int find_usr(const char *username, struct user *usr);
 static int create_user(const char *username, const char *passwd);
+
 static int diralloc();
 static int dirfree(int id);
+
+static void show_help_info();
+static int init();
+/*
+ * 获得和释放一个i节点。
+ * 获得i节点将返回一个空闲的i节点的下标。分配失败将返回-1
+ * 释放i节点，将其标记为空闲
+ */
 static int ialloc();
-static int ifree(int id);
+static void ifree(int);
+
+/*
+ */
+static int dalloc();
+static void  dfree(int);
+
+/*
+ */
 static int balloc();
-static int bfree(int id);
+static void bfree(int);
+
 static int find(const char *name);
-static int update_curr_paht_name();
+static int update_curr_path_name();
+
 static int read_indirect_block(union block *addr_block, int len, char* buffer);
 static int write_block(int b_id, char *buffer, int size);
+
 static void str_cpy(char * des, const char * src, int begin, int size);
 static int access_f(const char * name, int mode);
+
 //全局变量定义
-static struct supernode g_sn;			//超级块
-static struct dir_info g_dir_info;		//目录信息
-static struct imap g_imap;				//inode位图
-static struct bmap g_bmap;				//物理块位图
+static struct supernode *g_sn = NULL;			//超级块
+static struct dir_info *g_dir_info = NULL;		//目录信息
+static struct imap *g_imap = NULL;				//inode位图
+static struct bmap *g_bmap = NULL;				//物理块位图
 
 static struct inode *head = NULL;		//i内存节点链表头
 
@@ -30,21 +52,22 @@ static struct inode *head = NULL;		//i内存节点链表头
 static struct user login_users[MAX_LOGIN_USR];				//登录的用户列表
 static struct user_ofile user_ofile_table[MAX_LOGIN_USR]; 	//用户打开文件列表
 static int usr_num = 0;										//登陆的用户个数
-static struct user *curr_user = NULL;							//当前登录用户
+static struct user *curr_user = NULL;						//当前登录用户
 static struct system_ofile system_ofile_table;				//系统打开的文件列表
 
 static char tip[50];										//命令提示
 static int curr_usr_id;										//当前登录用户在用户列表中的位置。
 
-static union block blocks[BNODE_SIZE];						//模拟物理块
-static struct directory dir_table[DIR_NUM];					//模拟目录表
-static struct dinode dinodes[INODE_SIZE];					//模拟硬盘i节点
-static struct inode inodes[INODE_SIZE];						//内存i节点
+static union block *blocks = NULL;						//模拟物理块
+static struct directory *dir_table = NULL;				//模拟目录表
+static struct dinode *dinodes = NULL;					//模拟硬盘i节点
+static struct inode *inodes = NULL;						//内存i节点
 
 static char curr_path[500];									//当前工作目录
 static unsigned int curr_dir_id = 0;						//当前工作目录的id号
 
 static FILE_P *t_fp = NULL;//调试使用
+
 /*
  * 程序入口
  */
@@ -52,13 +75,12 @@ void run(bool show_details)
 {
 	system("clear");//清屏
 	
-	
 	//printf("int: %d char: %d\n",sizeof(int),sizeof(char));
 
 	printf("HCY's Fils System.\n");
 	printf("Version 0.001. \n");
 	
-	int state = init();
+	int state = hfs_init();
 
 	if(state == -1)//文件系统运行失败。
 	{
@@ -88,48 +110,48 @@ void run(bool show_details)
 		}
 		else if(strcmp("ls", cmd) == 0)
 		{
-			ls_t(NULL);
+			hfs_ls(NULL);
 		}
 		else if(strcmp("mkdir", cmd) == 0)
 		{
 			printf("目录名：");
 			scanf("%s",path);
-			mkdir_t(path);
+			hfs_mkdir(path);
 		}
 		else if(strcmp("rmdir", cmd) == 0)
 		{
 			printf("目录名称：");
 			scanf("%s",path);
-			rmdir_t(path);
+			hfs_rmdir(path);
 		}
 		else if(strcmp("chdir", cmd) == 0 || strcmp("cd", cmd) == 0)
 		{
 			printf("完整的目录路径： ");
 			scanf("%s",path);
-			chdir_t(path);
+			hfs_chdir(path);
 		}
 		else if(strcmp("create", cmd) ==0 || strcmp("crt", cmd) == 0)
 		{
 			printf("文件名： ");
 			scanf("%s",path);
-			t_fp = create_f(path,75);
+			t_fp = hfs_create(path,75);
 		}
 		else if(strcmp("delete", cmd) == 0 
 					|| strcmp("del", cmd) == 0 || strcmp("rm", cmd) == 0)
 		{
 			printf("完整的路径和文件名： ");
 			scanf("%s",path);
-			delete_f(path);
+			hfs_delete(path);
 		}
 		else if(strcmp("open", cmd) == 0)
 		{
 			printf("完整的路径和文件名： ");
 			scanf("%s", path);
-			t_fp = open_f(path,R|W);
+			t_fp = hfs_open(path,R|W);
 		}
 		else if(strcmp("close", cmd) == 0)
 		{
-			close_f(t_fp);
+			hfs_close(t_fp);
 		}
 		else if(strcmp("write", cmd) == 0 || strcmp("wr", cmd) == 0)
 		{
@@ -137,24 +159,24 @@ void run(bool show_details)
 			memset(buffer, '\0', 10000);
 			printf("内容:");
 			scanf("%s", buffer);
-			write_f(t_fp, buffer, strlen(buffer));
+			hfs_write(t_fp, buffer, strlen(buffer));
 		}
 		else if(strcmp("read", cmd) == 0 || strcmp("rd", cmd) == 0)
 		{
 			char buffer[105];
 			memset(buffer, '\0', 105);
 
-			int len = read_f(t_fp, buffer, 100);
+			int len = hfs_read(t_fp, buffer, 100);
 			printf("reslut: len %d\n %s\n", len, buffer);
 		}
 		else if(strcmp("pwd", cmd) == 0)
 		{
-			pwd();
+			hfs_pwd();
 		}
 		else if(strcmp("login", cmd) == 0)
 		{
-			char username[USR_NAME_SIZE];
-			char passwd[PWD_SIZE];
+			char username[USR_NAME_MAXSIZE];
+			char passwd[PWD_MAXSIZE];
 			struct user user_info;
 			
 			printf("用户名：");
@@ -188,17 +210,17 @@ void run(bool show_details)
 			{
 				printf("口令：");
 				scanf("%s",passwd);
-				login(username,passwd);
+				hfs_login(username,passwd);
 			}
 			
 		}
 		else if(strcmp("logout", cmd) == 0)
 		{
-			logout(login_users[curr_usr_id].username);
+			hfs_logout(login_users[curr_usr_id].username);
 		}
 		else if(strcmp("cat", cmd) == 0)
 		{
-		 	char *content = cat(t_fp);
+		 	char *content = hfs_cat(t_fp);
 		}
 		else
 		{
@@ -215,13 +237,97 @@ void run(bool show_details)
 	}
 	
 	//退出文件系统，写回数据。
-	halt();
+	hfs_halt();
+}
+
+//分配并初始化内存空间
+int calloc_memory()
+{
+	g_sn = (struct supernode*)malloc(sizeof(*g_sn));
+	if (!g_sn)
+	{
+		return -1;
+	}
+	g_dir_info = (struct dir_info*)malloc(sizeof(*g_dir_info));
+	if (!g_dir_info)
+	{
+		return -1;
+	}
+	g_imap = (struct imap*)malloc(sizeof(*g_imap));
+	if (!g_imap)
+	{
+		return -1;
+	}
+	g_bmap = (struct bmap*)malloc(sizeof(*g_bmap));
+	if (!g_bmap)
+	{
+		return -1;
+	}
+	
+	blocks = (union block *)calloc(BNODE_MAXNUM, sizeof(union block));
+	if (!blocks)
+	{
+		return -1;
+	}
+	
+	dir_table = (struct directory*)calloc(DIR_MAXNUM, sizeof(struct directory));
+	if (!dir_table)
+	{
+		return -1;
+	}
+	
+	dinodes = (struct dinode*)calloc(INODE_MAXNUM, sizeof(struct dinode));
+	if (!dinodes)
+	{
+		return -1;
+	}
+
+	inodes = (struct inode*)calloc(INODE_MAXNUM, sizeof(struct inode));
+	if (!inodes)
+	{
+		return -1;
+	}
+
+	return 1;
+}
+
+/*
+ * 创建和释放内存i节点，创建的同时初始化
+ */
+int  ialloc()
+{
+	return -1;
+}
+void ifree(int id)
+{
+}
+
+/*
+ * 创建和释放磁盘i节点，创建的同时初始化
+ */
+int dalloc()
+{
+	return -1;
+}
+void dfree(int id)
+{
+}
+
+/*
+ * 创建和释放物理块，创建的同时初始化
+ */
+int balloc()
+{
+	return -1;
+}
+void bfree(int id)
+{
 }
 
 /*
  * 初始化文件系统
  */
-int init()
+int hfs_init()
 {
 	printf("初始化文件系统...\n");
 	
@@ -230,7 +336,12 @@ int init()
 	
 	fd = fopen("./fsdata","r");
 	
-	
+	if (calloc_memory() < 0)
+	{
+		printf("文件系统存储空间分配出错！\n");
+		return -1;
+	}
+
 	int state;
 	if(NULL == fd)
 	{
@@ -252,7 +363,6 @@ int init()
 	//文件系统运行失败。。。
 	if(state == -1)
 	{
-		
 		return -1;
 	}
 	
@@ -275,7 +385,7 @@ static int format_fs()
 	
 	printf("创建文件系统...\n");
 	
-	fd = fopen("./fsdata","a+");
+	fd = fopen("./fsdata","w+");
     
     if(NULL == fd)
     {
@@ -283,53 +393,58 @@ static int format_fs()
     	return -1;
     }
     
+	if (calloc_memory() < 0)
+	{
+		printf("内存空间分配失败！\n");
+		return -1;
+	}
 
 	//初始化超级块
-	g_sn.s_isize = INODE_SIZE;
-	g_sn.s_bsize = BNODE_SIZE;
-	g_sn.s_nfree = BNODE_SIZE;
-	g_sn.s_pfree = 0;
-	g_sn.s_ninode = INODE_SIZE;
-	g_sn.s_pinode = 0;
-	g_sn.s_rinode = 0;
-	g_sn.s_fmod = 's';
-	g_sn.disk_size = sizeof(struct supernode)
+	g_sn->s_isize = INODE_MAXNUM;
+	g_sn->s_bsize = BNODE_MAXNUM;
+	g_sn->s_nfree = BNODE_MAXNUM;
+	g_sn->s_pfree = 0;
+	g_sn->s_ninode = INODE_MAXNUM;
+	g_sn->s_pinode = 0;
+	g_sn->s_rinode = 0;
+	g_sn->s_fmod = 's';
+	g_sn->disk_size = sizeof(struct supernode)
 				  +sizeof(struct imap)
 				  +sizeof(struct bmap)
 				  +sizeof(struct dir_info)
-				  +sizeof(struct directory)*DIR_NUM
-				  +sizeof(struct dinode)*g_sn.s_isize
-				  +sizeof(union block)*g_sn.s_bsize
+				  +sizeof(struct directory)*DIR_MAXNUM
+				  +sizeof(struct dinode)*g_sn->s_isize
+				  +sizeof(union block)*g_sn->s_bsize
 				  ;
 	fwrite(&g_sn, sizeof(struct supernode), 1, fd);
 	
 	//创建inode节点位图，并写入文件
-	for(int i = 0; i < IMAP_SIZE; ++i)
+	for(int i = 0; i < IMAP_MAXSIZE; ++i)
 	{
-		g_imap.bits[i] = 0xffffffffffffffffLL;
+		g_imap->bits[i] = 0xffffffffffffffffLL;
 	}
 	//第一个inode被根目录占用。
-	g_imap.bits[IMAP_SIZE - 1] = 0x7fffffffffffffffLL;
+	g_imap->bits[IMAP_MAXSIZE - 1] = 0x7fffffffffffffffLL;
 	
 	fwrite(&g_imap, sizeof(struct imap), 1, fd);
 	
 	//创建物理块位图，并写入文件。
-	for(int i = 0; i < BMAP_SIZE; ++i)
+	for(int i = 0; i < BMAP_MAXSIZE; ++i)
 	{
-		g_bmap.bits[i] = 0xffffffffffffffffLL;
+		g_bmap->bits[i] = 0xffffffffffffffffLL;
 	}
 	fwrite(&g_bmap, sizeof(struct bmap), 1, fd);
 
 	//创建目录信息块，并写入文件
-	g_dir_info.root_id = 0;
-	g_dir_info.size = 1;//根目录存在
+	g_dir_info->root_id = 0;
+	g_dir_info->size = 1;//根目录存在
 	
 	//初始化目录表位图
-	for(int i = 0; i < DMAP_SIZE; ++i)
+	for(int i = 0; i < DMAP_MAXSIZE; ++i)
 	{
-		g_dir_info.dmap[i] = 0xffffffffffffffffLL;
+		g_dir_info->dmap[i] = 0xffffffffffffffffLL;
 	}
-	g_dir_info.dmap[DMAP_SIZE-1] = 0x7fffffffffffffffLL;
+	g_dir_info->dmap[DMAP_MAXSIZE-1] = 0x7fffffffffffffffLL;
 	
 	fwrite(&g_dir_info, sizeof(struct dir_info), 1, fd);
 
@@ -352,16 +467,16 @@ static int format_fs()
 	dinodes[0].di_size = 0;
 	dinodes[0].direct_addr[0] = 0;//目录项在目录表中的位置。
 	
-	memset(dir_table[0].file_inode, 0, DIR_INCLUDE_NUM);
-	memset(dir_table[0].sub_dir_ids, 0, DIR_INCLUDE_NUM);
+	memset(dir_table[0].file_inode, 0, DIR_INCLUDE_MAXNUM);
+	memset(dir_table[0].sub_dir_ids, 0, DIR_INCLUDE_MAXNUM);
 	
-	fwrite(dir_table, sizeof(struct directory), DIR_NUM, fd);
+	fwrite(dir_table, sizeof(struct directory), DIR_MAXNUM, fd);
 	
 	//创建inode并写入文件
-	fwrite(dinodes, sizeof(struct dinode), INODE_SIZE, fd);
+	fwrite(dinodes, sizeof(struct dinode), INODE_MAXNUM, fd);
 
 	//创建物理块，写入文件。
-	fwrite(blocks, sizeof(union block), BNODE_SIZE, fd);
+	fwrite(blocks, sizeof(union block), BNODE_MAXNUM, fd);
 	
 	fflush(fd);
 	fclose(fd);
@@ -391,7 +506,7 @@ static int read_fs()
 	int read_size = -1;
 	
 	//读取超级块 
-	read_size = fread(&g_sn, sizeof(struct supernode), 1, fd);
+	read_size = fread(g_sn, sizeof(struct supernode), 1, fd);
 	
 	if(read_size <= 0)
 	{
@@ -400,7 +515,7 @@ static int read_fs()
 	}
 	
 	//读取i节点位图
-	read_size = fread(&g_imap, sizeof(struct imap), 1, fd);
+	read_size = fread(g_imap, sizeof(struct imap), 1, fd);
 	if(read_size <= 0)
 	{
 		printf("读取i节点位图错误！！\n");
@@ -408,7 +523,7 @@ static int read_fs()
 	}
 	
 	//读取物理块位图
-	read_size = fread(&g_bmap, sizeof(struct bmap), 1, fd);
+	read_size = fread(g_bmap, sizeof(struct bmap), 1, fd);
 	if(read_size <= 0)
 	{
 		printf("读取物理块位图错误！！\n");
@@ -416,7 +531,7 @@ static int read_fs()
 	}
 	
 	//读取目录信息块
-	read_size = fread(&g_dir_info, sizeof(struct dir_info), 1, fd);
+	read_size = fread(g_dir_info, sizeof(struct dir_info), 1, fd);
 	if(read_size <= 0)
 	{
 		printf("读取目录信息块错误！！\n");
@@ -424,11 +539,11 @@ static int read_fs()
 	}
 	
 	//读取目录表
-	fread(dir_table, sizeof(struct directory),DIR_NUM, fd);
+	fread(dir_table, sizeof(struct directory),DIR_MAXNUM, fd);
 	//读取i节点表
-	fread(dinodes, sizeof(struct dinode),INODE_SIZE, fd);
+	fread(dinodes, sizeof(struct dinode),INODE_MAXNUM, fd);
 	//读取物理块
-	fread(blocks, sizeof(union block),BNODE_SIZE, fd);	
+	fread(blocks, sizeof(union block),BNODE_MAXNUM, fd);	
 	
 	fclose(fd);//关闭文件
 	
@@ -510,7 +625,7 @@ static int create_user(const char *username, const char *passwd)
 	printf("用户名：%s 密码：%s UID：%d GID：%d \n",username, passwd, usr.p_uid, usr.p_gid);
 	
 	//用户登录。
-	login(username, passwd);
+	hfs_login(username, passwd);
 }
 
 /*
@@ -552,7 +667,7 @@ static int show_names(int id,int black)
 	
 }
 
-char * ls_t(const char *path)
+char * hfs_ls(const char *path)
 {
 
 	printf("\n名称（文件(f)或目录(d), 目录ID或文件inode的id） 文件长度或目录容量\n");
@@ -564,7 +679,7 @@ char * ls_t(const char *path)
 	
 	return NULL;
 }
-int mkdir_t(const char *name)
+int hfs_mkdir(const char *name)
 {
 	
 	int p_id;//父目录在目录表中的位置
@@ -628,13 +743,13 @@ int mkdir_t(const char *name)
 	
 	//清空子目录的子目录的信息。
 	dir_table[s_id].sub_cnt = 0;
-	memset(dir_table[s_id].file_inode, 0, DIR_INCLUDE_NUM);
-	memset(dir_table[s_id].sub_dir_ids, 0, DIR_INCLUDE_NUM);
+	memset(dir_table[s_id].file_inode, 0, DIR_INCLUDE_MAXNUM);
+	memset(dir_table[s_id].sub_dir_ids, 0, DIR_INCLUDE_MAXNUM);
 	
 	return 0;
 }
 
-int rmdir_t(const char *name)
+int hfs_rmdir(const char *name)
 {
 	//判断是否有权删除。
 	//
@@ -745,7 +860,7 @@ static int update_curr_path_name()
 }
 
 
-int chdir_t(const char *path)
+int hfs_chdir(const char *path)
 {
 	//切换到根目录
 	if(strlen(path) == 1 && path[0] == '/')
@@ -773,7 +888,7 @@ int chdir_t(const char *path)
 	return 0;
 }
 
-FILE_P* create_f(const char *name, int right)
+FILE_P* hfs_create(const char *name, int right)
 {
 	
 	int p_id;//父目录在目录表中的位置
@@ -824,7 +939,7 @@ FILE_P* create_f(const char *name, int right)
 	return fp;
 }
 
-int delete_f(const char *name)
+int hfs_delete(const char *name)
 {
 	
 	//判断权限
@@ -878,7 +993,7 @@ int delete_f(const char *name)
 	return 0;
 }
 
-FILE_P* open_f(const char *name, int mode)
+FILE_P* hfs_open(const char *name, int mode)
 {
 	//判断权限
 	if(access_f(name, mode) == 0)
@@ -924,7 +1039,7 @@ FILE_P* open_f(const char *name, int mode)
 	return fp;
 }
 
-int close_f(FILE_P *fp)
+int hfs_close(FILE_P *fp)
 {
 
 	int i_id = fp -> i_into;
@@ -978,7 +1093,7 @@ static int write_block(int b_id, char *buffer, int size)
 	return index;
 }
 
-int write_f(FILE_P *fp, char *buffer, int length)
+int hfs_write(FILE_P *fp, char *buffer, int length)
 {
 
 	if(fp == NULL || buffer == NULL || length == 0)
@@ -1226,7 +1341,7 @@ int write_f(FILE_P *fp, char *buffer, int length)
 	return length;
 }
 
-int read_f(FILE_P *fp, char *buffer, int length)
+int hfs_read(FILE_P *fp, char *buffer, int length)
 {
 
 	if(fp == NULL || buffer == NULL || length == 0)
@@ -1322,14 +1437,14 @@ int read_f(FILE_P *fp, char *buffer, int length)
 	return len;
 }
 
-char* pwd()
+char* hfs_pwd()
 {
 	//printf("当前目录号：%d 目录名称：%s\n", curr_dir_id, curr_path);
 	printf("%s\n", curr_path);
 	return NULL;
 }
 
-int login(const char *username, const char *passwd)
+int hfs_login(const char *username, const char *passwd)
 {
 
 	struct user user_info;
@@ -1360,14 +1475,14 @@ int login(const char *username, const char *passwd)
 }
 
 
-int logout(const char *user_name)
+int hfs_logout(const char *user_name)
 {
 	--usr_num;
 	strcpy(tip, "cmd:");
 	return 0;
 }
 
-char* cat(FILE_P *fp)
+char* hfs_cat(FILE_P *fp)
 {
 	if(NULL == fp)
 	{
@@ -1518,7 +1633,7 @@ static void str_cpy(char * des, const char * src, int begin, int size)
  */
 static int find(const char * path)
 {
-	char tmp_name[DIR_NAME_SIZE];	//当前正在解析的文件名
+	char tmp_name[DIR_NAME_MAXSIZE];	//当前正在解析的文件名
 	int i_id = 0;					//当前正在解析的文件inode号
 	int tmp_dir_id = 0;             //若当前解析的名称是目录的名称，记录其目录号。	
 	int result = -1;				//最终的结果
@@ -1546,7 +1661,7 @@ static int find(const char * path)
 		}
 		end = index;
 		
-		memset(tmp_name,'\0',DIR_NAME_SIZE);
+		memset(tmp_name,'\0',DIR_NAME_MAXSIZE);
 		str_cpy(tmp_name, path, begin, end - begin);
 		//printf("pares: %s\n",tmp_name);	
 		int tmp = -1;
@@ -1587,10 +1702,9 @@ static int find(const char * path)
  */
 static int diralloc()
 {
-	 int index = DMAP_SIZE;
+	 int index = DMAP_MAXSIZE;
 	 
-	 
-	 while(index >= 0 && g_dir_info.dmap[--index] == 0);
+	 while(index >= 0 && g_dir_info->dmap[--index] == 0);
 	 
 	 //没有空闲的空间
 	 if(index < 0)
@@ -1600,19 +1714,19 @@ static int diralloc()
 	 
 	 unsigned long long test_b = 1;
 	 int shift = 63;
-	 while((g_dir_info.dmap[index] & (test_b << shift)) == 0)
+	 while((g_dir_info->dmap[index] & (test_b << shift)) == 0)
 	 {
 	 	--shift;
 	 }
 	 
-	 //printf("diralloc %llx\n", g_dir_info.dmap[index]);
+	 //printf("diralloc %llx\n", g_dir_info->dmap[index]);
 	 
 	 //分配
-	 g_dir_info.dmap[index] = g_dir_info.dmap[index] ^ (test_b << shift);
-	 ++g_dir_info.size;//目录个数加一
+	 g_dir_info->dmap[index] = g_dir_info->dmap[index] ^ (test_b << shift);
+	 ++g_dir_info->size;//目录个数加一
 	 
 	 //printf("diralloc index %d shift %d\n",index, shift);
-	 //printf("diralloc %llx\n", g_dir_info.dmap[index]);
+	 //printf("diralloc %llx\n", g_dir_info->dmap[index]);
 	 
 	 return index * 64 + (64 - shift) - 1;
 	 
@@ -1632,110 +1746,15 @@ static int dirfree(int id)
 	
 	//printf("dirfree %llx test_b %llx\n", g_dir_info.dmap[index], test_b);
 	
-	g_dir_info.dmap[index] = g_dir_info.dmap[index] ^ test_b;
+	g_dir_info -> dmap[index] = g_dir_info -> dmap[index] ^ test_b;
 	
 	
 	//printf("dirfree %llx\n", g_dir_info.dmap[index]);
 	//目录个数减一
-	--g_dir_info.size;
+	--g_dir_info -> size;
 	
 	return 0;	
 }
-
-/*
- * 分配i节点
- */
-static int ialloc()
-{
-	int index = IMAP_SIZE;
-	 
-	 
-	 while(index >= 0 && g_imap.bits[--index] == 0);
-	 
-	 //没有空闲的空间
-	 if(index < 0)
-	 {
-	 	return -1;
-	 }
-	 
-	 unsigned long long test_b = 1;
-	 int shift = 63;
-	 while((g_imap.bits[index] & (test_b << shift)) == 0)
-	 {
-	 	--shift;
-	 }
-	 
-	 //分配
-	 g_imap.bits[index] = g_imap.bits[index] ^ (test_b << shift);
-	 --g_sn.s_ninode;
-	 
-	 return index * 64 + (64 - shift) - 1;
-}
-
-/*
- * 释放i节点
- */
-static int ifree(int id)
-{
-	int index = id / 64;
-	int shift = 63 - id % 64;
-	
-	unsigned long long test_b = 1LL << shift;
-	g_imap.bits[index] = g_imap.bits[index] ^ test_b;
-	
-	++g_sn.s_ninode;
-	
-	return 0;
-	
-}
-
-/*
- * 分配物理块
- */
-static int balloc()
-{
-	int index = BMAP_SIZE;
-	 
-	 
-	 while(index >= 0  && g_bmap.bits[--index] == 0);
-	 
-	 //没有空闲的空间
-	 if(index < 0)
-	 {
-	 	return -1;
-	 }
-	 
-	 unsigned long long test_b = 1;
-	 int shift = 63;
-	 while((g_bmap.bits[index] & (test_b << shift)) == 0)
-	 {
-	 	--shift;
-	 }
-	 
-	 //分配
-	 g_bmap.bits[index] = g_bmap.bits[index] ^ (test_b << shift);
-	 --g_sn.s_nfree;
-	 
-	 return index * 64 + (64 - shift) - 1;
-}
-
-/*
- * 释放物理块
- */
-static int bfree(int id)
-{
-	int index = id / 64;
-	int shift = 63 - id % 64;
-	
-	unsigned long long test_b = 1LL << shift;
-	g_bmap.bits[index] = g_bmap.bits[index] ^ test_b;
-	
-	++g_sn.s_nfree;
-	
-	return 0;
-	
-}
-
 
 /*
  * 访问控制函数。
@@ -1774,7 +1793,7 @@ static int access_f(const char* name, int mode)
 	}
 }
 
-int halt()
+int hfs_halt()
 {
 	FILE * fd = NULL;
 	fd = fopen("./fsdata", "w+");
@@ -1798,13 +1817,13 @@ int halt()
 	fwrite(&g_dir_info, sizeof(struct dir_info), 1, fd);
 
 	//写回目录表
-	fwrite(dir_table, sizeof(struct directory), DIR_NUM, fd);
+	fwrite(dir_table, sizeof(struct directory), DIR_MAXNUM, fd);
 	
 	//写回i节点
-	fwrite(dinodes, sizeof(struct dinode), INODE_SIZE, fd);
+	fwrite(dinodes, sizeof(struct dinode), INODE_MAXNUM, fd);
 
 	//写回物理块
-	fwrite(blocks, sizeof(union block), BNODE_SIZE, fd);
+	fwrite(blocks, sizeof(union block), BNODE_MAXNUM, fd);
 	
 	fflush(fd);
 	fclose(fd);
@@ -1816,6 +1835,21 @@ void show_help_info()
 {
 	printf("\n  帮助信息。\n");
 
-	printf("\tls\t\t显示当前目录的内容。\n\tmkdir\t\t创建目录。\n\trmdir\t\t删除目录。\n\tchdir or cd\t更改当前工作目录。\n\tcreate or crt\t创建文件。\n\tdelete or del or rm\t删除文件。\n\topen\t\t打开文件。\n\tclose\t\t关闭文件。\n\twrite or wr\t向文件中写数据。\n\tread or rd\t读文件中的数据。\n\tquit\t\t退出。\n\tlogin\t\t用户登录。\n\tlogout\t\t用户登出。\n\tpwd\t\t显示当前工作目录。\n\tcat\t\t显示文件内容。\n");
+	printf("\tls\t\t显示当前目录的内容。"
+			"\n\tmkdir\t\t创建目录。"
+			"\n\trmdir\t\t删除目录。"
+			"\n\tchdir or cd\t更改当前工作目录。"
+			"\n\tcreate or crt\t创建文件。"
+			"\n\tdelete or del or rm\t删除文件。"
+			"\n\topen\t\t打开文件。"
+			"\n\tclose\t\t关闭文件。"
+			"\n\twrite or wr\t向文件中写数据。"
+			"\n\tread or rd\t读文件中的数据。"
+			"\n\tquit\t\t退出。"
+			"\n\tlogin\t\t用户登录。"
+			"\n\tlogout\t\t用户登出。"
+			"\n\tpwd\t\t显示当前工作目录。"
+			"\n\tcat\t\t显示文件内容。\n"
+			);
 	return ;
 }

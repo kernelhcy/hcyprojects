@@ -6,4 +6,4 @@ main.o : main.cpp
 	g++  -c  main.cpp  -o main.o
 
 clean :
-	rm *.o main fsdata
+	rm -f *.o fsdata

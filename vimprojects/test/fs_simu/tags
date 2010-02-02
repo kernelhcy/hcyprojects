@@ -1,0 +1,173 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.7	//
+A	fs_structs.h	19;"	d
+BLOCK_SIZE	fs_structs.h	25;"	d
+BMAP_MAXSIZE	fs_structs.h	46;"	d
+BNODE_MAXNUM	fs_structs.h	40;"	d
+B_ADDR_NUM	fs_structs.h	26;"	d
+DIR_INCLUDE_MAXNUM	fs_structs.h	33;"	d
+DIR_MAXNUM	fs_structs.h	31;"	d
+DIR_NAME_MAXSIZE	fs_structs.h	29;"	d
+DIR_T	fs_structs.h	14;"	d
+DMAP_MAXSIZE	fs_structs.h	32;"	d
+D_ADDR_NUM	fs_structs.h	27;"	d
+FILE_NAME_MAXSIZE	fs_structs.h	30;"	d
+FILE_P	fs_structs.h	/^}FILE_P;$/;"	t	typeref:struct:inode
+FILE_T	fs_structs.h	13;"	d
+IMAP_MAXSIZE	fs_structs.h	45;"	d
+INODE_MAXNUM	fs_structs.h	39;"	d
+MAX_LOGIN_USR	fs_structs.h	48;"	d
+NICFREE	fs_structs.h	42;"	d
+NICINOD	fs_structs.h	43;"	d
+NONE_T	fs_structs.h	15;"	d
+PWD_MAXSIZE	fs_structs.h	36;"	d
+R	fs_structs.h	17;"	d
+R_R	fs_structs.h	21;"	d
+USR_NAME_MAXSIZE	fs_structs.h	35;"	d
+USR_OFILE_MAXNUM	fs_structs.h	37;"	d
+W	fs_structs.h	18;"	d
+W_R	fs_structs.h	22;"	d
+X_R	fs_structs.h	23;"	d
+_FS_STRUCTS_H	fs_structs.h	2;"	d
+__HFS_FS_H	fs.h	2;"	d
+access_f	fs.cpp	/^static int access_f(const char* name, int mode)$/;"	f	file:
+addr	fs_structs.h	/^	unsigned int addr;						\/*一级块索引*\/$/;"	m	struct:dinode
+addr	fs_structs.h	/^	unsigned int addr;						\/*一级块索引*\/$/;"	m	struct:inode
+b_addr	fs_structs.h	/^	unsigned int b_addr[B_ADDR_NUM]; $/;"	m	union:block
+balloc	fs.cpp	/^int balloc()$/;"	f
+bfree	fs.cpp	/^void bfree(int id)$/;"	f
+bits	fs_structs.h	/^	unsigned long long bits[BMAP_MAXSIZE];$/;"	m	struct:bmap
+bits	fs_structs.h	/^	unsigned long long bits[IMAP_MAXSIZE];$/;"	m	struct:imap
+block	fs_structs.h	/^union block$/;"	u
+blocks	fs.cpp	/^static union block *blocks = NULL;						\/\/模拟物理块$/;"	v	typeref:union:block	file:
+bmap	fs_structs.h	/^struct bmap$/;"	s
+calloc_memory	fs.cpp	/^int calloc_memory()$/;"	f
+cpy_name_update	fs.cpp	/^static int cpy_name_update(int id)$/;"	f	file:
+create_user	fs.cpp	/^static int create_user(const char *username, const char *passwd)$/;"	f	file:
+curr_dir_id	fs.cpp	/^static unsigned int curr_dir_id = 0;						\/\/当前工作目录的id号$/;"	v	file:
+curr_path	fs.cpp	/^static char curr_path[500];									\/\/当前工作目录$/;"	v	file:
+curr_pos	fs_structs.h	/^	unsigned long curr_pos;				\/*文件读取的当前位置。*\/$/;"	m	struct:inode
+curr_user	fs.cpp	/^static struct user *curr_user = NULL;						\/\/当前登录用户$/;"	v	typeref:struct:user	file:
+curr_usr_id	fs.cpp	/^static int curr_usr_id;										\/\/当前登录用户在用户列表中的位置。$/;"	v	file:
+d_id	fs_structs.h	/^ 	unsigned int d_id;							\/*目录的id号。即目录数组中的索引号*\/$/;"	m	struct:directory
+d_name	fs_structs.h	/^ 	char d_name[DIR_NAME_MAXSIZE];         		\/*目录名*\/$/;"	m	struct:directory
+dalloc	fs.cpp	/^int dalloc()$/;"	f
+dfree	fs.cpp	/^void dfree(int id)$/;"	f
+di_gid	fs_structs.h	/^	unsigned short di_gid;    			\/*磁盘i节点组*\/$/;"	m	struct:inode
+di_gid	fs_structs.h	/^ 	unsigned int di_gid;$/;"	m	struct:dinode
+di_number	fs_structs.h	/^	unsigned short di_number; 			\/*关联文件数，当为0时，则删除该文件*\/$/;"	m	struct:inode
+di_number	fs_structs.h	/^ 	unsigned short di_number;        	\/*关联文件数*\/$/;"	m	struct:dinode
+di_right	fs_structs.h	/^	unsigned int di_right;   			\/*存取权限*\/$/;"	m	struct:inode
+di_right	fs_structs.h	/^ 	unsigned int di_right;          	\/*存取权限*\/$/;"	m	struct:dinode
+di_size	fs_structs.h	/^	unsigned long di_size;            	\/*文件大小*\/$/;"	m	struct:dinode
+di_size	fs_structs.h	/^	unsigned long di_size;            	\/*文件大小*\/$/;"	m	struct:inode
+di_uid	fs_structs.h	/^	unsigned short di_uid;    			\/*磁盘i节点用户*\/$/;"	m	struct:inode
+di_uid	fs_structs.h	/^ 	unsigned int di_uid;				\/*所有者的id*\/$/;"	m	struct:dinode
+dinode	fs_structs.h	/^struct dinode$/;"	s
+dinodes	fs.cpp	/^static struct dinode *dinodes = NULL;					\/\/模拟硬盘i节点$/;"	v	typeref:struct:dinode	file:
+dir_info	fs_structs.h	/^struct dir_info$/;"	s
+dir_or_file	fs_structs.h	/^	int dir_or_file;					\/*标记是文件还是目录*\/$/;"	m	struct:dinode
+dir_or_file	fs_structs.h	/^	int dir_or_file;					\/*标记是文件还是目录*\/$/;"	m	struct:inode
+dir_table	fs.cpp	/^static struct directory *dir_table = NULL;				\/\/模拟目录表$/;"	v	typeref:struct:directory	file:
+diralloc	fs.cpp	/^static int diralloc()$/;"	f	file:
+direct_addr	fs_structs.h	/^	unsigned int direct_addr[D_ADDR_NUM];  	$/;"	m	struct:dinode
+direct_addr	fs_structs.h	/^	unsigned int direct_addr[D_ADDR_NUM];  	$/;"	m	struct:inode
+directory	fs_structs.h	/^struct directory$/;"	s
+dirfree	fs.cpp	/^static int dirfree(int id)$/;"	f	file:
+disk_size	fs_structs.h	/^ 	long disk_size;						\/*磁盘空间大小。用文件大小模拟。*\/$/;"	m	struct:supernode
+dmap	fs_structs.h	/^ 	unsigned long long dmap[DMAP_MAXSIZE];	\/\/位图$/;"	m	struct:dir_info
+entry	fs_structs.h	/^	char entry[BLOCK_SIZE];$/;"	m	union:block
+f_count	fs_structs.h	/^	unsigned int f_count; 	\/*引用计数*\/$/;"	m	struct:system_ofile
+f_flag	fs_structs.h	/^	char f_flag; 			\/*文件操作标志*\/$/;"	m	struct:system_ofile
+f_inode	fs_structs.h	/^	struct inode *f_inode; 	\/*指向内存节点*\/$/;"	m	struct:system_ofile	typeref:struct:system_ofile::inode
+f_off	fs_structs.h	/^	unsigned long f_off; 	\/*读\/写指针*\/$/;"	m	struct:system_ofile
+file_inode	fs_structs.h	/^	unsigned int file_inode[DIR_INCLUDE_MAXNUM];           	\/*对应的inode号*\/$/;"	m	struct:directory
+file_name	fs_structs.h	/^	char file_name[DIR_INCLUDE_MAXNUM][FILE_NAME_MAXSIZE];        \/*目录中的文件或子目录的名子*\/$/;"	m	struct:directory
+find	fs.cpp	/^static int find(const char * path)$/;"	f	file:
+find_usr	fs.cpp	/^static int find_usr(const char *username, struct user *usr)$/;"	f	file:
+format_fs	fs.cpp	/^static int format_fs()$/;"	f	file:
+g_bmap	fs.cpp	/^static struct bmap *g_bmap = NULL;				\/\/物理块位图$/;"	v	typeref:struct:bmap	file:
+g_dir_info	fs.cpp	/^static struct dir_info *g_dir_info = NULL;		\/\/目录信息$/;"	v	typeref:struct:dir_info	file:
+g_imap	fs.cpp	/^static struct imap *g_imap = NULL;				\/\/inode位图$/;"	v	typeref:struct:imap	file:
+g_sn	fs.cpp	/^static struct supernode *g_sn = NULL;			\/\/超级块$/;"	v	typeref:struct:supernode	file:
+head	fs.cpp	/^static struct inode *head = NULL;		\/\/i内存节点链表头$/;"	v	typeref:struct:inode	file:
+hfs_cat	fs.cpp	/^char* hfs_cat(FILE_P *fp)$/;"	f
+hfs_chdir	fs.cpp	/^int hfs_chdir(const char *path)$/;"	f
+hfs_close	fs.cpp	/^int hfs_close(FILE_P *fp)$/;"	f
+hfs_create	fs.cpp	/^FILE_P* hfs_create(const char *name, int right)$/;"	f
+hfs_delete	fs.cpp	/^int hfs_delete(const char *name)$/;"	f
+hfs_halt	fs.cpp	/^int hfs_halt()$/;"	f
+hfs_init	fs.cpp	/^int hfs_init()$/;"	f
+hfs_login	fs.cpp	/^int hfs_login(const char *username, const char *passwd)$/;"	f
+hfs_logout	fs.cpp	/^int hfs_logout(const char *user_name)$/;"	f
+hfs_ls	fs.cpp	/^char * hfs_ls(const char *path)$/;"	f
+hfs_mkdir	fs.cpp	/^int hfs_mkdir(const char *name)$/;"	f
+hfs_open	fs.cpp	/^FILE_P* hfs_open(const char *name, int mode)$/;"	f
+hfs_pwd	fs.cpp	/^char* hfs_pwd()$/;"	f
+hfs_read	fs.cpp	/^int hfs_read(FILE_P *fp, char *buffer, int length)$/;"	f
+hfs_rmdir	fs.cpp	/^int hfs_rmdir(const char *name)$/;"	f
+hfs_write	fs.cpp	/^int hfs_write(FILE_P *fp, char *buffer, int length)$/;"	f
+i_back	fs_structs.h	/^	struct inode  *i_back;$/;"	m	struct:inode	typeref:struct:inode::inode
+i_count	fs_structs.h	/^	unsigned int i_count;     			\/*用户引用计数*\/$/;"	m	struct:inode
+i_forw	fs_structs.h	/^	struct inode  *i_forw;$/;"	m	struct:inode	typeref:struct:inode::inode
+i_into	fs_structs.h	/^	unsigned int i_into;      			\/*磁盘i节点标号*\/$/;"	m	struct:inode
+ialloc	fs.cpp	/^int  ialloc()$/;"	f
+ifree	fs.cpp	/^void ifree(int id)$/;"	f
+imap	fs_structs.h	/^struct imap$/;"	s
+index	fs_structs.h	/^	int index;                                  \/\/目录表中可用的位置。$/;"	m	struct:dir_info
+inode	fs_structs.h	/^typedef struct inode$/;"	s
+inode_id	fs_structs.h	/^ 	unsigned int inode_id;						\/*inode号*\/$/;"	m	struct:directory
+inodes	fs.cpp	/^static struct inode *inodes = NULL;						\/\/内存i节点$/;"	v	typeref:struct:inode	file:
+login_users	fs.cpp	/^static struct user login_users[MAX_LOGIN_USR];				\/\/登录的用户列表$/;"	v	typeref:struct:user	file:
+main	main.cpp	/^int main(int argc, char** argv)$/;"	f
+mode	fs_structs.h	/^	unsigned int mode;					\/*打开方式*\/$/;"	m	struct:inode
+p_gid	fs_structs.h	/^	unsigned short p_gid;$/;"	m	struct:user
+p_uid	fs_structs.h	/^ 	unsigned short p_uid;$/;"	m	struct:user
+parent_id	fs_structs.h	/^	unsigned int parent_id;             \/*父目录的目录号。*\/$/;"	m	struct:dinode
+parent_id	fs_structs.h	/^	unsigned int parent_id;             \/*父目录的目录号。*\/$/;"	m	struct:inode
+parent_id	fs_structs.h	/^ 	unsigned int parent_id;						\/*父目录的id。*\/$/;"	m	struct:directory
+passwd	fs_structs.h	/^	char passwd[PWD_MAXSIZE];$/;"	m	struct:user
+read_fs	fs.cpp	/^static int read_fs()$/;"	f	file:
+read_indirect_block	fs.cpp	/^static int read_indirect_block(union block *addr_block, int len, char* buffer)$/;"	f	file:
+root_id	fs_structs.h	/^ 	unsigned int root_id;						\/\/根目录的id。通常是0.$/;"	m	struct:dir_info
+run	fs.cpp	/^void run(bool show_details)$/;"	f
+s_bsize	fs_structs.h	/^ 	unsigned long s_bsize;             	\/*数据块块数*\/$/;"	m	struct:supernode
+s_fmod	fs_structs.h	/^ 	char s_fmod;                    	\/*超级块修改标志*\/$/;"	m	struct:supernode
+s_free	fs_structs.h	/^ 	unsigned int s_free[NICFREE];     	\/*空闲块堆栈*\/$/;"	m	struct:supernode
+s_inode	fs_structs.h	/^ 	unsigned int s_inode[NICINOD];   	\/*空闲i节点数组*\/$/;"	m	struct:supernode
+s_isize	fs_structs.h	/^ 	unsigned int s_isize;            	\/*i节点块块数*\/$/;"	m	struct:supernode
+s_nfree	fs_structs.h	/^ 	unsigned int s_nfree;             	\/*空闲块块数*\/$/;"	m	struct:supernode
+s_ninode	fs_structs.h	/^ 	unsigned int s_ninode;            	\/*空闲i节点数*\/$/;"	m	struct:supernode
+s_pfree	fs_structs.h	/^ 	unsigned short s_pfree;           	\/*空闲块指针*\/$/;"	m	struct:supernode
+s_pinode	fs_structs.h	/^ 	unsigned short s_pinode;          	\/*空闲i节点指针*\/$/;"	m	struct:supernode
+s_rinode	fs_structs.h	/^	unsigned int s_rinode;           	\/*铭记i节点*\/$/;"	m	struct:supernode
+sen_addr	fs_structs.h	/^	unsigned int sen_addr;					\/*二级块索引*\/$/;"	m	struct:dinode
+sen_addr	fs_structs.h	/^	unsigned int sen_addr;					\/*二级块索引*\/$/;"	m	struct:inode
+show_help_info	fs.cpp	/^void show_help_info()$/;"	f
+show_names	fs.cpp	/^static int show_names(int id,int black)$/;"	f	file:
+size	fs_structs.h	/^ 	unsigned int size;                  		\/\/目录的个数$/;"	m	struct:dir_info
+str_cpy	fs.cpp	/^static void str_cpy(char * des, const char * src, int begin, int size)$/;"	f	file:
+sub_cnt	fs_structs.h	/^ 	unsigned int sub_cnt;									\/*子目录和文件的数目*\/$/;"	m	struct:directory
+sub_dir_ids	fs_structs.h	/^	unsigned int sub_dir_ids[DIR_INCLUDE_MAXNUM];				\/*若对应项是目录，存放其id。*\/$/;"	m	struct:directory
+supernode	fs_structs.h	/^struct supernode$/;"	s
+system_ofile	fs_structs.h	/^struct system_ofile$/;"	s
+system_ofile_table	fs.cpp	/^static struct system_ofile system_ofile_table;				\/\/系统打开的文件列表$/;"	v	typeref:struct:system_ofile	file:
+t_fp	fs.cpp	/^static FILE_P *t_fp = NULL;\/\/调试使用$/;"	v	file:
+tip	fs.cpp	/^static char tip[50];										\/\/命令提示$/;"	v	file:
+tru_addr	fs_structs.h	/^	unsigned int tru_addr;					\/*三级块索引*\/$/;"	m	struct:dinode
+tru_addr	fs_structs.h	/^	unsigned int tru_addr;					\/*三级块索引*\/$/;"	m	struct:inode
+u_default_mode	fs_structs.h	/^	unsigned short u_default_mode;$/;"	m	struct:user_ofile
+u_gid	fs_structs.h	/^	unsigned short u_gid; 			\/*用户组标志*\/$/;"	m	struct:user_ofile
+u_ofile	fs_structs.h	/^	unsigned short u_ofile[USR_OFILE_MAXNUM]; \/*用户打开表*\/$/;"	m	struct:user_ofile
+u_uid	fs_structs.h	/^	unsigned short u_uid; 			\/*用户标志*\/$/;"	m	struct:user_ofile
+update_curr_path_name	fs.cpp	/^static int update_curr_path_name()$/;"	f	file:
+user	fs_structs.h	/^struct user$/;"	s
+user_ofile	fs_structs.h	/^struct user_ofile$/;"	s
+user_ofile_table	fs.cpp	/^static struct user_ofile user_ofile_table[MAX_LOGIN_USR]; 	\/\/用户打开文件列表$/;"	v	typeref:struct:user_ofile	file:
+username	fs_structs.h	/^	char username[USR_NAME_MAXSIZE];$/;"	m	struct:user
+usr_num	fs.cpp	/^static int usr_num = 0;										\/\/登陆的用户个数$/;"	v	file:
+write_block	fs.cpp	/^static int write_block(int b_id, char *buffer, int size)$/;"	f	file:
