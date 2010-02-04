@@ -7,6 +7,8 @@
 #include <string.h>
 
 #include "fs_structs.h"
+#include "global_data.h"
+
 /*
  * 定义文件系统支持的基本操作。
  * 并提供有常用的一些其他文件目录操作。
@@ -194,6 +196,6 @@ char * hfs_cat(FILE_P* fp);
 /*
  * 以命令行的形式运行文件系统
  */
-void run(bool showdetails);
+void run(int showdetails);
 
 #endif
