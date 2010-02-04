@@ -1,7 +1,10 @@
-#ifndef _FS_STRUCTS_H
-#define _FS_STRUCTS_H
+#ifndef _FS_BASE_H
+#define _FS_BASE_H
 #include "bitset.h"
 #include "node.h"
+#include "dir.h"
+#include "user.h"
+
 /*
  * 定义文件系统的基本数据结构常量等。
  */
@@ -38,12 +41,9 @@ struct supernode
  	unsigned int s_isize;            	/*i节点块块数*/
  	unsigned long s_bsize;             	/*数据块块数*/
 
-	
-
  	unsigned int s_nfree;             	/*空闲块块数*/
  	unsigned short s_pfree;           	/*空闲块指针*/
  	unsigned int s_free[NICFREE];     	/*空闲块堆栈*/
-
 
  	unsigned int s_ninode;            	/*空闲i节点数*/
  	unsigned short s_pinode;          	/*空闲i节点指针*/
@@ -63,8 +63,33 @@ struct system_ofile
 	unsigned int f_count; 	/*引用计数*/
 	struct inode *f_inode; 	/*指向内存节点*/
 	unsigned long f_off; 	/*读/写指针*/
-	
-	
 };
+
+typedef struct _hfs
+{
+	struct supernode *sn;				//超级块
+	struct dir_info *dir_info;		//目录信息
+	bitset *imap;						//inode位图
+	bitset *bmap;						//物理块位图
+
+	struct user login_users[MAX_LOGIN_USR];				//登录的用户列表
+	struct user_ofile user_ofile_table[MAX_LOGIN_USR]; 	//用户打开文件列表
+	int usr_num = 0;									//登陆的用户个数
+	struct user *curr_user;								//当前登录用户
+	struct system_ofile system_ofile_table;				//系统打开的文件列表
+
+	char tip[50];										//命令提示
+	int curr_usr_id;									//当前登录用户在用户列表中的位置。
+
+	struct directory *dir_table;						//模拟目录表
+	
+	union block *blocks;								//模拟物理块
+	struct dinode *dinodes;								//模拟硬盘i节点
+	struct inode *inodes;								//内存i节点
+
+	char curr_path[500];								//当前工作目录
+	unsigned int curr_dir_id = 0;						//当前工作目录的id号
+
+}hfs;
 
 #endif
