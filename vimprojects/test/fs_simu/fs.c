@@ -268,6 +268,7 @@ int calloc_memory()
 int hfs_init()
 {
 	printf("初始化文件系统...\n");
+	log_open("log.hfs");
 	
 	//打开文件
 	FILE *fd = NULL;
@@ -1476,6 +1477,7 @@ static void str_cpy(char * des, const char * src, int begin, int size)
 
 int hfs_halt()
 {
+	log_close();
 	return hfs_write_to_file();
 }
 

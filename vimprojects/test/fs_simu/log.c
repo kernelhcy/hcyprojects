@@ -12,7 +12,31 @@ typedef enum
 	_LOG_UNKNOWN 	//未知信息
 }log_t;
 
+static FILE* log_fd = NULL; //日志文件fd
+
 static void do_log(const char *fmt, log_t t, va_list ap);
+
+void log_open(const char *file)
+{
+	if (NULL == file)
+	{
+		log_fd = stdout;
+		return;
+	}
+
+	log_fd = fopen(file, "w+");
+	if (NULL == log_fd)
+	{
+		log_fd = stdout;
+		fprintf(log_fd, "Open log file ERROR. Use stdout to show log information.\n");
+	}
+}
+
+void log_close()
+{
+	fflush(log_fd);
+	fclose(log_fd);
+}
 
 void log_error(const char *fmt, ...)
 {
@@ -61,24 +85,24 @@ void do_log(const char *fmt, log_t t, va_list ap)
 			strcpy(buf, "UNKNOWN TYPE: ");
 			break;
 		default:
-			fputs("ERROR IN DO_LOG!!", stderr);
+			fputs("ERROR IN DO_LOG!!", log_fd);
 			break;
 	}
 
 	vsnprintf(buf + strlen(buf), MAXLINE - strlen(buf), fmt, ap);
 	strcat(buf, "\n");
-	fflush(stdout);
+	fflush(log_fd);
 
 	if (t == _LOG_ERROR)
 	{
-		fputs(buf, stderr);
+		fputs(buf, log_fd);
 	}
 	else
 	{
-		fputs(buf, stdout);
+		fputs(buf, log_fd);
 	}
 
-	fflush(NULL);
+	fflush(log_fd);
 
 	return;
 }

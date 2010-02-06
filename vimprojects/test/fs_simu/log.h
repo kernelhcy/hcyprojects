@@ -13,4 +13,16 @@ void log_info(const char *fmt, ...);
 void log_error(const char *fmt, ...);
 void log_warning(const char *fmt, ...);
 
+/**
+ * 打开日志。
+ * 参数是日志文件的名称。
+ * 如果参数为NULL，则向标准输入输出错误输出日志信息。
+ */
+void log_open(const char *file);
+
+/**
+ * 关闭日志
+ */
+void log_close();
+
 #endif
