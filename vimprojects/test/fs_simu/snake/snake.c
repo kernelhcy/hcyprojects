@@ -10,7 +10,6 @@ void snake_start()
 	log_info("run snake.\n");
 	snake_data *s_d = NULL;
 	s_d = snake_game_init();
-	getch();
 	snake_game_close(s_d);
 
 	log_close();

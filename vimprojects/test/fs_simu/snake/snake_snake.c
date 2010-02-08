@@ -1,5 +1,4 @@
 #include "snake_snake.h"
-#include "snake_base.h"
 #include <string.h>
 #include "log.h"
 
@@ -9,25 +8,43 @@ static snake_node* snake_node_init();
 static void snake_node_free(snake_node *);
 static snake_node* snake_node_init_yx(int y, int x);
 static int snake_is_craft(snake*);
+static int snake_has_food(snake_data *);
+static void snake_add_node(snake *s, snake_node *node);
+
 
 //线程主体
 void* thread_run_snake(void *a)
 {
 	log_info("Snake run thread start up.");
-	thread_arg_t *arg = (thread_arg_t*)a;
+	thread_run_snake_arg_t *arg = (thread_run_snake_arg_t*)a;
 
 	int i = 0 , j;
 
 	while( 1 )
 	{
 		log_info("Thread_run_snake : Move the snake.");
-		snake_clear(arg -> s, arg -> win);
-		snake_move(arg -> s);
-		snake_show(arg -> s, arg -> win);
-		if (snake_is_craft(arg -> s))
+
+		//执行一次移动
+		pthread_mutex_lock(&arg -> s_d -> snake_lock);
+		snake_clear(arg -> s_d -> s, arg -> s_d -> play_win);
+		snake_move(arg -> s_d -> s);
+		snake_show(arg -> s_d -> s, arg -> s_d -> play_win);
+		pthread_mutex_unlock(&arg -> s_d -> snake_lock);
+
+		if (snake_is_craft(arg -> s_d -> s))
 		{
 			arg -> retval = THD_RETVAL_SNAKE_CRAFT;
+			//取消其他线程
+			pthread_cancel(arg -> s_d -> food_creator_id);
+			pthread_cancel(arg -> s_d -> key_listenner_id);
 			return arg;
+		}
+		
+		if (snake_has_food(arg -> s_d))
+		{
+			pthread_mutex_lock(&arg -> s_d -> snake_lock);
+			snake_add_node(arg -> s_d -> s, snake_node_init());
+			pthread_mutex_unlock(&arg -> s_d -> snake_lock);
 		}
 	
 		//暂停0.2秒
@@ -42,7 +59,7 @@ void* thread_run_snake(void *a)
 /**
  * 启动蛇的移动线程
  */
-pthread_t snake_run(thread_arg_t *arg)
+pthread_t snake_run(thread_run_snake_arg_t *arg)
 {
 	if (NULL == arg)
 	{
@@ -60,6 +77,34 @@ pthread_t snake_run(thread_arg_t *arg)
 	//pthread_detach(id); 		//设置为分离线程
 	//log_info("Detach the snake run thtread. done.");
 	return id;
+}
+
+/**
+ * 判断是否有食物被吃到
+ */
+static int snake_has_food(snake_data *s_d)
+{
+	if (NULL == s_d)
+	{
+		return 0;
+	}
+	int x,y;
+	x = s_d -> s -> head -> x;
+	y = s_d -> s -> head -> y;
+
+	pthread_mutex_lock(& s_d -> food_map_lock);
+	if (s_d -> food_map[y][x])
+	{
+		s_d -> food_map[y][x] = 1;
+		pthread_mutex_unlock(& s_d -> food_map_lock);
+		return 1;
+	}
+	else
+	{
+		pthread_mutex_unlock(& s_d -> food_map_lock);
+		return 0;
+	}
+
 }
 
 /**
@@ -216,7 +261,7 @@ void snake_show(snake *s, WINDOW *w)
 	snake_node *tmp = s -> head;
 	for (i = 0; i < s -> len; ++i)
 	{
-		mvwaddch(w, tmp -> y, tmp -> x, SNAKE_NODE);
+		mvwaddch(w, tmp -> y, tmp -> x, SNAKE_NODE_SHARP);
 		tmp = tmp -> next;
 	}
 	wrefresh(w);
@@ -301,7 +346,7 @@ void snake_set_pos_dct(snake *s, int y, int x,  dct_t dct)
  * snake的操作函数
  ******************
  */
-static void snake_add_node(snake *s, snake_node *node)
+void snake_add_node(snake *s, snake_node *node)
 {
 	if (NULL == node || NULL == s)
 	{

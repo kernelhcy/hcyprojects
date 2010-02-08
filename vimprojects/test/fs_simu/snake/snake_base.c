@@ -115,47 +115,100 @@ static int screen_init(snake_data *s)
 	log_info("Create windows. %s %d", __FILE__, __LINE__);
 	//绘制子窗口
 	create_wins(s);
+
+	/**
+	 * 在信息窗口显示提示信息
+	 */
+	mvwaddstr(s -> info_win, 1, 1, "Press 'Q' or ");
+	mvwaddstr(s -> info_win, 2, 1, "'q' to quit.");
+
+	wrefresh(s -> info_win);
+
 	
+	//获得窗口大小
 	int y,x;
 	getmaxyx(s -> play_win, y, x);
 	log_info("play_win size (%d, %d)", x, y);
+
+	//初始化蛇的位置和大小
 	log_info("Set the snake scope.");
 	snake_set_scope(s -> s, y, x);
 	log_info("Show the snake on the window.");
 	snake_set_pos_dct(s -> s, y / 2 + 2, x / 2 - s -> s -> len /2, RIGHT_DCT);	
 
 	/**
+	 * 初始化foodmap
+	 */
+	s -> map_y = y - 1;
+	s -> map_x = x - 1;
+	log_info("Initial food map.line %d , col %d", s -> map_y, s -> map_x);
+	s -> food_map = (int **)calloc(s -> map_y , sizeof(int*));
+	if (!s -> food_map)
+	{
+		log_error("Create food map error. %s %d", __FILE__, __LINE__);
+		return 0;
+	}
+	int i;
+	for (i = 0; i < s -> map_y; ++i)
+	{
+		s -> food_map[i] = (int*)calloc(s -> map_x ,  sizeof(int));
+		if (!s -> food_map[i])
+		{
+			log_error("Create food map error. index %d %s %d", i, __FILE__, __LINE__);
+			return 0;
+		}
+	}
+
+
+	/**
 	 * 启动键盘事件监听线程
 	 */
 	thread_key_arg_t *key_args = (thread_key_arg_t*)malloc(sizeof(*key_args));
-	key_args -> s = s -> s;
-	key_args -> win = s -> play_win;
+	key_args -> s_d = s;
 	key_args -> retval = THD_RETVAL_UNKNOWN;
 	key_args -> id = listening_keyevent(key_args);
-	pthread_detach(key_args -> id); 	//分离线程
 
 	/**
 	 * 启动蛇移动线程
 	 */
-	thread_arg_t *snake_thread_args = (thread_arg_t*)malloc(sizeof(thread_arg_t));
-	snake_thread_args -> s = s -> s;
-	snake_thread_args -> win = s -> play_win;
+	thread_run_snake_arg_t *snake_thread_args = (thread_run_snake_arg_t*)malloc(sizeof(thread_run_snake_arg_t));
+	snake_thread_args -> s_d = s;
 	snake_thread_args -> retval = THD_RETVAL_UNKNOWN;
 	snake_thread_args -> id = snake_run(snake_thread_args);
-	pthread_join(snake_thread_args -> id, NULL);
 
-	//关闭键盘事件监听线程
-	pthread_cancel(key_args -> id);
-	
+	/**
+	 * 启动食物产生线程
+	 */
+	thread_food_arg_t *food_thread_args = (thread_food_arg_t*)malloc(sizeof(thread_food_arg_t));
+	food_thread_args -> s_d = s;
+	food_thread_args -> retval = THD_RETVAL_UNKNOWN;
+	food_thread_args -> id = begin_create_food(food_thread_args);
+
+	//保存三个进程的id
+	s -> food_creator_id = food_thread_args -> id;
+	s -> snake_runner_id = snake_thread_args -> id;
+	s -> key_listenner_id = key_args -> id;
+
+	pthread_join(snake_thread_args -> id, NULL);
+	pthread_join(food_thread_args -> id, NULL);
+	pthread_join(key_args -> id, NULL);
+
+	log_info("Free the thread args. %S %d", __FILE__, __LINE__);
+
 	free(key_args);
 	free(snake_thread_args);
+	free(food_thread_args);
 
+	log_info("Game Over!");
 	//game over
 	if (snake_thread_args -> retval == THD_RETVAL_SNAKE_CRAFT)
 	{
+		wattron(s -> play_win, COLOR_PAIR(RED_ON_BLACK));
 		mvwaddstr(s -> play_win , 10, 20, "Game Over!");
 		mvwaddstr(s -> play_win , 11, 20, "Press any key to QUIT!");
+		wattroff(s -> play_win, COLOR_PAIR(RED_ON_BLACK));
 		wrefresh(s -> play_win);
+		getch();
 	}
 
 	//snake_show(s -> s, s -> play_win);
@@ -183,7 +236,17 @@ snake_data* snake_game_init()
 		return NULL;
 	}
 	
-	s_d -> split_r = 0.8f;
+	s_d -> split_r = 0.8f; 	//
+
+	s_d -> food_max_num = 30; 	//每一关的最大食物量
+	s_d -> food_map = NULL;
+	s_d -> map_x = -1;
+	s_d -> map_y = -1;
+
+	//初始化锁
+	pthread_mutex_init(&s_d -> food_map_lock, NULL);
+	pthread_mutex_init(&s_d -> snake_lock, NULL);
+	pthread_mutex_init(&s_d -> s_d_lock, NULL);
 
 	s_d -> s = snake_init();
 
@@ -193,6 +256,18 @@ snake_data* snake_game_init()
 
 int snake_game_close(snake_data *s)
 {
+	if(NULL == s)
+	{
+		log_error("NULL pointer. %s %d", __FILE__, __LINE__);
+		return 0;
+	}
 	screen_close(s);
+
+	//销毁锁
+	pthread_mutex_destroy(&s -> food_map_lock);
+	pthread_mutex_destroy(&s -> snake_lock);
+	pthread_mutex_destroy(&s -> s_d_lock);
+
+	free(s);
 	return 1;
 }

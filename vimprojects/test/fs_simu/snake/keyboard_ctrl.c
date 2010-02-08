@@ -12,25 +12,32 @@ static void * thread_key_listen(void *a)
 		{
 			case KEY_UP:
 				log_info("Click UP key.");
-				snake_set_dct(arg -> s, UP_DCT);
+				snake_set_dct(arg -> s_d -> s, UP_DCT);
 				break;
 			case KEY_DOWN:
 				log_info("Click DOWN key.");
-				snake_set_dct(arg -> s, DOWN_DCT);
+				snake_set_dct(arg -> s_d -> s, DOWN_DCT);
 				break;
 			case KEY_LEFT:
 				log_info("Click LEFT key.");
-				snake_set_dct(arg -> s, LEFT_DCT);
+				snake_set_dct(arg -> s_d -> s, LEFT_DCT);
 				break;
 			case KEY_RIGHT:
 				log_info("Click RIGHT key.");
-				snake_set_dct(arg -> s, RIGHT_DCT);
+				snake_set_dct(arg -> s_d -> s, RIGHT_DCT);
 				break;
 			default:
 				break;
 		}
 		key = getch();
 	}
+
+	log_info("Cancel others two thread in key listenner. %s %d", __FILE__, __LINE__);
+	//取消其他线程
+	pthread_cancel(arg -> s_d -> food_creator_id);
+	pthread_cancel(arg -> s_d -> snake_runner_id);
+
+	return NULL;
 }
 
 pthread_t listening_keyevent(thread_key_arg_t *arg)
@@ -44,7 +51,7 @@ pthread_t listening_keyevent(thread_key_arg_t *arg)
 	
 	int error;
 	log_info("Start keyevent listening thread.");
-	if (error = pthread_create(&id, NULL, (void *(*)(void *))thread_key_listen, (void *)arg))
+	if (error = pthread_create(&id, NULL, thread_key_listen, arg))
 	{
 		log_error("Create the keyevent listen thread ERROR. %s %d", __FILE__, __LINE__);
 		return 0;

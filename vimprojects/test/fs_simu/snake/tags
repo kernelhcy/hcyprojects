@@ -4,101 +4,120 @@
 !_TAG_PROGRAM_NAME	Exuberant Ctags	//
 !_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
 !_TAG_PROGRAM_VERSION	5.7	//
-BLUE_ON_BLACK	snake_base.h	10;"	d
+BLUE_ON_BLACK	base.h	5;"	d
 CC	Makefile	/^CC=gcc$/;"	m
-DOWN_DCT	snake_snake.h	/^	DOWN_DCT, 	\/\/向下运动$/;"	e	enum:_direction
-GREEN_ON_BLACK	snake_base.h	9;"	d
-LEFT_DCT	snake_snake.h	/^	LEFT_DCT, 	\/\/向左运动$/;"	e	enum:_direction
+DEBUG	Makefile	/^DEBUG=-g$/;"	m
+DOWN_DCT	base.h	/^	DOWN_DCT, 	\/\/向下运动$/;"	e	enum:_direction
+GREEN_ON_BLACK	base.h	4;"	d
+LEFT_DCT	base.h	/^	LEFT_DCT, 	\/\/向左运动$/;"	e	enum:_direction
 LIBS	Makefile	/^LIBS=-lcurses -lpthread$/;"	m
-OBJS	Makefile	/^OBJS=test.o snake.o snake_base.o log.o snake_snake.o keyboard_ctrl.o$/;"	m
-RED_ON_BLACK	snake_base.h	11;"	d
-RIGHT_DCT	snake_snake.h	/^	RIGHT_DCT, 	\/\/向右运动$/;"	e	enum:_direction
-SNAKE_INIT_LEN	snake_snake.h	6;"	d
-SNAKE_NODE	snake_snake.h	7;"	d
-THD_RETVAL_ERROR	snake_snake.h	/^	THD_RETVAL_ERROR,$/;"	e	enum:__anon4
-THD_RETVAL_KEY_DWON	snake_snake.h	/^	THD_RETVAL_KEY_DWON,$/;"	e	enum:__anon4
-THD_RETVAL_KEY_LEFT	snake_snake.h	/^	THD_RETVAL_KEY_LEFT,$/;"	e	enum:__anon4
-THD_RETVAL_KEY_UP	snake_snake.h	/^	THD_RETVAL_KEY_UP,$/;"	e	enum:__anon4
-THD_RETVAL_NORMAL	snake_snake.h	/^	THD_RETVAL_NORMAL,$/;"	e	enum:__anon4
-THD_RETVAL_SNAKE_CRAFT	snake_snake.h	/^	THD_RETVAL_SNAKE_CRAFT,$/;"	e	enum:__anon4
-THD_RETVAL_SNAKE_NEXT	snake_snake.h	/^	THD_RETVAL_SNAKE_NEXT,$/;"	e	enum:__anon4
-THD_RETVAL_UNKNOWN	snake_snake.h	/^	THD_RETVAL_UNKNOWN$/;"	e	enum:__anon4
-THE_RETVAL_KEY_RIGHT	snake_snake.h	/^	THE_RETVAL_KEY_RIGHT,$/;"	e	enum:__anon4
-UNKNOWN_DCT	snake_snake.h	/^	UNKNOWN_DCT \/\/未知方向$/;"	e	enum:_direction
-UP_DCT	snake_snake.h	/^	UP_DCT, 	\/\/向上运动$/;"	e	enum:_direction
+OBJS	Makefile	/^OBJS=test.o snake.o snake_base.o log.o snake_snake.o keyboard_ctrl.o snake_food.o$/;"	m
+RED_ON_BLACK	base.h	6;"	d
+RIGHT_DCT	base.h	/^	RIGHT_DCT, 	\/\/向右运动$/;"	e	enum:_direction
+SNAKE_INIT_LEN	snake_snake.h	7;"	d
+SNAKE_NODE	snake_snake.h	8;"	d
+THD_RETVAL_ERROR	base.h	/^	THD_RETVAL_ERROR, 		\/\/出错$/;"	e	enum:__anon1
+THD_RETVAL_KEY_DWON	base.h	/^	THD_RETVAL_KEY_DWON,$/;"	e	enum:__anon1
+THD_RETVAL_KEY_LEFT	base.h	/^	THD_RETVAL_KEY_LEFT,$/;"	e	enum:__anon1
+THD_RETVAL_KEY_UP	base.h	/^	THD_RETVAL_KEY_UP,$/;"	e	enum:__anon1
+THD_RETVAL_NORMAL	base.h	/^	THD_RETVAL_NORMAL, 		\/\/正常推出$/;"	e	enum:__anon1
+THD_RETVAL_SNAKE_CRAFT	base.h	/^	THD_RETVAL_SNAKE_CRAFT, \/\/蛇的运动违规$/;"	e	enum:__anon1
+THD_RETVAL_SNAKE_NEXT	base.h	/^	THD_RETVAL_SNAKE_NEXT,  \/\/进入下一关$/;"	e	enum:__anon1
+THD_RETVAL_UNKNOWN	base.h	/^	THD_RETVAL_UNKNOWN 		\/\/未知类型$/;"	e	enum:__anon1
+THE_RETVAL_KEY_RIGHT	base.h	/^	THE_RETVAL_KEY_RIGHT,$/;"	e	enum:__anon1
+UNKNOWN_DCT	base.h	/^	UNKNOWN_DCT \/\/未知方向$/;"	e	enum:_direction
+UP_DCT	base.h	/^	UP_DCT, 	\/\/向上运动$/;"	e	enum:_direction
+__BASE_H_	base.h	2;"	d
 __KEY_BOARD_CTRL_H_	keyboard_ctrl.h	2;"	d
 __SNAKE_BASE_H_	snake_base.h	2;"	d
 __SNAKE_H_	snake.h	2;"	d
 __SNAKE_LOG_H_	log.h	2;"	d
 __SNAKE_SNAKE_H_	snake_snake.h	2;"	d
-_direction	snake_snake.h	/^typedef enum _direction$/;"	g
-_snake_node	snake_snake.h	/^typedef struct _snake_node$/;"	s
-border_color	snake_base.h	/^	int border_color; 	\/\/边框的颜色。保存颜色对的索引。$/;"	m	struct:__anon1
-color	snake_snake.h	/^	int 	color; 			\/\/节点的颜色。$/;"	m	struct:_snake_node
+__SNAKE__FOOD_H_	snake_food.h	2;"	d
+_direction	base.h	/^typedef enum _direction$/;"	g
+_snake_node	snake_base.h	/^typedef struct _snake_node$/;"	s
+begin_create_food	snake_food.c	/^pthread_t begin_create_food(thread_food_arg_t *args)$/;"	f
+border_color	snake_base.h	/^	int border_color; 	\/\/边框的颜色。保存颜色对的索引。$/;"	m	struct:__anon3
+color	snake_base.h	/^	int 	color; 			\/\/节点的颜色。$/;"	m	struct:_snake_node
 create_border	snake_base.c	/^static int create_border()$/;"	f	file:
+create_food	snake_food.c	/^static void create_food(int **map, int y, int x)$/;"	f	file:
 create_wins	snake_base.c	/^static void create_wins(snake_data *s)$/;"	f	file:
-dct_t	snake_snake.h	/^}dct_t;$/;"	t	typeref:enum:_direction
-direction	snake_snake.h	/^	dct_t 	direction; 		\/\/运动方向。提示后面的节点的运动方向$/;"	m	struct:_snake_node
-direction	snake_snake.h	/^	dct_t 	direction; 	\/\/蛇的运动方向$/;"	m	struct:__anon3
-head	snake_snake.h	/^	snake_node *head, *tail; 	\/\/蛇头和尾$/;"	m	struct:__anon3
-height	snake_base.h	/^	int width, height; 	\/\/宽度和高度$/;"	m	struct:__anon1
-id	keyboard_ctrl.h	/^	pthread_t id; 	\/\/线程id$/;"	m	struct:thread_key_arg
-id	snake_snake.h	/^	pthread_t id;$/;"	m	struct:thread_arg
-info_win	snake_base.h	/^	WINDOW* info_win; 			\/\/游戏信息窗口。$/;"	m	struct:__anon2
-info_win_attrs	snake_base.h	/^	win_attrs info_win_attrs; 	\/\/游戏信息窗口属性。$/;"	m	struct:__anon2
+dct_t	base.h	/^}dct_t;$/;"	t	typeref:enum:_direction
+direction	snake_base.h	/^	dct_t 	direction; 		\/\/运动方向。提示后面的节点的运动方向$/;"	m	struct:_snake_node
+direction	snake_base.h	/^	dct_t 	direction; 	\/\/蛇的运动方向$/;"	m	struct:__anon2
+food_map	snake_base.h	/^	int **food_map; 			\/\/食物所在位置表格$/;"	m	struct:__anon4
+food_map_lock	snake_base.h	/^	pthread_mutex_t food_map_lock; 	$/;"	m	struct:__anon4
+food_max_num	snake_base.h	/^	int food_max_num; 			\/\/产生食物的最大数量$/;"	m	struct:__anon4
+head	snake_base.h	/^	snake_node *head, *tail; 	\/\/蛇头和尾$/;"	m	struct:__anon2
+height	snake_base.h	/^	int width, height; 	\/\/宽度和高度$/;"	m	struct:__anon3
+id	snake_base.h	/^	pthread_t id; 	\/\/线程id$/;"	m	struct:thread_key_arg
+id	snake_base.h	/^	pthread_t id;$/;"	m	struct:thread_create_food
+id	snake_base.h	/^	pthread_t id;$/;"	m	struct:thread_run_snake_arg
+info_win	snake_base.h	/^	WINDOW* info_win; 			\/\/游戏信息窗口。$/;"	m	struct:__anon4
+info_win_attrs	snake_base.h	/^	win_attrs info_win_attrs; 	\/\/游戏信息窗口属性。$/;"	m	struct:__anon4
 init_used_colors	snake_base.c	/^static int init_used_colors()$/;"	f	file:
-len	snake_snake.h	/^	int 	len; 		\/\/蛇的长度$/;"	m	struct:__anon3
+len	snake_base.h	/^	int 	len; 		\/\/蛇的长度$/;"	m	struct:__anon2
 listening_keyevent	keyboard_ctrl.c	/^pthread_t listening_keyevent(thread_key_arg_t *arg)$/;"	f
 main	test.c	/^int main(int argc, char *argv[])$/;"	f
-max_col	snake_base.h	/^	int max_line, max_col; 		\/\/屏幕的大小$/;"	m	struct:__anon2
-max_line	snake_base.h	/^	int max_line, max_col; 		\/\/屏幕的大小$/;"	m	struct:__anon2
-max_x	snake_snake.h	/^	int max_x, max_y; 		\/\/最大活动区域$/;"	m	struct:__anon3
-max_y	snake_snake.h	/^	int max_x, max_y; 		\/\/最大活动区域$/;"	m	struct:__anon3
-next	snake_snake.h	/^	struct _snake_node *next;   	\/\/后一个节点$/;"	m	struct:_snake_node	typeref:struct:_snake_node::_snake_node
-play_win	snake_base.h	/^	WINDOW* play_win; 			\/\/游戏窗口。$/;"	m	struct:__anon2
-play_win_attrs	snake_base.h	/^	win_attrs play_win_attrs; 	\/\/游戏窗口属性$/;"	m	struct:__anon2
-pre	snake_snake.h	/^	struct _snake_node *pre; 		\/\/前一个节点$/;"	m	struct:_snake_node	typeref:struct:_snake_node::_snake_node
-retval	keyboard_ctrl.h	/^	int retval; 	\/\/返回值$/;"	m	struct:thread_key_arg
-retval	snake_snake.h	/^	int retval; 	\/\/线程的返回参数$/;"	m	struct:thread_arg
-s	keyboard_ctrl.h	/^	snake *s; 		\/\/蛇$/;"	m	struct:thread_key_arg
-s	snake_base.h	/^	snake *s; 					\/\/蛇$/;"	m	struct:__anon2
-s	snake_snake.h	/^	snake *s;$/;"	m	struct:thread_arg
+map_x	snake_base.h	/^	int map_x, map_y; 			\/\/food_map的大小$/;"	m	struct:__anon4
+map_y	snake_base.h	/^	int map_x, map_y; 			\/\/food_map的大小$/;"	m	struct:__anon4
+max_col	snake_base.h	/^	int max_line, max_col; 		\/\/屏幕的大小$/;"	m	struct:__anon4
+max_line	snake_base.h	/^	int max_line, max_col; 		\/\/屏幕的大小$/;"	m	struct:__anon4
+max_x	snake_base.h	/^	int max_x, max_y; 		\/\/最大活动区域$/;"	m	struct:__anon2
+max_y	snake_base.h	/^	int max_x, max_y; 		\/\/最大活动区域$/;"	m	struct:__anon2
+next	snake_base.h	/^	struct _snake_node *next;   	\/\/后一个节点$/;"	m	struct:_snake_node	typeref:struct:_snake_node::_snake_node
+play_win	snake_base.h	/^	WINDOW* play_win; 			\/\/游戏窗口。$/;"	m	struct:__anon4
+play_win_attrs	snake_base.h	/^	win_attrs play_win_attrs; 	\/\/游戏窗口属性$/;"	m	struct:__anon4
+pre	snake_base.h	/^	struct _snake_node *pre; 		\/\/前一个节点$/;"	m	struct:_snake_node	typeref:struct:_snake_node::_snake_node
+retval	snake_base.h	/^	int retval; 	\/\/线程的返回参数$/;"	m	struct:thread_run_snake_arg
+retval	snake_base.h	/^	int retval; 	\/\/返回值$/;"	m	struct:thread_key_arg
+retval	snake_base.h	/^	int retval;$/;"	m	struct:thread_create_food
+s	snake_base.h	/^	snake *s; 					\/\/蛇$/;"	m	struct:__anon4
+s_d	snake_base.h	/^	snake_data *s_d; 	\/\/全局数据$/;"	m	struct:thread_create_food
+s_d	snake_base.h	/^	snake_data *s_d; 	\/\/全局数据$/;"	m	struct:thread_key_arg
+s_d	snake_base.h	/^	snake_data *s_d; 	\/\/全局数据$/;"	m	struct:thread_run_snake_arg
+s_d_lock	snake_base.h	/^	pthread_mutex_t s_d_lock; 	\/\/这个结构体的锁$/;"	m	struct:__anon4
 screen_close	snake_base.c	/^static int screen_close(snake_data *s)$/;"	f	file:
 screen_init	snake_base.c	/^static int screen_init(snake_data *s)$/;"	f	file:
-snake	snake_snake.h	/^}snake;$/;"	t	typeref:struct:__anon3
+show_food	snake_food.c	/^static void show_food(thread_food_arg_t *args)$/;"	f	file:
+shutdown	snake_base.h	/^	int shutdown; 				\/\/标记是否退出$/;"	m	struct:__anon4
+snake	snake_base.h	/^}snake;$/;"	t	typeref:struct:__anon2
 snake_add_node	snake_snake.c	/^static void snake_add_node(snake *s, snake_node *node)$/;"	f	file:
 snake_clear	snake_snake.c	/^void snake_clear(snake *s, WINDOW *w)$/;"	f
-snake_data	snake_base.h	/^}snake_data;$/;"	t	typeref:struct:__anon2
+snake_data	snake_base.h	/^}snake_data;$/;"	t	typeref:struct:__anon4
 snake_free	snake_snake.c	/^void snake_free(snake *s)$/;"	f
 snake_game_close	snake_base.c	/^int snake_game_close(snake_data *s)$/;"	f
 snake_game_init	snake_base.c	/^snake_data* snake_game_init()$/;"	f
+snake_has_food	snake_snake.c	/^static int snake_has_food(snake_data *s_d)$/;"	f	file:
 snake_init	snake_snake.c	/^snake * snake_init()$/;"	f
 snake_is_craft	snake_snake.c	/^static int snake_is_craft(snake* s)$/;"	f	file:
+snake_lock	snake_base.h	/^	pthread_mutex_t snake_lock; 	$/;"	m	struct:__anon4
 snake_move	snake_snake.c	/^void snake_move(snake* s)$/;"	f
-snake_node	snake_snake.h	/^}snake_node;$/;"	t	typeref:struct:_snake_node
+snake_node	snake_base.h	/^}snake_node;$/;"	t	typeref:struct:_snake_node
 snake_node_free	snake_snake.c	/^void snake_node_free(snake_node *n)$/;"	f
 snake_node_init	snake_snake.c	/^snake_node* snake_node_init()$/;"	f
 snake_node_init_yx	snake_snake.c	/^snake_node* snake_node_init_yx(int y, int x)$/;"	f
-snake_run	snake_snake.c	/^pthread_t snake_run(thread_arg_t *arg)$/;"	f
+snake_run	snake_snake.c	/^pthread_t snake_run(thread_run_snake_arg_t *arg)$/;"	f
 snake_set_dct	snake_snake.c	/^void snake_set_dct(snake *s, dct_t dct)$/;"	f
 snake_set_pos_dct	snake_snake.c	/^void snake_set_pos_dct(snake *s, int y, int x,  dct_t dct)$/;"	f
 snake_set_scope	snake_snake.c	/^void snake_set_scope(snake* s, int y, int x)$/;"	f
 snake_show	snake_snake.c	/^void snake_show(snake *s, WINDOW *w)$/;"	f
 snake_start	snake.c	/^void snake_start()$/;"	f
-split_r	snake_base.h	/^	float split_r; 				\/\/两个窗口的比例。用于根据当前窗口的大小计算两个子窗口的大小。$/;"	m	struct:__anon2
-startx	snake_base.h	/^	int startx, starty; \/\/开始位置坐标$/;"	m	struct:__anon1
-starty	snake_base.h	/^	int startx, starty; \/\/开始位置坐标$/;"	m	struct:__anon1
-tail	snake_snake.h	/^	snake_node *head, *tail; 	\/\/蛇头和尾$/;"	m	struct:__anon3
-thread_arg	snake_snake.h	/^typedef struct thread_arg$/;"	s
-thread_arg_t	snake_snake.h	/^}thread_arg_t;$/;"	t	typeref:struct:thread_arg
-thread_key_arg	keyboard_ctrl.h	/^typedef struct thread_key_arg$/;"	s
-thread_key_arg_t	keyboard_ctrl.h	/^}thread_key_arg_t;$/;"	t	typeref:struct:thread_key_arg
+split_r	snake_base.h	/^	float split_r; 				\/\/两个窗口的比例。用于根据当前窗口的大小计算两个子窗口的大小。$/;"	m	struct:__anon4
+startx	snake_base.h	/^	int startx, starty; \/\/开始位置坐标$/;"	m	struct:__anon3
+starty	snake_base.h	/^	int startx, starty; \/\/开始位置坐标$/;"	m	struct:__anon3
+tail	snake_base.h	/^	snake_node *head, *tail; 	\/\/蛇头和尾$/;"	m	struct:__anon2
+thread_create_food	snake_base.h	/^typedef struct thread_create_food$/;"	s
+thread_create_food	snake_food.c	/^static void * thread_create_food(void *a)$/;"	f	file:
+thread_food_arg_t	snake_base.h	/^}thread_food_arg_t;$/;"	t	typeref:struct:thread_create_food
+thread_key_arg	snake_base.h	/^typedef struct thread_key_arg$/;"	s
+thread_key_arg_t	snake_base.h	/^}thread_key_arg_t;$/;"	t	typeref:struct:thread_key_arg
 thread_key_listen	keyboard_ctrl.c	/^static void * thread_key_listen(void *a)$/;"	f	file:
 thread_run_snake	snake_snake.c	/^void* thread_run_snake(void *a)$/;"	f
-title	snake_base.h	/^	char title[100]; 	\/\/标题$/;"	m	struct:__anon1
-width	snake_base.h	/^	int width, height; 	\/\/宽度和高度$/;"	m	struct:__anon1
-win	keyboard_ctrl.h	/^	WINDOW *win; 	\/\/屏幕$/;"	m	struct:thread_key_arg
-win	snake_snake.h	/^	WINDOW *win;$/;"	m	struct:thread_arg
-win_attrs	snake_base.h	/^}win_attrs;$/;"	t	typeref:struct:__anon1
-x	snake_snake.h	/^	int 	x,y; 			\/\/蛇节点在窗口中的位置。$/;"	m	struct:_snake_node
-y	snake_snake.h	/^	int 	x,y; 			\/\/蛇节点在窗口中的位置。$/;"	m	struct:_snake_node
+thread_run_snake_arg	snake_base.h	/^typedef struct thread_run_snake_arg$/;"	s
+thread_run_snake_arg_t	snake_base.h	/^}thread_run_snake_arg_t;$/;"	t	typeref:struct:thread_run_snake_arg
+title	snake_base.h	/^	char title[100]; 	\/\/标题$/;"	m	struct:__anon3
+width	snake_base.h	/^	int width, height; 	\/\/宽度和高度$/;"	m	struct:__anon3
+win_attrs	snake_base.h	/^}win_attrs;$/;"	t	typeref:struct:__anon3
+x	snake_base.h	/^	int 	x,y; 			\/\/蛇节点在窗口中的位置。$/;"	m	struct:_snake_node
+y	snake_base.h	/^	int 	x,y; 			\/\/蛇节点在窗口中的位置。$/;"	m	struct:_snake_node
