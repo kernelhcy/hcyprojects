@@ -1,6 +1,8 @@
 #ifndef __SNAKE_BASE_H_
 #define __SNAKE_BASE_H_
 #include <curses.h>
+#include <pthread.h>
+
 #include "log.h"
 #include "snake_snake.h"
 

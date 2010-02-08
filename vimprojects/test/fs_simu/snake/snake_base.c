@@ -2,6 +2,8 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "keyboard_ctrl.h"
+
 /**
  * 初始化颜色对。
  * 返回初始化得颜色对得数量。
@@ -23,6 +25,7 @@ static void create_wins(snake_data *s)
 	wattron(stdscr, COLOR_PAIR(RED_ON_BLACK));
 	mvaddstr(1, s -> max_col /2 - strlen(title)/2, title);
 	wattroff(stdscr, COLOR_PAIR(RED_ON_BLACK));
+	wrefresh(stdscr);
 
 	win_attrs *a;
 
@@ -72,6 +75,8 @@ static int screen_init(snake_data *s)
 	initscr();
 	noecho(); 				//关闭getch()的键盘回显
 	keypad(stdscr, TRUE); 	//开启功能键相应模式
+	curs_set(0); 			//不显示光标
+	cbreak(); 				//关闭行缓冲。便于捕获键盘按键事件
 
 	if (has_colors() == FALSE)
 	{
@@ -118,8 +123,42 @@ static int screen_init(snake_data *s)
 	snake_set_scope(s -> s, y, x);
 	log_info("Show the snake on the window.");
 	snake_set_pos_dct(s -> s, y / 2 + 2, x / 2 - s -> s -> len /2, RIGHT_DCT);	
-	//绘制蛇
-	snake_show(s -> s, s -> play_win);
+
+	/**
+	 * 启动键盘事件监听线程
+	 */
+	thread_key_arg_t *key_args = (thread_key_arg_t*)malloc(sizeof(*key_args));
+	key_args -> s = s -> s;
+	key_args -> win = s -> play_win;
+	key_args -> retval = THD_RETVAL_UNKNOWN;
+	key_args -> id = listening_keyevent(key_args);
+	pthread_detach(key_args -> id); 	//分离线程
+
+	/**
+	 * 启动蛇移动线程
+	 */
+	thread_arg_t *snake_thread_args = (thread_arg_t*)malloc(sizeof(thread_arg_t));
+	snake_thread_args -> s = s -> s;
+	snake_thread_args -> win = s -> play_win;
+	snake_thread_args -> retval = THD_RETVAL_UNKNOWN;
+	snake_thread_args -> id = snake_run(snake_thread_args);
+	pthread_join(snake_thread_args -> id, NULL);
+
+	//关闭键盘事件监听线程
+	pthread_cancel(key_args -> id);
+	
+	free(key_args);
+	free(snake_thread_args);
+
+	//game over
+	if (snake_thread_args -> retval == THD_RETVAL_SNAKE_CRAFT)
+	{
+		mvwaddstr(s -> play_win , 10, 20, "Game Over!");
+		mvwaddstr(s -> play_win , 11, 20, "Press any key to QUIT!");
+		wrefresh(s -> play_win);
+	}
+
+	//snake_show(s -> s, s -> play_win);
 	return 1;
 }
 

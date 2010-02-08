@@ -1,8 +1,9 @@
 CC=gcc
-OBJS=test.o snake.o snake_base.o log.o snake_snake.o
+OBJS=test.o snake.o snake_base.o log.o snake_snake.o keyboard_ctrl.o
+LIBS=-lcurses -lpthread
 
 test : ${OBJS}
-	${CC} ${OBJS} -o test -lcurses
+	${CC} ${OBJS} -o test ${LIBS}
 
 test.o : test.c snake.h
 	${CC} -c test.c -o test.o
@@ -15,6 +16,9 @@ snake_base.o : snake_base.c snake_base.h
 
 snake_snake.o : snake_snake.c snake_snake.h
 	${CC} -c snake_snake.c -o snake_snake.o
+
+key_board.o : keyboard_ctrl.c keyboard_ctrl.h
+	${CC} -c keyboard_ctrl.c -o keyboard_ctrl.o
 
 log.o : ../log.c ../log.h
 	${CC} -c ../log.c -o log.o

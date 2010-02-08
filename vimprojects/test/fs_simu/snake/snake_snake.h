@@ -1,8 +1,9 @@
 #ifndef __SNAKE_SNAKE_H_
 #define __SNAKE_SNAKE_H_
 #include <curses.h>
+#include <pthread.h>
 
-#define SNAKE_INIT_LEN  3 //蛇的初始长度
+#define SNAKE_INIT_LEN  15 //蛇的初始长度
 #define SNAKE_NODE 		ACS_DIAMOND
 /**
  * 定义运动的方向
@@ -43,10 +44,36 @@ typedef struct
 	int max_x, max_y; 		//最大活动区域
 }snake;
 
+
+//线程的返回值
+enum
+{
+	THD_RETVAL_NORMAL,
+	THD_RETVAL_ERROR,
+	THD_RETVAL_SNAKE_CRAFT,
+	THD_RETVAL_SNAKE_NEXT,
+	THD_RETVAL_KEY_UP,
+	THD_RETVAL_KEY_DWON,
+	THD_RETVAL_KEY_LEFT,
+	THE_RETVAL_KEY_RIGHT,
+	THD_RETVAL_UNKNOWN
+};
+
+//线程的启动参数
+typedef struct thread_arg
+{
+	snake *s;
+	WINDOW *win;
+	pthread_t id;
+	int retval; 	//线程的返回参数
+}thread_arg_t;
 /**
  * make the snake run!
+ * 蛇的移动由一个单独的线程来控制。这个函数启动这个线程。
+ *
+ * 返回线程的id。如果启动线程失败，则返回NULL。
  */
-void snake_run(snake *);
+pthread_t snake_run(thread_arg_t *);
 
 /**
  * 初始化和销毁蛇
@@ -68,5 +95,16 @@ void snake_clear(snake *, WINDOW *);
  * 设置蛇的最大活动区域
  */
 void snake_set_scope(snake*, int y, int x);
+
+/**
+ * 根据当前的位置和方向，移动蛇
+ */
+void snake_move(snake*);
+
+/**
+ * 设置蛇的移动方向
+ */
+
+void snake_set_dct(snake *, dct_t);
 
 #endif

@@ -3,13 +3,192 @@
 #include <string.h>
 #include "log.h"
 
+
 //函数声明
 static snake_node* snake_node_init();
 static void snake_node_free(snake_node *);
 static snake_node* snake_node_init_yx(int y, int x);
+static int snake_is_craft(snake*);
 
-void snake_run(snake *s)
+//线程主体
+void* thread_run_snake(void *a)
 {
+	log_info("Snake run thread start up.");
+	thread_arg_t *arg = (thread_arg_t*)a;
+
+	int i = 0 , j;
+
+	while( 1 )
+	{
+		log_info("Thread_run_snake : Move the snake.");
+		snake_clear(arg -> s, arg -> win);
+		snake_move(arg -> s);
+		snake_show(arg -> s, arg -> win);
+		if (snake_is_craft(arg -> s))
+		{
+			arg -> retval = THD_RETVAL_SNAKE_CRAFT;
+			return arg;
+		}
+	
+		//暂停0.2秒
+		usleep(200000);
+
+		log_info("Thread_run_snake : Move done.");
+	}
+
+	return arg;
+}
+
+/**
+ * 启动蛇的移动线程
+ */
+pthread_t snake_run(thread_arg_t *arg)
+{
+	if (NULL == arg)
+	{
+		log_info("NULL pointer. %s %d", __FILE__, __LINE__);
+		return 0;
+	}
+	
+	pthread_t id;	
+	int error;
+	if (error = pthread_create(&id, NULL, (void *(*)(void *))thread_run_snake, (void *)arg))
+	{
+		log_error("Create the snake run thread ERROR. %s %d", __FILE__, __LINE__);
+		return 0;
+	}
+	//pthread_detach(id); 		//设置为分离线程
+	//log_info("Detach the snake run thtread. done.");
+	return id;
+}
+
+/**
+ * 判断蛇是否撞到了四周的墙壁和自己身上。
+ * 是，则返回1,否则返回0
+ */
+static int snake_is_craft(snake* s)
+{
+	if (NULL == s)
+	{
+		log_error("NULL pointer. %s %d", __FILE__, __LINE__);
+		return 0;
+	}
+	log_info("Snake_is_craft : max_x %d max_y %d", s -> max_x, s -> max_y);
+	log_info("Snake_is_craft : snake pos(%d, %d)", s -> head -> x, s -> head -> y);
+	//是否碰到墙壁
+	if (s -> head -> x >= s -> max_x - 1 || s -> head -> y >= s -> max_y - 1
+		|| s -> head -> x <= 0|| s -> head -> y <= 0)
+	{
+		return 1;
+	}
+
+	//判断是否咬到自己
+	int i = 0;
+	snake_node *tmp = s -> head -> next;
+	for (; i < s -> len - 1; ++i)
+	{
+		if (tmp -> x == s -> head -> x && tmp -> y == s -> head -> y )
+		{
+			return 1;
+		}
+		tmp = tmp -> next;
+	}
+
+	return 0;
+}
+
+//设置移动方向
+void snake_set_dct(snake *s, dct_t dct)
+{
+	if (NULL == s)
+	{
+		log_error("NULL pointer. %s %d", __FILE__, __LINE__);
+		return;
+	}
+	
+	switch (dct)
+	{
+		case UP_DCT:
+			log_info("snake_set_dct: UP");
+			if (s -> head -> direction == DOWN_DCT)
+			{
+				break;
+			}
+			s -> head -> direction = dct;
+			break;
+		case DOWN_DCT:
+			log_info("snake_set_dct: DOWN");
+			if (s -> head -> direction == UP_DCT)
+			{
+				break;
+			}
+			s -> head -> direction = dct;
+			break;
+		case LEFT_DCT:
+			log_info("snake_set_dct: LEFT");
+			if (s -> head -> direction == RIGHT_DCT)
+			{
+				break;
+			}
+			s -> head -> direction = dct;
+			break;
+		case RIGHT_DCT:
+			log_info("snake_set_dct: RIGHT");
+			if (s -> head -> direction == LEFT_DCT)
+			{
+				break;
+			}
+			s -> head -> direction = dct;
+			break;
+		case UNKNOWN_DCT:
+		default:
+			log_error("Set snake direction ERROR. Unknown direction %d. %s %d",dct,  __FILE__, __LINE__);
+			break;
+	}
+
+	return;
+}
+
+//移动蛇
+void snake_move(snake* s)
+{
+	if (NULL == s)
+	{
+		return;
+	}
+
+	//蛇身上的节点只需要根据前一节点进行移动即可。
+	snake_node *tmp;
+	tmp = s -> tail;
+	while (tmp != s -> head)
+	{
+		tmp -> x = tmp -> pre -> x;
+		tmp -> y = tmp -> pre -> y;
+		tmp = tmp -> pre;
+	}
+
+	//根据蛇头中的方向设置蛇头的下一个位置。
+	dct_t dct = s -> head -> direction;
+	switch (dct)
+	{
+		case UP_DCT:
+			s -> head -> y -= 1;
+			break;
+		case DOWN_DCT:
+			s -> head -> y += 1;
+			break;
+		case LEFT_DCT:
+			s -> head -> x -= 1;
+			break;
+		case RIGHT_DCT:
+			s -> head -> x += 1;
+			break;
+		case UNKNOWN_DCT:
+		default:
+			log_error("Move snake ERROR. Unknown direction %d. %s %d",dct,  __FILE__, __LINE__);
+			break;
+	}
+
 	return;
 }
 
@@ -28,9 +207,11 @@ void snake_show(snake *s, WINDOW *w)
 {
 	if (NULL == s || NULL == w)
 	{
+		log_info("NULL pointer. %s %d", __FILE__, __LINE__);
 		return;
 	}
 
+	log_info("Show the snake.");
 	int i;
 	snake_node *tmp = s -> head;
 	for (i = 0; i < s -> len; ++i)
@@ -45,9 +226,11 @@ void snake_clear(snake *s, WINDOW *w)
 {
 	if (NULL == s || NULL == w)
 	{
+		log_info("NULL pointer. %s %d", __FILE__, __LINE__);
 		return;
 	}
 
+	log_info("Hidet the snake");
 	int i;
 	snake_node *tmp = s -> head;
 	for (i = 0; i < s -> len; ++i)
@@ -62,6 +245,7 @@ void snake_set_pos_dct(snake *s, int y, int x,  dct_t dct)
 {
 	if (NULL == s || s -> len <= 0)
 	{
+		log_info("NULL pointer. %s %d", __FILE__, __LINE__);
 		return;
 	}
 	
@@ -69,6 +253,7 @@ void snake_set_pos_dct(snake *s, int y, int x,  dct_t dct)
 	s -> head -> y = y;
 
 	snake_node *tmp = s -> head;
+	s -> head -> direction = dct;
 	int i;
 	switch(dct)
 	{
@@ -120,6 +305,7 @@ static void snake_add_node(snake *s, snake_node *node)
 {
 	if (NULL == node || NULL == s)
 	{
+		log_info("NULL pointer. %s %d", __FILE__, __LINE__);
 		return;
 	}
 
@@ -168,6 +354,7 @@ void snake_free(snake *s)
 {
 	if (NULL == s)
 	{
+		log_info("NULL pointer. %s %d", __FILE__, __LINE__);
 		return;
 	}
 
