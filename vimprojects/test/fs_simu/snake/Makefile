@@ -1,7 +1,8 @@
 CC=gcc
 OBJS=test.o snake.o snake_base.o log.o snake_snake.o keyboard_ctrl.o snake_food.o
 LIBS=-lcurses -lpthread
-DEBUG=-g
+#DEBUG=-g
+DEBUG=
 
 test : ${OBJS}
 	${CC} ${DEBUG} ${OBJS} -o test ${LIBS}
