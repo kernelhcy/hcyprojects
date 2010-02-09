@@ -28,11 +28,14 @@ typedef struct _snake_node
  */
 typedef struct
 {
-	int 	len; 		//蛇的长度
-	dct_t 	direction; 	//蛇的运动方向
+	int 	len; 				//蛇的长度
+	dct_t 	direction; 			//蛇的运动方向
 
 	snake_node *head, *tail; 	//蛇头和尾
-	int max_x, max_y; 		//最大活动区域
+	int max_x, max_y; 			//最大活动区域
+
+	int level; 					//当前关卡
+
 }snake;
 
 

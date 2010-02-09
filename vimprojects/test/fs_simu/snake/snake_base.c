@@ -210,6 +210,15 @@ static int screen_init(snake_data *s)
 		wrefresh(s -> play_win);
 		getch();
 	}
+	else
+	{
+		wattron(s -> play_win, COLOR_PAIR(RED_ON_BLACK));
+		mvwaddstr(s -> play_win , 10, 20, "Quit Game!");
+		mvwaddstr(s -> play_win , 11, 20, "Press any key to QUIT!");
+		wattroff(s -> play_win, COLOR_PAIR(RED_ON_BLACK));
+		wrefresh(s -> play_win);
+		getch();
+	}
 
 	//snake_show(s -> s, s -> play_win);
 	return 1;
@@ -238,10 +247,11 @@ snake_data* snake_game_init()
 	
 	s_d -> split_r = 0.8f; 	//
 
-	s_d -> food_max_num = 30; 	//每一关的最大食物量
+	s_d -> food_max_num = FOOD_MAX_NUM_PER_LEVEL; 	//每一关的最大食物量
 	s_d -> food_map = NULL;
 	s_d -> map_x = -1;
 	s_d -> map_y = -1;
+	
 
 	//初始化锁
 	pthread_mutex_init(&s_d -> food_map_lock, NULL);
@@ -249,6 +259,7 @@ snake_data* snake_game_init()
 	pthread_mutex_init(&s_d -> s_d_lock, NULL);
 
 	s_d -> s = snake_init();
+	s_d -> s -> level = 1;
 
 	screen_init(s_d);	
 	return s_d;

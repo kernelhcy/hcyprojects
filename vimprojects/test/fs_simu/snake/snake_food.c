@@ -75,14 +75,38 @@ static void * thread_create_food(void *a)
 		return NULL;
 	}
 	thread_food_arg_t *arg = (thread_food_arg_t*)a;
-	int i = 0;
+
 	int time_marg;
 	log_info("Beginning creating food.");
-	while(i < arg -> s_d -> food_max_num)
+
+	while(1)
 	{
-		create_food(arg -> s_d -> food_map, arg -> s_d -> map_y, arg -> s_d  -> map_x);
-		++i;
-		show_food(arg);
+		if (arg -> s_d -> shutdown) 
+		{
+			log_info("food creator was shutdown. %s %d", __FILE__, __LINE__);
+			break;
+		}
+		pthread_mutex_lock(&arg -> s_d -> food_map_lock);
+		if (arg -> s_d -> food_max_num > 0)
+		{
+			create_food(arg -> s_d -> food_map, arg -> s_d -> map_y, arg -> s_d  -> map_x);
+			show_food(arg);
+			-- arg-> s_d -> food_max_num;
+		}
+		/*
+		 * 此时食物已经全部产生。
+		 * 等待游戏进入下一关重新启动并产生食物。
+		 */
+		else
+		{
+			/**
+			 * 解锁必须在usleep之前。否则snake runner会因为没有得到锁而暂停
+			 */
+			pthread_mutex_unlock(&arg -> s_d -> food_map_lock);
+			usleep(10000);
+			continue;
+		}
+		pthread_mutex_unlock(&arg -> s_d -> food_map_lock);
 	
 		time_marg = rand() % 5;
 		if (time_marg <= 0)

@@ -32,10 +32,9 @@ static void * thread_key_listen(void *a)
 		key = getch();
 	}
 
-	log_info("Cancel others two thread in key listenner. %s %d", __FILE__, __LINE__);
-	//取消其他线程
-	pthread_cancel(arg -> s_d -> food_creator_id);
-	pthread_cancel(arg -> s_d -> snake_runner_id);
+	log_info("%c was pushdown.", key);
+	log_info("Shut down the game.");
+	arg -> s_d -> shutdown = 1;
 
 	return NULL;
 }

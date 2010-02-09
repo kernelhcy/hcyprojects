@@ -9,6 +9,10 @@
 #define SNAKE_INIT_LEN  3 				//蛇的初始长度
 #define SNAKE_NODE_SHARP ACS_DIAMOND 	//蛇的形状
 
+#define FOOD_MAX_NUM_PER_LEVEL 3		//每一关的最大食物量
+
+#define MAX_LEVEL 	5 					//最大关数
+
 /**
  * 定义运动的方向
  */

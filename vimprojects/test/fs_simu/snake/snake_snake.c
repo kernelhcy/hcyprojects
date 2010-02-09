@@ -10,7 +10,7 @@ static snake_node* snake_node_init_yx(int y, int x);
 static int snake_is_craft(snake*);
 static int snake_has_food(snake_data *);
 static void snake_add_node(snake *s, snake_node *node);
-
+static int snake_next_level(snake_data *);
 
 //线程主体
 void* thread_run_snake(void *a)
@@ -19,10 +19,17 @@ void* thread_run_snake(void *a)
 	thread_run_snake_arg_t *arg = (thread_run_snake_arg_t*)a;
 
 	int i = 0 , j;
+	int step = 0;
 
 	while( 1 )
 	{
-		log_info("Thread_run_snake : Move the snake.");
+		if (arg -> s_d -> shutdown) 
+		{
+			log_info("snake runner was shutdown. %s %d", __FILE__, __LINE__);
+			break;
+		}
+
+		log_info("Thread_run_snake : Move the snake. step : %d", step);
 
 		//执行一次移动
 		pthread_mutex_lock(&arg -> s_d -> snake_lock);
@@ -30,6 +37,17 @@ void* thread_run_snake(void *a)
 		snake_move(arg -> s_d -> s);
 		snake_show(arg -> s_d -> s, arg -> s_d -> play_win);
 		pthread_mutex_unlock(&arg -> s_d -> snake_lock);
+
+		log_info("Thread_run_snake : Move done. step : %d", step);
+		++step;
+
+		//在info窗口显示信息
+		mvwprintw(arg -> s_d -> info_win, 4, 2, "Level: %d", arg -> s_d -> s -> level);
+		mvwprintw(arg -> s_d -> info_win, 5, 2, "Snake Length: %d", arg -> s_d -> s -> len);
+		mvwprintw(arg -> s_d -> info_win, 6, 2, "Step: %d", step);
+		//mvwprintw(arg -> s_d -> info_win, 6, 0, "Snake Length %d", step);
+		mvwprintw(arg -> s_d -> info_win, 9, 5, "By HCY");
+		wrefresh(arg -> s_d -> info_win);
 
 		if (snake_is_craft(arg -> s_d -> s))
 		{
@@ -39,6 +57,7 @@ void* thread_run_snake(void *a)
 			pthread_cancel(arg -> s_d -> key_listenner_id);
 			return arg;
 		}
+		log_info("check craft done.");
 		
 		if (snake_has_food(arg -> s_d))
 		{
@@ -46,13 +65,20 @@ void* thread_run_snake(void *a)
 			snake_add_node(arg -> s_d -> s, snake_node_init());
 			pthread_mutex_unlock(&arg -> s_d -> snake_lock);
 		}
-	
-		//暂停0.2秒
-		usleep(200000);
+		log_info("check food done.");
 
-		log_info("Thread_run_snake : Move done.");
+		if (arg -> s_d -> s -> len >= FOOD_MAX_NUM_PER_LEVEL + SNAKE_INIT_LEN)
+		{
+			log_info("snake length %d.", arg -> s_d -> s -> len);
+			snake_next_level(arg -> s_d);			
+		}
+		log_info("check next level done.");
+	
+		usleep( (MAX_LEVEL - arg -> s_d -> s -> level + 1) * 50000);
+
 	}
 
+	log_info("Snake runner gone out the while loop. quit.");
 	return arg;
 }
 
@@ -69,7 +95,7 @@ pthread_t snake_run(thread_run_snake_arg_t *arg)
 	
 	pthread_t id;	
 	int error;
-	if (error = pthread_create(&id, NULL, (void *(*)(void *))thread_run_snake, (void *)arg))
+	if (error = pthread_create(&id, NULL, thread_run_snake, arg))
 	{
 		log_error("Create the snake run thread ERROR. %s %d", __FILE__, __LINE__);
 		return 0;
@@ -80,9 +106,58 @@ pthread_t snake_run(thread_run_snake_arg_t *arg)
 }
 
 /**
+ * 进入下一关
+ */
+int snake_next_level(snake_data *s_d)
+{
+	if (NULL == s_d)
+	{
+		log_error("NULL pointer. %s %d", __FILE__, __LINE__);
+		return 0;
+	}
+
+	static const char* tip1 = "Congratulations!!";
+	static const char* tip2 = "Press any key to enter next level.";
+
+	int info_x, info_y;
+	getmaxyx(s_d -> play_win, info_y, info_x);
+
+	int x1 = info_x /2 - strlen(tip1) / 2;
+	int x2 = info_x /2 - strlen(tip2) / 2;
+
+	int y = info_y / 2 + 1;
+
+	mvwaddstr(s_d -> play_win, y, x1, tip1);
+	mvwaddstr(s_d -> play_win, y + 1, x2, tip2);
+	wrefresh(s_d -> play_win);
+	getch();
+
+	s_d -> s -> level += 1; 	//进入下一关
+	log_info("Enter the next level.");
+	snake_free(s_d -> s);
+	s_d -> s = snake_init();
+	if (!s_d -> s)
+	{
+		log_error("Create snake error. %s %d", __FILE__, __LINE__);
+		return 0;
+	}
+		
+	int play_x, play_y;
+	getmaxyx(s_d -> play_win, play_y, play_x);
+	snake_set_pos_dct(s_d -> s, play_y / 2 + 2, play_x / 2 - s_d -> s -> len /2, RIGHT_DCT);	
+	
+	//pthread_mutex_lock(&s_d -> food_map_lock);
+	s_d -> food_max_num = FOOD_MAX_NUM_PER_LEVEL;
+	//pthread_mutex_unlock(&s_d -> food_map_lock);
+
+	return 1;
+
+}
+
+/**
  * 判断是否有食物被吃到
  */
-static int snake_has_food(snake_data *s_d)
+int snake_has_food(snake_data *s_d)
 {
 	if (NULL == s_d)
 	{
@@ -95,8 +170,10 @@ static int snake_has_food(snake_data *s_d)
 	pthread_mutex_lock(& s_d -> food_map_lock);
 	if (s_d -> food_map[y][x])
 	{
-		s_d -> food_map[y][x] = 1;
+		s_d -> food_map[y][x] = 0;
 		pthread_mutex_unlock(& s_d -> food_map_lock);
+
+
 		return 1;
 	}
 	else
@@ -118,8 +195,8 @@ static int snake_is_craft(snake* s)
 		log_error("NULL pointer. %s %d", __FILE__, __LINE__);
 		return 0;
 	}
-	log_info("Snake_is_craft : max_x %d max_y %d", s -> max_x, s -> max_y);
-	log_info("Snake_is_craft : snake pos(%d, %d)", s -> head -> x, s -> head -> y);
+	//log_info("Snake_is_craft : max_x %d max_y %d", s -> max_x, s -> max_y);
+	//log_info("Snake_is_craft : snake pos(%d, %d)", s -> head -> x, s -> head -> y);
 	//是否碰到墙壁
 	if (s -> head -> x >= s -> max_x - 1 || s -> head -> y >= s -> max_y - 1
 		|| s -> head -> x <= 0|| s -> head -> y <= 0)
@@ -275,7 +352,7 @@ void snake_clear(snake *s, WINDOW *w)
 		return;
 	}
 
-	log_info("Hidet the snake");
+	log_info("Hide the snake");
 	int i;
 	snake_node *tmp = s -> head;
 	for (i = 0; i < s -> len; ++i)
