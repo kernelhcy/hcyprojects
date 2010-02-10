@@ -61,6 +61,7 @@ static void log_do(log_t type, const char *fmt, va_list ap)
 	return;
 }
 
+
 void assert(void *p)
 {
 	if ( NULL == p)

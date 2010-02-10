@@ -1,7 +1,10 @@
 #include "log.h"
 #include <string.h>
+#include <pthread.h>
 //定义日志的最大长度
 #define MAXLINE  4096
+
+static pthread_mutex_t log_lock = PTHREAD_MUTEX_INITIALIZER;
 
 //定义log的类型。
 typedef enum
@@ -67,6 +70,8 @@ void log_warning(const char *fmt, ...)
 
 void do_log(const char *fmt, log_t t, va_list ap)
 {
+	pthread_mutex_lock(&log_lock);
+
 	char buf[MAXLINE];
 	memset(buf, '\0', sizeof(buf));
 
@@ -103,7 +108,8 @@ void do_log(const char *fmt, log_t t, va_list ap)
 	}
 
 	fflush(log_fd);
-
+	
+	pthread_mutex_unlock(&log_lock);
 	return;
 }
 
