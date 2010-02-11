@@ -34,9 +34,9 @@ void run(int show_details)
 	printf("HCY's Fils System.\n");
 	printf("Version 0.001. \n");
 	
-	int state = hfs_init();
+	hfs *fs = hfs_init();
 
-	if(state == -1)//文件系统运行失败。
+	if(NULL == fs)//文件系统运行失败。
 	{
 		printf("文件系统出错！！退出...\n");
 		return;
@@ -47,11 +47,11 @@ void run(int show_details)
 	char cmd[10];
 	char path[500];//存放临时的目录或文件名	
 	//设置命令提示。
-	strcpy(tip, "cmd:");
+	strcpy(fs -> tip, "cmd:");
 
 	while(1)
 	{
-		printf("%s",tip);
+		printf("%s", fs -> tip);
 		scanf("%s",cmd);
 		
 		if(strcmp("quit",cmd) == 0|| strcmp("q", cmd) == 0)
@@ -60,52 +60,52 @@ void run(int show_details)
 		}
 		else if(strcmp("help", cmd) == 0 || strcmp("h", cmd) == 0)
 		{
-			show_help_info();
+			show_help_info(fs);
 		}
 		else if(strcmp("ls", cmd) == 0)
 		{
-			hfs_ls(NULL);
+			hfs_ls(fs, NULL);
 		}
 		else if(strcmp("mkdir", cmd) == 0)
 		{
 			printf("目录名：");
 			scanf("%s",path);
-			hfs_mkdir(path);
+			hfs_mkdir(fs, path);
 		}
 		else if(strcmp("rmdir", cmd) == 0)
 		{
 			printf("目录名称：");
 			scanf("%s",path);
-			hfs_rmdir(path);
+			hfs_rmdir(fs, path);
 		}
 		else if(strcmp("chdir", cmd) == 0 || strcmp("cd", cmd) == 0)
 		{
 			printf("完整的目录路径： ");
 			scanf("%s",path);
-			hfs_chdir(path);
+			hfs_chdir(fs, path);
 		}
 		else if(strcmp("create", cmd) ==0 || strcmp("crt", cmd) == 0)
 		{
 			printf("文件名： ");
 			scanf("%s",path);
-			t_fp = hfs_create(path,75);
+			t_fp = hfs_create(fs, path,75);
 		}
 		else if(strcmp("delete", cmd) == 0 
 					|| strcmp("del", cmd) == 0 || strcmp("rm", cmd) == 0)
 		{
 			printf("完整的路径和文件名： ");
 			scanf("%s",path);
-			hfs_delete(path);
+			hfs_delete(fs, path);
 		}
 		else if(strcmp("open", cmd) == 0)
 		{
 			printf("完整的路径和文件名： ");
 			scanf("%s", path);
-			t_fp = hfs_open(path,R|W);
+			t_fp = hfs_open(fs, path,R|W);
 		}
 		else if(strcmp("close", cmd) == 0)
 		{
-			hfs_close(t_fp);
+			hfs_close(fs, t_fp);
 		}
 		else if(strcmp("write", cmd) == 0 || strcmp("wr", cmd) == 0)
 		{
@@ -113,19 +113,19 @@ void run(int show_details)
 			memset(buffer, '\0', 10000);
 			printf("内容:");
 			scanf("%s", buffer);
-			hfs_write(t_fp, buffer, strlen(buffer));
+			hfs_write(fs, t_fp, buffer, strlen(buffer));
 		}
 		else if(strcmp("read", cmd) == 0 || strcmp("rd", cmd) == 0)
 		{
 			char buffer[105];
 			memset(buffer, '\0', 105);
 
-			int len = hfs_read(t_fp, buffer, 100);
+			int len = hfs_read(fs, t_fp, buffer, 100);
 			printf("reslut: len %d\n %s\n", len, buffer);
 		}
 		else if(strcmp("pwd", cmd) == 0)
 		{
-			hfs_pwd();
+			hfs_pwd(fs);
 		}
 		else if(strcmp("login", cmd) == 0)
 		{
@@ -135,7 +135,7 @@ void run(int show_details)
 			
 			printf("用户名：");
 			scanf("%s",username);
-			if(find_usr(username, &user_info) < 0)
+			if(find_usr(fs, username, &user_info) < 0)
 			{
 				printf("用户不存在！！创建用户?y/n");
 				char s[5];
@@ -147,7 +147,7 @@ void run(int show_details)
 					printf("口令：");
 					scanf("%s",passwd);
 					
-					int state = create_user(username, passwd);
+					int state = create_user(fs, username, passwd);
 					
 					if(state == 0)
 					{
@@ -164,17 +164,17 @@ void run(int show_details)
 			{
 				printf("口令：");
 				scanf("%s",passwd);
-				hfs_login(username,passwd);
+				hfs_login(fs, username,passwd);
 			}
 			
 		}
 		else if(strcmp("logout", cmd) == 0)
 		{
-			hfs_logout(login_users[curr_usr_id].username);
+			hfs_logout(fs, fs -> login_users[curr_usr_id].username);
 		}
 		else if(strcmp("cat", cmd) == 0)
 		{
-		 	char *content = hfs_cat(t_fp);
+		 	char *content = hfs_cat(fs, t_fp);
 		}
 		else
 		{
@@ -191,7 +191,7 @@ void run(int show_details)
 	}
 	
 	//退出文件系统，写回数据。
-	hfs_halt();
+	hfs_halt(fs);
 }
 
 //分配并初始化内存空间
