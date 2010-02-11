@@ -5,6 +5,9 @@
 #include "joblist.h"
 #include "log.h"
 
+/**
+ * 追加con到srv的joblist中。
+ */
 int joblist_append(server * srv, connection * con)
 {
 	if (con->in_joblist)
@@ -13,13 +16,12 @@ int joblist_append(server * srv, connection * con)
 	if (srv->joblist->size == 0)
 	{
 		srv->joblist->size = 16;
-		srv->joblist->ptr =
-			malloc(sizeof(*srv->joblist->ptr) * srv->joblist->size);
-	} else if (srv->joblist->used == srv->joblist->size)
+		srv->joblist->ptr = malloc(sizeof(*srv->joblist->ptr) * srv->joblist->size);
+	} 
+	else if (srv->joblist->used == srv->joblist->size)
 	{
 		srv->joblist->size += 16;
-		srv->joblist->ptr =
-			realloc(srv->joblist->ptr,
+		srv->joblist->ptr = realloc(srv->joblist->ptr,
 					sizeof(*srv->joblist->ptr) * srv->joblist->size);
 	}
 
@@ -28,6 +30,9 @@ int joblist_append(server * srv, connection * con)
 	return 0;
 }
 
+/**
+ * 释放joblist
+ */
 void joblist_free(server * srv, connections * joblist)
 {
 	UNUSED(srv);
@@ -35,6 +40,7 @@ void joblist_free(server * srv, connections * joblist)
 	free(joblist->ptr);
 	free(joblist);
 }
+
 
 connection *fdwaitqueue_unshift(server * srv, connections * fdwaitqueue)
 {
@@ -60,7 +66,8 @@ int fdwaitqueue_append(server * srv, connection * con)
 		srv->fdwaitqueue->size = 16;
 		srv->fdwaitqueue->ptr =
 			malloc(sizeof(*(srv->fdwaitqueue->ptr)) * srv->fdwaitqueue->size);
-	} else if (srv->fdwaitqueue->used == srv->fdwaitqueue->size)
+	} 
+	else if (srv->fdwaitqueue->used == srv->fdwaitqueue->size)
 	{
 		srv->fdwaitqueue->size += 16;
 		srv->fdwaitqueue->ptr =

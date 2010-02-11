@@ -74,7 +74,7 @@
 #endif
 /**
  * sig_atomic_c类型有ISO C标准定义。
- * 在写这种类型的变量时不会被终端。这意味着在具有虚拟存储器的系统上这种变量不回跨越页边界。
+ * 在写这种类型的变量时不会被中断。这意味着在具有虚拟存储器的系统上这种变量不回跨越页边界。
  * 可以用一条机器指令对其进行访问。
  * 类型的定义包含在signal.h，定义为tpyedef __sig_atomic_t sig_atomic_t.在文件bits/sigsets.h中
  * 定义了__sig_atomic_t: typedef int __sig_atomic_t.
@@ -998,8 +998,10 @@ int main(int argc, char **argv)
 		if (srv->srvconf.changeroot->used)
 		{
 			//The tzset() function initializes the tzname variable from the TZ environment variable.  
-			//This function is automatically called by the other time conversion functions that depend on the time zone.  
-			//In a SysV-like environment it will also set the variables  time-zone  (seconds  West  of GMT) and daylight 
+			//This function is automatically called by the other time conversion functions that depend 
+			//on the time zone.  
+			//In a SysV-like environment it will also set the variables  time-zone  (seconds  West  of GMT) 
+			//and daylight 
 			//(0 if this time zone does not have any daylight saving time rules, nonzero if there is a
 			//time during the year when daylight saving time applies).
 			tzset();
@@ -1305,7 +1307,8 @@ int main(int argc, char **argv)
 	 *
 	 *     ITIMER_REAL    decrements in real time, and delivers SIGALRM upon expiration.
 	 *     ITIMER_VIRTUAL decrements only when the process is executing, and delivers SIGVTALRM upon expiration.
-	 *     ITIMER_PROF    decrements both when the process executes and when the system is executing on behalf of the process.   
+	 *     ITIMER_PROF    decrements both when the process executes and when the system is executing on 
+	 * 					  behalf of the process.   
 	 *     				  Coupled with ITIMER_VIRTUAL,  this  timer  is usually used to profile the time spent 
 	 *     				  by the application in user and kernel space.
 	 *  SIGPROF is delivered upon expiration.
@@ -1751,11 +1754,11 @@ int main(int argc, char **argv)
 					}
 					fprintf(stderr, "c[%d,%d]: %s ", con->fd, con->fcgi.fd, connection_get_state(con->state));
 #endif
-				}
+				}//end of for( ndx = 0; ...
 
 				if (cs == 1)
 					fprintf(stderr, "\n");
-			}
+			}//end of if (min_ts != srv->cur_ts)...
 		}//end of if (handle_sig_alarm)...
 
 		if (srv->sockets_disabled)
