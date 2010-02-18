@@ -413,6 +413,10 @@ static int connection_handle_read(server * srv, connection * con)
 	}
 #if defined(__WIN32)
 	b = chunkqueue_get_append_buffer(con->read_queue);
+	/*
+	 * windows下无法获得所要读取的数据的长度，因此只能设置一个
+	 * 固定的缓存大小
+	 */
 	buffer_prepare_copy(b, 4 * 1024);
 	len = recv(con->fd, b->ptr, b->size - 1, 0);
 #else
@@ -1077,7 +1081,7 @@ int connection_handle_read_state(server * srv, connection * con)
 	}
 
 	/*
-	 * the last chunk might be empty 
+	 * the last chunk might be empty 最后一个节点可能没有数据
 	 */
 	for (c = cq->first; c;)
 	{
@@ -1086,6 +1090,8 @@ int connection_handle_read_state(server * srv, connection * con)
 			/*
 			 * the first node is empty 
 			 * ... and it is empty, move it to unused 
+			 * 第一个节点就是空的。什么数据都没读到。
+			 * 删除之。
 			 */
 
 			cq->first = c->next;
@@ -1137,8 +1143,10 @@ int connection_handle_read_state(server * srv, connection * con)
 	{
 	case CON_STATE_READ:
 		/*
-		 * if there is a \r\n\r\n in the chunkqueue scan the chunk-queue twice
-		 * 1. to find the \r\n\r\n 2. to copy the header-packet 
+		 * if there is a \r\n\r\n in the chunkqueue 
+		 * scan the chunk-queue twice:
+		 * 		1. to find the \r\n\r\n 
+		 * 		2. to copy the header-packet 
 		 */
 
 		last_chunk = NULL;
@@ -1181,7 +1189,8 @@ int connection_handle_read_state(server * srv, connection * con)
 
 							break;
 						}
-					} else
+					} 
+					else
 					{
 						chunk *lookahead_chunk = c->next;
 						size_t missing_chars;
@@ -1192,8 +1201,7 @@ int connection_handle_read_state(server * srv, connection * con)
 
 						missing_chars = 4 - have_chars;
 
-						if (lookahead_chunk
-							&& lookahead_chunk->type == MEM_CHUNK)
+						if (lookahead_chunk	&& lookahead_chunk->type == MEM_CHUNK)
 						{
 							/*
 							 * is the chunk long enough to contain the other
@@ -1202,14 +1210,13 @@ int connection_handle_read_state(server * srv, connection * con)
 
 							if (lookahead_chunk->mem->used > missing_chars)
 							{
-								if (0 ==
-									strncmp(b.ptr + i, "\r\n\r\n",
-											have_chars)
-									&& 0 ==
-									strncmp(lookahead_chunk->mem->
-											ptr,
-											"\r\n\r\n" +
-											have_chars, missing_chars))
+								//注意："\r\n\r\n" + have_chars
+								//得到的结果是还是一个字符串，只是是原字符串偏移have_chars
+								//个字符后的子串。
+								//如果have_chars = 2,得到的结果是"\r\n"
+								if (0 == strncmp(b.ptr + i, "\r\n\r\n", have_chars)
+									&& 0 == strncmp(lookahead_chunk->mem-> ptr,
+												"\r\n\r\n" + have_chars, missing_chars))
 								{
 
 									last_chunk = lookahead_chunk;
@@ -1217,7 +1224,8 @@ int connection_handle_read_state(server * srv, connection * con)
 
 									break;
 								}
-							} else
+							} 
+							else
 							{
 								/*
 								 * a splited \r \n 
@@ -1234,6 +1242,7 @@ int connection_handle_read_state(server * srv, connection * con)
 
 		/*
 		 * found 
+		 * 找到了完整的request header。将数据拷贝到con -> requese.request中。
 		 */
 		if (last_chunk)
 		{
@@ -1246,7 +1255,7 @@ int connection_handle_read_state(server * srv, connection * con)
 				b.ptr = c->mem->ptr + c->offset;
 				b.used = c->mem->used - c->offset;
 
-				if (c == last_chunk)
+				if (c == last_chunk)//多拷贝一个'/0'
 				{
 					b.used = last_offset + 1;
 				}
@@ -1258,7 +1267,8 @@ int connection_handle_read_state(server * srv, connection * con)
 					c->offset += last_offset;
 
 					break;
-				} else
+				} 
+				else
 				{
 					/*
 					 * the whole packet was copied 
@@ -1268,7 +1278,8 @@ int connection_handle_read_state(server * srv, connection * con)
 			}
 
 			connection_set_state(srv, con, CON_STATE_REQUEST_END);
-		} else if (chunkqueue_length(cq) > 64 * 1024)
+		} 
+		else if (chunkqueue_length(cq) > 64 * 1024)
 		{
 			log_error_write(srv, __FILE__, __LINE__, "s",
 							"oversized request-header -> sending Status 414");
@@ -1279,10 +1290,8 @@ int connection_handle_read_state(server * srv, connection * con)
 		}
 		break;
 	case CON_STATE_READ_POST:
-		for (c = cq->first;
-			 c
-			 && (dst_cq->bytes_in != (off_t) con->request.content_length);
-			 c = c->next)
+		for (c = cq->first; c && (dst_cq->bytes_in != (off_t) con->request.content_length);
+			 		c = c->next)
 		{
 			off_t weWant, weHave, toRead;
 
@@ -1315,8 +1324,7 @@ int connection_handle_read_state(server * srv, connection * con)
 				 *
 				 * */
 
-				if (dst_cq->last &&
-					dst_cq->last->type == FILE_CHUNK &&
+				if (dst_cq->last && dst_cq->last->type == FILE_CHUNK &&
 					dst_cq->last->file.is_temp && dst_cq->last->offset == 0)
 				{
 					/*
@@ -1333,11 +1341,10 @@ int connection_handle_read_state(server * srv, connection * con)
 							 * this should not happen as we cache the fd, but
 							 * you never know 
 							 */
-							dst_c->file.fd =
-								open(dst_c->file.name->ptr,
-									 O_WRONLY | O_APPEND);
+							dst_c->file.fd = open(dst_c->file.name->ptr, O_WRONLY | O_APPEND);
 						}
-					} else
+					} 
+					else
 					{
 						/*
 						 * the chunk is too large now, close it 
@@ -1351,7 +1358,8 @@ int connection_handle_read_state(server * srv, connection * con)
 						}
 						dst_c = chunkqueue_get_append_tempfile(dst_cq);
 					}
-				} else
+				} 
+				else
 				{
 					dst_c = chunkqueue_get_append_tempfile(dst_cq);
 				}
@@ -1379,8 +1387,7 @@ int connection_handle_read_state(server * srv, connection * con)
 					break;
 				}
 
-				if (toRead !=
-					write(dst_c->file.fd, c->mem->ptr + c->offset, toRead))
+				if (toRead != write(dst_c->file.fd, c->mem->ptr + c->offset, toRead))
 				{
 					/*
 					 * write failed for some reason ... disk full ? 
@@ -1401,8 +1408,7 @@ int connection_handle_read_state(server * srv, connection * con)
 
 				dst_c->file.length += toRead;
 
-				if (dst_cq->bytes_in + toRead ==
-					(off_t) con->request.content_length)
+				if (dst_cq->bytes_in + toRead == (off_t) con->request.content_length)
 				{
 					/*
 					 * we read everything, close the chunk 
@@ -1410,7 +1416,8 @@ int connection_handle_read_state(server * srv, connection * con)
 					close(dst_c->file.fd);
 					dst_c->file.fd = -1;
 				}
-			} else
+			} 
+			else
 			{
 				buffer *b;
 
@@ -2242,7 +2249,8 @@ int connection_state_machine(server * srv, connection * con)
 			(con->is_writable == 0) && (con->traffic_limit_reached == 0))
 		{
 			fdevent_event_add(srv->ev, &(con->fde_ndx), con->fd, FDEVENT_OUT);
-		} else
+		} 
+		else
 		{
 			fdevent_event_del(srv->ev, &(con->fde_ndx), con->fd);
 		}

@@ -27,7 +27,8 @@
  * Unix-like operating systems. The FAM subsystem allows applications to watch certain files and be notified when 
  * they were modified. This greatly aids the applications, because before FAM existed, such applications would have 
  * to read the disk repeatedly to detect any changes: this resulted in high disk and CPU usage.
- * For example, a file manager application can detect if some file has changed and can then update a displayed icon and/or filename.
+ * For example, a file manager application can detect if some file has changed and can then update a displayed 
+ * icon and/or filename.
  *
  * The FAM system consists of two parts:
  * 		famd — the FAM Daemon, which provides notifications and listens for requests. Administrators can configure 
@@ -55,7 +56,8 @@
  * It's useful in more complex apps that create FAM-related objects in one scope but use them in another. 
  *
  * 3.A FAMEvent object encapsulates an event on a watched target. 
- * Its member variables include the watch target's name, an event code, and the user-data parameter set in FAMMonitorFile(). 
+ * Its member variables include the watch target's name, an event code, and the user-data parameter 
+ * set in FAMMonitorFile(). 
  * FAMNextEvent() catches FAM events--that is, changes to watch targets--and populates the provided FAMEvent pointer, fe, 
  * with that information:
  * 		FAMNextEvent( fc , fe ) ;
@@ -69,7 +71,8 @@
  * 6.Watching a directory means reporting events on its immediate children as well as the directory itself. 
  * It's very similar to watching files, except that you call FAMMonitorDirectory() instead of FAMMonitorFile(). 
  * 	Calling FAMMonitorDirectory() on a file doesn't fail. (The same goes for calling FAMMonitorFile() for a directory.) 
- * FAM will still report some events, though. Have your code stat() or lstat() the target to determine which FAM call to use.
+ * FAM will still report some events, though. Have your code stat() or lstat() the target to determine 
+ * which FAM call to use.
  *  Registering a directory with FAM will report several FAMExists events: one for the directory itself, 
  *  plus one for each element contained therein. 
  *  (This includes hidden elements, except for the special directory entries . and ...) 
@@ -847,14 +850,17 @@ handler_t stat_cache_get_entry(server * srv, connection * con, buffer * name,
 /**
  * remove stat() from cache which havn't been stat()ed for
  * more than 10 seconds
- *
+ * 从缓存中删除超过10s没有stat()ed的stat()
  *
  * walk though the stat-cache, collect the ids which are too old
  * and remove them in a second loop
+ * 遍历stat缓存，收集较旧的id并在第二个循环中删除之。
+ *
+ * 先序遍历伸展树，将stat_ts比服务器的当前时间cur_ts小2的stat_cache_entry的id存入
+ * 数组key中。
  */
 
-static int
-stat_cache_tag_old_entries(server * srv, splay_tree * t, int *keys,
+static int stat_cache_tag_old_entries(server * srv, splay_tree * t, int *keys,
 						   size_t * ndx)
 {
 	stat_cache_entry *sce;
@@ -875,6 +881,7 @@ stat_cache_tag_old_entries(server * srv, splay_tree * t, int *keys,
 	return 0;
 }
 
+//清理文件状态缓存
 int stat_cache_trigger_cleanup(server * srv)
 {
 	stat_cache *sc;
@@ -890,6 +897,8 @@ int stat_cache_trigger_cleanup(server * srv)
 
 	stat_cache_tag_old_entries(srv, sc->files, keys, &max_ndx);
 
+	//删除上面的函数调用中收集到的存放在keys数组中的id
+	//对应的伸展树中的节点。
 	for (i = 0; i < max_ndx; i++)
 	{
 		int ndx = keys[i];

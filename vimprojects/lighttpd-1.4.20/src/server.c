@@ -1,7 +1,7 @@
 /**
  * 书签：
- * 		状态机的详细分析。
- * 		connections.c 1052
+ * 		状态机的详细分析。 handle_request状态。
+ * 		connections.c 
  */
 #include <sys/types.h>
 #include <sys/time.h>
