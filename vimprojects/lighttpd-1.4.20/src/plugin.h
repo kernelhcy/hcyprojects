@@ -9,6 +9,8 @@
 #include "base.h"
 #include "buffer.h"
 
+
+//这里定义接口模板，用于插件实现功能函数的接口的统一
 #define SERVER_FUNC(x) \
 		static handler_t x(server *srv, void *p_d)
 

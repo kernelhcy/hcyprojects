@@ -89,6 +89,9 @@ static void plugin_free(plugin * p)
 	free(p);
 }
 
+/**
+ * 将p加到srv的plugins数组中
+ */
 static int plugins_register(server * srv, plugin * p)
 {
 	plugin **ps;
@@ -122,6 +125,7 @@ static int plugins_register(server * srv, plugin * p)
  */
 
 //静态链接
+//函数并没有完整的实现。目前只支持动态链接库的形式。
 #ifdef LIGHTTPD_STATIC
 int plugins_load(server * srv)
 {
@@ -150,10 +154,10 @@ int plugins_load(server * srv)
 
 	for (i = 0; i < srv->srvconf.modules->used; i++)
 	{
-		//获得动态链接库的完整的路径名称。
+		//获得动态链接库的名称。
 		data_string *d = (data_string *) srv->srvconf.modules->data[i];
 		char *modules = d->value->ptr;
-		//库的路径
+		//库所在目录
 		buffer_copy_string_buffer(srv->tmp_buf, srv->srvconf.modules_dir);
 
 		buffer_append_string_len(srv->tmp_buf, CONST_STR_LEN("/"));
@@ -196,6 +200,7 @@ int plugins_load(server * srv)
 		}
 #endif
 		//调用动态库中的XXX_plugin_init函数。
+		//XXX是库的名称
 		buffer_reset(srv->tmp_buf);
 		buffer_copy_string(srv->tmp_buf, modules);
 		buffer_append_string_len(srv->tmp_buf, CONST_STR_LEN("_plugin_init"));
@@ -225,6 +230,7 @@ int plugins_load(server * srv)
 		//调用dlsym函数获得XXX_plugin_init函数的地址。
 		init = (int (*)(plugin *)) (intptr_t) dlsym(p->lib, srv->tmp_buf->ptr);
 #else
+		//这句没有用
 		*(void **) (&init) = dlsym(p->lib, srv->tmp_buf->ptr);
 #endif
 		if ((error = dlerror()) != NULL)
@@ -236,6 +242,7 @@ int plugins_load(server * srv)
 		}
 #endif
 		//初始化插件
+		//在初始化的过程中，模块将自己所有的对外接口函数的入口地址都存入到p中。
 		if ((*init) (p))
 		{
 			log_error_write(srv, __FILE__, __LINE__, "ss", modules, "plugin init failed");
@@ -251,7 +258,7 @@ int plugins_load(server * srv)
 
 	return 0;
 }
-#endif
+#endif //end of #ifdef LIGHTTPD_STATIC
 
 /**
  * 下面的宏PLUGIN_TO_SLOT（不止一个哦）实际上是定义了一些函数模板
@@ -290,6 +297,21 @@ int plugins_load(server * srv)
 		return HANDLER_GO_ON;\
 	}
 
+
+/**
+ * 下面这两个宏用于实现plugin.c中的那一系列plugins_call_xxxxxx函数。
+ * 通过这样一个模板，减少代码的重复。
+ */
+
+/**
+ * 从这些函数的实现中可以看出，宏的第一个参数是描述插件功能的一个枚举类型，
+ * 标记这个函数所要执行的功能。
+ * 第二个参数是plugin_t中与这个功能对应的成员的名称，这样后面可以这个名称调用
+ * 这个成员。（就是一个函数）
+ *
+ * 另外，这些函数中都是通过一个for循环调用所有插件对应的函数。(效率？？？)
+ */
+
 /**
  * plugins that use
  *
@@ -319,8 +341,8 @@ PLUGIN_TO_SLOT(PLUGIN_FUNC_CONNECTION_RESET, connection_reset)
 	handler_t plugins_call_##y(server *srv) {\
 		plugin **slot;\
 		size_t j;\
-                if (!srv->plugin_slots) return HANDLER_GO_ON;\
-                slot = ((plugin ***)(srv->plugin_slots))[x];\
+        if (!srv->plugin_slots) return HANDLER_GO_ON;\
+        slot = ((plugin ***)(srv->plugin_slots))[x];\
 		if (!slot) return HANDLER_GO_ON;\
 		for (j = 0; j < srv->plugins.used && slot[j]; j++) { \
 			plugin *p = slot[j];\
@@ -390,6 +412,7 @@ handler_t plugins_call_handle_fdevent(server * srv, const fd_conn * fdc)
 	return HANDLER_GO_ON;
 }
 #endif
+
 /**
  *
  * - call init function of all plugins to init the plugin-internals
@@ -429,6 +452,8 @@ handler_t plugins_call_init(server * srv)
 	 * 最外面的if(p -> y)判断插件是否有功能y。
 	 * 如果有，则在下面的for循环中将其加入到这一行中。
 	 * 里面的if是初始化还没有初始化的行。
+	 *
+	 * 对所有的plugin进行登记造册
 	 */
 #define PLUGIN_TO_SLOT(x, y) \
 	if (p->y) { \
@@ -460,7 +485,8 @@ handler_t plugins_call_init(server * srv)
 		PLUGIN_TO_SLOT(PLUGIN_FUNC_CLEANUP, cleanup);
 		PLUGIN_TO_SLOT(PLUGIN_FUNC_SET_DEFAULTS, set_defaults);
 #undef PLUGIN_TO_SLOT
-
+		
+		//对插件进行初始化，调用其初始化函数
 		if (p->init)
 		{
 			if (NULL == (p->data = p->init()))
@@ -474,6 +500,8 @@ handler_t plugins_call_init(server * srv)
 			 */
 			((plugin_data *) (p->data))->id = i + 1;
 
+			//这里检测插件的版本是否和当前服务器的版本相同。
+			//这里保证如果以后插件的接口发生了改变，不会造成服务器崩溃。
 			if (p->version != LIGHTTPD_VERSION_ID)
 			{
 				log_error_write(srv, __FILE__, __LINE__, "sb",

@@ -750,8 +750,21 @@ int main(int argc, char **argv)
 		return -1;
 	}
 
-	//加载插件
-	//以后再说。。。
+	
+	/*
+	 * 加载插件
+	 *
+	 * 插件是以动态链接库的形式存在的。在配置文件中，要配置好插件的链接库的
+	 * 路径位置和库中函数的名称。在这个函数中，通过这些配置，获得函数的入口
+	 * 地址。
+	 * 可以看到，这个函数的调用是在整个程序的初始化阶段，而且只调用了这一次，
+	 * 因此，在服务器运行之前，要配置好所有的插件。
+	 * 如果想增加插件，只能重启服务器。
+	 *
+	 * 在实现plugins_load函数的时候，同时也有一个用于加载静态链接库的版本，
+	 * 但函数并没有什么实质性的实现。
+	 * 
+	 */
 	if (plugins_load(srv))
 	{
 		log_error_write(srv, __FILE__, __LINE__, "s",
@@ -1149,7 +1162,13 @@ int main(int argc, char **argv)
 		srv->max_conns = srv->max_fds;
 	}
 
-	if (HANDLER_GO_ON != plugins_call_init(srv)) //初始化插件。
+	/*
+	 * 在前面的plugins_load函数中，已经所有的插件读入到系统中，并对插件中含有
+	 * 的各种函数，确定入口地址。
+	 * 在这里，程序对所有插件进行登记造册，确定插件中含有的功能，并计入表中(srv->plugins_slot)
+	 * 
+	 */
+	if (HANDLER_GO_ON != plugins_call_init(srv)) 
 	{
 		log_error_write(srv, __FILE__, __LINE__, "s",
 						"Initialization of plugins failed. Going down.");
@@ -1200,6 +1219,7 @@ int main(int argc, char **argv)
 		return -1;
 	}
 
+	//这个函数并没有实现
 	if (HANDLER_GO_ON != plugins_call_set_defaults(srv))
 	{
 		log_error_write(srv, __FILE__, __LINE__, "s",
@@ -1562,8 +1582,8 @@ int main(int argc, char **argv)
 			 * 重新开始新一轮日志。
 			 * 这里使用了switch而不是if语句，有意思。。。
 			 * 调用插件关于SIGHUP信号的处理函数。
+			 * 这个函数貌似也没实现。。。
 			 */
-
 			switch (r = plugins_call_handle_sighup(srv))
 			{
 				case HANDLER_GO_ON:

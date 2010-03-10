@@ -5010,6 +5010,9 @@ TRIGGER_FUNC(mod_fastcgi_handle_trigger)
 }
 
 
+/*
+ * 初始化插件，在p中保存各个函数的入口地址。
+ */
 int mod_fastcgi_plugin_init(plugin * p)
 {
 	p->version = LIGHTTPD_VERSION_ID;

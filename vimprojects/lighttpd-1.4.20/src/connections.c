@@ -43,7 +43,7 @@
 
 typedef struct 
 {
-	PLUGIN_DATA;
+	PLUGIN_DATA;  //就是一个id
 } plugin_data;
 
 /**
