@@ -328,7 +328,7 @@ bool MainWindow::loadFile(const QString &fileName)
     ss -> setFileName(fileName);
     createContextMenu(ss);
     int index = tabWidget -> addTab(ss, fileName);
-    document[index] = ss;
+    //document[index] = ss;
     if (!ss -> load())
     {
         statusBar() -> showMessage(tr("Loading canceled"), 2000);
