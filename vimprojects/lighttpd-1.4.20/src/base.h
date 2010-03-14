@@ -85,7 +85,9 @@ typedef int socklen_t;
 
 #include "settings.h"
 
-typedef enum { T_CONFIG_UNSET,
+typedef enum 
+{ 
+	T_CONFIG_UNSET,
 	T_CONFIG_STRING,
 	T_CONFIG_SHORT,
 	T_CONFIG_BOOLEAN,
@@ -95,12 +97,15 @@ typedef enum { T_CONFIG_UNSET,
 	T_CONFIG_UNSUPPORTED
 } config_values_type_t;
 
-typedef enum { T_CONFIG_SCOPE_UNSET,
+typedef enum 
+{ 
+	T_CONFIG_SCOPE_UNSET,
 	T_CONFIG_SCOPE_SERVER,
 	T_CONFIG_SCOPE_CONNECTION
 } config_scope_type_t;
 
-typedef struct {
+typedef struct 
+{
 	const char *key;
 	void *destination;
 

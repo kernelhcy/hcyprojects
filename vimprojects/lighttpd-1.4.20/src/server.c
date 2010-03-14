@@ -1218,8 +1218,8 @@ int main(int argc, char **argv)
 		server_free(srv);
 		return -1;
 	}
-
-	//这个函数并没有实现
+	
+	//将插件设置为默认配置
 	if (HANDLER_GO_ON != plugins_call_set_defaults(srv))
 	{
 		log_error_write(srv, __FILE__, __LINE__, "s",
