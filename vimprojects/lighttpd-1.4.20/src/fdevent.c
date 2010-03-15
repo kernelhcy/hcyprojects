@@ -151,7 +151,7 @@ int fdevent_register(fdevents * ev, int fd, fdevent_handler handler, void *ctx)
 	fdn->fd = fd;
 	fdn->ctx = ctx;
 
-	ev->fdarray[fd] = fdn; //使用文件描述符作为数组的下标
+	ev->fdarray[fd] = fdn; //使用文件描述符作为数组的下标。可以将查询的时间变为O(1)
 
 	return 0;
 }

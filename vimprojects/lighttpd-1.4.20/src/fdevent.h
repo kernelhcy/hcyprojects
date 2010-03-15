@@ -238,7 +238,7 @@ typedef struct fdevents
 	int port_fd;
 #endif
 
-	//统一的操作接口
+	//统一的操作接口,与后面的函数声明对应。
 	int (*reset) (struct fdevents * ev);
 	void (*free) (struct fdevents * ev);
 	int (*event_add) (struct fdevents * ev, int fde_ndx, int fd, int events);
@@ -252,25 +252,71 @@ typedef struct fdevents
 
 fdevents *fdevent_init(size_t maxfds, fdevent_handler_t type);
 
-//对应与上面的结构体中的前六个函数指针。
+//对应与上面的结构体中的前八个函数指针。
+//这几个函数是fdevent系统的对外接口。
+
+/*
+ * 重置和释放fdevent系统。
+ */
 int fdevent_reset(fdevents * ev);
 void fdevent_free(fdevents * ev);
+/*
+ * 将fd增加到fd event系统中。events是要对fd要监听的事件。
+ * fde_ndx是fd对应的fdnode在ev->fdarray中的下标值的指针。
+ * 如果fde_ndx==NULL，则表示在fd event系统中增加fd。如果不为NULL，则表示这个
+ * fd已经在系统中存在，这个函数的功能就变为将对fd监听的事件变为events。
+ */
 int fdevent_event_add(fdevents * ev, int *fde_ndx, int fd, int events);
+/*
+ * 从fd event系统中删除fd。 fde_ndx的内容和上面的一致。
+ */
 int fdevent_event_del(fdevents * ev, int *fde_ndx, int fd);
+/*
+ * 返回ndx对应的fd所发生的事件。
+ * 这里的ndx和上面的fde_ndx不一样，这个ndx是ev->epoll_events中epoll_event结构体的下标。
+ * 第一次调用的时候，通常ndx为-1。
+ * 这个ndx和其对应的fd没有关系。而fde_ndx等于其对应的fd。
+ */
 int fdevent_event_get_revent(fdevents * ev, size_t ndx);
+/*
+ * 返回ndx对应的fd。
+ */
 int fdevent_event_get_fd(fdevents * ev, size_t ndx);
-
-fdevent_handler fdevent_get_handler(fdevents * ev, int fd);
-void *fdevent_get_context(fdevents * ev, int fd);
-
-//对应结构体中最后两个指针。
+/*
+ * 返回下一个fd。
+ */
 int fdevent_event_next_fdndx(fdevents * ev, int ndx);
+/*
+ * 开始等待IO事件。timeout_ms是超时限制。
+ */
 int fdevent_poll(fdevents * ev, int timeout_ms);
 
+/*
+ * 返回fd对应的事件处理函数地址。
+ */
+fdevent_handler fdevent_get_handler(fdevents * ev, int fd);
+/*
+ * 返回fd对应的环境。
+ */
+void *fdevent_get_context(fdevents * ev, int fd);
+
+/*
+ * 注册和取消注册fd。
+ * 就是生成一个fdnode，然后保存在ev->fdarray中。或者删除之。
+ */
 int fdevent_register(fdevents * ev, int fd, fdevent_handler handler, void *ctx);
 int fdevent_unregister(fdevents * ev, int fd);
+
+
+/**
+ * 设置fd的状态，通常是设置为运行exec在子进程中关闭和非阻塞。
+ */
 int fdevent_fcntl_set(fdevents * ev, int fd);
 
+
+/**
+ * 初始化各种多路IO。
+ */
 int fdevent_select_init(fdevents * ev);
 int fdevent_poll_init(fdevents * ev);
 int fdevent_linux_rtsig_init(fdevents * ev);
