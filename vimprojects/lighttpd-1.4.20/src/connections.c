@@ -397,7 +397,7 @@ static int connection_handle_read_ssl(server * srv, connection * con)
 /**
  * 从con -> fd读取数据并存放到con -> read_queue中。
  * 返回值：
- *  0  正常完成。
+ *  0  正常完成。由于所有的fd都是非阻塞的，因此，如果没有数据可读，也返回0。
  *  -1 出错。
  *  -2 读取到的数据长度为0,标明连接可能已经关闭
  */
@@ -597,22 +597,16 @@ static int connection_handle_write_prepare(server * srv, connection * con)
 		{
 			stat_cache_entry *sce = NULL;
 
-			buffer_copy_string_buffer(con->physical.path,
-									  con->conf.errorfile_prefix);
+			buffer_copy_string_buffer(con->physical.path, con->conf.errorfile_prefix);
 			buffer_append_long(con->physical.path, con->http_status);
-			buffer_append_string_len(con->physical.path,
-									 CONST_STR_LEN(".html"));
+			buffer_append_string_len(con->physical.path, CONST_STR_LEN(".html"));
 
 			if (HANDLER_ERROR !=
 				stat_cache_get_entry(srv, con, con->physical.path, &sce))
 			{
 				con->file_finished = 1;
-
-				http_chunk_append_file(srv, con, con->physical.path, 0,
-									   sce->st.st_size);
-				response_header_overwrite(srv, con,
-										  CONST_STR_LEN
-										  ("Content-Type"),
+				http_chunk_append_file(srv, con, con->physical.path, 0, sce->st.st_size);
+				response_header_overwrite(srv, con, CONST_STR_LEN("Content-Type"),
 										  CONST_BUF_LEN(sce->content_type));
 			}
 		}
@@ -620,7 +614,6 @@ static int connection_handle_write_prepare(server * srv, connection * con)
 		if (!con->file_finished)
 		{
 			buffer *b;
-
 			buffer_reset(con->physical.path);
 
 			con->file_finished = 1;
@@ -629,8 +622,7 @@ static int connection_handle_write_prepare(server * srv, connection * con)
 			/*
 			 * build default error-page 
 			 */
-			buffer_copy_string_len(b,
-								   CONST_STR_LEN
+			buffer_copy_string_len(b, CONST_STR_LEN
 								   ("<?xml version=\"1.0\" encoding=\"iso-8859-1\"?>\n"
 									"<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\"\n"
 									"         \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">\n"
@@ -640,20 +632,14 @@ static int connection_handle_write_prepare(server * srv, connection * con)
 			buffer_append_string_len(b, CONST_STR_LEN(" - "));
 			buffer_append_string(b, get_http_status_name(con->http_status));
 
-			buffer_append_string_len(b, CONST_STR_LEN("</title>\n"
-													  " </head>\n"
-													  " <body>\n" "  <h1>"));
+			buffer_append_string_len(b, CONST_STR_LEN("</title>\n</head>\n<body>\n <h1>"));
 			buffer_append_long(b, con->http_status);
 			buffer_append_string_len(b, CONST_STR_LEN(" - "));
 			buffer_append_string(b, get_http_status_name(con->http_status));
 
-			buffer_append_string_len(b, CONST_STR_LEN("</h1>\n"
-													  " </body>\n"
-													  "</html>\n"));
+			buffer_append_string_len(b, CONST_STR_LEN("</h1>\n </body>\n</html>\n"));
 
-			response_header_overwrite(srv, con,
-									  CONST_STR_LEN("Content-Type"),
-									  CONST_STR_LEN("text/html"));
+			response_header_overwrite(srv, con, CONST_STR_LEN("Content-Type"), CONST_STR_LEN("text/html"));
 		}
 		break;
 	}
@@ -666,8 +652,7 @@ static int connection_handle_write_prepare(server * srv, connection * con)
 		 */
 
 		if ((!(con->parsed_response & HTTP_CONTENT_LENGTH)) &&
-			(con->response.
-			 transfer_encoding & HTTP_TRANSFER_ENCODING_CHUNKED) == 0)
+			(con->response.transfer_encoding & HTTP_TRANSFER_ENCODING_CHUNKED) == 0)
 		{
 			off_t qlen = chunkqueue_length(con->write_queue);
 
@@ -686,16 +671,13 @@ static int connection_handle_write_prepare(server * srv, connection * con)
 				/*
 				 * no Content-Body, no Content-Length 
 				 */
-				if (NULL !=
-					(ds =
-					 (data_string *) array_get_element(con->response.
-													   headers,
-													   "Content-Length")))
+				if (NULL != (ds = (data_string *) array_get_element(con->response.headers, "Content-Length")))
 				{
 					buffer_reset(ds->value);	/* Headers with empty values
 												 * are ignored for output */
 				}
-			} else if (qlen > 0 || con->request.http_method != HTTP_METHOD_HEAD)
+			} 
+			else if (qlen > 0 || con->request.http_method != HTTP_METHOD_HEAD)
 			{
 				/*
 				 * qlen = 0 is important for Redirects (301, ...) as they MAY
@@ -703,13 +685,11 @@ static int connection_handle_write_prepare(server * srv, connection * con)
 				 */
 				buffer_copy_off_t(srv->tmp_buf, qlen);
 
-				response_header_overwrite(srv, con,
-										  CONST_STR_LEN
-										  ("Content-Length"),
-										  CONST_BUF_LEN(srv->tmp_buf));
+				response_header_overwrite(srv, con, CONST_STR_LEN("Content-Length"), CONST_BUF_LEN(srv->tmp_buf));
 			}
 		}
-	} else
+	} 
+	else
 	{
 		/**
 		 * the file isn't finished yet, but we have all headers
@@ -720,8 +700,7 @@ static int connection_handle_write_prepare(server * srv, connection * con)
 		 */
 
 		if (((con->parsed_response & HTTP_CONTENT_LENGTH) == 0) &&
-			((con->response.
-			  transfer_encoding & HTTP_TRANSFER_ENCODING_CHUNKED) == 0))
+			((con->response.transfer_encoding & HTTP_TRANSFER_ENCODING_CHUNKED) == 0))
 		{
 			con->keep_alive = 0;
 		}
@@ -1082,6 +1061,7 @@ int connection_handle_read_state(server * srv, connection * con)
 
 	/*
 	 * the last chunk might be empty 最后一个节点可能没有数据
+	 * 删除con->read_queue中的空节点
 	 */
 	for (c = cq->first; c;)
 	{
@@ -1459,12 +1439,21 @@ int connection_handle_read_state(server * srv, connection * con)
 
 /**
  * 处理连接socket的IO事件
+ * 这个函数和network_server_handle_fdevent相对应，是处理IO事件的两个主要的函数。
+ * 这个函数处理的是连接socket的IO事件。
+ * 
+ * s : srv,server结构体
+ * context : con，connection结构体。=
+ * revents ： 所发生的IO事件。
+ *
+ * 返回处理的结果。
  */
 handler_t connection_handle_fdevent(void *s, void *context, int revents)
 {
 	server *srv = (server *) s;
 	connection *con = context;
-
+	
+	//把这个连接加到作业队列中，等待下一次IO事件的发生。
 	joblist_append(srv, con);
 
 	if (revents & FDEVENT_IN)
@@ -1475,6 +1464,7 @@ handler_t connection_handle_fdevent(void *s, void *context, int revents)
 						con->fd);
 #endif
 	}
+
 	if (revents & FDEVENT_OUT)
 	{
 		con->is_writable = 1;
@@ -1487,7 +1477,7 @@ handler_t connection_handle_fdevent(void *s, void *context, int revents)
 	if (revents & ~(FDEVENT_IN | FDEVENT_OUT))
 	{
 		/*
-		 * looks like an error 
+		 * looks like an error 即可读又可写，可能是一个错误。
 		 */
 
 		/*
@@ -1498,7 +1488,8 @@ handler_t connection_handle_fdevent(void *s, void *context, int revents)
 			if (con->state == CON_STATE_CLOSE)
 			{
 				con->close_timeout_ts = 0;
-			} else
+			} 
+			else
 			{
 				/*
 				 * sigio reports the wrong event here there was no HUP at all 
@@ -1506,10 +1497,10 @@ handler_t connection_handle_fdevent(void *s, void *context, int revents)
 #ifdef USE_LINUX_SIGIO
 				if (srv->ev->in_sigio == 1)
 				{
-					log_error_write(srv, __FILE__, __LINE__, "sd",
-									"connection closed: poll() -> HUP",
+					log_error_write(srv, __FILE__, __LINE__, "sd", "connection closed: poll() -> HUP",
 									con->fd);
-				} else
+				} 
+				else
 				{
 					connection_set_state(srv, con, CON_STATE_ERROR);
 				}
@@ -1518,36 +1509,34 @@ handler_t connection_handle_fdevent(void *s, void *context, int revents)
 #endif
 
 			}
-		} else if (revents & FDEVENT_ERR)
+		} 
+		else if (revents & FDEVENT_ERR)
 		{
 #ifndef USE_LINUX_SIGIO
-			log_error_write(srv, __FILE__, __LINE__, "sd",
-							"connection closed: poll() -> ERR", con->fd);
+			log_error_write(srv, __FILE__, __LINE__, "sd", "connection closed: poll() -> ERR", con->fd);
 #endif
 			connection_set_state(srv, con, CON_STATE_ERROR);
-		} else
+		} 
+		else
 		{
-			log_error_write(srv, __FILE__, __LINE__, "sd",
-							"connection closed: poll() -> ???", revents);
+			log_error_write(srv, __FILE__, __LINE__, "sd", "connection closed: poll() -> ???", revents);
 		}
 	}
 
 	if (con->state == CON_STATE_READ || con->state == CON_STATE_READ_POST)
 	{
-		connection_handle_read_state(srv, con);
+		connection_handle_read_state(srv, con); //继续读取数据，直到数据读取完毕
 	}
 
-	if (con->state == CON_STATE_WRITE &&
-		!chunkqueue_is_empty(con->write_queue) && con->is_writable)
+	if (con->state == CON_STATE_WRITE && !chunkqueue_is_empty(con->write_queue) && con->is_writable)
 	{
 
 		if (-1 == connection_handle_write(srv, con))
 		{
 			connection_set_state(srv, con, CON_STATE_ERROR);
-
-			log_error_write(srv, __FILE__, __LINE__, "ds",
-							con->fd, "handle write failed.");
-		} else if (con->state == CON_STATE_WRITE)
+			log_error_write(srv, __FILE__, __LINE__, "ds", con->fd, "handle write failed.");
+		} 
+		else if (con->state == CON_STATE_WRITE)
 		{
 			con->write_request_ts = srv->cur_ts;
 		}
@@ -1560,22 +1549,22 @@ handler_t connection_handle_fdevent(void *s, void *context, int revents)
 		 */
 		int b;
 
+		//获取缓冲区中数据的字节数
 		if (ioctl(con->fd, FIONREAD, &b))
 		{
-			log_error_write(srv, __FILE__, __LINE__, "ss",
-							"ioctl() failed", strerror(errno));
+			log_error_write(srv, __FILE__, __LINE__, "ss", "ioctl() failed", strerror(errno));
 		}
 
 		if (b > 0)
 		{
 			char buf[1024];
-			log_error_write(srv, __FILE__, __LINE__, "sdd",
-							"CLOSE-read()", con->fd, b);
-
+			log_error_write(srv, __FILE__, __LINE__, "sdd", "CLOSE-read()", con->fd, b);
 			/*
+			 * 数据读取之后直接丢弃了。。。
 			 */
 			read(con->fd, buf, sizeof(buf));
-		} else
+		} 
+		else
 		{
 			/*
 			 * nothing to read 
@@ -2056,6 +2045,14 @@ int connection_state_machine(server * srv, connection * con)
 			}
 
 			connection_handle_read_state(srv, con);
+			/**
+			 * 如果connection_handle_read_state函数的一次调用中，把所有的数据都读取完了，
+			 * 那么在函数中，会将状态机设置为下一个状态，CON_STATE_READ_POST对应CON_STATE_HANDLE_REQUEST,
+			 * CON_STATE_READ对应CON_STATE_REQUEST_END。
+			 * 如果数据没有一次读取完，程序从函数中正常返回，并且不改变状态机的状态。
+			 * 这个连接在作业列表中继续等待IO事件的发生，并通过fd event系统中的connection_handle_fdevent函数中再次调用
+			 * connection_handle_read_state函数，直到所有的数据都读取完毕。
+			 */
 			break;
 		case CON_STATE_WRITE:
 			if (srv->srvconf.log_state_handling)
