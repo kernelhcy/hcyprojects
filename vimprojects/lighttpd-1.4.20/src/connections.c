@@ -1458,7 +1458,7 @@ int connection_handle_read_state(server * srv, connection * con)
 }//end of int connection_handle_read_state(...
 
 /**
- *
+ * 处理连接socket的IO事件
  */
 handler_t connection_handle_fdevent(void *s, void *context, int revents)
 {
@@ -1672,6 +1672,7 @@ connection *connection_accept(server * srv, server_socket * srv_socket)
 
 		//在IO事件系统中注册这个socket fd。
 		//这个socket fd是client创建的socket的fd。accept的返回值。
+		//对于连接socket，其事件处理函数是:connection_handle_fdevent
 		fdevent_register(srv->ev, con->fd, connection_handle_fdevent, con);
 
 		/*

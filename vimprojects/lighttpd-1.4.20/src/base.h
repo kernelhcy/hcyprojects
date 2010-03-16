@@ -623,7 +623,10 @@ typedef struct
 
 typedef struct server 
 {
-	server_socket_array srv_sockets;
+	server_socket_array srv_sockets; //保存socket
+	/*
+	 * 包括服务器建立的监听socket和accept函数返回的socket。
+	 */
 
 	/*
 	 * the errorlog 

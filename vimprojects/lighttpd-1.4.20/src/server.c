@@ -982,6 +982,7 @@ int main(int argc, char **argv)
 		/*
 		 * we need root-perms for port < 1024 
 		 * 使用超级用户模式获得小于1024的端口。初始化网络。
+		 * 创建监听socket，绑定地址并开始监听。
 		 */
 		if (0 != network_init(srv))
 		{
@@ -1485,7 +1486,10 @@ int main(int argc, char **argv)
 	/*
 	 * kqueue() is called here, select resets its internals,
 	 * all server sockets get their handlers
-	 * 以后再说。。。
+	 * 将监听socket注册到fd events系统中。
+	 * 在注册的时候为每个socket都同时注册了一个处理函数，用来处理这个socket的IO事件。
+	 * 对于在这次调用中注册的监听socket，注册的处理函数是：network_server_handle_fdevent。
+	 * 这个处理函数用来建立socket连接。
 	 * */
 	if (0 != network_register_fdevents(srv))
 	{
@@ -1967,8 +1971,9 @@ int main(int argc, char **argv)
 			log_error_write(srv, __FILE__, __LINE__, "ss", "fdevent_poll failed:", strerror(errno));
 		}
 
-		//这里折腾一下作业列表。
-		//检查作业列表 
+		//由于上面处理的都是发生了IO事件的描述符，这些描述符的状态都被正确的设置了。
+		//对于没有发生IO事件的描述符，其状态机的状态也需要设置，
+		//下面的循环就是对剩下的描述符进行处理。
 		for (ndx = 0; ndx < srv->joblist->used; ndx++)
 		{
 			connection *con = srv->joblist->ptr[ndx];

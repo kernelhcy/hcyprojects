@@ -27,7 +27,9 @@
 #endif
 
 /**
- * 处理fd事件。
+ * 这个是监听socket的IO事件处理函数。
+ * 只要的工作就是建立和客户端的socket连接。只处理读事件。在处理过程中，
+ * 每次调用这个函数都试图一次建立100个连接，这样可以提高效率。
  */
 handler_t network_server_handle_fdevent(void *s, void *context, int revents)
 {
@@ -51,6 +53,8 @@ handler_t network_server_handle_fdevent(void *s, void *context, int revents)
 	 * accept()s at most 100 connections directly we jump out after 100 to give the waiting connections a chance 
 	 * 对于每一个连接，只处理100次的请求，当请求大于100次时，停止处理此连接的请求，以处理等待其他连接。
 	 * 如果此时没有其他连接，那么，紧接着处理的连接仍是上一个连接。
+	 * 如果没有达到100个连接，程序会阻塞在connection_accept函数中的accept函数调用，
+	 * 这个问题是怎么解决的呢？？？？？？？alarm信号？
 	 */
 	for (loops = 0; loops < 100 && NULL != (con = connection_accept(srv, srv_socket)); loops++)
 	{
@@ -202,6 +206,9 @@ int network_server_init(server * srv, buffer * host_token, specific_config * s)
 
 	/**
 	 * Unix domain和ipv6都不是，那只能是ipv4了。
+	 * 创建socket。
+	 * 这个时候还只有一个进程，程序还没有产生子进程。
+	 * 当后面产生子进程后，各个子进程都同时具有各自的socket。也就是这个socket的拷贝。
 	 */
 	if (srv_socket->fd == -1)
 	{
@@ -215,6 +222,8 @@ int network_server_init(server * srv, buffer * host_token, specific_config * s)
 
 	/*
 	 * 设置当前描述符
+	 * SO_REUSEADDR:允许socket和一个已经在使用中的地址绑定。所有的子进程都绑定同样的地址，这个设置可以达到这一目的。
+	 * SOL_SOCKET: 设置socket。
 	 */
 	srv->cur_fds = srv_socket->fd;
 
@@ -346,7 +355,6 @@ int network_server_init(server * srv, buffer * host_token, specific_config * s)
 
 	//绑定地址。
 	if (0 != bind(srv_socket->fd, (struct sockaddr *) &(srv_socket->addr), addr_len))
- * bookmarks:
 	{
 		switch (srv_socket->addr.plain.sa_family)
 		{
@@ -656,6 +664,9 @@ int network_init(server * srv)
 		}
 	}
 
+	/**
+	 * 指定回写函数。
+	 */
 	switch (backend)
 	{
 	case NETWORK_BACKEND_WRITE:
@@ -727,6 +738,10 @@ int network_init(server * srv)
 	return 0;
 }
 
+/**
+ * 在fd events系统中注册监听socket。
+ * 这个函数在子进程中被调用。
+ */
 int network_register_fdevents(server * srv)
 {
 	size_t i;
