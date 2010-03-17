@@ -290,6 +290,11 @@ int fdevent_event_next_fdndx(fdevents * ev, int ndx);
  * 开始等待IO事件。timeout_ms是超时限制。
  */
 int fdevent_poll(fdevents * ev, int timeout_ms);
+/**
+ * 设置fd的状态，通常是设置为运行exec在子进程中关闭和非阻塞。
+ */
+int fdevent_fcntl_set(fdevents * ev, int fd);
+
 
 /*
  * 返回fd对应的事件处理函数地址。
@@ -308,10 +313,6 @@ int fdevent_register(fdevents * ev, int fd, fdevent_handler handler, void *ctx);
 int fdevent_unregister(fdevents * ev, int fd);
 
 
-/**
- * 设置fd的状态，通常是设置为运行exec在子进程中关闭和非阻塞。
- */
-int fdevent_fcntl_set(fdevents * ev, int fd);
 
 
 /**
