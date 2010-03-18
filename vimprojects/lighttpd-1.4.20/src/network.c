@@ -51,10 +51,9 @@ handler_t network_server_handle_fdevent(void *s, void *context, int revents)
 
 	/*
 	 * accept()s at most 100 connections directly we jump out after 100 to give the waiting connections a chance 
-	 * 对于每一个连接，只处理100次的请求，当请求大于100次时，停止处理此连接的请求，以处理等待其他连接。
-	 * 如果此时没有其他连接，那么，紧接着处理的连接仍是上一个连接。
-	 * 如果没有达到100个连接，程序会阻塞在connection_accept函数中的accept函数调用，
-	 * 这个问题是怎么解决的呢？？？？？？？alarm信号？
+	 * 一次监听fd的IO事件，表示有客户端请求连接，对其的处理就是建立连接。建立连接后并不急着退出函数，
+	 * 而是继续继续建立新连接，直到已经建立了100次连接。这样可以提高效率。
+	 * 由于监听fd被设置为非阻塞的，如果此时没有连接请求，那么connection_accept会返回一个null。
 	 */
 	for (loops = 0; loops < 100 && NULL != (con = connection_accept(srv, srv_socket)); loops++)
 	{
