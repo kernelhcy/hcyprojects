@@ -1805,7 +1805,7 @@ int main(int argc, char **argv)
 				log_error_write(srv, __FILE__, __LINE__, "s", "[note] sockets enabled again");
 				srv->sockets_disabled = 0;
 			}
-		} U
+		} 
 		else
 		{
 			/*
