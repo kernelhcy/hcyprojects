@@ -1751,10 +1751,14 @@ int main(int argc, char **argv)
 						t_diff = 1;
 
 					/**
-					 * 
+					 * 下面的if语句不是用来判断连接是否超时。
+					 * lighttpd对每个连接设置了一个kbytes_per_second，这个变量设定每个连接在一秒钟内多能传输的最大数据量。
+					 * 如果传送的数据大于这个值，那么这个连接将停止传输数据，被追加到作业队列中等待下一次处理。
+					 * 作者这样做估计是为了平衡各个连接之间的数据传输。
 					 */
 					if (con->traffic_limit_reached &&
-						(con->conf.kbytes_per_second == 0 || ((con->bytes_written / t_diff) < con->conf.kbytes_per_second * 1024)))
+						(con->conf.kbytes_per_second == 0 
+							|| ((con->bytes_written / t_diff) < con->conf.kbytes_per_second * 1024)))
 					{
 						/*
 						 * enable connection again 
