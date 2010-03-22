@@ -1011,39 +1011,30 @@ static int cgi_create_env(server * srv, connection * con, plugin_data * p,
 			env.size = 0;
 			env.used = 0;
 
-			cgi_env_add(&env, CONST_STR_LEN("SERVER_SOFTWARE"),
-						CONST_STR_LEN(PACKAGE_NAME "/" PACKAGE_VERSION));
+			cgi_env_add(&env, CONST_STR_LEN("SERVER_SOFTWARE"), CONST_STR_LEN(PACKAGE_NAME "/" PACKAGE_VERSION));
 
 			if (!buffer_is_empty(con->server_name))
 			{
-				cgi_env_add(&env, CONST_STR_LEN("SERVER_NAME"),
-							CONST_BUF_LEN(con->server_name));
-			} else
+				cgi_env_add(&env, CONST_STR_LEN("SERVER_NAME"), CONST_BUF_LEN(con->server_name));
+			} 
+			else
 			{
 #ifdef HAVE_IPV6
-				s = inet_ntop(srv_sock->addr.plain.sa_family,
-							  srv_sock->addr.plain.sa_family ==
-							  AF_INET6 ? (const void *) &(srv_sock->addr.
-														  ipv6.sin6_addr)
-							  : (const void *) &(srv_sock->addr.ipv4.
-												 sin_addr), b2, sizeof(b2) - 1);
+				s = inet_ntop(srv_sock->addr.plain.sa_family, srv_sock->addr.plain.sa_family == AF_INET6 ? 
+								(const void *) &(srv_sock->addr.ipv6.sin6_addr) : (const void *) &(srv_sock->addr.ipv4.sin_addr)
+										, b2, sizeof(b2) - 1);
 #else
 				s = inet_ntoa(srv_sock->addr.ipv4.sin_addr);
 #endif
 				cgi_env_add(&env, CONST_STR_LEN("SERVER_NAME"), s, strlen(s));
 			}
-			cgi_env_add(&env, CONST_STR_LEN("GATEWAY_INTERFACE"),
-						CONST_STR_LEN("CGI/1.1"));
-
+			cgi_env_add(&env, CONST_STR_LEN("GATEWAY_INTERFACE"), CONST_STR_LEN("CGI/1.1"));
 			s = get_http_version_name(con->request.http_version);
-
 			cgi_env_add(&env, CONST_STR_LEN("SERVER_PROTOCOL"), s, strlen(s));
 
 			LI_ltostr(buf,
 #ifdef HAVE_IPV6
-					  ntohs(srv_sock->addr.plain.sa_family ==
-							AF_INET6 ? srv_sock->addr.ipv6.
-							sin6_port : srv_sock->addr.ipv4.sin_port)
+					  ntohs(srv_sock->addr.plain.sa_family ==AF_INET6 ? srv_sock->addr.ipv6.sin6_port : srv_sock->addr.ipv4.sin_port)
 #else
 					  ntohs(srv_sock->addr.ipv4.sin_port)
 #endif
@@ -1066,20 +1057,16 @@ static int cgi_create_env(server * srv, connection * con, plugin_data * p,
 
 			if (!buffer_is_empty(con->request.pathinfo))
 			{
-				cgi_env_add(&env, CONST_STR_LEN("PATH_INFO"),
-							CONST_BUF_LEN(con->request.pathinfo));
+				cgi_env_add(&env, CONST_STR_LEN("PATH_INFO"),CONST_BUF_LEN(con->request.pathinfo));
 			}
-			cgi_env_add(&env, CONST_STR_LEN("REDIRECT_STATUS"),
-						CONST_STR_LEN("200"));
+			cgi_env_add(&env, CONST_STR_LEN("REDIRECT_STATUS"), CONST_STR_LEN("200"));
 			if (!buffer_is_empty(con->uri.query))
 			{
-				cgi_env_add(&env, CONST_STR_LEN("QUERY_STRING"),
-							CONST_BUF_LEN(con->uri.query));
+				cgi_env_add(&env, CONST_STR_LEN("QUERY_STRING"),CONST_BUF_LEN(con->uri.query));
 			}
 			if (!buffer_is_empty(con->request.orig_uri))
 			{
-				cgi_env_add(&env, CONST_STR_LEN("REQUEST_URI"),
-							CONST_BUF_LEN(con->request.orig_uri));
+				cgi_env_add(&env, CONST_STR_LEN("REQUEST_URI"),CONST_BUF_LEN(con->request.orig_uri));
 			}
 #ifdef HAVE_IPV6
 			s = inet_ntop(con->dst_addr.plain.sa_family,
@@ -1119,14 +1106,10 @@ static int cgi_create_env(server * srv, connection * con, plugin_data * p,
 			 * request.content_length < SSIZE_MAX, see request.c 
 			 */
 			LI_ltostr(buf, con->request.content_length);
-			cgi_env_add(&env, CONST_STR_LEN("CONTENT_LENGTH"), buf,
-						strlen(buf));
-			cgi_env_add(&env, CONST_STR_LEN("SCRIPT_FILENAME"),
-						CONST_BUF_LEN(con->physical.path));
-			cgi_env_add(&env, CONST_STR_LEN("SCRIPT_NAME"),
-						CONST_BUF_LEN(con->uri.path));
-			cgi_env_add(&env, CONST_STR_LEN("DOCUMENT_ROOT"),
-						CONST_BUF_LEN(con->physical.doc_root));
+			cgi_env_add(&env, CONST_STR_LEN("CONTENT_LENGTH"), buf,strlen(buf));
+			cgi_env_add(&env, CONST_STR_LEN("SCRIPT_FILENAME"),CONST_BUF_LEN(con->physical.path));
+			cgi_env_add(&env, CONST_STR_LEN("SCRIPT_NAME"),CONST_BUF_LEN(con->uri.path));
+			cgi_env_add(&env, CONST_STR_LEN("DOCUMENT_ROOT"),CONST_BUF_LEN(con->physical.doc_root));
 
 			/*
 			 * for valgrind 
@@ -1160,13 +1143,11 @@ static int cgi_create_env(server * srv, connection * con, plugin_data * p,
 				if (ds->value->used && ds->key->used)
 				{
 					size_t j;
-
 					buffer_reset(p->tmp_buf);
 
 					if (0 != strcasecmp(ds->key->ptr, "CONTENT-TYPE"))
 					{
-						buffer_copy_string_len(p->tmp_buf,
-											   CONST_STR_LEN("HTTP_"));
+						buffer_copy_string_len(p->tmp_buf,CONST_STR_LEN("HTTP_"));
 						p->tmp_buf->used--;	/* strip \0 after HTTP_ */
 					}
 
@@ -1181,7 +1162,8 @@ static int cgi_create_env(server * srv, connection * con, plugin_data * p,
 							 * upper-case 
 							 */
 							cr = ds->key->ptr[j] & ~32;
-						} else if (light_isdigit(ds->key->ptr[j]))
+						} 
+						else if (light_isdigit(ds->key->ptr[j]))
 						{
 							/*
 							 * copy 
@@ -1192,15 +1174,13 @@ static int cgi_create_env(server * srv, connection * con, plugin_data * p,
 					}
 					p->tmp_buf->ptr[p->tmp_buf->used++] = '\0';
 
-					cgi_env_add(&env, CONST_BUF_LEN(p->tmp_buf),
-								CONST_BUF_LEN(ds->value));
+					cgi_env_add(&env, CONST_BUF_LEN(p->tmp_buf),CONST_BUF_LEN(ds->value));
 				}
 			}
 
 			for (n = 0; n < con->environment->used; n++)
 			{
 				data_string *ds;
-
 				ds = (data_string *) con->environment->data[n];
 
 				if (ds->value->used && ds->key->used)
@@ -1214,14 +1194,11 @@ static int cgi_create_env(server * srv, connection * con, plugin_data * p,
 					for (j = 0; j < ds->key->used - 1; j++)
 					{
 						p->tmp_buf->ptr[p->tmp_buf->used++] =
-							light_isalnum((unsigned char) ds->key->
-										  ptr[j]) ?
-							toupper((unsigned char) ds->key->ptr[j]) : '_';
+							light_isalnum((unsigned char) ds->key-> ptr[j]) ? toupper((unsigned char) ds->key->ptr[j]) : '_';
 					}
 					p->tmp_buf->ptr[p->tmp_buf->used++] = '\0';
 
-					cgi_env_add(&env, CONST_BUF_LEN(p->tmp_buf),
-								CONST_BUF_LEN(ds->value));
+					cgi_env_add(&env, CONST_BUF_LEN(p->tmp_buf),CONST_BUF_LEN(ds->value));
 				}
 			}
 
@@ -1259,8 +1236,7 @@ static int cgi_create_env(server * srv, connection * con, plugin_data * p,
 				 */
 				if (-1 == chdir(con->physical.path->ptr))
 				{
-					log_error_write(srv, __FILE__, __LINE__, "ssb",
-									"chdir failed:", strerror(errno),
+					log_error_write(srv, __FILE__, __LINE__, "ssb",	"chdir failed:", strerror(errno),
 									con->physical.path);
 				}
 				*c = '/';
@@ -1296,8 +1272,7 @@ static int cgi_create_env(server * srv, connection * con, plugin_data * p,
 		/*
 		 * error 
 		 */
-		log_error_write(srv, __FILE__, __LINE__, "ss", "fork failed:",
-						strerror(errno));
+		log_error_write(srv, __FILE__, __LINE__, "ss", "fork failed:", strerror(errno));
 		return -1;
 		break;
 	default:
@@ -1315,8 +1290,7 @@ static int cgi_create_env(server * srv, connection * con, plugin_data * p,
 				chunkqueue *cq = con->request_content_queue;
 				chunk *c;
 
-				assert(chunkqueue_length(cq) ==
-					   (off_t) con->request.content_length);
+				assert(chunkqueue_length(cq) == (off_t) con->request.content_length);
 
 				/*
 				 * there is content to send 
@@ -1336,13 +1310,10 @@ static int cgi_create_env(server * srv, connection * con, plugin_data * p,
 						{
 							if (-1 == c->file.fd &&	/* open the file if not
 													 * already open */
-								-1 == (c->file.fd =
-									   open(c->file.name->ptr, O_RDONLY)))
+								-1 == (c->file.fd = open(c->file.name->ptr, O_RDONLY)))
 							{
-								log_error_write(srv, __FILE__,
-												__LINE__, "ss",
-												"open failed: ",
-												strerror(errno));
+								log_error_write(srv, __FILE__,__LINE__, "ss",
+												"open failed: ",strerror(errno));
 
 								close(from_cgi_fds[0]);
 								close(to_cgi_fds[1]);
@@ -1352,15 +1323,11 @@ static int cgi_create_env(server * srv, connection * con, plugin_data * p,
 							c->file.mmap.length = c->file.length;
 
 							if (MAP_FAILED ==
-								(c->file.mmap.start =
-								 mmap(0, c->file.mmap.length,
+								(c->file.mmap.start = mmap(0, c->file.mmap.length,
 									  PROT_READ, MAP_SHARED, c->file.fd, 0)))
 							{
-								log_error_write(srv, __FILE__,
-												__LINE__, "ssbd",
-												"mmap failed: ",
-												strerror(errno),
-												c->file.name, c->file.fd);
+								log_error_write(srv, __FILE__,__LINE__, "ssbd","mmap failed: ",
+												strerror(errno),c->file.name, c->file.fd);
 
 								close(from_cgi_fds[0]);
 								close(to_cgi_fds[1]);
@@ -1376,9 +1343,7 @@ static int cgi_create_env(server * srv, connection * con, plugin_data * p,
 							 */
 						}
 
-						if ((r =
-							 write(to_cgi_fds[1],
-								   c->file.mmap.start + c->offset,
+						if ((r = write(to_cgi_fds[1], c->file.mmap.start + c->offset,
 								   c->file.length - c->offset)) < 0)
 						{
 							switch (errno)
@@ -1395,9 +1360,7 @@ static int cgi_create_env(server * srv, connection * con, plugin_data * p,
 						}
 						break;
 					case MEM_CHUNK:
-						if ((r =
-							 write(to_cgi_fds[1],
-								   c->mem->ptr + c->offset,
+						if ((r = write(to_cgi_fds[1], c->mem->ptr + c->offset,
 								   c->mem->used - c->offset - 1)) < 0)
 						{
 							switch (errno)
@@ -1423,10 +1386,7 @@ static int cgi_create_env(server * srv, connection * con, plugin_data * p,
 						cq->bytes_out += r;
 					} else
 					{
-						log_error_write(srv, __FILE__, __LINE__,
-										"ss",
-										"write() failed due to: ",
-										strerror(errno));
+						log_error_write(srv, __FILE__, __LINE__,"ss","write() failed due to: ",	strerror(errno));
 						con->http_status = 500;
 						break;
 					}
@@ -1457,19 +1417,15 @@ static int cgi_create_env(server * srv, connection * con, plugin_data * p,
 
 			if (-1 == fdevent_fcntl_set(srv->ev, hctx->fd))
 			{
-				log_error_write(srv, __FILE__, __LINE__, "ss",
-								"fcntl failed: ", strerror(errno));
+				log_error_write(srv, __FILE__, __LINE__, "ss","fcntl failed: ", strerror(errno));
 
 				fdevent_event_del(srv->ev, &(hctx->fde_ndx), hctx->fd);
 				fdevent_unregister(srv->ev, hctx->fd);
 
-				log_error_write(srv, __FILE__, __LINE__, "sd",
-								"cgi close:", hctx->fd);
+				log_error_write(srv, __FILE__, __LINE__, "sd","cgi close:", hctx->fd);
 
 				close(hctx->fd);
-
 				cgi_handler_ctx_free(hctx);
-
 				con->plugin_ctx[p->id] = NULL;
 
 				return -1;
