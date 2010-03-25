@@ -1,9 +1,0 @@
-# Nothing to read here
-
-CLASS TestClass
-  string name = "test class"
-
-  PROC testje()
-    IO.writeLine("did it")
-  }
-}

@@ -1,9 +1,0 @@
-# Test file for a subdirectory
-
-IMPORT "../something.zu"
-
-MODULE Some
-  PROC print()
-    IO.write("Some in testdir\n")
-  }
-}
