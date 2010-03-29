@@ -403,6 +403,12 @@ static int cgi_response_parse(server * srv, connection * con, plugin_data * p, b
 }
 
 
+/*
+ * 从子进程读取数据。
+ * 子进程发送回来的数据是HTTP response数据格式。
+ * 所以在函数中，要对其进行解析。
+ *
+ */
 static int cgi_demux_response(server * srv, handler_ctx * hctx)
 {
 	plugin_data *p = hctx->plugin_data;
@@ -618,6 +624,10 @@ static int cgi_demux_response(server * srv, handler_ctx * hctx)
 	return FDEVENT_HANDLED_NOT_FINISHED;
 }
 
+/**
+ * 关闭cgi连接。
+ * cgi脚本执行结束，waitpid子进程，并做一些清理工作。
+ */
 static handler_t cgi_connection_close(server * srv, handler_ctx * hctx)
 {
 	int status;
@@ -756,6 +766,12 @@ static handler_t cgi_connection_close_callback(server * srv, connection * con, v
 }
 
 
+/**
+ * cgi的fdevent系统处理函数。
+ * 父进程创建子进程后，将需要的数据发送给子进程，随后父进程将连向子进程的
+ * 读取数据的管道的fd注册的fdevent系统中，通过多路IO监测子进程发送的数据。
+ * 这个函数是fdevent系统处理处理有子进程IO事件的函数。
+ */
 static handler_t cgi_handle_fdevent(void *s, void *ctx, int revents)
 {
 	server *srv = (server *) s;
@@ -878,7 +894,10 @@ static handler_t cgi_handle_fdevent(void *s, void *ctx, int revents)
 	return HANDLER_FINISHED;
 }
 
-
+/**
+ * 将key，val拼接成key=val\0的形式
+ * 然后复制到env中。
+ */
 static int cgi_env_add(char_array * env, const char *key, size_t key_len,
 			const char *val, size_t val_len)
 {
@@ -911,6 +930,11 @@ static int cgi_env_add(char_array * env, const char *key, size_t key_len,
 	return 0;
 }
 
+/**
+ * 为cgi脚本创建环境变量。
+ * 调用fork产生子进程并执行cgi脚本。
+ * 父进程从子进程通过管道获得输出。
+ */
 static int cgi_create_env(server * srv, connection * con, plugin_data * p,
 			   buffer * cgi_handler)
 {
@@ -972,6 +996,7 @@ static int cgi_create_env(server * srv, connection * con, plugin_data * p,
 			const char *s;
 			server_socket *srv_sock = con->srv_socket;
 
+			//重定向子进程的标准输出输出到管道上。
 			/*
 			 * move stdout to from_cgi_fd[1] 
 			 */
@@ -1211,7 +1236,8 @@ static int cgi_create_env(server * srv, connection * con, plugin_data * p,
 			env.ptr[env.used] = NULL;
 
 			/*
-			 * set up args 
+			 * set up args 设置运行参数。
+			 * 参数有三个：cig handler, cgi脚本名称和NULL。
 			 */
 			argc = 3;
 			args = malloc(sizeof(*args) * argc);
@@ -1254,7 +1280,7 @@ static int cgi_create_env(server * srv, connection * con, plugin_data * p,
 			}
 
 			/*
-			 * exec the cgi 
+			 * exec the cgi 启动cgi脚本
 			 */
 			execve(args[0], args, env.ptr);
 
@@ -1287,6 +1313,11 @@ static int cgi_create_env(server * srv, connection * con, plugin_data * p,
 
 			if (con->request.content_length)
 			{
+				/*
+				 * 向子进程中发送数据。
+				 * 有些数据可能存放在文件中，通过mmap函数将文件映射到系统中，
+				 * 然后发送给子进程。
+				 */
 				chunkqueue *cq = con->request_content_queue;
 				chunk *c;
 
@@ -1412,6 +1443,11 @@ static int cgi_create_env(server * srv, connection * con, plugin_data * p,
 
 			con->plugin_ctx[p->id] = hctx;
 
+			/**
+			 * 父进程将管道的fd加入的fdevent中。
+			 * 通过fdevent系统来读取子进程返回的数据。
+			 * IO事件处理函数为cgi_handle_fdevent。
+			 */
 			fdevent_register(srv->ev, hctx->fd, cgi_handle_fdevent, hctx);
 			fdevent_event_add(srv->ev, &(hctx->fde_ndx), hctx->fd, FDEVENT_IN);
 
@@ -1509,8 +1545,10 @@ URIHANDLER_FUNC(cgi_is_handled)
 		if (s_len < ct_len)
 			continue;
 
+		//判断路径的结尾，也就是文件的扩展名，是否是要处理的cgi脚本。
 		if (0 == strncmp(fn->ptr + s_len - ct_len, ds->key->ptr, ct_len))
 		{
+			//在这个函数中，创建子进程，执行cgi脚本。
 			if (cgi_create_env(srv, con, p, ds->value))
 			{
 				con->mode = DIRECT;
@@ -1600,6 +1638,9 @@ TRIGGER_FUNC(cgi_trigger)
 	return HANDLER_GO_ON;
 }
 
+/**
+ * 仅仅是等待子进程退出并做一些清理工作。
+ */
 SUBREQUEST_FUNC(mod_cgi_handle_subrequest)
 {
 	int status;

@@ -10,7 +10,7 @@
  */
 int joblist_append(server * srv, connection * con)
 {
-	if (con->in_joblist)
+	if (con->in_joblist)//防止多次追加
 		return 0;
 
 	if (srv->joblist->size == 0)

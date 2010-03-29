@@ -129,14 +129,16 @@ int http_response_redirect_to_directory(server * srv, connection * con)
 	if (con->conf.is_ssl)
 	{
 		buffer_copy_string_len(o, CONST_STR_LEN("https://"));
-	} else
+	} 
+	else
 	{
 		buffer_copy_string_len(o, CONST_STR_LEN("http://"));
 	}
 	if (con->uri.authority->used)
 	{
 		buffer_append_string_buffer(o, con->uri.authority);
-	} else
+	} 
+	else
 	{
 		/*
 		 * get the name of the currently connected socket 

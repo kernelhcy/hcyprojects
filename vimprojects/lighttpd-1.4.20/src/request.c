@@ -699,7 +699,7 @@ int http_request_parse(server * srv, connection * con)
 				break;
 			case 1:
 				/*
-				 * /foobar/...  rul地址
+				 * /foobar/...  url地址
 				 */ 
 				uri = con->parse_request->ptr + first;
 				first = i + 1;

@@ -110,9 +110,7 @@ int http_chunk_append_buffer(server * srv, connection * con, buffer * mem)
 	return 0;
 }
 
-int
-http_chunk_append_mem(server * srv, connection * con, const char *mem,
-					  size_t len)
+int http_chunk_append_mem(server * srv, connection * con, const char *mem, size_t len)
 {
 	chunkqueue *cq;
 

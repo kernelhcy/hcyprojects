@@ -160,13 +160,19 @@ int http_response_write_header(server * srv, connection * con)
 }
 
 
-
+/**
+ * 根据解析的http请求，对其进行处理。
+ */
 handler_t http_response_prepare(server * srv, connection * con)
 {
 	handler_t r;
 
 	/*
 	 * looks like someone has already done a decision 
+	 * 貌似请求已经处理了。。。
+	 * 在解析http请求的时候，当发现请求出错时，会直接对请求进行处理。
+	 * 200表示请求成功处理。
+	 * 如果前面解析的时候已经因为出错而处理了请求，这里就不再处理。
 	 */
 	if (con -> mode == DIRECT && (con -> http_status != 0 && con -> http_status != 200))
 	{
