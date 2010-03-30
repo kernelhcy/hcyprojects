@@ -213,12 +213,15 @@ typedef struct {
 	} transfer_encoding;
 } response;
 
-typedef struct {
-	buffer *scheme;
-	buffer *authority;
-	buffer *path;
-	buffer *path_raw;
-	buffer *query;
+//定义uri地址。
+// (scheme)://(authority)(path)?(query)#fragment
+typedef struct 
+{
+	buffer *scheme; 		//http , https and so on
+	buffer *authority; 		//user:password
+	buffer *path; 			//www.xxx.com/xxx/xxxx.html
+	buffer *path_raw; 		//www.xxx.com
+	buffer *query; 			//key1=data1&key2=data2
 } request_uri;
 
 typedef struct {

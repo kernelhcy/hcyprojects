@@ -75,8 +75,7 @@ static size_t get_sa_len(const struct sockaddr *addr)
 
 
 
-int
-response_header_insert(server * srv, connection * con, const char *key,
+int response_header_insert(server * srv, connection * con, const char *key,
 					   size_t keylen, const char *value, size_t vallen)
 {
 	data_string *ds;
@@ -84,8 +83,7 @@ response_header_insert(server * srv, connection * con, const char *key,
 	UNUSED(srv);
 
 	if (NULL ==
-		(ds =
-		 (data_string *) array_get_unused_element(con->response.headers,
+		(ds = (data_string *) array_get_unused_element(con->response.headers,
 												  TYPE_STRING)))
 	{
 		ds = data_response_init();

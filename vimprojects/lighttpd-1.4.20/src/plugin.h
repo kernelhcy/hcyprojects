@@ -47,11 +47,28 @@ typedef struct
 	 * is called ... 
 	 */
 	handler_t(*handle_trigger) (server * srv, void *p_d);	/* once a second */
+	
+	//插件处理挂断信号。
 	handler_t(*handle_sighup) (server * srv, void *p_d);	/* at a signup */
+	
+	//在解析出uri_raw后，服务器将调用插件的这个函数处理请求。
+	//uri_raw就是服务器的域名。
+	//比如请求为http://www.xxx.com/page/index.html?key=data
+	//那么uri_raw就是www.xxx.com
 	handler_t(*handle_uri_raw) (server * srv, connection * con, void *p_d); /* after uri_raw is set */
+
+	//在解析出uri后调用。
+	//uri为www.xxx.com/page/index.html
 	handler_t(*handle_uri_clean) (server * srv, connection * con, void *p_d);/* after uri is set */
+
+	//获得插件的根目录
 	handler_t(*handle_docroot) (server * srv, connection * con, void *p_d);	/* getting the document-root */
+
+	//将url转换成服务器上对应的物理地址。
+	//然后进行处理。
 	handler_t(*handle_physical) (server * srv, connection * con, void *p_d);	/* mapping url to physical path */
+
+	
 	handler_t(*handle_request_done) (server * srv, connection * con, void *p_d);	/* at the end of a request */
 	handler_t(*handle_connection_close) (server * srv, connection * con, void *p_d);	/* at the end of a connection */
 	handler_t(*handle_joblist) (server * srv, connection * con, void *p_d);	/* after all events are handled */

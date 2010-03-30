@@ -686,8 +686,7 @@ config_check_cond_cached(server * srv, connection * con, data_config * dc)
  *
  * if the item is COND_LAST_ELEMENT we reset all items
  */
-void
-config_cond_cache_reset_item(server * srv, connection * con, comp_key_t item)
+void config_cond_cache_reset_item(server * srv, connection * con, comp_key_t item)
 {
 	size_t i;
 

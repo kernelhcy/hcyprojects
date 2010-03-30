@@ -1801,7 +1801,7 @@ int connection_state_machine(server * srv, connection * con)
 
 			/*
 			 * 准备response。
-			 * 这个函数做了大部分的请求处理工作。有700多行。
+			 * 包括解析request请求（HTTP头）
 			 */
 			switch (r = http_response_prepare(srv, con))
 			{

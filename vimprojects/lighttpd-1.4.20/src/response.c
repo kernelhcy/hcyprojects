@@ -162,6 +162,11 @@ int http_response_write_header(server * srv, connection * con)
 
 /**
  * 根据解析的http请求，对其进行处理。
+ * 根据解析出来的HTTP头，调用相应的插件功能去处理。
+ * 如果插件调用返回处理完毕或出错等，则会直接从这个函数中返回。
+ * 不再进行后面的处理，如果调用的插件功能返回HANDLE_GO_ON，
+ * 则函数继续执行。
+ * 继续调用其他功能，或返回请求的文件。
  */
 handler_t http_response_prepare(server * srv, connection * con)
 {
@@ -203,6 +208,8 @@ handler_t http_response_prepare(server * srv, connection * con)
 		 */
 
 		config_cond_cache_reset(srv, con);
+
+		//将srv中一些配置拷贝到con的conf中。
 		config_setup_connection(srv, con);	/* Perhaps this could be removed at other places. */
 
 		if (con->conf.log_condition_handling)
@@ -229,8 +236,9 @@ handler_t http_response_prepare(server * srv, connection * con)
 		 * - query
 		 *
 		 * (scheme)://(authority)(path)?(query)#fragment
-		 *
-		 *
+		 * 
+		 * fragment: 用于页面内部的跳转。通常不属于uri的一部分。
+		 * 服务器没有你要对其进行解析，后面的解析中，直接丢弃fragment。
 		 */
 
 		if (con->conf.is_ssl)
@@ -252,14 +260,14 @@ handler_t http_response_prepare(server * srv, connection * con)
 		config_patch_connection(srv, con, COMP_HTTP_COOKIE);	/* Cookie: */
 		config_patch_connection(srv, con, COMP_HTTP_REQUEST_METHOD);	/* REQUEST_METHOD */
 
-		/** their might be a fragment which has to be cut away */
+		/** their might be a fragment which has to be cut away  丢弃fragment*/
 		if (NULL != (qstr = strchr(con->request.uri->ptr, '#')))
 		{
 			con->request.uri->used = qstr - con->request.uri->ptr;
 			con->request.uri->ptr[con->request.uri->used++] = '\0';
 		}
 
-		/** extract query string from request.uri */
+		/** extract query string from request.uri 将query数据和地址分离。*/
 		if (NULL != (qstr = strchr(con->request.uri->ptr, '?')))
 		{
 			buffer_copy_string(con->uri.query, qstr + 1);
@@ -284,24 +292,21 @@ handler_t http_response_prepare(server * srv, connection * con)
 		/*
 		 * disable keep-alive if requested 
 		 */
-
 		if (con->request_count > con->conf.max_keep_alive_requests)
 		{
 			con->keep_alive = 0;
 		}
 
-
 		/*
 		 * build filename - decode url-encodings (e.g. %20 -> ' ') - remove
 		 * path-modifiers (e.g. /../) 
+		 * 将url编码的字符串解码，并简化地址。
 		 */
-
-
 		if (con->request.http_method == HTTP_METHOD_OPTIONS && con->uri.path_raw->ptr[0] == '*'
 			&& con->uri.path_raw->ptr[1] == '\0')
 		{
 			/*
-			 * OPTIONS * ... 
+			 * OPTIONS * ... 仅仅是为了测试服务器。
 			 */
 			buffer_copy_string_buffer(con->uri.path, con->uri.path_raw);
 		} 
@@ -322,11 +327,8 @@ handler_t http_response_prepare(server * srv, connection * con)
 		/**
 		 *
 		 * call plugins
-		 *
 		 * - based on the raw URL
-		 *
 		 */
-
 		switch (r = plugins_call_handle_uri_raw(srv, con))
 		{
 		case HANDLER_GO_ON:
@@ -342,13 +344,9 @@ handler_t http_response_prepare(server * srv, connection * con)
 		}
 
 		/**
-		 *
 		 * call plugins
-		 *
 		 * - based on the clean URL
-		 *
 		 */
-
 		config_patch_connection(srv, con, COMP_HTTP_URL);	/* HTTPurl */
 		config_patch_connection(srv, con, COMP_HTTP_QUERY_STRING);	/* HTTPqs */
 
@@ -379,9 +377,8 @@ handler_t http_response_prepare(server * srv, connection * con)
 		{
 			/*
 			 * option requests are handled directly without checking of the
-			 * path 
+			 * path  将key=val加到response的head中。
 			 */
-
 			response_header_insert(srv, con, CONST_STR_LEN("Allow"),
 								   CONST_STR_LEN("OPTIONS, GET, HEAD, POST"));
 
@@ -392,22 +389,13 @@ handler_t http_response_prepare(server * srv, connection * con)
 		}
 
 		/***
+		 * border logical filename (URI) becomes a physical filename here
+		 * 将请求地址转换成服务器的物理地址，也就是文件路径。
 		 *
-		 * border
-		 *
-		 * logical filename (URI) becomes a physical filename here
-		 */
-
-		/*
 		 * 1. stat() ... ISREG() -> ok, go on ... ISDIR() -> index-file ->
 		 * redirect 2. pathinfo() ... ISREG() 3. -> 404 
-		 */
-
-		/*
+		 *
 		 * SEARCH DOCUMENT ROOT
-		 */
-
-		/*
 		 * set a default 
 		 */
 
@@ -501,8 +489,7 @@ handler_t http_response_prepare(server * srv, connection * con)
 		buffer_copy_string_buffer(con->physical.path, con->physical.doc_root);
 		BUFFER_APPEND_SLASH(con->physical.path);
 		buffer_copy_string_buffer(con->physical.basedir, con->physical.path);
-		if (con->physical.rel_path->used
-			&& con->physical.rel_path->ptr[0] == '/')
+		if (con->physical.rel_path->used && con->physical.rel_path->ptr[0] == '/')
 		{
 			buffer_append_string_len(con->physical.path,
 									 con->physical.rel_path->ptr + 1,
@@ -546,7 +533,6 @@ handler_t http_response_prepare(server * srv, connection * con)
 
 	/*
 	 * Noone catched away the file from normal path of execution yet (like mod_access)
-	 *
 	 * Go on and check of the file exists at all
 	 */
 

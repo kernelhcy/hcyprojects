@@ -465,8 +465,6 @@ static int stat_cache_lstat(server * srv, buffer * dname, struct stat *lst)
 
 /***
  *
- *
- *
  * returns:
  *  - HANDLER_FINISHED on cache-miss (don't forget to reopen the file)
  *  - HANDLER_ERROR on stat() failed -> see errno for problem
