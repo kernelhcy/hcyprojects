@@ -82,9 +82,7 @@ SETDEFAULTS_FUNC(mod_access_set_defaults)
 
 		p->config_storage[i] = s;
 
-		if (0 !=
-			config_insert_values_global(srv,
-										((data_config *) srv->
+		if (0 != config_insert_values_global(srv, ((data_config *) srv->
 										 config_context->data[i])->value, cv))
 		{
 			return HANDLER_ERROR;
@@ -96,8 +94,7 @@ SETDEFAULTS_FUNC(mod_access_set_defaults)
 
 #define PATCH(x) \
 	p->conf.x = s->x;
-static int
-mod_access_patch_connection(server * srv, connection * con, plugin_data * p)
+static int mod_access_patch_connection(server * srv, connection * con, plugin_data * p)
 {
 	size_t i, j;
 	plugin_config *s = p->config_storage[0];
@@ -125,8 +122,7 @@ mod_access_patch_connection(server * srv, connection * con, plugin_data * p)
 		{
 			data_unset *du = dc->value->data[j];
 
-			if (buffer_is_equal_string
-				(du->key, CONST_STR_LEN("url.access-deny")))
+			if (buffer_is_equal_string(du->key, CONST_STR_LEN("url.access-deny")))
 			{
 				PATCH(access_deny);
 			}
@@ -162,8 +158,7 @@ URIHANDLER_FUNC(mod_access_uri_handler)
 
 	if (con->conf.log_request_handling)
 	{
-		log_error_write(srv, __FILE__, __LINE__, "s",
-						"-- mod_access_uri_handler called");
+		log_error_write(srv, __FILE__, __LINE__, "s", "-- mod_access_uri_handler called");
 	}
 
 	for (k = 0; k < p->conf.access_deny->used; k++)
@@ -171,7 +166,6 @@ URIHANDLER_FUNC(mod_access_uri_handler)
 		data_string *ds = (data_string *) p->conf.access_deny->data[k];
 		int ct_len = ds->value->used - 1;
 		int denied = 0;
-
 
 		if (ct_len > s_len)
 			continue;
@@ -185,17 +179,14 @@ URIHANDLER_FUNC(mod_access_uri_handler)
 
 		if (con->conf.force_lowercase_filenames)
 		{
-			if (0 ==
-				strncasecmp(con->uri.path->ptr + s_len - ct_len,
-							ds->value->ptr, ct_len))
+			if (0 == strncasecmp(con->uri.path->ptr + s_len - ct_len, ds->value->ptr, ct_len))
 			{
 				denied = 1;
 			}
-		} else
+		} 
+		else
 		{
-			if (0 ==
-				strncmp(con->uri.path->ptr + s_len - ct_len,
-						ds->value->ptr, ct_len))
+			if (0 == strncmp(con->uri.path->ptr + s_len - ct_len, ds->value->ptr, ct_len))
 			{
 				denied = 1;
 			}

@@ -82,8 +82,7 @@ int response_header_insert(server * srv, connection * con, const char *key,
 
 	UNUSED(srv);
 
-	if (NULL ==
-		(ds = (data_string *) array_get_unused_element(con->response.headers,
+	if (NULL == (ds = (data_string *) array_get_unused_element(con->response.headers,
 												  TYPE_STRING)))
 	{
 		ds = data_response_init();
@@ -96,22 +95,18 @@ int response_header_insert(server * srv, connection * con, const char *key,
 	return 0;
 }
 
-int
-response_header_overwrite(server * srv, connection * con, const char *key,
+int response_header_overwrite(server * srv, connection * con, const char *key,
 						  size_t keylen, const char *value, size_t vallen)
 {
 	data_string *ds;
 
 	UNUSED(srv);
-
 	/*
 	 * if there already is a key by this name overwrite the value 
 	 */
-	if (NULL !=
-		(ds = (data_string *) array_get_element(con->response.headers, key)))
+	if (NULL != (ds = (data_string *) array_get_element(con->response.headers, key)))
 	{
 		buffer_copy_string(ds->value, value);
-
 		return 0;
 	}
 

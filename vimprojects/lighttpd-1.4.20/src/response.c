@@ -26,6 +26,10 @@
 
 #include "sys-socket.h"
 
+
+/**
+ * create response head
+ */
 int http_response_write_header(server * srv, connection * con)
 {
 	buffer *b;
@@ -33,6 +37,7 @@ int http_response_write_header(server * srv, connection * con)
 	int have_date = 0;
 	int have_server = 0;
 
+	//在write queu的开头，追加
 	b = chunkqueue_get_prepend_buffer(con->write_queue);
 
 	if (con->request.http_version == HTTP_VERSION_1_1)
@@ -161,8 +166,8 @@ int http_response_write_header(server * srv, connection * con)
 
 
 /**
- * 根据解析的http请求，对其进行处理。
- * 根据解析出来的HTTP头，调用相应的插件功能去处理。
+ * 根据解析的host地址，对其进行处理。
+ * 根据解析出来的host地址，调用相应的插件功能去处理。
  * 如果插件调用返回处理完毕或出错等，则会直接从这个函数中返回。
  * 不再进行后面的处理，如果调用的插件功能返回HANDLE_GO_ON，
  * 则函数继续执行。

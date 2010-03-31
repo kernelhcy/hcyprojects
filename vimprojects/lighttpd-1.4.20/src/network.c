@@ -773,8 +773,7 @@ int network_write_chunkqueue(server * srv, connection * con, chunkqueue * cq)
 	server_socket *srv_socket = con->srv_socket;
 
 	if (con->conf.global_kbytes_per_second &&
-		*(con->conf.global_bytes_per_second_cnt_ptr) >
-		con->conf.global_kbytes_per_second * 1024)
+		*(con->conf.global_bytes_per_second_cnt_ptr) > con->conf.global_kbytes_per_second * 1024)
 	{
 		/*
 		 * we reached the global traffic limit 

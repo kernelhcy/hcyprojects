@@ -12,15 +12,15 @@
 /*
  * plugin config for all request/connections 
  */
-typedef struct {
+typedef struct 
+{
 	array *alias;
 } plugin_config;
 
-typedef struct {
+typedef struct 
+{
 	PLUGIN_DATA;
-
 	plugin_config **config_storage;
-
 	plugin_config conf;
 } plugin_data;
 
@@ -30,10 +30,7 @@ typedef struct {
 INIT_FUNC(mod_alias_init)
 {
 	plugin_data *p;
-
 	p = calloc(1, sizeof(*p));
-
-
 
 	return p;
 }
@@ -74,13 +71,13 @@ FREE_FUNC(mod_alias_free)
 /*
  * handle plugin config and check values 
  */
-
 SETDEFAULTS_FUNC(mod_alias_set_defaults)
 {
 	plugin_data *p = p_d;
 	size_t i = 0;
 
-	config_values_t cv[] = {
+	config_values_t cv[] = 
+	{
 		{"alias.url", NULL, T_CONFIG_ARRAY, T_CONFIG_SCOPE_CONNECTION}
 		,						/* 0 */
 		{NULL, NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET}
@@ -89,8 +86,7 @@ SETDEFAULTS_FUNC(mod_alias_set_defaults)
 	if (!p)
 		return HANDLER_ERROR;
 
-	p->config_storage =
-		calloc(1, srv->config_context->used * sizeof(specific_config *));
+	p->config_storage = calloc(1, srv->config_context->used * sizeof(specific_config *));
 
 	for (i = 0; i < srv->config_context->used; i++)
 	{
@@ -102,10 +98,7 @@ SETDEFAULTS_FUNC(mod_alias_set_defaults)
 
 		p->config_storage[i] = s;
 
-		if (0 !=
-			config_insert_values_global(srv,
-										((data_config *) srv->
-										 config_context->data[i])->value, cv))
+		if (0 != config_insert_values_global(srv, ((data_config *) srv-> config_context->data[i])->value, cv))
 		{
 			return HANDLER_ERROR;
 		}
@@ -149,8 +142,7 @@ SETDEFAULTS_FUNC(mod_alias_set_defaults)
 
 #define PATCH(x) \
 	p->conf.x = s->x;
-static int
-mod_alias_patch_connection(server * srv, connection * con, plugin_data * p)
+static int mod_alias_patch_connection(server * srv, connection * con, plugin_data * p)
 {
 	size_t i, j;
 	plugin_config *s = p->config_storage[0];

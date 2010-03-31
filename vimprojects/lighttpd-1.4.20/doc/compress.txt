@@ -64,3 +64,9 @@ To compress dynamic content with PHP please enable ::
   zlib.output_compression = 1
 
 in the php.ini as PHP provides compression support by itself.
+
+插件接口：
+	init
+	set_defaults
+	handle_subrequest_start
+	cleanup

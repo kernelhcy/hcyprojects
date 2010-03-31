@@ -526,13 +526,10 @@ static int connection_handle_write_prepare(server * srv, connection * con)
 			if ((!con->http_status || con->http_status == 200)
 				&& con->uri.path->used && con->uri.path->ptr[0] != '*')
 			{
-				response_header_insert(srv, con,
-									   CONST_STR_LEN("Allow"),
-									   CONST_STR_LEN
-									   ("OPTIONS, GET, HEAD, POST"));
+				response_header_insert(srv, con, CONST_STR_LEN("Allow"),
+									   CONST_STR_LEN("OPTIONS, GET, HEAD, POST"));
 
-				con->response.transfer_encoding &=
-					~HTTP_TRANSFER_ENCODING_CHUNKED;
+				con->response.transfer_encoding &= ~HTTP_TRANSFER_ENCODING_CHUNKED;
 				con->parsed_response &= ~HTTP_CONTENT_LENGTH;
 
 				con->http_status = 200;
@@ -587,7 +584,6 @@ static int connection_handle_write_prepare(server * srv, connection * con)
 			break;
 
 		con->file_finished = 0;
-
 		buffer_reset(con->physical.path);
 
 		/*
@@ -601,8 +597,7 @@ static int connection_handle_write_prepare(server * srv, connection * con)
 			buffer_append_long(con->physical.path, con->http_status);
 			buffer_append_string_len(con->physical.path, CONST_STR_LEN(".html"));
 
-			if (HANDLER_ERROR !=
-				stat_cache_get_entry(srv, con, con->physical.path, &sce))
+			if (HANDLER_ERROR != stat_cache_get_entry(srv, con, con->physical.path, &sce))
 			{
 				con->file_finished = 1;
 				http_chunk_append_file(srv, con, con->physical.path, 0, sce->st.st_size);
@@ -1801,7 +1796,7 @@ int connection_state_machine(server * srv, connection * con)
 
 			/*
 			 * 准备response。
-			 * 包括解析request请求（HTTP头）
+			 * 解析host地址，根据host地址进行相应的处理.
 			 */
 			switch (r = http_response_prepare(srv, con))
 			{

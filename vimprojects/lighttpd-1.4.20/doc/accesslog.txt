@@ -124,3 +124,10 @@ An example the use this functionality is provided below: ::
 
   ?>
 
+
+插件接口：
+  init
+  set_defaults
+  cleanup
+  handle_request_done
+  handle_sighup

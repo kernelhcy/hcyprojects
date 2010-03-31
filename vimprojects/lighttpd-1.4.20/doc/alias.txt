@@ -22,6 +22,7 @@ Description
 ===========
 
 The alias module is used to specify a special document-root for a given url-subset.
+为给定的url子地址指定一个特殊的根目录。
 
 Options
 =======
@@ -34,3 +35,9 @@ alias.url
   Example: ::
 
     alias.url = ( "/cgi-bin/" => "/var/www/servers/www.example.org/cgi-bin/" )
+
+插件接口：
+ init
+ handle_physical
+ set_defaults
+ cleanup

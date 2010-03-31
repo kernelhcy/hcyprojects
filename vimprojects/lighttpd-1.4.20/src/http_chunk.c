@@ -58,8 +58,7 @@ static int http_chunk_append_len(server * srv, connection * con, size_t len)
 }
 
 
-int
-http_chunk_append_file(server * srv, connection * con, buffer * fn,
+int http_chunk_append_file(server * srv, connection * con, buffer * fn,
 					   off_t offset, off_t len)
 {
 	chunkqueue *cq;

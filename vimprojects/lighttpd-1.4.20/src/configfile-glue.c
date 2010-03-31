@@ -27,9 +27,7 @@
 /*
  * parse config array 
  */
-int
-config_insert_values_internal(server * srv, array * ca,
-							  const config_values_t cv[])
+int config_insert_values_internal(server * srv, array * ca,  const config_values_t cv[])
 {
 	size_t i;
 	data_unset *du;
@@ -199,9 +197,7 @@ config_insert_values_internal(server * srv, array * ca,
 	return 0;
 }
 
-int
-config_insert_values_global(server * srv, array * ca,
-							const config_values_t cv[])
+int config_insert_values_global(server * srv, array * ca, const config_values_t cv[])
 {
 	size_t i;
 	data_unset *du;

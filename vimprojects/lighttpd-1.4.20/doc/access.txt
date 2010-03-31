@@ -12,6 +12,7 @@ Module: mod_access
 
 :abstract:
   The access module is used to deny access to files with given trailing path names.
+  对于具有指定后缀的文件，不允许对其进行访问。
 
 .. meta::
   :keywords: lighttpd, trailing path access control
@@ -34,8 +35,18 @@ url.access-deny
   Example: ::
 
     url.access-deny = ( "~", ".inc")
-
+  
+  禁止访问所有文件名末尾是~和.inc的文件。~文件通常是备份文件，.inc通常是包含
+  源码的include 文件。
   will deny access to all files ended with a diacritical mark (~) or .inc
   such as example~ or example.inc.  A trailing diacritical mark is often
   used by editors for backup files.  And the .inc extension is often used
   for include files with code.
+
+
+  插件接口：
+  init
+  set_defaults
+  handle_uri_clean
+  handle_subrequest_start
+  cleanup
