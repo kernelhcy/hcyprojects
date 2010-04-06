@@ -498,6 +498,12 @@ int http_request_parse(server * srv, connection * con)
 
 				if (request_line_stage != 2)
 				{
+					/*
+					 * request line只会包含两个空格。
+					 * 因此，request_line_stage的值只能小于2，
+					 * 如果等于2，说明request line不符合http协议要求，
+					 * 返回400错误：bad request。
+					 */
 					con->http_status = 400;
 					con->response.keep_alive = 0;
 					con->keep_alive = 0;
@@ -576,6 +582,7 @@ int http_request_parse(server * srv, connection * con)
 
 					if (invalid_version)
 					{
+						//request line中， http协议号不符合要求。
 						con->http_status = 400;
 						con->keep_alive = 0;
 
@@ -598,6 +605,7 @@ int http_request_parse(server * srv, connection * con)
 					} 
 					else
 					{
+						//505:HTTP Version Not Supported.
 						con->http_status = 505;
 						if (srv->srvconf.log_request_header_on_error)
 						{
@@ -626,13 +634,14 @@ int http_request_parse(server * srv, connection * con)
 				{
 					/*
 					 * ignore the host-part 
+					 * request line 中的uri地址，忽略其中的host部分。值处理abs_path。
 					 */
 					buffer_copy_string_len(con->request.uri, nuri, proto - nuri - 1);
 				} 
 				else
 				{
 					/*
-					 * everything looks good so far 
+					 * everything looks good so far uri地址中不包含host。
 					 */
 					buffer_copy_string_len(con->request.uri, uri, proto - uri - 1);
 				}
@@ -640,6 +649,7 @@ int http_request_parse(server * srv, connection * con)
 				/*
 				 * check uri for invalid characters 
 				 * 检查uri地址是否含有非法字符。
+				 * 也就是检查是否符合作为一个路径的要求，不能包含特殊字符。
 				 */
 				for (j = 0; j < con->request.uri->used - 1; j++)
 				{
@@ -745,7 +755,7 @@ int http_request_parse(server * srv, connection * con)
 	 * 下面开始分析header lines
 	 * 注：
 	 * 	first 用于标记key开始的位置。
-	 * 	cut 用于标记value开始的位置。
+	 * 	cur 用于标记value开始的位置。
 	 */
 	for (; i < con->parse_request->used && !done; i++)
 	{

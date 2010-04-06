@@ -1770,6 +1770,7 @@ int connection_state_machine(server * srv, connection * con)
 			}
 
 			//解析http请求。如果此函数返回1,表示还有一些post数据需要读取。
+			//所有的数据都存储在con -> request中。
 			if (http_request_parse(srv, con))
 			{
 				/*
