@@ -220,7 +220,7 @@ typedef struct
 	buffer *scheme; 		//http , https and so on
 	buffer *authority; 		//user:password
 	buffer *path; 			//www.xxx.com/xxx/xxxx.html
-	buffer *path_raw; 		//www.xxx.com
+	buffer *path_raw; 		//www.xxx.com/% HEX HEX %HEXHEX 就是未解码的path
 	buffer *query; 			//key1=data1&key2=data2
 } request_uri;
 

@@ -332,7 +332,7 @@ handler_t http_response_prepare(server * srv, connection * con)
 		/**
 		 *
 		 * call plugins
-		 * - based on the raw URL
+		 * - based on the raw URL 为解码的url。
 		 */
 		switch (r = plugins_call_handle_uri_raw(srv, con))
 		{
@@ -350,7 +350,7 @@ handler_t http_response_prepare(server * srv, connection * con)
 
 		/**
 		 * call plugins
-		 * - based on the clean URL
+		 * - based on the clean URL 解码过的url
 		 */
 		config_patch_connection(srv, con, COMP_HTTP_URL);	/* HTTPurl */
 		config_patch_connection(srv, con, COMP_HTTP_QUERY_STRING);	/* HTTPqs */
@@ -698,8 +698,7 @@ handler_t http_response_prepare(server * srv, connection * con)
 					pathinfo = slash;
 			}
 			while ((found == 0) && (slash != NULL)
-				   && ((size_t) (slash - srv->tmp_buf->ptr) >
-					   (con->physical.basedir->used - 2)));
+				   && ((size_t) (slash - srv->tmp_buf->ptr) > (con->physical.basedir->used - 2)));
 
 			if (found == 0)
 			{
