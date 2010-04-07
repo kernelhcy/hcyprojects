@@ -87,47 +87,48 @@
   <valuemap type="QVariantMap">
    <value key="ProjectExplorer.BuildConfiguration.DisplayName" type="QString">Debug</value>
    <valuelist key="abstractProcess.Environment" type="QVariantList">
-    <value type="QString">DBUS_SESSION_BUS_ADDRESS=unix:abstract=/tmp/dbus-j1YbTrGkq9,guid=8961f4a47bff019aaa364aaa4b5940cf</value>
+    <value type="QString">DBUS_SESSION_BUS_ADDRESS=unix:abstract=/tmp/dbus-nekTWjtrEe,guid=110932d163b1938984dba5c04bbaaa11</value>
     <value type="QString">DESKTOP_SESSION=default</value>
     <value type="QString">DISPLAY=:0.0</value>
     <value type="QString">GDMSESSION=default</value>
     <value type="QString">GDM_LANG=zh_CN.UTF-8</value>
     <value type="QString">GDM_XSERVER_LOCATION=local</value>
     <value type="QString">GNOME_DESKTOP_SESSION_ID=Default</value>
-    <value type="QString">GNOME_KEYRING_PID=5955</value>
-    <value type="QString">GNOME_KEYRING_SOCKET=/tmp/keyring-6khIQ7/socket</value>
-    <value type="QString">GPG_AGENT_INFO=/tmp/seahorse-rocsI2/S.gpg-agent:6045:1</value>
-    <value type="QString">GTK_IM_MODULE=scim-bridge</value>
+    <value type="QString">GNOME_KEYRING_PID=3385</value>
+    <value type="QString">GNOME_KEYRING_SOCKET=/tmp/keyring-9EbYTv/socket</value>
+    <value type="QString">GPG_AGENT_INFO=/tmp/seahorse-amiuWT/S.gpg-agent:3448:1</value>
+    <value type="QString">GTK_IM_MODULE=xim</value>
+    <value type="QString">GTK_MODULES=gail:atk-bridge</value>
     <value type="QString">GTK_RC_FILES=/etc/gtk/gtkrc:/home/hcy/.gtkrc-1.2-gnome2</value>
     <value type="QString">HOME=/home/hcy</value>
     <value type="QString">LANG=zh_CN.UTF-8</value>
     <value type="QString">LD_LIBRARY_PATH=/home/silwings/qtsdk-2009.03/lib/qtcreator:</value>
     <value type="QString">LOGNAME=hcy</value>
     <value type="QString">MANPATH=/home/hcy/ProgramFiles/qtsdk/qt//doc/html:</value>
-    <value type="QString">PATH=/home/hcy/ProgramFiles/qtsdk-2010.01/qt/bin:/home/hcy/ProgramFiles/qtsdk/qt//bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games</value>
-    <value type="QString">PWD=/home/hcy/ProgramFiles/qtsdk-2010.01/bin</value>
-    <value type="QString">QTDIR=/home/hcy/ProgramFiles/qtsdk-2010.01/qt</value>
+    <value type="QString">PATH=/home/hcy/ProgramFiles/qtsdk2010.10/qt/bin:/home/hcy/ProgramFiles/qtsdk/qt//bin:/usr/local/bin:/usr/bin:/bin:/usr/games</value>
+    <value type="QString">PWD=/home/hcy</value>
+    <value type="QString">QTDIR=/home/hcy/ProgramFiles/qtsdk2010.10/qt</value>
     <value type="QString">QT_IM_MODULE=xim</value>
-    <value type="QString">SESSION_MANAGER=local/hcy-laptop:/tmp/.ICE-unix/5956</value>
+    <value type="QString">SESSION_MANAGER=local/hcy-debian:/tmp/.ICE-unix/3386</value>
     <value type="QString">SHELL=/bin/bash</value>
-    <value type="QString">SSH_AUTH_SOCK=/tmp/keyring-6khIQ7/ssh</value>
+    <value type="QString">SHLVL=0</value>
+    <value type="QString">SSH_AUTH_SOCK=/tmp/keyring-9EbYTv/ssh</value>
     <value type="QString">USER=hcy</value>
     <value type="QString">USERNAME=hcy</value>
     <value type="QString">WINDOWPATH=7</value>
     <value type="QString">XAUTHORITY=/home/hcy/.Xauthority</value>
     <value type="QString">XDG_DATA_DIRS=/usr/local/share/:/usr/share/:/usr/share/gdm/</value>
-    <value type="QString">XDG_SESSION_COOKIE=013c6d363452ddf382407b624b599882-1264140493.950931-435344355</value>
-    <value type="QString">XMODIFIERS=@im=SCIM</value>
+    <value type="QString">XMODIFIERS=@im=fcitx</value>
    </valuelist>
    <valuelist key="abstractProcess.arguments" type="QVariantList">
-    <value type="QString">/home/hcy/vimprojects/1g1g/linux1g1g.pro</value>
+    <value type="QString">/home/hcy/Projects/vimprojects/1g1g/linux1g1g.pro</value>
     <value type="QString">-spec</value>
     <value type="QString">linux-g++</value>
     <value type="QString">-r</value>
    </valuelist>
-   <value key="abstractProcess.command" type="QString">/home/hcy/ProgramFiles/qtsdk-2010.01/qt/bin/qmake</value>
-   <value key="abstractProcess.enabled" type="bool">true</value>
-   <value key="abstractProcess.workingDirectory" type="QString">/home/hcy/vimprojects/1g1g</value>
+   <value key="abstractProcess.command" type="QString">/home/hcy/ProgramFiles/qtsdk/qt/bin/qmake</value>
+   <value key="abstractProcess.enabled" type="bool">false</value>
+   <value key="abstractProcess.workingDirectory" type="QString">/home/hcy/Projects/vimprojects/1g1g</value>
    <value key="buildConfiguration" type=""></value>
   </valuemap>
  </data>
@@ -136,37 +137,38 @@
   <valuemap type="QVariantMap">
    <value key="ProjectExplorer.BuildConfiguration.DisplayName" type="QString">Debug</value>
    <valuelist key="abstractProcess.Environment" type="QVariantList">
-    <value type="QString">DBUS_SESSION_BUS_ADDRESS=unix:abstract=/tmp/dbus-j1YbTrGkq9,guid=8961f4a47bff019aaa364aaa4b5940cf</value>
+    <value type="QString">DBUS_SESSION_BUS_ADDRESS=unix:abstract=/tmp/dbus-nekTWjtrEe,guid=110932d163b1938984dba5c04bbaaa11</value>
     <value type="QString">DESKTOP_SESSION=default</value>
     <value type="QString">DISPLAY=:0.0</value>
     <value type="QString">GDMSESSION=default</value>
     <value type="QString">GDM_LANG=zh_CN.UTF-8</value>
     <value type="QString">GDM_XSERVER_LOCATION=local</value>
     <value type="QString">GNOME_DESKTOP_SESSION_ID=Default</value>
-    <value type="QString">GNOME_KEYRING_PID=5955</value>
-    <value type="QString">GNOME_KEYRING_SOCKET=/tmp/keyring-6khIQ7/socket</value>
-    <value type="QString">GPG_AGENT_INFO=/tmp/seahorse-rocsI2/S.gpg-agent:6045:1</value>
-    <value type="QString">GTK_IM_MODULE=scim-bridge</value>
+    <value type="QString">GNOME_KEYRING_PID=3385</value>
+    <value type="QString">GNOME_KEYRING_SOCKET=/tmp/keyring-9EbYTv/socket</value>
+    <value type="QString">GPG_AGENT_INFO=/tmp/seahorse-amiuWT/S.gpg-agent:3448:1</value>
+    <value type="QString">GTK_IM_MODULE=xim</value>
+    <value type="QString">GTK_MODULES=gail:atk-bridge</value>
     <value type="QString">GTK_RC_FILES=/etc/gtk/gtkrc:/home/hcy/.gtkrc-1.2-gnome2</value>
     <value type="QString">HOME=/home/hcy</value>
     <value type="QString">LANG=zh_CN.UTF-8</value>
     <value type="QString">LD_LIBRARY_PATH=/home/silwings/qtsdk-2009.03/lib/qtcreator:</value>
     <value type="QString">LOGNAME=hcy</value>
     <value type="QString">MANPATH=/home/hcy/ProgramFiles/qtsdk/qt//doc/html:</value>
-    <value type="QString">PATH=/home/hcy/ProgramFiles/qtsdk-2010.01/qt/bin:/home/hcy/ProgramFiles/qtsdk/qt//bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games</value>
-    <value type="QString">PWD=/home/hcy/ProgramFiles/qtsdk-2010.01/bin</value>
-    <value type="QString">QTDIR=/home/hcy/ProgramFiles/qtsdk-2010.01/qt</value>
+    <value type="QString">PATH=/home/hcy/ProgramFiles/qtsdk2010.10/qt/bin:/home/hcy/ProgramFiles/qtsdk/qt//bin:/usr/local/bin:/usr/bin:/bin:/usr/games</value>
+    <value type="QString">PWD=/home/hcy</value>
+    <value type="QString">QTDIR=/home/hcy/ProgramFiles/qtsdk2010.10/qt</value>
     <value type="QString">QT_IM_MODULE=xim</value>
-    <value type="QString">SESSION_MANAGER=local/hcy-laptop:/tmp/.ICE-unix/5956</value>
+    <value type="QString">SESSION_MANAGER=local/hcy-debian:/tmp/.ICE-unix/3386</value>
     <value type="QString">SHELL=/bin/bash</value>
-    <value type="QString">SSH_AUTH_SOCK=/tmp/keyring-6khIQ7/ssh</value>
+    <value type="QString">SHLVL=0</value>
+    <value type="QString">SSH_AUTH_SOCK=/tmp/keyring-9EbYTv/ssh</value>
     <value type="QString">USER=hcy</value>
     <value type="QString">USERNAME=hcy</value>
     <value type="QString">WINDOWPATH=7</value>
     <value type="QString">XAUTHORITY=/home/hcy/.Xauthority</value>
     <value type="QString">XDG_DATA_DIRS=/usr/local/share/:/usr/share/:/usr/share/gdm/</value>
-    <value type="QString">XDG_SESSION_COOKIE=013c6d363452ddf382407b624b599882-1264140493.950931-435344355</value>
-    <value type="QString">XMODIFIERS=@im=SCIM</value>
+    <value type="QString">XMODIFIERS=@im=fcitx</value>
    </valuelist>
    <value key="abstractProcess.IgnoreReturnValue" type="bool">false</value>
    <valuelist key="abstractProcess.arguments" type="QVariantList">
@@ -174,7 +176,7 @@
    </valuelist>
    <value key="abstractProcess.command" type="QString">/usr/bin/make</value>
    <value key="abstractProcess.enabled" type="bool">true</value>
-   <value key="abstractProcess.workingDirectory" type="QString">/home/hcy/vimprojects/1g1g</value>
+   <value key="abstractProcess.workingDirectory" type="QString">/home/hcy/Projects/vimprojects/1g1g</value>
   </valuemap>
  </data>
  <data>

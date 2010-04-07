@@ -24,7 +24,7 @@ YGTitleBar::YGTitleBar(QWidget *p) :
     layout -> addWidget(icon);
     layout -> addWidget(title);
     layout -> addWidget(btnMinimize);
-    //layout -> addWidget(btnClose);
+    layout -> addWidget(btnClose);
 
     layout -> setSpacing(0);
     layout -> setContentsMargins(0, 0, 0, 0);

@@ -28,6 +28,7 @@ MainWindow::MainWindow(QWidget *parent, ControlThread* ct)
     setProxy();
     setTrayIcon();
     startPlayer();
+    hiden_pos = HIDEN_UNSET;
 
     this -> setWindowIcon(QIcon(":images/icon.png"));
     this -> resize(800, 620);
@@ -340,7 +341,11 @@ void MainWindow::trayActived(QSystemTrayIcon::ActivationReason reason)
 
 void MainWindow::moveEvent(QMoveEvent *event)
 {
+
+
     QPoint pos = event -> pos();
+
+    /*
     QPoint toPos = pos;
 
     if (pos.x() < 50 && pos.x() > frameWidth + 1)
@@ -371,19 +376,46 @@ void MainWindow::moveEvent(QMoveEvent *event)
     Config *config = Config::getInstance();
     config -> pos_x = pos.x();
     config -> pos_y = pos.y();
-
+    */
 }
 
 void MainWindow::leaveEvent(QEvent *event)
 {
-    shrinkWindow();
+    QDesktopWidget *desktop = QApplication::desktop();
+    int shrink = 0;
+
+    if (this -> pos().x() < 5)
+    {
+        hiden_pos = HIDEN_LEFT;
+        shrink = 1;
+    }
+    else if (this -> pos().x() + this -> size().width()
+        > desktop -> width() - 5)
+    {
+        hiden_pos = HIDEN_RIGHT;
+        shrink = 1;
+    }
+    else if (this -> pos().y() < 5)
+    {
+        hiden_pos = HIDEN_UP;
+        shrink = 1;
+    }
+    else
+    {
+        shrink = 0;
+    }
+
+    if (shrink)
+    {
+        shrinkWindow();
+    }
     event->accept();
 }
 
 void MainWindow::enterEvent(QEvent *event)
 {
     setFixedSize(oldSize);
-    moveSuitable();
+    //moveSuitable();
     event->accept();
 }
 void MainWindow::mouseMoveEvent(QMouseEvent *event)
@@ -403,9 +435,15 @@ void MainWindow::shrinkWindow()
 {
     oldSize = size();
     QSize newSize = oldSize;
-    newSize.setWidth(5);
-    //newSize.setHeight(80);
 
+    if (hiden_pos == HIDEN_UP)
+    {
+        newSize.setHeight(5);
+    }
+    else
+    {
+        newSize.setWidth(5);
+    }
     QRect area = this -> geometry();
     QPoint pos = QCursor::pos(); //获取鼠标的当前位置。
     //判断是否真的出了窗口
@@ -417,53 +455,22 @@ void MainWindow::shrinkWindow()
     moveSuitable();
 
 }
+
+
 void MainWindow::moveSuitable()
 {
-    int midX = (avaGeometry.right() + avaGeometry.left()) / 2;
-    int midY = (avaGeometry.bottom() + avaGeometry.top()) / 2;
-    QSize sz = size();
-    /*
-      首先将屏幕分成四个区域：A B C D.如图：
-                      midX
-          -------------------------------> x
-          |*            |           *|
-          |      A      |     B      |
-          |             |            |
-      midY|---------------------------
-          |             |            |
-          |      C      |     D      |
-          |*            |           *|
-          ----------------------------
-          |
-          V
-          y
-      当窗口位于这四个区域中时，将分别将窗口移动到各个区域中标*的地方。
-
-     */
-    /* 区域A */
-    if (pos().x() < midX && pos().y() < midY)
+    QDesktopWidget *desktop = QApplication::desktop();
+    if (hiden_pos == HIDEN_LEFT)
     {
-        move(avaGeometry.left(), avaGeometry.top() + 1);
+        this -> move(0, this -> pos().y());
     }
-    /* 区域B */
-    else if (pos().x() >= midX && pos().y() < midY)
+    else if(hiden_pos == HIDEN_RIGHT)
     {
-        move(avaGeometry.right() - sz.width(), avaGeometry.top() + 1);
+        this -> move(desktop -> width() - this -> size().width(), this -> pos().y());
     }
-    /* 区域C */
-    else if (pos().x() < midX && pos().y() >= midY)
+    else if (hiden_pos == HIDEN_UP)
     {
-        move(avaGeometry.left(), avaGeometry.bottom() - sz.height() - 1);
+        this -> move(this -> pos().x(), 0);
     }
-    /* 区域D */
-    else if (pos().x() >= midX && pos().y() >= midY)
-    {
-        move(avaGeometry.right() - sz.width()
-             , avaGeometry.bottom() - sz.height() - 1);
-    }
-    else
-    {
-        move(avaGeometry.right() - sz.width() - 1, avaGeometry.top() + 1);
-    }
-
+    return;
 }

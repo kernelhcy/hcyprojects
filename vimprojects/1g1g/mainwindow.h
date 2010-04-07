@@ -103,6 +103,15 @@ private:
     //在调用了上面缩小窗口函数，那么窗口要移动到合适的位置。
     //如：屏幕边缘。
     void moveSuitable();
+
+    //标记窗口隐藏的位置。
+    enum
+    {
+        HIDEN_LEFT,
+        HIDEN_RIGHT,
+        HIDEN_UP,
+        HIDEN_UNSET
+    }hiden_pos;
 };
 
 #endif // MAINWINDOW_H
