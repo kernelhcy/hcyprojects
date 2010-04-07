@@ -1281,6 +1281,7 @@ int connection_handle_read_state(server * srv, connection * con)
 			/*
 			 * the new way, copy everything into a chunkqueue whcih might use
 			 * tempfiles 
+			 * 如果POST的数据大于64k，则将其写入临时文件中。
 			 */
 			if (con->request.content_length > 64 * 1024)
 			{
