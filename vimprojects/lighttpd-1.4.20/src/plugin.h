@@ -51,14 +51,11 @@ typedef struct
 	//插件处理挂断信号。
 	handler_t(*handle_sighup) (server * srv, void *p_d);	/* at a signup */
 	
-	//在解析出uri_raw后，服务器将调用插件的这个函数处理请求。
-	//uri_raw就是服务器的域名。
-	//比如请求为http://www.xxx.com/page/index.html?key=data
-	//那么uri_raw就是www.xxx.com
+	//在解析出uri_raw后调用。
+	//这时的uri地址没有解码。
 	handler_t(*handle_uri_raw) (server * srv, connection * con, void *p_d); /* after uri_raw is set */
 
-	//在解析出uri后调用。
-	//uri为www.xxx.com/page/index.html
+	//在解码uri后调用。
 	handler_t(*handle_uri_clean) (server * srv, connection * con, void *p_d);/* after uri is set */
 
 	//获得插件的根目录

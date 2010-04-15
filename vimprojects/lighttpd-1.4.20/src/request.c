@@ -136,7 +136,77 @@ static int request_check_hostname(server * srv, connection * con, buffer * host)
 		case TOPLABEL:
 			if (c == '.')
 			{
+				/*/**
+ * header lines中的value，可以是以","分割的多个value。
+ * 这个函数将v中value，按照","分割成多个值，存放在vals中。
+ */
+int http_request_split_value(array * vals, buffer * b)
+{
+	char *s;
+	size_t i;
+	int state = 0;
+	/*
+	 * parse
+	 * val1, val2, val3, val4
+	 * into a array (more or less a explode() incl. striping of whitespaces
+	 */
+
+	if (b->used == 0)
+		return 0;
+	s = b->ptr;
+	for (i = 0; i < b->used - 1;)
+	{
+		char *start = NULL, *end = NULL;
+		data_string *ds;
+
+		switch (state)
+		{
+		case 0:				/* ws */
+
+			/*
+			 * skip ws 
+			 */
+			for (; (*s == ' ' || *s == '\t') && i < b->used - 1; i++, s++);
+
+			state = 1;
+			break;
+		case 1:				/* value */
+			start = s;
+
+			for (; *s != ',' && i < b->used - 1; i++, s++);
+			end = s - 1;
+			//去掉空格
+			for (; (*end == ' ' || *end == '\t') && end > start; end--);
+
+			if (NULL ==	(ds = (data_string *) array_get_unused_element(vals, TYPE_STRING)))
+			{
+				ds = data_string_init();
+			}
+
+			buffer_copy_string_len(ds->value, start, end - start + 1);
+			array_insert_unique(vals, (data_unset *) ds);
+
+			if (*s == ',')
+			{
+				state = 0;
+				i++;
+				s++;
+			} 
+			else
+			{
 				/*
+				 * end of string 
+				 */
+				state = 2;
+			}
+			break;
+		default:
+			i++;
+			break;
+		}
+	}
+	return 0;
+}
 				 * only switch stage, if this is not the last character 
 				 */
 				if (i != host_len - 1)
