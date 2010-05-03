@@ -1473,7 +1473,7 @@ handler_t connection_handle_fdevent(void *s, void *context, int revents)
 	if (revents & ~(FDEVENT_IN | FDEVENT_OUT))
 	{
 		/*
-		 * looks like an error 即可读又可写，可能是一个错误。
+		 * looks like an error 即不可读又不可写，可能是一个错误。
 		 */
 
 		/*
