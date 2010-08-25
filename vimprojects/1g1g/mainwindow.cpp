@@ -72,7 +72,7 @@ void MainWindow::startPlayer()
 {
     player = new QWebView(this);
     player->settings()->setAttribute(QWebSettings::PluginsEnabled, true);
-    player->load(QUrl("http://www.1g1g.com/"));
+    player->load(QUrl("http://www.1g1g.com/?version=desktop_linux"));
     //player -> load(QUrl("http://commander.1g1g.com/test.html"));
     connect(player, SIGNAL(titleChanged(QString)), this, SLOT(changingTitle(QString)));
     connect(player, SIGNAL(titleChanged(QString)), this, SLOT(changeTrayIconTooltip(QString)));
