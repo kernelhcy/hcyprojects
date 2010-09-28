@@ -1,4 +1,4 @@
-package ClosestPointers;
+package closestPointers;
 
 import java.lang.reflect.InvocationTargetException;
 
