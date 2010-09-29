@@ -41,14 +41,20 @@ public class AMatrix
 	public AMatrix matrixPow(int n)
 	{
 		AMatrix tmp = new AMatrix(this);
-		AMatrix re = new AMatrix(this);
-		for(; n > 0; n >>=1){
-			if (n % 2 == 1){
-				re.multiply(tmp);
-			}
-			tmp.multiply(tmp);
+//		AMatrix re = new AMatrix(this);
+//		for(; n > 0; n >>=1){
+//			if (n % 2 == 1){
+//				re.multiply(tmp);
+//			}
+//			tmp.multiply(tmp);
+//		}
+		if(n % 2 == 1){
+			return Identity.multiply(this);
 		}
-		return re;
+		else{
+			tmp = matrixPow(n / 2);
+			return tmp.multiply(tmp);
+		}
 	}
 	
 	private AMatrix multiply(AMatrix m)
