@@ -11,13 +11,13 @@ public class Main
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		Main m = new Main();
-		m.test(10, Fibonacci.RECURRENCE);
-		m.test(10, Fibonacci.ORDER);
+//		m.test(10, Fibonacci.RECURRENCE);
+//		m.test(10, Fibonacci.ORDER);
 		//m.test(100, Fibonacci.RECURRENCE);
-		m.test(100, Fibonacci.ORDER);
-		m.test(10000, Fibonacci.ORDER);
-		m.test(100000, Fibonacci.ORDER);
-		
+//		m.test(100000, Fibonacci.ORDER);
+		m.test(1000000, Fibonacci.DIVIDECONQUER);
+//		m.test(10000, Fibonacci.ORDER);
+//		m.test(100000, Fibonacci.ORDER);
 	}
 	
 	private void test(int n, int method)

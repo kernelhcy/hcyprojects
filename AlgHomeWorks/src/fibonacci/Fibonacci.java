@@ -79,6 +79,13 @@ public class Fibonacci
 	private BigInteger getFNDC(int n)
 	{
 		BigInteger re = null;
+		Matrix am = new Matrix(2);
+		am.matrix[0][0] = new BigInteger("1");
+		am.matrix[0][1] = new BigInteger("1");
+		am.matrix[1][0] = new BigInteger("1");
+		am.matrix[1][1] = new BigInteger("0");
+		am = am.matrixPow(n - 1);
+		re = am.matrix[0][0];
 		return re;
 	}
 	
