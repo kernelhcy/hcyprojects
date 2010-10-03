@@ -1,4 +1,4 @@
-package closestPointers;
+package closestPoints;
 /**
  * 保存结果。
  * @author hcy

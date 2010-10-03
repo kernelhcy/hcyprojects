@@ -1,4 +1,4 @@
-package closestPointers;
+package closestPoints;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -116,7 +116,7 @@ public class MainFrame extends JFrame
 		bg.add(nRBtn);
 		bg.add(dcRBtn);
 		
-		showCoordinateCb = new JCheckBox("Show CoordinateCb");
+		showCoordinateCb = new JCheckBox("Show Coordinate");
 		showCoordinateCb.addActionListener(new ActionListener()
 		{
 			

@@ -1,4 +1,4 @@
-package closestPointers;
+package closestPoints;
 
 import java.util.Random;
 
@@ -49,7 +49,7 @@ public class RandomPointsGenor
 			points[i].y = y[i];
 		}
 		
-		show();
+		//show();
 		return points;
 	}
 	

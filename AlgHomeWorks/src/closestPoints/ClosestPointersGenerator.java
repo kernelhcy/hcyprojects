@@ -1,4 +1,4 @@
-package closestPointers;
+package closestPoints;
 
 import java.util.Arrays;
 
