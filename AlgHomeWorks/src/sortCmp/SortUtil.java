@@ -45,12 +45,19 @@ public class SortUtil
 		if(array == null){
 			return;
 		}
-		
+		//show16(array);
+		int[] tmp, re = null;
 		int[] dest = new int[array.length];
 		System.arraycopy(array, 0, dest, 0, array.length);
 		for(int i = 0; i < 32; i += 4){
 			randixSortHelp(dest, array, i);
+			re = array;
+			tmp = dest;
+			dest = array;
+			array = tmp;
+			//show(re);
 		}
+		System.arraycopy(re, 0, array, 0, re.length);
 	}
 	
 	/**
@@ -79,7 +86,7 @@ public class SortUtil
 			c[i] += c[i - 1];
 		}
 		
-		for(int i = 0; i < src.length; ++i){
+		for(int i = src.length - 1; i >= 0; --i){
 			dest[c[getFourBit(src[i], bit)] - 1] = src[i];
 			--c[getFourBit(src[i], bit)];
 		}
@@ -95,6 +102,25 @@ public class SortUtil
 		n >>= bit;
 		n &= 0x0f;
 		return n;
+	}
+	
+	private static void show16(int[] array)
+	{
+		for(int i = 0; i < array.length; ++i){
+			for(int j = 0; j < 32; j += 4){
+				System.out.printf("%x "
+						, getFourBit(array[i], j));
+			}
+			System.out.println();
+		}
+	}
+	
+	private static void show(int[] a)
+	{
+		for(int i = 0; i < a.length; ++i){
+			System.out.printf("%08x ", a[i]);
+		}
+		System.out.printf("\n");
 	}
 	/**
 	 * 归并排序
@@ -167,10 +193,10 @@ public class SortUtil
 		while(true){			
 			do{
 				++left;
-			}while(left <= right && array[left] <= val);
+			}while(left <= right && ulesseq(array[left], val));
 			do{
 				--right;
-			}while(left <= right && array[right] >= val);
+			}while(left <= right && ugreateq(array[right], val));
 			if(left > right){
 				break;
 			}
@@ -194,7 +220,7 @@ public class SortUtil
 		int end = len + off;
 		for(int i = off; i < end; ++i){
 			for(int j = i; j > off; --j){
-				if(array[j] >= array[j - 1]){
+				if(ugreateq(array[j], array[j - 1])){
 					break;
 				}
 				swap(array, j, j - 1);
@@ -214,46 +240,82 @@ public class SortUtil
 		array[j] = tmp;
 	}
 	
-	/**
+	/*
 	 * 将a和b看作无符号数，比较其大小
 	 */
-	private static boolean ugreat(int a, int b)
-	{
-		for(int i = 31; i > 0; --i){
-			if((a >> i) > (b >>i)){
-				return true;
-			}
-		}
-		return (a & 1) > (b & 1);
-	}
-	
+
+	/**
+	 * a < b
+	 * @param a
+	 * @param b
+	 * @return
+	 */
 	private static boolean uless(int a, int b)
 	{
-		for(int i = 31; i >= 0; --i){
-			if((a >> i) < (b >>i)){
+		int aa, bb;
+		for(int i = 28; i >= 0; i -= 4){
+			/*
+			 * 将a和b看作是十六进制的数，aa和bb中存储的是
+			 * a和b的每一位的数值。
+			 * 如，a为0x3df32ad3，那么aa中存放的就分别是
+			 * 3,d,f,3,2,a,d,3
+			 */
+			aa = (a >> i) & 0xf;
+			bb = (b >> i) & 0xf;
+			if(aa < bb){
 				return true;
 			}
-		}
-		return (a & 1) < (b & 1);
-	}
-	
-	private static boolean ugreateq(int a, int b)
-	{
-		for(int i = 31; i > 0; --i){
-			if((a >> i) > (b >>i)){
-				return true;
-			}
-		}
-		return (a & 1) >= (b & 1);
-	}
-	
-	private static boolean ulesseq(int a, int b)
-	{
-		for(int i = 31; i >= 0; --i){
-			if((a >> i) > (b >>i)){
+			else if(aa > bb){
 				return false;
 			}
 		}
-		return (a & 1) <= (b & 1);
+		//a==b
+		return false;
+	}
+	
+	/**
+	 * a >= b
+	 * @param a
+	 * @param b
+	 * @return
+	 */
+	private static boolean ugreateq(int a, int b)
+	{
+		int aa, bb;
+		for(int i = 28; i >= 0; i -= 4){
+			aa = (a >> i) & 0xf;
+			bb = (b >> i) & 0xf;
+			if(aa < bb){
+				return false;
+			}
+			else if(aa > bb){
+				return true;
+			}
+		}
+		//a==b
+		return true;
+	}
+	
+	/**
+	 * a <= b
+	 * @param a
+	 * @param b
+	 * @return
+	 */
+	private static boolean ulesseq(int a, int b)
+	{
+		int aa, bb;
+		for(int i = 28; i >= 0; i -= 4){
+			aa = (a >> i) & 0xf;
+			bb = (b >> i) & 0xf;
+			if(aa > bb){
+				return false;
+			}
+			else if(aa < bb){
+				return true;
+			}
+		}
+		//a==b
+		return true;
 	}
 }
