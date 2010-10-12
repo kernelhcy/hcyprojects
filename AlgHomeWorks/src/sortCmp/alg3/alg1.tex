@@ -1,0 +1,152 @@
+\documentclass[a4paper, 11pt]{article}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{xeCJK}
+\usepackage{fontspec}
+\usepackage{xunicode}
+\usepackage{xltxtra}
+
+\setCJKfamilyfont{tt}{SimSun}
+\setmainfont{Times New Roman} 		%默认字体，默认英文字体。
+\setCJKmainfont{SimSun} 		%中文默认字体
+\setCJKmonofont{Times New Roman}
+\CJKsetecglue{} 			%中英间隔
+
+%\XeTeXlinebreaklocale "zh"  % 表示用中文的断行
+%\XeTeXlinebreakskip = 0pt plus 1pt % 多一点调整的空间设置字体。
+
+\newcommand{\cn}{\fontspec{Courier New}}
+%字体大小
+\newcommand{\ltwo}{\fontsize{18pt}{27pt}\selectfont} 		%小二
+\newcommand{\three}{\fontsize{16pt}{24pt}\selectfont}		%三号
+\newcommand{\lthree}{\fontsize{15pt}{22.5pt}\selectfont}	%小三
+\newcommand{\four}{\fontsize{14pt}{21pt}\selectfont}		%四号
+\newcommand{\lfour}{\fontsize{13pt}{18pt}\selectfont}		%小四
+\newcommand{\five}{\fontsize{10.5pt}{15.75pt}\selectfont}	%五号
+\newcommand{\lfive}{\fontsize{9pt}{13.5pt}\selectfont}		%小五
+
+\usepackage{listings}
+\lstset{language=Java}%这条命令可以让LaTeX排版时将C++键字突出显示
+\lstset{breaklines}%这条命令可以让LaTeX自动将长的代码行换行排版
+%\lstset{extendedchars=false}%这一条命令可以解决代码跨页时，章节标题，页眉等汉字不显示的问题
+\lstset{xleftmargin=28pt}
+\lstset{tabsize=4}
+\lstset{columns=flexible}
+\lstset{basicstyle=\cn\lfive}
+
+%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%正文%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+
+\title{{\Huge 算法分析与设计第三次作业\\}}
+\author{黄丛宇 2010212439}
+\date{\today}
+
+\maketitle
+
+\section{实验环境}
+\begin{itemize}
+	\item CPU: Intel(R) Core(TM)2 Duo CPU T5870 2.00GHz
+	\item MEM: 1GB
+	\item OS : Debian 5.0 （1GB swap）
+	\item Java: java version "1.6.0\_21"
+\end{itemize}
+\section{排序算法比较}
+
+由于Java的Random类之内返回$0 \sim 2 ^ {31}$范围内的随机数，因此，可以使用下面的方法获得$0 \sim 2 ^ {32}$的随机数。
+
+通过Java的Random类的nextInt函数得到两个$0 \sim 2 ^ {31}$范围的随机数，取这两个数的低16位，拼接成一个$0 \sim 2 ^ {32}$范围内的随机数。
+\begin{lstlisting}
+	/**
+	 * 使用两个随机的int数的低16位拼接成一个32位的随机数。
+	 * @return
+	 */
+	private int getNextUint()
+	{
+		int re = 0;
+		int leftPart, rightPart;
+		leftPart = random.nextInt();
+		rightPart = random.nextInt();
+		re = leftPart;
+		re <<= 16;
+		rightPart &= 0xffff;	//取rightPart的低16位
+		re += rightPart;
+		return re;
+	}
+\end{lstlisting}
+
+通过上面的函数得到的是$0 \sim 2 ^ {32}$范围内的无符号随机数，Java中没有无符号数，因此只能把这些数当做有符号数来比较。本实验中通过下面的函数实现无符号数的比较。
+
+将一个数看作是十六进制的，从高到低一次比较其十六进制对应的位的值，得到大小关系。代码如下：
+\begin{lstlisting}
+	private static boolean uless(int a, int b)
+	{
+		int aa, bb;
+		for(int i = 28; i >= 0; i -= 4){
+			/*
+			 * 将a和b看作是十六进制的数，aa和bb中存储的是
+			 * a和b的每一位的数值。
+			 * 如，a为0x3df32ad3，那么aa中存放的就分别是
+			 * 3,d,f,3,2,a,d,3
+			 */
+			aa = (a >> i) & 0xf;
+			bb = (b >> i) & 0xf;
+			if(aa < bb){
+				return true;
+			}
+			else if(aa > bb){
+				return false;
+			}
+		}
+		//a==b
+		return false;
+	}
+\end{lstlisting}
+
+\section{课后习题}
+\subsection{习题7.3 Stooge sort}
+a.Ans:
+
+首先，当元素的个数小于等于三个的时候，算法可以正确的对其进行排序。
+
+当元素个数大于三个的时候。在算法中，每次将数组A分成三等分，分别表述为X，Y，Z。其中X为[i, i + k], Y为(i + k, j - k)，Z为[j - k, j]，由于k取的是(j-i)/3的下底，所以，Y的长度会大于等于X和Z的长度。
+
+在第6行的递归调用中，算法将X和Y部分的数据排成有序的。如果其中的某一个元素的最终位置在Z中，那么，这个元素此时只可能在Y中。假如这个元素在X中，那么Y中的所有元素都比这个元素大，那么也就是Y中的所有元素的最终位置都在Z中，但是，这样就造成在最终位置在Z中的元素个数大于Z的长度，因此假设不成立。
+
+此时，最终位置在Z中的元素只存在与Y和Z中。在第7行的递归调用中，可以使Z中的所有元素都在其最终位置上。那么，第8行的递归调用将使X和Y中的元素都在其最终位置上，最终，所有的元素都在其最终位置上。
+
+因此，此算法可以将数组A的元素正确排序。
+
+b.Ans:
+
+由算法可得递归式：
+\begin{displaymath}
+	T(n) = 3T(2n/3)+\Theta(1)
+\end{displaymath}
+由主定理可得：
+\begin{displaymath}
+	T(n) = \Theta(n ^ {log_{1.5}{3}}) = \Theta{n^{2.71}}
+\end{displaymath}
+
+c.Ans:
+
+插入排序的时间复杂度是$\Theta(n^2)$，归并排序，堆排序和快速排序的时间复杂度都是$\Theta(nlgn)$。都要低于这个算法的$\Theta(n^{2.71})$，所以这几个教授浪得虚名。
+
+\subsection{习题8.3-4}
+
+对所有的元素开根号，然后乘以100，取下底。不同的值得到的结果也不同。这时候元素的范围在0 $\sim$ 100n之间，利用Counting sort可以在O(n)的时间内完成排序。
+
+\subsection{习题8.4-4}
+
+使用桶排序。对于桶i，存放距离原点的距离在下面的范围内：
+\begin{displaymath}
+	(\frac{\sqrt{i - 1}}{\sqrt{n\pi}}, \frac{\sqrt{i}}{\sqrt{n\pi}}]
+\end{displaymath}
+
+第一个桶在：
+\begin{displaymath}
+	[0, \frac{\sqrt{1}}{\sqrt{n\pi}}]
+\end{displaymath}
+
+这个环的面积是1/n。由于n个点在单位圆上出现的概率是一样的，因此，这个环中点个数的期望值是1。因此这个桶排序的时间复杂度的期望值就是$\Theta(n)$
+\end{document}

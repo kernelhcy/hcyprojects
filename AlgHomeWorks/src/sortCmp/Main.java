@@ -18,7 +18,9 @@ public class Main
 		 * 比如，在数据量为10的时候，理论上运行时间都应该在1ms以内
 		 * 但是第一个运行的算法的运行时间会大于1ms。
 		 */
-		for(int i = 1; i < 8; ++i){
+		for(int i = 1; i < 9; ++i){
+			System.out.println("Need memory:" + (n / 1024 / 1024 *4)
+			+ "M.");
 			test(n);
 			n *= 10;
 		}
