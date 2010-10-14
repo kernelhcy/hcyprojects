@@ -19,20 +19,25 @@ public class Main
 		 * 但是第一个运行的算法的运行时间会大于1ms。
 		 */
 		for(int i = 1; i < 9; ++i){
-			System.out.println("Need memory:" + (n / 1024 / 1024 *4)
-			+ "M.");
-			test(n);
+			
+			//test(n);
 			n *= 10;
 		}
+		n /= 10;
+		System.out.println("Need memory:" + (int)((float)n  * 
+				4 / 1024 / 1024)
+				+ "M.");
+		test(n);
+		test(2 * n);
 	}
 	
 	public static void test(int n)
 	{
 		RandomIntegers rl = new RandomIntegers();
 		int[] input = new int[n];
-		int[] tmp = new int[n];
+		//int[] tmp = new int[n];
 		rl.getIntegers(input);
-		System.arraycopy(input, 0, tmp, 0, input.length);
+		//System.arraycopy(input, 0, tmp, 0, input.length);
 		
 		System.out.println("Sort (" + n + ") numbers. Begin sort...");
 		
@@ -40,7 +45,7 @@ public class Main
 		
 		if(n < 1000000){
 			//rl.getIntegers(input);
-			System.arraycopy(tmp, 0, input, 0, input.length);
+			//System.arraycopy(tmp, 0, input, 0, input.length);
 			begin = System.currentTimeMillis();
 			SortUtil.insertionSort(input);
 			end = System.currentTimeMillis();
@@ -50,28 +55,30 @@ public class Main
 		}
 		
 		//rl.getIntegers(input);
-		System.arraycopy(tmp, 0, input, 0, input.length);
+		rl.getIntegers(input);
 		begin = System.currentTimeMillis();
 		SortUtil.quickSort(input);
 		end = System.currentTimeMillis();
 		System.out.printf("Quicksort:\t\t%dms.\n", (end - begin));
 		//show(input);
 		
-		//rl.getIntegers(input);
-		System.arraycopy(tmp, 0, input, 0, input.length);
-		begin = System.currentTimeMillis();
-		SortUtil.mergeSort(input);
-		end = System.currentTimeMillis();
-		System.out.printf("Mergesort:\t\t%dms.\n", (end - begin));
-		//show(input);
-		
-		//rl.getIntegers(input);
-		System.arraycopy(tmp, 0, input, 0, input.length);
-		begin = System.currentTimeMillis();
-		SortUtil.radixSort(input);
-		end = System.currentTimeMillis();
-		System.out.printf("Radixsort:\t\t%dms.\n", (end - begin));
-		//show(input);
+		if(n <= 100000000){
+			//rl.getIntegers(input);
+			rl.getIntegers(input);
+			begin = System.currentTimeMillis();
+			SortUtil.mergeSort(input);
+			end = System.currentTimeMillis();
+			System.out.printf("Mergesort:\t\t%dms.\n", (end - begin));
+			//show(input);
+			
+			//rl.getIntegers(input);
+			rl.getIntegers(input);
+			begin = System.currentTimeMillis();
+			SortUtil.radixSort(input);
+			end = System.currentTimeMillis();
+			System.out.printf("Radixsort:\t\t%dms.\n", (end - begin));
+			//show(input);
+		}
 			
 		System.out.println();
 	}

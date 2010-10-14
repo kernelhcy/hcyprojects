@@ -33,6 +33,22 @@
 \lstset{columns=flexible}
 \lstset{basicstyle=\cn\lfive}
 
+%图，表标题的间距。
+\usepackage{caption}
+\setlength{\abovecaptionskip}{10pt}
+\setlength{\belowcaptionskip}{0pt}
+\usepackage{tabularx}
+\renewcommand {\figurename}{\five 图}
+\renewcommand {\thefigure}{\arabic{chapter}-\arabic{figure}}
+
+\renewcommand {\tablename}{\five 表}
+\renewcommand {\thetable}{\arabic{chapter}-\arabic{table}}
+\usepackage{booktabs}
+\renewcommand {\heavyrulewidth}{1.5pt}	%表格外线宽
+\renewcommand {\lightrulewidth}{1pt}	%表格内线宽
+
+\captionsetup{labelsep=space}
+
 %%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%正文%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%
@@ -103,6 +119,35 @@
 	}
 \end{lstlisting}
 
+对于32位的数据，在数据量达到$10 ^ 8$时，需要380M的内存。$2 * 10 ^ 8$则需要760M的内存。由于我的电脑只有1G的内存和
+1G交换区，并且radix sort和merge sort都需要两倍的空间，所以，$2 * 10 ^ 8$数据量只测试quicksort。而$10 ^ 9$需
+要达3.5G的空间，我的电脑无法运行。因此不予测试。
+
+下面是测试结果，取三次均值：
+\begin{table}[b]
+\setlength{\abovecaptionskip}{0pt} %设置标题上下的宽度。图片也一样 
+\setlength{\belowcaptionskip}{10pt} 
+\centering
+\begin{tabularx}{\textwidth}{XXXXXl} %最后一列是空的。这样可以是倒数第二列居中，否则会报错或不居中。
+\toprule
+\centering 数据量 & \centering  Insertion sort & \centering  Quicksort &\centering Mergesort&
+\centering Radix sort& \\
+\midrule
+\centering 10 &\centering  1 &\centering 1  &\centering 0 &\centering 0 &\\
+\centering 100 &\centering 0  &\centering  1 &\centering 0 &\centering 0 &\\
+\centering 1000 &\centering  4 &\centering  2 &\centering 2 &\centering 0 &\\
+\centering 10000 &\centering 302  &\centering  4 &\centering 4 &\centering 1 &\\
+\centering 100000 &\centering 28247  &\centering  52 &\centering 46 &\centering 10 &\\
+\centering 1000000 &\centering -  &\centering  648 &\centering 593 &\centering 146 &\\
+\centering 10000000 &\centering  - &\centering 8142  &\centering 6988 &\centering 1159 &\\
+\centering 100000000 &\centering -  &\centering  92216 &\centering 101664 &\centering 12600 &\\
+\centering 200000000 &\centering -  &\centering  192256 &\centering - &\centering - &\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+在用quicksort排序$2 * 10 ^ 8$数据量的时候，程序使用了95\%的内存和99\%的交换区空间。
+
 \section{课后习题}
 \subsection{习题7.3 Stooge sort}
 a.Ans:
@@ -140,13 +185,13 @@ c.Ans:
 
 使用桶排序。对于桶i，存放距离原点的距离在下面的范围内：
 \begin{displaymath}
-	(\frac{\sqrt{i - 1}}{\sqrt{n\pi}}, \frac{\sqrt{i}}{\sqrt{n\pi}}]
+	(\frac{\sqrt{i - 1}}{\sqrt{n}}, \frac{\sqrt{i}}{\sqrt{n}}]
 \end{displaymath}
 
 第一个桶在：
 \begin{displaymath}
-	[0, \frac{\sqrt{1}}{\sqrt{n\pi}}]
+	[0, \frac{\sqrt{1}}{\sqrt{n}}]
 \end{displaymath}
 
-这个环的面积是1/n。由于n个点在单位圆上出现的概率是一样的，因此，这个环中点个数的期望值是1。因此这个桶排序的时间复杂度的期望值就是$\Theta(n)$
+这个环的面积是$\pi/n$。由于n个点在单位圆上出现的概率是一样的，因此，这个环中点个数的期望值是1。因此这个桶排序的时间复杂度的期望值就是$\Theta(n)$
 \end{document}
