@@ -38,11 +38,9 @@
 \setlength{\abovecaptionskip}{10pt}
 \setlength{\belowcaptionskip}{0pt}
 \usepackage{tabularx}
-\renewcommand {\figurename}{\five 图}
-\renewcommand {\thefigure}{\arabic{chapter}-\arabic{figure}}
 
 \renewcommand {\tablename}{\five 表}
-\renewcommand {\thetable}{\arabic{chapter}-\arabic{table}}
+\renewcommand {\thetable}{\arabic{table}}
 \usepackage{booktabs}
 \renewcommand {\heavyrulewidth}{1.5pt}	%表格外线宽
 \renewcommand {\lightrulewidth}{1pt}	%表格内线宽
@@ -123,10 +121,13 @@
 1G交换区，并且radix sort和merge sort都需要两倍的空间，所以，$2 * 10 ^ 8$数据量只测试quicksort。而$10 ^ 9$需
 要达3.5G的空间，我的电脑无法运行。因此不予测试。
 
-下面是测试结果，取三次均值：
-\begin{table}[b]
+表\ref{result}是测试结果，取三次均值。表\ref{result}中，‘-’表示没有对这个数据量进行测试，0表示算法的运行时间小于
+1ms。
+\begin{table}[htpb]
 \setlength{\abovecaptionskip}{0pt} %设置标题上下的宽度。图片也一样 
 \setlength{\belowcaptionskip}{10pt} 
+\caption{运行结果}
+\label{result}
 \centering
 \begin{tabularx}{\textwidth}{XXXXXl} %最后一列是空的。这样可以是倒数第二列居中，否则会报错或不居中。
 \toprule
@@ -137,14 +138,23 @@
 \centering 100 &\centering 0  &\centering  1 &\centering 0 &\centering 0 &\\
 \centering 1000 &\centering  4 &\centering  2 &\centering 2 &\centering 0 &\\
 \centering 10000 &\centering 302  &\centering  4 &\centering 4 &\centering 1 &\\
-\centering 100000 &\centering 28247  &\centering  52 &\centering 46 &\centering 10 &\\
-\centering 1000000 &\centering -  &\centering  648 &\centering 593 &\centering 146 &\\
+\centering 100000 &\centering 29247  &\centering  52 &\centering 46 &\centering 10 &\\
+\centering 1000000 &\centering 3001231  &\centering  648 &\centering 593 &\centering 146 &\\
 \centering 10000000 &\centering  - &\centering 8142  &\centering 6988 &\centering 1159 &\\
 \centering 100000000 &\centering -  &\centering  92216 &\centering 101664 &\centering 12600 &\\
 \centering 200000000 &\centering -  &\centering  192256 &\centering - &\centering - &\\
 \bottomrule
 \end{tabularx}
 \end{table}
+
+从表中可以看出，在数据量比较小的时候（10,100），理论上算法的运行时间应该都是小于1ms，也就是测出的时间应该是0。但是，
+表中，Insertion srot和Quicksort对应的时间是1ms。这个时间是程序的加载时间。CPU在运行程序的时候，需要将程序从内存中
+读到高速缓存中，这个过程需要花费时间。表中的那三个1ms就是由于这个过程造成的。
+
+随着数据量每增加10倍，Insertion sort的运行时间也相应的增加100倍。当数据量大于$10 ^ 6$时，运行时间太长，不予测试。
+Quicksort和Mergesort的时间复杂度都是$\Theta(nlgn)$，运行时间每次增加12倍左右。Radix sort的时间复杂度是
+$\Theta(n)$，运行时间每次增加10倍左右。在排序$10 ^ 8$数据量的时候，由于Mergesort算法 申请额外的空间保存中间
+结果，因此Mergesort的运行时间有较多的增加，这是由于程序需要读写交换区造成的。
 
 在用quicksort排序$2 * 10 ^ 8$数据量的时候，程序使用了95\%的内存和99\%的交换区空间。
 

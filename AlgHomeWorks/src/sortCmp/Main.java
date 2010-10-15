@@ -43,7 +43,7 @@ public class Main
 		
 		long begin,end;
 		
-		if(n < 1000000){
+		if(n <= 1000000){
 			//rl.getIntegers(input);
 			//System.arraycopy(tmp, 0, input, 0, input.length);
 			begin = System.currentTimeMillis();
