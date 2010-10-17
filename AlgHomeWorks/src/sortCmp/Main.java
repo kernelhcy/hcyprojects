@@ -20,13 +20,10 @@ public class Main
 		 */
 		for(int i = 1; i < 9; ++i){
 			
-			//test(n);
+			test(n);
 			n *= 10;
 		}
 		n /= 10;
-		System.out.println("Need memory:" + (int)((float)n  * 
-				4 / 1024 / 1024)
-				+ "M.");
 		test(n);
 		test(2 * n);
 	}
