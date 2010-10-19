@@ -1,6 +1,7 @@
 package lis;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridLayout;
@@ -11,6 +12,7 @@ import java.util.Random;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -47,8 +49,14 @@ public class Main
 					// TODO Auto-generated method stub
 					String ins = input.getText();
 					char[] re = new char[ins.length()];
-					LIS.getLISLen(ins.toCharArray(), re);
-					result.setText(new String(re));
+					int len = LIS.getLISLen(
+							ins.toCharArray(), re);
+					StringBuffer rs = new StringBuffer();
+					for(int i = 0; i < len; ++i){
+						rs.append(re[i]);
+					}
+					result.setText(rs.toString());
+					lenLabel.setText("length: " + len);
 				}
 			});
 			
@@ -104,16 +112,22 @@ public class Main
 					Random rd = new Random();
 					int tmp;
 					for(int i = 0; i < n; ++i){
-						tmp = rd.nextInt(25);
+						tmp = rd.nextInt(26);
 						sb.append((char)('a' + tmp));
 					}
 					input.setText(sb.toString());
 				}
 			});
 			
+			lenLabel = new JLabel();
+			lenLabel.setPreferredSize(new Dimension(
+					"length: XXXXX".length() * 10
+					, runbtn.getPreferredSize().height));
+			lenLabel.setFont(new Font(fontname, Font.PLAIN, 20));
+			
 			input = new JTextArea();
 			input.setLineWrap(true);
-			input.setFont(new Font("宋体", Font.PLAIN, 20));
+			input.setFont(new Font(fontname, Font.PLAIN, 20));
 			JScrollPane jspInput = new JScrollPane(input);
 			jspInput.setHorizontalScrollBarPolicy(
 					JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
@@ -124,6 +138,7 @@ public class Main
 			
 			result = new JTextArea();
 			result.setEditable(false);
+			result.setFont(new Font(fontname, Font.PLAIN, 20));
 			JScrollPane jspResult = new JScrollPane(result);
 			jspResult.setHorizontalScrollBarPolicy(
 					JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
@@ -144,6 +159,7 @@ public class Main
 			fl.setAlignment(FlowLayout.CENTER);
 			fl.setHgap(10);
 			jp1.setLayout(fl);
+			jp1.add(lenLabel);
 			jp1.add(randomchars);
 			jp1.add(runbtn);
 			jp1.add(clearbtn);
@@ -157,6 +173,8 @@ public class Main
 		private JButton runbtn, clearbtn, exitbtn, randomchars;
 		private JTextArea input;
 		private JTextArea result;
+		private JLabel lenLabel;
+		private String fontname = "Courier New";
 		private MainWindow mw;
 	}
 
