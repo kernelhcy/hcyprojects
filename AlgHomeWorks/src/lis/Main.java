@@ -39,6 +39,7 @@ public class Main
 			setSize(700, 500);
 			getContentPane().setLayout(new BorderLayout());
 			
+			
 			runbtn = new JButton("Run!");
 			runbtn.addActionListener(new ActionListener()
 			{
@@ -48,12 +49,36 @@ public class Main
 				{
 					// TODO Auto-generated method stub
 					String ins = input.getText();
-					char[] re = new char[ins.length()];
-					int len = LIS.getLISLen(
-							ins.toCharArray(), re);
+					/*
+					 * 以一个或多个空格分割字符串
+					 */
+					String[] nums = ins.split(" +");
+					int[] num = new int[nums.length];
+					int[] lis = new int[nums.length];
+					for(int i = 0; i < num.length; ++i){
+						try{
+							num[i] =
+							Integer.valueOf(
+								nums[i]);
+						}catch (Exception exp) {
+							// TODO: handle 
+							//exception
+							JOptionPane
+							.showMessageDialog(mw
+							, "The " + nums[i]
+							   + " is TOO LARGE!!"
+							, "Too LARGE number!!"
+							, JOptionPane
+							.WARNING_MESSAGE);
+							return;
+						}
+					}
+					
+					int len = LIS.getLISLen(num, lis);
 					StringBuffer rs = new StringBuffer();
 					for(int i = 0; i < len; ++i){
-						rs.append(re[i]);
+						rs.append(lis[i]);
+						rs.append(' ');
 					}
 					result.setText(rs.toString());
 					lenLabel.setText("length: " + len);
@@ -70,6 +95,7 @@ public class Main
 					// TODO Auto-generated method stub
 					input.setText("");
 					result.setText("");
+					lenLabel.setText("");
 				}
 			});
 			
@@ -85,7 +111,7 @@ public class Main
 				}
 			});
 			
-			randomchars = new JButton("Get random chars");
+			randomchars = new JButton("Get random numbers");
 			randomchars.addActionListener(new ActionListener()
 			{
 				
@@ -98,8 +124,9 @@ public class Main
 					int n;
 					String len = 
 						JOptionPane.showInputDialog(mw,
-						"Please input the length:"
-						, "Input Length"
+						"Please input the number " +
+						"of the numbers:"
+						, "Input Number"
 						, JOptionPane.OK_OPTION);
 					if(len == null){
 						len = "0";
@@ -112,8 +139,10 @@ public class Main
 					Random rd = new Random();
 					int tmp;
 					for(int i = 0; i < n; ++i){
-						tmp = rd.nextInt(26);
-						sb.append((char)('a' + tmp));
+						tmp = rd.nextInt(
+							Integer.MAX_VALUE);
+						sb.append(tmp);
+						sb.append(' ');
 					}
 					input.setText(sb.toString());
 				}
@@ -121,7 +150,7 @@ public class Main
 			
 			lenLabel = new JLabel();
 			lenLabel.setPreferredSize(new Dimension(
-					"length: XXXXX".length() * 10
+					"length: XXXXXXX".length() * 10
 					, runbtn.getPreferredSize().height));
 			lenLabel.setFont(new Font(fontname, Font.PLAIN, 20));
 			
@@ -138,6 +167,7 @@ public class Main
 			
 			result = new JTextArea();
 			result.setEditable(false);
+			result.setLineWrap(true);
 			result.setFont(new Font(fontname, Font.PLAIN, 20));
 			JScrollPane jspResult = new JScrollPane(result);
 			jspResult.setHorizontalScrollBarPolicy(

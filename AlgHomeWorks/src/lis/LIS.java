@@ -6,12 +6,12 @@ public class LIS
 		System.out.println("Can not creat the instance of LIS!");
 	}
 
-	public static int getLISLen(final char[] s, char[] lis)
+	public static int getLISLen(final int[] s, int[] lis)
 	{
 		if (null == s) {
 			return -1;
 		}
-		c = new char[s.length + 1];
+		c = new int[s.length + 1];
 		cindex = new int[s.length + 1];
 		pre = new int[s.length];
 		
@@ -27,7 +27,7 @@ public class LIS
        		cindex[1] = 0;
        		len = 1;	//此时只有c[1]求出来，最长递增子序列的长度为1.
 		int j;
-		for(int i = 0; i < s.length; ++i){
+		for(int i = 1; i < s.length; ++i){
 			j = binarySearch(c, len, s[i]);
 			c[j] = s[i];
 			cindex[j] = i;
@@ -45,13 +45,14 @@ public class LIS
 		return len;
 	}
 	/**
-	 * 二分查找。如果返回x，表示a[x] >= n > a[x - 1]
+	 * 二分查找。返回值表示n在数组a中的位置。如果在数组中有元素等于n
+	 * 那么返回最后一个等于n的元素的下一个位置。
 	 * @param a  数组a
 	 * @param len 数组a中数据的个数
 	 * @param n  需要查找的字符
 	 * @return
 	 */
-	private static int binarySearch(final char[] a, int len, char n)
+	private static int binarySearch(final int[] a, int len, int n)
 	{
 		if (n < 0) {
 			return -1;
@@ -61,13 +62,16 @@ public class LIS
 		int mid = (left + right) / 2;
 
 		while (left <= right) {
-			if (n > a[mid])
+			/*
+			 * 等于是为了处理"两个相等的元素"也是递增序列的情况
+			 */
+			if (n >= a[mid]){
 				left = mid + 1;
-			else if (n < a[mid])
+			}
+			else if (n < a[mid]){
 				right = mid - 1;
-			else
-				return mid;
-
+			}
+			
 			mid = (left + right) / 2;
 		}
 		return left;
@@ -78,20 +82,15 @@ public class LIS
 	 * @param s 原始字符串。
 	 * @param lis 最长子列
 	 */
-	private static void getSubsquence(final char[] s, char[] lis)
+	private static void getSubsquence(final int[] s, int[] lis)
 	{
-		StringBuffer sb = new StringBuffer();
 		int pr;
+		int index = len;
 		pr = lastIndex;
 		do{
-			sb.insert(0, s[pr]);
+			lis[--index] = s[pr];
 			pr = pre[pr];
-		}while(pr != -1);
-		
-		char[] tmp = sb.toString().toCharArray();
-		System.arraycopy(tmp, 0, lis, 0, tmp.length);
-		lis[len] = '\0';
-		
+		}while(pr != -1);		
 	}
 	
 	//最长递增子列的长度
@@ -103,7 +102,7 @@ public class LIS
 	 * 并且，c中存放的就是最长递增子列。
 	 * c从1开始，c[0]最为哨兵在二分搜索中使用
 	 */
-	private static char[] c;
+	private static int[] c;
 	/*
 	 * cindex[i]存储c[i]对应的字符在字符串中的位置。
 	 */
