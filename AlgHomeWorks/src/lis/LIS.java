@@ -32,7 +32,7 @@ public class LIS
 			c[j] = s[i];
 			cindex[j] = i;
 			/*
-			 * 以s[i]结尾的最长子串的倒数第二个字符是c[j-1]。
+			 * 以s[i]结尾的最长子串的倒数第二个元素是c[j-1]。
 			 */
 			pre[i] = cindex[j - 1];
 			if(len < j){
@@ -49,7 +49,7 @@ public class LIS
 	 * 那么返回最后一个等于n的元素的下一个位置。
 	 * @param a  数组a
 	 * @param len 数组a中数据的个数
-	 * @param n  需要查找的字符
+	 * @param n  需要查找的元素
 	 * @return
 	 */
 	private static int binarySearch(final int[] a, int len, int n)
@@ -79,7 +79,7 @@ public class LIS
 	
 	/**
 	 * 构造其中一个最长递增子列。
-	 * @param s 原始字符串。
+	 * @param s 原始序列。
 	 * @param lis 最长子列
 	 */
 	private static void getSubsquence(final int[] s, int[] lis)
@@ -95,20 +95,20 @@ public class LIS
 	
 	//最长递增子列的长度
 	private static int len = 0;
-	//最长递增子列最后一个字符的位置。
+	//最长递增子列最后一个元素的位置。
 	private static int lastIndex = -1;
 	/*
-	 * c[i]=a[j]，表示c[i]中存储的是长度为i的最长递增子列的最后一个字符。
+	 * c[i]=a[j]，表示c[i]中存储的是长度为i的最长递增子列的最后一个元素。
 	 * 并且，c中存放的就是最长递增子列。
 	 * c从1开始，c[0]最为哨兵在二分搜索中使用
 	 */
 	private static int[] c;
 	/*
-	 * cindex[i]存储c[i]对应的字符在字符串中的位置。
+	 * cindex[i]存储c[i]对应的元素在序列中的位置。
 	 */
 	private static int[] cindex;
 	/*
-	 * pre[i]表示s[i]所在的最长递增子列的前一个字符的位置。
+	 * pre[i]表示s[i]所在的最长递增子列的前一个元素的位置。
 	 * 注，这个最长子列可能不是s的最长子列，只是包含s[i]中所有
 	 * 递增子列最长的。
 	 */

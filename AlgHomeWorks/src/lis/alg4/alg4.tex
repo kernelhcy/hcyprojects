@@ -7,9 +7,9 @@
 \usepackage{graphicx}
 
 \setCJKfamilyfont{tt}{SimSun}
-\setmainfont{Times New Roman} 		%默认字体，默认英文字体。
+\setmainfont{SimSun} 		%默认字体，默认英文字体。
 \setCJKmainfont{SimSun} 		%中文默认字体
-\setCJKmonofont{Times New Roman}
+\setCJKmonofont{SimSun}
 \CJKsetecglue{} 			%中英间隔
 
 %\XeTeXlinebreaklocale "zh"  % 表示用中文的断行
@@ -31,6 +31,7 @@
 %\lstset{extendedchars=false}%这一条命令可以解决代码跨页时，章节标题，页眉等汉字不显示的问题
 \lstset{xleftmargin=28pt}
 \lstset{tabsize=4}
+\lstset{escapechar=`} %中文注释问题
 \lstset{columns=flexible}
 \lstset{basicstyle=\cn\lfive}
 
@@ -110,24 +111,24 @@ $c[b[k]]=a[k]$。算法中对c的修改可以保证c是有序的。如果有多�
 		cindex = new int[s.length + 1];
 		pre = new int[s.length];
 		
-		//初始化
+		//`初始化`
        		cindex[0] = -1;
        		for(int i = 0; i < s.length; ++i){
        			pre[i] = -1;
        			cindex[i + 1] = -1;
        		}
        		
-       		c[0] = 0; //这个元素作为一个哨兵。在二分查找中使用。
+       		c[0] = 0; //`这个元素作为一个哨兵。在二分查找中使用。`
        		c[1] = s[0];
        		cindex[1] = 0;
-       		len = 1;  //此时只有c[1]求出来，最长递增子序列的长度为1.
+       		len = 1;	//`此时只有`c[1]`求出来，最长递增子序列的长度为1.`
 		int j;
 		for(int i = 1; i < s.length; ++i){
 			j = binarySearch(c, len, s[i]);
 			c[j] = s[i];
 			cindex[j] = i;
 			/*
-			 * 以s[i]结尾的最长子串的倒数第二个字符是c[j-1]。
+			 * `以`s[i]`结尾的最长子串的倒数第二个元素是`c[j-1]`。`
 			 */
 			pre[i] = cindex[j - 1];
 			if(len < j){
@@ -140,11 +141,11 @@ $c[b[k]]=a[k]$。算法中对c的修改可以保证c是有序的。如果有多�
 		return len;
 	}
 	/**
-	 * 二分查找。返回值表示n在数组a中的位置。如果在数组中有元素等于n
-	 * 那么返回最后一个等于n的元素的下一个位置。
-	 * @param a  数组a
-	 * @param len 数组a中数据的个数
-	 * @param n  需要查找的字符
+	 * `二分查找。返回值表示`n`在数组`a`中的位置。如果在数组中有元素等于`n
+	 * `那么返回最后一个等于`n`的元素的下一个位置。`
+	 * @param a  `数组`a
+	 * @param len `数组`a`中数据的个数`
+	 * @param n  `需要查找的元素`
 	 * @return
 	 */
 	private static int binarySearch(final int[] a, int len, int n)
@@ -158,7 +159,7 @@ $c[b[k]]=a[k]$。算法中对c的修改可以保证c是有序的。如果有多�
 
 		while (left <= right) {
 			/*
-			 * 等于是为了处理"两个相等的元素"也是递增序列的情况
+			 * `等于是为了处理"两个相等的元素"也是递增序列的情况`
 			 */
 			if (n >= a[mid]){
 				left = mid + 1;
@@ -172,29 +173,47 @@ $c[b[k]]=a[k]$。算法中对c的修改可以保证c是有序的。如果有多�
 		return left;
 	}
 	
-	//最长递增子列的长度
+	/**
+	 * `构造其中一个最长递增子列。`
+	 * @param s `原始序列。`
+	 * @param lis `最长子列`
+	 */
+	private static void getSubsquence(final int[] s, int[] lis)
+	{
+		int pr;
+		int index = len;
+		pr = lastIndex;
+		do{
+			lis[--index] = s[pr];
+			pr = pre[pr];
+		}while(pr != -1);		
+	}
+	
+	//`最长递增子列的长度`
 	private static int len = 0;
-	//最长递增子列最后一个字符的位置。
+	//`最长递增子列最后一个元素的位置。`
 	private static int lastIndex = -1;
 	/*
-	 * c[i]=a[j]，表示c[i]中存储的是长度为i的最长递增子列的最后一个字符。
-	 * 并且，c中存放的就是最长递增子列。
-	 * c从1开始，c[0]最为哨兵在二分搜索中使用
+	 * c[i]=a[j]，`表示`c[i]`中存储的是长度为`i`的最长递增子列的最后一个元素。`
+	 * `并且，`c`中存放的就是最长递增子列。`
+	 * c`从`1`开始，`c[0]`最为哨兵在二分搜索中使用`
 	 */
 	private static int[] c;
 	/*
-	 * cindex[i]存储c[i]对应的字符在字符串中的位置。
+	 * cindex[i]`存储`c[i]`对应的元素在序列中的位置。`
 	 */
 	private static int[] cindex;
 	/*
-	 * pre[i]表示s[i]所在的最长递增子列的前一个字符的位置。
-	 * 注，这个最长子列可能不是s的最长子列，只是包含s[i]中所有
-	 * 递增子列最长的。
+	 * pre[i]`表示`s[i]`所在的最长递增子列的前一个元素的位置。`
+	 * `注，这个最长子列可能不是`s`的最长子列，只是包含`s[i]`中所有`
+	 * `递增子列最长的。`
 	 */
 	private static int[] pre;
 \end{lstlisting}
 
-	使用一个pre数组保存
+使用一个pre数组保存每个元素所在的最长递增子列的前一个元素的位置。pre[i]表示s[i]所在的最长递增
+子列中，s[i]前一个元素的下标。使用pre数组，可以在$O(n)$的时间内构造出一个最长的递增子列。
+
 运行结果如下：
 
 \begin{figure}[htbp]
@@ -203,4 +222,61 @@ $c[b[k]]=a[k]$。算法中对c的修改可以保证c是有序的。如果有多�
 \includegraphics[height=8cm, width=11cm]{LIS.eps}
 \end{figure}
 
+\section{Problem 15-1 bitonic tours}
+
+对所有点按x坐标排序。$T(i)$表示前i个点的最短路径，那么$T(i)$可以从$T(i - 1)$构造出。从
+$T(i-1)$中选出一条边，使得从$T(i-1)$删除这条边并加上这条边的两个端点到点i的两条边之后，
+路径距离最短。从$T(i-1)$删除这条边并加上两条新边后就得到了$T(i)$。
+
+算法如下：
+\begin{verbatim}
+    对所有的点按x坐标排序，将排好序的点存入数组p。
+    path存储当前最短路径。
+    path_len为当前最短路径的长度
+	
+    边(p[0],p[1])存入path中。
+    path_len等于边(p[0],p[1])的长度
+	
+    for(i从1到n-1)
+        for(path中的每一条边(p[x], p[y]))
+            计算从path删除边(p[x], p[y]),并加上边(p[x], p[i])和
+            边(p[i], p[y])后的路径长度。
+            记录这个路径的最小值和要删除的边。
+        从path中删除这个边，并加上新的两条边。
+        更新path_len的值。
+\end{verbatim}
+	
+最终，path中存储最短路径的所有边，path\_len存储最短路径长度。
+
+path可以使用一个双向连表，插入和删除的时间可以在$O(1)$内实现。排序算法使用快速排序，时间
+$O(nlgn)$。外循环需要n-1次，内循环要i - 2次，因此，算法的时间复杂度是$O(n ^ 2)$
+
+\section{Problem 15-6 checker}
+
+用一个n×n的二维数组c表示checkerboader。那么，对于格子c[i][j]，checker只可能从c[i][j-1]，
+c[i-1][j-1]和c[i+1][j-1]三个格子移动过来。用一个二维数组b表示到达每个格子所能获得的最大钱数。
+b[i][j]表示checker到达c[i][j]时所能获得的最大钱数。每一个格子的标号用i*n+j表示。可以得到如下
+的递推方程：
+\begin{align*}
+                     b[i][j]=max(b[i-1][j]+p((i-1)*n+j, i*n+j)\\
+                     		,b[i-1][j-1]+p((i-1)*n+j-1, i*n+j)\\
+                     		,b[i-1][j+1]+p((i+1)*n+j+1, i*n+j))
+\end{align*}
+
+算法如下：
+\begin{verbatim}
+    maxValue = -1
+    b存储checker到达每个格子所得到的最大值。
+    for(i=1; i < n; ++i)
+        for(j=0; j < n; ++j)
+            b[i][j] = max(b[i-1][j]+p((i-1)*n+j, i*n+j)
+                        ,b[i-1][j-1]+p((i-1)*n+j-1, i*n+j)
+                        ,b[i-1][j+1]+p((i+1)*n+j+1, i*n+j));
+
+    for(i=0; i < n; ++i)
+        if(maxValue < b[n-1][i])
+        maxValue = b[n-1][i]
+\end{verbatim}
+	
+外层循环和内层循环分别是n-1次和n次，因此算法的复杂度是$O(n^2)$
 \end{document}
