@@ -124,6 +124,10 @@ $c[b[k]]=a[k]$。算法中对c的修改可以保证c是有序的。如果有多�
        		len = 1;	//`此时只有`c[1]`求出来，最长递增子序列的长度为1.`
 		int j;
 		for(int i = 1; i < s.length; ++i){
+			/*
+	 		 * `二分查找。返回值表示`n`在数组`a`中的位置。如果在数组中有元素等于`n
+	 		 * `那么返回最后一个等于`n`的元素的下一个位置。`
+	 		 */
 			j = binarySearch(c, len, s[i]);
 			c[j] = s[i];
 			cindex[j] = i;
@@ -140,55 +144,7 @@ $c[b[k]]=a[k]$。算法中对c的修改可以保证c是有序的。如果有多�
 		getSubsquence(s, lis);
 		return len;
 	}
-	/**
-	 * `二分查找。返回值表示`n`在数组`a`中的位置。如果在数组中有元素等于`n
-	 * `那么返回最后一个等于`n`的元素的下一个位置。`
-	 * @param a  `数组`a
-	 * @param len `数组`a`中数据的个数`
-	 * @param n  `需要查找的元素`
-	 * @return
-	 */
-	private static int binarySearch(final int[] a, int len, int n)
-	{
-		if (n < 0) {
-			return -1;
-		}
 
-		int left = 0, right = len;
-		int mid = (left + right) / 2;
-
-		while (left <= right) {
-			/*
-			 * `等于是为了处理"两个相等的元素"也是递增序列的情况`
-			 */
-			if (n >= a[mid]){
-				left = mid + 1;
-			}
-			else if (n < a[mid]){
-				right = mid - 1;
-			}
-			
-			mid = (left + right) / 2;
-		}
-		return left;
-	}
-	
-	/**
-	 * `构造其中一个最长递增子列。`
-	 * @param s `原始序列。`
-	 * @param lis `最长子列`
-	 */
-	private static void getSubsquence(final int[] s, int[] lis)
-	{
-		int pr;
-		int index = len;
-		pr = lastIndex;
-		do{
-			lis[--index] = s[pr];
-			pr = pre[pr];
-		}while(pr != -1);		
-	}
-	
 	//`最长递增子列的长度`
 	private static int len = 0;
 	//`最长递增子列最后一个元素的位置。`
@@ -214,49 +170,41 @@ $c[b[k]]=a[k]$。算法中对c的修改可以保证c是有序的。如果有多�
 使用一个pre数组保存每个元素所在的最长递增子列的前一个元素的位置。pre[i]表示s[i]所在的最长递增
 子列中，s[i]前一个元素的下标。使用pre数组，可以在$O(n)$的时间内构造出一个最长的递增子列。
 
-运行结果如下：
+程序执行的命令为：java -jar lis.jar。运行结果如图\ref{result}。
 
 \begin{figure}[htbp]
 \centering
 \caption{运行结果}
+\label{result}
 \includegraphics[height=8cm, width=11cm]{LIS.eps}
 \end{figure}
 
 \section{Problem 15-1 bitonic tours}
 
-对所有点按x坐标排序。$T(i)$表示前i个点的最短路径，那么$T(i)$可以从$T(i - 1)$构造出。从
-$T(i-1)$中选出一条边，使得从$T(i-1)$删除这条边并加上这条边的两个端点到点i的两条边之后，
-路径距离最短。从$T(i-1)$删除这条边并加上两条新边后就得到了$T(i)$。
-
-算法如下：
-\begin{verbatim}
-    对所有的点按x坐标排序，将排好序的点存入数组p。
-    path存储当前最短路径。
-    path_len为当前最短路径的长度
-	
-    边(p[0],p[1])存入path中。
-    path_len等于边(p[0],p[1])的长度
-	
-    for(i从1到n-1)
-        for(path中的每一条边(p[x], p[y]))
-            计算从path删除边(p[x], p[y]),并加上边(p[x], p[i])和
-            边(p[i], p[y])后的路径长度。
-            记录这个路径的最小值和要删除的边。
-        从path中删除这个边，并加上新的两条边。
-        更新path_len的值。
-\end{verbatim}
-	
-最终，path中存储最短路径的所有边，path\_len存储最短路径长度。
-
-path可以使用一个双向连表，插入和删除的时间可以在$O(1)$内实现。排序算法使用快速排序，时间
-$O(nlgn)$。外循环需要n-1次，内循环要i - 2次，因此，算法的时间复杂度是$O(n ^ 2)$
+\begin{enumerate}
+	\item 将所有的点按照x坐标从小到达排序。时间复杂度为$O(nlgn)$。排许后用序列
+		$p_1, P_2, p_3 ... p_n$表示。
+	\item 定义从$p_i$到$p_j$之间的双调路径$d(i,j)$为：从$p_i$开始，严格的向右走，
+		直到$p_1$,然后严格的向左走直到$p_j$。途中经过$p_1$到$p_{max(i,j)}$
+		之间的所有点一次其只一次。由于对称性，只考虑$i \ge j$的情况。定义
+		$\Delta(i,j)$表示$p_i$和$p_j$之间的距离。
+	\item 计算$d(i,j), i \ge j$，最基本的情况是$d(2,1)=\Delta(2,1)$。
+		\begin{enumerate}
+			\item 如果$j < i-1$，边$(p_i, p_{i-1})$一定在从$p_i$到$p_j$之间
+				的爽调路径上。那么$d(i,j)=d(i-1,j)+\Delta(i, i-1)$。
+			\item 如果$j = i-1$，考虑在最短路径中最先连接的两个点，可以是$p_i$
+				到$p_1$,$p_i$到$p_2$,...$p_i$到$p_{-2}$。所以
+$d(i,j)=min(d(1,i-1)+\Delta(i,1),d(2,i-1)+\Delta(i,2),...,d(i-2,i-1)+\Delta(i,i-2))$
+		\end{enumerate}
+\end{enumerate}
+	上面的算法的时间复杂度是$O(n^2)$
 
 \section{Problem 15-6 checker}
 
 用一个n×n的二维数组c表示checkerboader。那么，对于格子c[i][j]，checker只可能从c[i][j-1]，
 c[i-1][j-1]和c[i+1][j-1]三个格子移动过来。用一个二维数组b表示到达每个格子所能获得的最大钱数。
-b[i][j]表示checker到达c[i][j]时所能获得的最大钱数。每一个格子的标号用i*n+j表示。可以得到如下
-的递推方程：
+b[i][j]表示checker到达c[i][j]时所能获得的最大钱数。对每一个格子进行编号，用i*n+j表示，编号
+之后便于查找p(x,y)的值。递推方程如下：
 \begin{align*}
                      b[i][j]=max(b[i-1][j]+p((i-1)*n+j, i*n+j)\\
                      		,b[i-1][j-1]+p((i-1)*n+j-1, i*n+j)\\
@@ -269,6 +217,10 @@ b[i][j]表示checker到达c[i][j]时所能获得的最大钱数。每一个格�
     b存储checker到达每个格子所得到的最大值。
     for(i=1; i < n; ++i)
         for(j=0; j < n; ++j)
+            //对于超出边界的点，不与考虑。
+            //但是，也可以在checkerboader的周围设置一个“围墙”。
+            //对与围墙上的点,p(x,y)总是负无穷大，这样在下面的代码
+            //中就不需要判断格子是否超出边界。
             b[i][j] = max(b[i-1][j]+p((i-1)*n+j, i*n+j)
                         ,b[i-1][j-1]+p((i-1)*n+j-1, i*n+j)
                         ,b[i-1][j+1]+p((i+1)*n+j+1, i*n+j));
@@ -278,5 +230,5 @@ b[i][j]表示checker到达c[i][j]时所能获得的最大钱数。每一个格�
         maxValue = b[n-1][i]
 \end{verbatim}
 	
-外层循环和内层循环分别是n-1次和n次，因此算法的复杂度是$O(n^2)$
+外层循环和内层循环分别是n-1次和n次，因此算法的复杂度是$O(n^2)$。
 \end{document}

@@ -1,7 +1,7 @@
 package sortCmp;
 
 
-public class Main
+public class SortMain
 {
 
 	/**
