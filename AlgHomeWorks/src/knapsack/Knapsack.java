@@ -66,6 +66,11 @@ public class Knapsack
 		return p[pc];
 	}
 	
+	/**
+	 * 构造最优解。
+	 * 返回的数组中，如果re[i] == 1，那么第i+1个物品被选中。
+	 * @return
+	 */
 	public static int[] getResult()
 	{
 		int[] re = new int[len];
