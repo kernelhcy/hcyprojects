@@ -1,6 +1,6 @@
-package problem4;
+package problem5;
 
-public class Main
+public class Main5
 {
 
 	/**

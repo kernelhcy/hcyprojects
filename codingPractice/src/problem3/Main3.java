@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Arrays;
 
-public class Main
+public class Main3
 {
 
 	/**
@@ -17,11 +17,11 @@ public class Main
 	public static void main(String[] args)
 	{
 		// TODO Auto-generated method stub
-		Main m = new Main();
+		Main3 m = new Main3();
 		m.run();
 	}
 
-	public Main() {
+	public Main3() {
 
 	}
 

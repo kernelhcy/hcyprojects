@@ -1,6 +1,6 @@
 package problem2;
 
-public class Main
+public class Main2
 {
 
 	/**
