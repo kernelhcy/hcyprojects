@@ -2,9 +2,13 @@ package problem7;
 
 import java.awt.BorderLayout;
 import java.awt.Cursor;
+import java.awt.event.AdjustmentEvent;
+import java.awt.event.AdjustmentListener;
+import java.awt.geom.Line2D;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JToolBar;
 
@@ -26,9 +30,34 @@ public class MainFrame extends JFrame
 				JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 		jsp.setHorizontalScrollBarPolicy(
 				JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
-		getContentPane().add(jsp, BorderLayout.CENTER);
 		
-		Line line = new Line();
+		JScrollBar jsbh = jsp.getHorizontalScrollBar();
+		jsbh.addAdjustmentListener(new AdjustmentListener()
+		{
+			
+			@Override
+			public void adjustmentValueChanged(AdjustmentEvent e)
+			{
+				// TODO Auto-generated method stub
+				int val = e.getValue();
+				
+			}
+		});
+		JScrollBar jsbv = jsp.getVerticalScrollBar();
+		jsbv.addAdjustmentListener(new AdjustmentListener()
+		{
+			
+			@Override
+			public void adjustmentValueChanged(AdjustmentEvent e)
+			{
+				// TODO Auto-generated method stub
+				
+			}
+		});
+		
+		
+		getContentPane().add(jsp, BorderLayout.CENTER);
+		Line2D.Double line = new Line2D.Double(1.0, 1.0, 100.0, 100.0);
 		dp.addSharp(line);
 		dp.repaint();
 		
