@@ -121,6 +121,10 @@
 1G交换区，并且radix sort和merge sort都需要两倍的空间，所以，$2 * 10 ^ 8$数据量只测试quicksort。而$10 ^ 9$需
 要达3.5G的空间，我的电脑无法运行。因此不予测试。
 
+程序的运行命令：
+\begin{lstlisting}
+	java -Xms2000m -jar sortcmp.jar
+\end{lstlisting}
 表\ref{result}是测试结果，取三次均值。表\ref{result}中，‘-’表示没有对这个数据量进行测试，0表示算法的运行时间小于
 1ms。
 \begin{table}[htpb]
