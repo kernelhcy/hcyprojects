@@ -1,5 +1,6 @@
 package problem7;
 
+import java.awt.Color;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Line2D;
 
@@ -14,6 +15,7 @@ public class CreateLineListener extends MyMouseAdapter
 
 	public CreateLineListener(DrawPanel listenee) {
 		this.listenee = listenee;
+		
 	}
 
 	@Override
@@ -29,6 +31,9 @@ public class CreateLineListener extends MyMouseAdapter
 	public void mousePressed(MouseEvent e)
 	{
 		// TODO Auto-generated method stub
+		tmp = new MyShape(ShapeType.LINE);
+		tmp.setColor(c);
+		tmp.setFill(fill);
 		((Line2D.Double)tmp.getShape()).x1 = e.getX();
 		((Line2D.Double)tmp.getShape()).y1 = e.getY();
 		((Line2D.Double)tmp.getShape()).x2 = e.getX();
@@ -55,6 +60,20 @@ public class CreateLineListener extends MyMouseAdapter
 					+ ")");
 
 	}
+	
+	public void setColor(Color c)
+	{
+		this.c = c;
+	}
+	
+	public void setFill(boolean fill)
+	{
+		this.fill = fill;
+	}
+	
 	private DrawPanel listenee; // 被监听的对象。
 	private MyShape tmp;
+	
+	private boolean fill;
+	private Color c;
 }

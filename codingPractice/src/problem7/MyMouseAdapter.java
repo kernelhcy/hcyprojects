@@ -1,5 +1,6 @@
 package problem7;
 
+import java.awt.Color;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
@@ -59,6 +60,16 @@ public class MyMouseAdapter implements MouseListener, MouseMotionListener
 	{
 		// TODO Auto-generated method stub
 
+	}
+	
+	public void setColor(Color c)
+	{
+		
+	}
+	
+	public void setFill(boolean fill)
+	{
+		
 	}
 
 }
