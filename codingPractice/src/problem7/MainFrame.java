@@ -30,35 +30,8 @@ public class MainFrame extends JFrame
 				JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 		jsp.setHorizontalScrollBarPolicy(
 				JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
-		
-		JScrollBar jsbh = jsp.getHorizontalScrollBar();
-		jsbh.addAdjustmentListener(new AdjustmentListener()
-		{
-			
-			@Override
-			public void adjustmentValueChanged(AdjustmentEvent e)
-			{
-				// TODO Auto-generated method stub
-				int val = e.getValue();
 				
-			}
-		});
-		JScrollBar jsbv = jsp.getVerticalScrollBar();
-		jsbv.addAdjustmentListener(new AdjustmentListener()
-		{
-			
-			@Override
-			public void adjustmentValueChanged(AdjustmentEvent e)
-			{
-				// TODO Auto-generated method stub
-				
-			}
-		});
-		
-		
 		getContentPane().add(jsp, BorderLayout.CENTER);
-		Line2D.Double line = new Line2D.Double(1.0, 1.0, 100.0, 100.0);
-		dp.addSharp(line);
 		dp.repaint();
 		
 	}
@@ -68,7 +41,9 @@ public class MainFrame extends JFrame
 		toolbar = new JToolBar();
 		toolbar.setCursor(new Cursor(Cursor.HAND_CURSOR));
 		toolbar.setFloatable(false); //不浮动
-		lineBtn = new JButton("Create line");
+		lineBtn = new JButton("Create Line");
+		
+		rectBtn = new JButton("Create Rect");
 		undoBtn = new JButton("Undo");
 		redoBtn = new JButton("Redo");
 		toolbar.add(lineBtn);
@@ -78,6 +53,6 @@ public class MainFrame extends JFrame
 	}
 	
 	private JToolBar toolbar;
-	private JButton lineBtn, undoBtn, redoBtn;
+	private JButton lineBtn, rectBtn, undoBtn, redoBtn;
 	private DrawPanel dp;
 }

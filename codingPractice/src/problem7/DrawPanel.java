@@ -4,7 +4,6 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.util.ArrayList;
-import java.awt.Shape;
 import javax.swing.JPanel;
 /**
  * 画图面板。
@@ -16,20 +15,21 @@ import javax.swing.JPanel;
  */
 public class DrawPanel extends JPanel
 {
+	
 	public DrawPanel() {
-		Shapes = new ArrayList<Shape>();
+		Shapes = new ArrayList<MyShape>();
 		cll = new CreateLineListener(this);
 		this.addMouseListener(cll);
 		this.addMouseMotionListener(cll);
 	}
 
-	public void addSharp(Shape s)
+	public void addSharp(MyShape s)
 	{
 		Shapes.add(s);
 
 	}
 
-	public Shape deleteSharp(Shape s)
+	public MyShape deleteSharp(MyShape s)
 	{
 		Shapes.remove(s);
 		return s;
@@ -42,11 +42,21 @@ public class DrawPanel extends JPanel
 		g2d.setColor(Color.WHITE);
 		g2d.fillRect(0, 0, this.getWidth() + 1, this.getHeight() + 1);
 		g2d.setColor(Color.BLACK);
-		for (Shape s : Shapes) {
-			g2d.draw(s);
+		
+		Color c = null, oldc = null;
+		for (MyShape s : Shapes) {
+			oldc = g2d.getColor();
+			c = s.getColor();
+			g2d.setColor(c);
+			if(s.isFill()){
+				g2d.fill(s.getShape());
+			}else{
+				g2d.draw(s.getShape());
+			}
+			g2d.setColor(oldc);
 		}
 	}
 	
-	private ArrayList<Shape> Shapes;
+	private ArrayList<MyShape> Shapes;
 	private CreateLineListener cll;
 }
