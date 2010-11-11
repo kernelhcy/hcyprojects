@@ -5,11 +5,13 @@ import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JColorChooser;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -25,9 +27,6 @@ public class MainFrame extends JFrame
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		toolbar = createToolbar();
 		getContentPane().add(toolbar, BorderLayout.NORTH);
-		
-		setSize(700, 500);
-		setVisible(true);
 		
 		dp = new DrawPanel();
 		JScrollPane jsp = new JScrollPane(dp);
@@ -63,9 +62,22 @@ public class MainFrame extends JFrame
 		rectBtn.addActionListener(ac);
 		bg.add(rectBtn);
 		
+		elliBtn = new JRadioButton("Elli");
+		elliBtn.addActionListener(ac);
+		bg.add(elliBtn);
+		
+		polyBtn = new JRadioButton("Poly");
+		polyBtn.addActionListener(ac);
+		bg.add(polyBtn);
+		
 		undoBtn = new JButton("Undo");
+		undoBtn.addActionListener(ac);
 		redoBtn = new JButton("Redo");
+		redoBtn.addActionListener(ac);
 		saveBtn = new JButton("Save");
+		saveBtn.addActionListener(ac);
+		openBtn = new JButton("Open");
+		openBtn.addActionListener(ac);
 		
 		fillcb = new JCheckBox("Fill");
 		fillcb.addActionListener(ac);
@@ -74,6 +86,8 @@ public class MainFrame extends JFrame
 		toolbar.add(nothingBtn);
 		toolbar.add(lineBtn);
 		toolbar.add(rectBtn);
+		toolbar.add(elliBtn);
+		toolbar.add(polyBtn);
 		
 		toolbar.addSeparator();
 		toolbar.add(undoBtn);
@@ -116,6 +130,7 @@ public class MainFrame extends JFrame
 		});
 		toolbar.add(clearBtn);
 		toolbar.add(saveBtn);
+		toolbar.add(openBtn);
 		return toolbar;
 	}
 	
@@ -138,6 +153,14 @@ public class MainFrame extends JFrame
 				dp.setShapeListener(ShapeType.RECT
 						, fillcb.isSelected()
 						, colorBtn.getColor());
+			}else if(src == elliBtn){
+				dp.setShapeListener(ShapeType.ELLI
+						, fillcb.isSelected()
+						, colorBtn.getColor());
+			}else if(src == polyBtn){
+				dp.setShapeListener(ShapeType.POLYGON
+						, fillcb.isSelected()
+						, colorBtn.getColor());
 			}else if(src == nothingBtn){
 				dp.setShapeListener(ShapeType.NONE
 						, fillcb.isSelected()
@@ -148,6 +171,32 @@ public class MainFrame extends JFrame
 				undo();
 			}else if(src == fillcb){
 				dp.setFill(fillcb.isSelected());
+			}else if(src == saveBtn){
+				JFileChooser fc = new JFileChooser(".");
+				int re = fc.showSaveDialog(mf);
+				if(re == JFileChooser.APPROVE_OPTION){
+					File f = fc.getSelectedFile();
+					try {
+						dp.writeToFile(f);
+					}
+					catch (Exception e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+				}
+			}else if(src == openBtn){
+				JFileChooser fc = new JFileChooser(".");
+				int re = fc.showOpenDialog(mf);
+				if(re == JFileChooser.APPROVE_OPTION){
+					File f = fc.getSelectedFile();
+					try {
+						dp.readFromFile(f);
+					}
+					catch (Exception e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+				}
 			}
 			
 		}
@@ -155,23 +204,30 @@ public class MainFrame extends JFrame
 		//redo button action
 		private void redo()
 		{
-			
+			MyShape tmp = dp.lastShape();
+			dp.addShape(preshape);
+			preshape = tmp;
+			dp.repaint();
 		}
 		
 		//undo button action
 		private void undo()
 		{
-			
+			preshape = dp.deleteShape(dp.lastShape());
+			dp.repaint();
+			System.out.println("Undo" + preshape);
 		}
 	}
 	
 	private JToolBar toolbar;
 	private ActionListener ac;
 	private ButtonGroup bg;
-	private JRadioButton lineBtn, rectBtn, nothingBtn;
-	private JButton undoBtn, redoBtn, clearBtn, saveBtn;
+	private JRadioButton lineBtn, rectBtn, elliBtn, polyBtn, nothingBtn;
+	private JButton undoBtn, redoBtn, clearBtn, saveBtn, openBtn;
 	private ColorButton colorBtn;
 	private DrawPanel dp;
 	private JCheckBox fillcb;
 	private MainFrame mf = this;
+	
+	private MyShape preshape = null;
 }

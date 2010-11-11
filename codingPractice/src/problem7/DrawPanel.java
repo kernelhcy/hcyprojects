@@ -5,10 +5,15 @@ import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.event.MouseAdapter;
+import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionAdapter;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import javax.swing.JPanel;
 /**
@@ -23,9 +28,11 @@ public class DrawPanel extends JPanel
 {
 	
 	public DrawPanel() {
-		Shapes = new ArrayList<MyShape>();
+		shapes = new ArrayList<MyShape>();
 		cll = new CreateLineListener(this);
 		crl = new CreateRectListener(this);
+		cel = new CreateElliListener(this);
+		cpl = new CreatePolygonLintener(this);
 		currl = null;
 		this.addMouseMotionListener(new MouseMotionAdapter()
 		{			
@@ -82,8 +89,21 @@ public class DrawPanel extends JPanel
 			this.addMouseMotionListener(cll);
 			currl = cll;
 			break;
-		case CIRCLE:
+		case ELLI:
 			this.setCursor(new Cursor(Cursor.CROSSHAIR_CURSOR));
+			cel.setColor(c);
+			cel.setFill(fill);
+			this.addMouseListener(cel);
+			this.addMouseMotionListener(cel);
+			currl = cel;
+			break;
+		case POLYGON:
+			this.setCursor(new Cursor(Cursor.CROSSHAIR_CURSOR));
+			cpl.setColor(c);
+			cpl.setFill(fill);
+			this.addMouseListener(cpl);
+			this.addMouseMotionListener(cpl);
+			currl = cpl;
 			break;
 		case NONE: 	//删除监听器。
 			break;
@@ -97,7 +117,7 @@ public class DrawPanel extends JPanel
 	 */
 	public void clear()
 	{
-		Shapes.clear();
+		shapes.clear();
 		this.repaint();
 	}
 	
@@ -117,18 +137,83 @@ public class DrawPanel extends JPanel
 		
 	}
 	
-	public void addSharp(MyShape s)
+	public void addShape(MyShape s)
 	{
-		Shapes.add(s);
+		shapes.add(s);
 
 	}
 
-	public MyShape deleteSharp(MyShape s)
+	public MyShape deleteShape(MyShape s)
 	{
-		Shapes.remove(s);
+		shapes.remove(s);
 		return s;
 	}
 
+	public MyShape lastShape()
+	{
+		return shapes.get(shapes.size() - 1);
+	}
+	
+	public void writeToFile(File f)
+	{
+		if(f == null){
+			return;
+		}
+		FileWriter fw = null;
+		BufferedWriter bw = null;
+		try {
+			fw = new FileWriter(f, false);
+			bw = new BufferedWriter(fw);
+			for(MyShape s : shapes){
+				bw.write(s.toString());
+				bw.newLine();
+			}
+			bw.close();
+			fw.close();
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+			try {
+				fw.close();
+				bw.close();
+			}
+			catch (IOException e1) {
+				
+			}
+		}
+		
+	}
+	
+	public void readFromFile(File f)
+	{
+		if(f == null){
+			return;
+		}
+		FileReader fr = null;
+		BufferedReader br = null;
+		try {
+			fr = new FileReader(f);
+			br= new BufferedReader(fr);
+			String s = br.readLine();
+			while(s != null){
+				s = br.readLine();
+				System.out.println(s);
+			}
+			br.close();
+			fr.close();
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+			try {
+				br.close();
+				fr.close();
+			}
+			catch (IOException e1) {
+			}
+		}
+		this.repaint();
+	}
+	
 	public void paint(Graphics g)
 	{
 		Graphics2D g2d = (Graphics2D)g;
@@ -138,7 +223,7 @@ public class DrawPanel extends JPanel
 		g2d.setColor(Color.BLACK);
 		
 		Color c = null, oldc = null;
-		for (MyShape s : Shapes) {
+		for (MyShape s : shapes) {
 			oldc = g2d.getColor();
 			c = s.getColor();
 			g2d.setColor(c);
@@ -152,10 +237,11 @@ public class DrawPanel extends JPanel
 		}
 	}
 	
-	private ArrayList<MyShape> Shapes;
+	private ArrayList<MyShape> shapes;
 	private MyMouseAdapter cll; //画直线的监听器
 	private MyMouseAdapter crl; //画矩形的监听器
-	
+	private MyMouseAdapter cel; //椭圆形的监听器
+	private MyMouseAdapter cpl; //多边形的监听器
 	private MyMouseAdapter currl;  //当前鼠标事件监听器。
 	
 	private DrawPanel dp = this;

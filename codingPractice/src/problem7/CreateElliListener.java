@@ -2,13 +2,14 @@ package problem7;
 
 import java.awt.Color;
 import java.awt.event.MouseEvent;
+import java.awt.geom.Ellipse2D;
 import java.awt.geom.Point2D;
-import java.awt.geom.Rectangle2D;
 
-public class CreateRectListener extends MyMouseAdapter
+public class CreateElliListener extends MyMouseAdapter
 {
-	public CreateRectListener(DrawPanel listenee)
-	{
+
+	public CreateElliListener(DrawPanel listenee) {
+		// TODO Auto-generated constructor stub
 		this.listenee = listenee;
 		startP = new Point2D.Double();
 		endP = new Point2D.Double();
@@ -26,7 +27,7 @@ public class CreateRectListener extends MyMouseAdapter
 	public void mousePressed(MouseEvent e)
 	{
 		// TODO Auto-generated method stub
-		tmp = new MyShape(ShapeType.RECT);
+		tmp = new MyShape(ShapeType.ELLI);
 		tmp.setColor(c);
 		tmp.setFill(fill);
 		startP.setLocation(e.getX(), e.getY());
@@ -58,13 +59,13 @@ public class CreateRectListener extends MyMouseAdapter
 			 *          * endP
 			 */
 			if(startP.getY() < endP.getY()){
-				((Rectangle2D.Double)tmp.getShape()).x 
+				((Ellipse2D.Double)tmp.getShape()).x
 						= startP.getX();
-				((Rectangle2D.Double)tmp.getShape()).y
+				((Ellipse2D.Double)tmp.getShape()).y
 						= startP.getY();
-				((Rectangle2D.Double)tmp.getShape()).width
+				((Ellipse2D.Double)tmp.getShape()).width
 						= endP.getX() - startP.getX();
-				((Rectangle2D.Double)tmp.getShape()).height
+				((Ellipse2D.Double)tmp.getShape()).height
 						= endP.getY() - startP.getY();
 			}
 			/*
@@ -73,13 +74,13 @@ public class CreateRectListener extends MyMouseAdapter
 			 * * startP
 			 */
 			else{
-				((Rectangle2D.Double)tmp.getShape()).x 
+				((Ellipse2D.Double)tmp.getShape()).x 
 					= startP.getX();
-				((Rectangle2D.Double)tmp.getShape()).y
+				((Ellipse2D.Double)tmp.getShape()).y
 					= endP.getY();
-				((Rectangle2D.Double)tmp.getShape()).width
+				((Ellipse2D.Double)tmp.getShape()).width
 					= endP.getX() - startP.getX();
-				((Rectangle2D.Double)tmp.getShape()).height
+				((Ellipse2D.Double)tmp.getShape()).height
 					= startP.getY() - endP.getY();
 			}
 		}else{
@@ -89,13 +90,13 @@ public class CreateRectListener extends MyMouseAdapter
 			 *  * endP
 			 */
 			if(startP.getY() < endP.getY()){
-				((Rectangle2D.Double)tmp.getShape()).x 
+				((Ellipse2D.Double)tmp.getShape()).x 
 					= endP.getX();
-				((Rectangle2D.Double)tmp.getShape()).y
+				((Ellipse2D.Double)tmp.getShape()).y
 					= startP.getY();
-				((Rectangle2D.Double)tmp.getShape()).width
+				((Ellipse2D.Double)tmp.getShape()).width
 					= startP.getX() - endP.getX();
-				((Rectangle2D.Double)tmp.getShape()).height
+				((Ellipse2D.Double)tmp.getShape()).height
 					= endP.getY() - startP.getY();
 			}
 			/*
@@ -104,13 +105,13 @@ public class CreateRectListener extends MyMouseAdapter
 			 *         * startP
 			 */
 			else{
-				((Rectangle2D.Double)tmp.getShape()).x 
+				((Ellipse2D.Double)tmp.getShape()).x 
 					= endP.getX();
-				((Rectangle2D.Double)tmp.getShape()).y
+				((Ellipse2D.Double)tmp.getShape()).y
 					= endP.getY();
-				((Rectangle2D.Double)tmp.getShape()).width
+				((Ellipse2D.Double)tmp.getShape()).width
 					= startP.getX() - endP.getX();
-				((Rectangle2D.Double)tmp.getShape()).height
+				((Ellipse2D.Double)tmp.getShape()).height
 					= startP.getY() - endP.getY();
 			}
 		}
@@ -126,6 +127,7 @@ public class CreateRectListener extends MyMouseAdapter
 	{
 		this.fill = fill;
 	}
+	
 	
 	private DrawPanel listenee; // 被监听的对象。
 	private MyShape tmp;

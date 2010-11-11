@@ -19,7 +19,9 @@ public class Main7
 			{
 				// TODO Auto-generated method stub
 				MainFrame mf = new MainFrame();
+				mf.setSize(900, 600);
 				mf.setVisible(true);
+				
 			}
 		});
 	}

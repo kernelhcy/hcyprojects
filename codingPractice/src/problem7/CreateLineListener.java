@@ -38,7 +38,7 @@ public class CreateLineListener extends MyMouseAdapter
 		((Line2D.Double)tmp.getShape()).y1 = e.getY();
 		((Line2D.Double)tmp.getShape()).x2 = e.getX();
 		((Line2D.Double)tmp.getShape()).y2 = e.getY();
-		listenee.addSharp(tmp);
+		listenee.addShape(tmp);
 		System.out.println("Create line. Begin at("
 				+ ((Line2D.Double)tmp.getShape()).x1 
 				+ "," 
@@ -66,9 +66,12 @@ public class CreateLineListener extends MyMouseAdapter
 		this.c = c;
 	}
 	
+	/**
+	 * 直线如果用fill，将不显示。
+	 */
 	public void setFill(boolean fill)
 	{
-		this.fill = fill;
+		this.fill = false;
 	}
 	
 	private DrawPanel listenee; // 被监听的对象。
