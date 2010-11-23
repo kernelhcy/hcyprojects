@@ -53,7 +53,8 @@ public class DrawPanelDB extends JPanel
 		}
 		
 		System.out.println("Image width: " + buffer.getWidth(null)
-						+ "Height: " + buffer.getHeight(null));
+						+ "Height: " 
+						+ buffer.getHeight(null));
 		for (Shape s : shapes) {
 			s.draw(buffer);
 		}

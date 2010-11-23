@@ -1,18 +1,23 @@
 package problem7.doublebuffer;
 
+import java.awt.Color;
 import java.awt.Image;
 
 import javax.swing.JPanel;
 
-public interface Shape
+public abstract class Shape
 {
-	void draw();
+	
+	public Color color;
+	public boolean fill; //fill or draw?
+	
+	public abstract void draw();
 
 	/**
 	 * Directly draw the shape on the panel .
 	 * @param drawee
 	 */
-	void draw(JPanel drawee);
+	public abstract void draw(JPanel drawee);
 	
 	/**
 	 * This is the core function.
@@ -24,5 +29,5 @@ public interface Shape
 	 * Every shape MUST implements this func.
 	 * @param image
 	 */
-	void draw(Image image);
+	public abstract void draw(Image image);
 }

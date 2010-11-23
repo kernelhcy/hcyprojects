@@ -7,15 +7,24 @@ import java.awt.Point;
 
 import javax.swing.JPanel;
 
-public class Line extends Shape
+public class Circle extends Shape
 {
-	public Point start = null, end = null;
+	public Point center;
+	public int radius;
+	
+	public Circle()
+	{
+		center = null;
+		radius = -1;
+		color = Color.BLACK;
+		fill = false;
+	}
+	
 	@Override
 	public void draw()
 	{
 		// TODO Auto-generated method stub
 		System.out.println("Not yet implement!");
-		return;
 	}
 
 	@Override
@@ -23,34 +32,35 @@ public class Line extends Shape
 	{
 		// TODO Auto-generated method stub
 		System.out.println("Not yet implement!");
-		return;
 	}
 
 	@Override
 	public void draw(Image image)
 	{
 		// TODO Auto-generated method stub
-		if(image == null)
-		{
+		if(image == null || center == null || radius < 0){
 			return;
 		}
-		Graphics2D g = (Graphics2D)image.getGraphics();
-		this.drawHelp(g);
+		drawHelp((Graphics2D)image.getGraphics());
 	}
 	
-	/**
-	 * Draw the line by g
-	 * @param g
-	 */
 	private void drawHelp(Graphics2D g)
 	{
-		if(start == null || end == null){
+		if(g == null){
 			return;
 		}
-		Color oldcolor = g.getColor();
+		
+		Color oldc = g.getColor();
 		g.setColor(color);
-		g.drawLine(start.x, start.y, end.x, end.y);
-		g.setColor(oldcolor);
+		if(fill){
+			g.fillOval(center.x - radius, center.y - radius
+					, radius, radius);
+		}else{
+			g.drawOval(center.x - radius, center.y - radius
+					, radius, radius);
+		}
+		g.setColor(oldc);
 		return;
 	}
+
 }

@@ -3,19 +3,25 @@ package problem7.doublebuffer;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Image;
-import java.awt.Point;
 
 import javax.swing.JPanel;
 
-public class Line extends Shape
+public class Rectangle extends Shape
 {
-	public Point start = null, end = null;
+	public int x, y;
+	public int width, height;
+	
+	public Rectangle()
+	{
+		x = y = -1;
+		width = height = -1;
+	}
+	
 	@Override
 	public void draw()
 	{
 		// TODO Auto-generated method stub
 		System.out.println("Not yet implement!");
-		return;
 	}
 
 	@Override
@@ -23,34 +29,32 @@ public class Line extends Shape
 	{
 		// TODO Auto-generated method stub
 		System.out.println("Not yet implement!");
-		return;
 	}
 
 	@Override
 	public void draw(Image image)
 	{
 		// TODO Auto-generated method stub
-		if(image == null)
-		{
+		if(image == null || x < 0 || y < 0
+				|| width < 0 || height < 0){
 			return;
 		}
-		Graphics2D g = (Graphics2D)image.getGraphics();
-		this.drawHelp(g);
+		this.drawHelp((Graphics2D)image.getGraphics());
 	}
 	
-	/**
-	 * Draw the line by g
-	 * @param g
-	 */
 	private void drawHelp(Graphics2D g)
 	{
-		if(start == null || end == null){
+		if(g == null){
 			return;
 		}
-		Color oldcolor = g.getColor();
+		
+		Color oldc = g.getColor();
 		g.setColor(color);
-		g.drawLine(start.x, start.y, end.x, end.y);
-		g.setColor(oldcolor);
-		return;
+		if(fill){
+			g.fillRect(x, y, width, height);
+		}else{
+			g.drawRect(x, y, width, height);
+		}
+		g.setColor(oldc);
 	}
 }
