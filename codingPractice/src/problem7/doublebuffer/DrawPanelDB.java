@@ -51,10 +51,6 @@ public class DrawPanelDB extends JPanel
 			buffer = this.createImage(this.getWidth(),
 					this.getHeight());
 		}
-		
-		System.out.println("Image width: " + buffer.getWidth(null)
-						+ "Height: " 
-						+ buffer.getHeight(null));
 		for (Shape s : shapes) {
 			s.draw(buffer);
 		}
