@@ -10,6 +10,9 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
+import problem8.eventagent.Event;
+import problem8.eventagent.EventAgent;
+
 /**
  * Show and edit the book information.
  * @author hcy
@@ -17,14 +20,13 @@ import javax.swing.JTextField;
  */
 public class BookInfoShower extends JPanel implements ActionListener
 {
-	public BookInfoShower(Book b, BookList bl)
+	public BookInfoShower(Book b)
 	{
-		if(b == null || bl == null){
+		if(b == null){
 			throw new IllegalArgumentException(
 					"BookInfoShower need a Book!");
 		}
 		this.b = b;
-		this.bl = bl;
 		
 		ISBN = new JLabel("ISBN:");
 		name = new JLabel("Name:");
@@ -62,6 +64,15 @@ public class BookInfoShower extends JPanel implements ActionListener
 		add(p);
 	}
 	
+	/**
+	 * the index of the tab pane which contains this BookInfoShower
+	 * @param i
+	 */
+	public void setIndex(int i)
+	{
+		this.tabIndex = i;
+	}
+	
 	@Override
 	public void actionPerformed(ActionEvent e)
 	{
@@ -75,7 +86,17 @@ public class BookInfoShower extends JPanel implements ActionListener
 		b.setPublisher(publishertf.getText());
 		b.setPublishTime(ptimetf.getText());
 		b.setStyle(styletf.getText());
-		bl.update(b);
+		
+		//update the table
+		upb.clearArg();
+		upb.addArg(b);
+		EventAgent.dispatchEvent(upb);
+		
+		//update the tab name
+		uptn.clearArg();
+		uptn.addArg(tabIndex);
+		uptn.addArg(b.getName());
+		EventAgent.dispatchEvent(uptn);
 	}
 	
 	private Book b;
@@ -85,6 +106,8 @@ public class BookInfoShower extends JPanel implements ActionListener
 	private JTextField  ISBNtf, nametf, styletf, authortf, pricetf, 
 			ptimetf, publishertf, btimetf, bowertf;
 	private JButton save;
-	private BookList bl;
+	private int tabIndex; // the index of the tab
+	private Event upb = new Event("BOOKLIST_UPDATEBOOK");
+	private Event uptn = new Event("JTABBEDPANE_UPDATETABNAME");
 	
 }

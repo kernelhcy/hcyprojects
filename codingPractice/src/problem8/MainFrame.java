@@ -1,6 +1,7 @@
 package problem8;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -8,6 +9,10 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JTabbedPane;
 import javax.swing.JToolBar;
+
+import problem8.eventagent.Event;
+import problem8.eventagent.EventAgent;
+import problem8.eventagent.EventResponser;
 
 public class MainFrame extends JFrame
 {
@@ -19,8 +24,85 @@ public class MainFrame extends JFrame
 
 		jtp = new JTabbedPane();
 		getContentPane().add(jtp, BorderLayout.SOUTH);
-
-		bl = new BookList(jtp);
+		
+		//JTABBEDPANE_REMOVEALL event
+		EventAgent.registerEvent(new EventResponser()
+		{
+			
+			@Override
+			public String getName()
+			{
+				// TODO Auto-generated method stub
+				return "JTABBEDPANE_REMOVEALL";
+			}
+			
+			@Override
+			public void doAction(Object[] args, int argc)
+			{
+				// TODO Auto-generated method stub
+				jtp.removeAll();
+			}
+		});
+		
+		//JTABBEDPANE_ADDTAB event
+		EventAgent.registerEvent(new EventResponser()
+		{
+			
+			@Override
+			public String getName()
+			{
+				// TODO Auto-generated method stub
+				return "JTABBEDPANE_ADDTAB";
+			}
+			
+			/**
+			 * args[0] : the name of the tab
+			 * args[1] : the component of the tab
+			 */
+			@Override
+			public void doAction(Object[] args, int argc)
+			{
+				// TODO Auto-generated method stub
+				//we need the tab name and the component.
+				if(argc < 2){
+					return;
+				}
+				
+				jtp.addTab((String)args[0]
+				                  , (Component)args[1]);
+			}
+		});
+		
+		//JTABBEDPANE_UPDATETABNAME event
+		EventAgent.registerEvent(new EventResponser()
+		{
+			
+			@Override
+			public String getName()
+			{
+				// TODO Auto-generated method stub
+				return "JTABBEDPANE_UPDATETABNAME";
+			}
+			
+			/**
+			 * args[0] : the index of the tab
+			 * args[1] : the new name
+			 */
+			@Override
+			public void doAction(Object[] args, int argc)
+			{
+				// TODO Auto-generated method stub
+				if(argc < 2){
+					//we need tab index and the new
+					//name.
+					return;
+				}
+				jtp.setTitleAt((Integer)args[0]
+				                     , (String)args[1]);
+			}
+		});
+		
+		bl = new BookList();
 		getContentPane().add(bl, BorderLayout.CENTER);
 
 		JToolBar tb = new JToolBar();
@@ -38,9 +120,11 @@ public class MainFrame extends JFrame
 			{
 				// TODO Auto-generated method stub
 				Book b = new Book();
+				BookInfoShower bis = new BookInfoShower(b);
 				bl.addBook(b);
-				jtp.add("New Book", new BookInfoShower(b, bl));
+				jtp.add("New Book", bis);
 				jtp.setSelectedIndex(jtp.getTabCount() - 1);
+				bis.setIndex(jtp.getTabCount() -1);
 			}
 		});
 		
@@ -52,7 +136,7 @@ public class MainFrame extends JFrame
 			public void actionPerformed(ActionEvent e)
 			{
 				// TODO Auto-generated method stub
-				System.err.println("Not implement");
+				EventAgent.dispatchEvent(delSel);
 			}
 		});
 		
@@ -75,4 +159,6 @@ public class MainFrame extends JFrame
 	private JTabbedPane jtp;
 	private JButton newBtn, delBtn;
 	private BookList bl;
+	
+	private Event delSel = new Event("BOOKLIST_DELSELECTED");
 }

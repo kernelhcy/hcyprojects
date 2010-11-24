@@ -7,6 +7,7 @@ import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import javax.swing.AbstractCellEditor;
 import javax.swing.JButton;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
@@ -17,10 +18,18 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableCellEditor;
 
+import problem8.eventagent.Event;
+import problem8.eventagent.EventAgent;
+import problem8.eventagent.EventResponser;
+
+/**
+ * Book table.
+ * @author hcy
+ *
+ */
 public class BookList extends JPanel
 {
-	public BookList(JTabbedPane tp) {
-		this.tp = tp;
+	public BookList() {
 		tm = new TableModel();
 		tb = new JTable(tm);
 		tb.setColumnSelectionAllowed(false);
@@ -34,6 +43,72 @@ public class BookList extends JPanel
 		JScrollPane jsp = new JScrollPane(tb);
 		setLayout(new BorderLayout());
 		add(jsp, BorderLayout.CENTER);
+		
+		//BOOKLIST_DELSELECTED event
+		//delete the selected rows
+		EventAgent.registerEvent(new EventResponser()
+		{
+			
+			@Override
+			public String getName()
+			{
+				// TODO Auto-generated method stub
+				return "BOOKLIST_DELSELECTED";
+			}
+			
+			@Override
+			public void doAction(Object[] args, int argc)
+			{
+				// TODO Auto-generated method stub
+				if(tb.getSelectedRowCount() <= 0){
+					return;
+				}
+				int re = JOptionPane.showConfirmDialog(me
+						, "Delete ?");
+				if(re == JOptionPane.CANCEL_OPTION
+					|| re == JOptionPane.NO_OPTION){
+					return;
+				}
+				
+				/*
+				 * During deleting the books, the index
+				 * of the book will change. So we save 
+				 * all the books be deleted, and then 
+				 * delete them.
+				 */
+				ArrayList<Book> delBooks 
+					= new ArrayList<Book>();
+				for(int c : tb.getSelectedRows()){
+					delBooks.add(tm.getBook(c));
+				}
+				for(Book b : delBooks){
+					tm.delBook(b);
+				}
+			}
+		});
+		
+		//BOOKLIST_UPDATEBOOK event
+		EventAgent.registerEvent(new EventResponser()
+		{
+			
+			@Override
+			public String getName()
+			{
+				// TODO Auto-generated method stub
+				return "BOOKLIST_UPDATEBOOK";
+			}
+			
+			@Override
+			public void doAction(Object[] args, int argc)
+			{
+				// TODO Auto-generated method stub
+				if(argc < 1){
+					//we need the book be updated.
+					return;
+				}
+				update((Book)args[0]);
+			}
+		});
 	}
 
 	public void update(Book b)
@@ -63,7 +138,6 @@ public class BookList extends JPanel
 	
 	private TableModel tm;
 	private JTable tb;
-	private JTabbedPane tp;
 	private BookList me = this;
 	
 	private class RowSelectionListener implements ListSelectionListener
@@ -76,18 +150,31 @@ public class BookList extends JPanel
 		                return;
 		        }
 			
-			tp.removeAll();
+			//remove all tab
+			EventAgent.dispatchEvent(rma);
 			Book b;
+			BookInfoShower bis;
 			//show book info on the tabbedPanel
 			for(int c: tb.getSelectedRows()){
 				b = tm.getBook(c);
-				tp.addTab(b.getName()
-					, new BookInfoShower(b, me));
+				bis = new BookInfoShower(b);
+				
+				addtab.clearArg();
+				addtab.addArg(b.getName());
+				addtab.addArg(bis);
+				EventAgent.dispatchEvent(addtab);
 			}
 		}
 		
+		private Event rma = new Event("JTABBEDPANE_REMOVEALL");
+		private Event addtab = new Event("JTABBEDPANE_ADDTAB");
 	}
 	
+	/**
+	 * The editor of the date cell.
+	 * @author hcy
+	 *
+	 */
 	private class DateEditor extends AbstractCellEditor 
 				implements TableCellEditor, ActionListener
 	{
@@ -247,29 +334,6 @@ public class BookList extends JPanel
 		{
 			return false;
 		}
-
-//		public void setValueAt(Object value, int row, int col)
-//		{
-//			Book b = data.get(row);
-//			if (b == null) {
-//				return;
-//			}
-//			System.out.println("Old Value: " + b);
-//			switch (col) {
-//			case 0:b.setISBN((String)value);break;
-//			case 1:b.setName((String)value);break;
-//			case 2:b.setStyle((String)value);break;
-//			case 3:b.setAuthor((String)value);break;
-//			case 4:b.setPrice((Double)value);break;
-//			case 5:b.setPublishTime((String)value);break;
-//			case 6:b.setPublisher((String)value);break;
-//			case 7:b.setBuyTime((String)value);break;
-//			case 8:b.setBorrower((String)value);break;
-//			default:break;
-//			}
-//			fireTableCellUpdated(row, col);
-//			System.out.println("New Value: " + b);
-//		}
 
 		private String[] headerNames = { "ISBN", "Name", "Style",
 				"Author", "Price", "Publist Time", "Publisher",
