@@ -4,11 +4,15 @@ import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.Calendar;
+import java.util.Date;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JSpinner;
 import javax.swing.JTextField;
+import javax.swing.SpinnerDateModel;
 
 import problem8.eventagent.Event;
 import problem8.eventagent.EventAgent;
@@ -43,16 +47,43 @@ public class BookInfoShower extends JPanel implements ActionListener
 		styletf = new JTextField(b.getStyle());
 		authortf = new JTextField(b.getAuthor());
 		pricetf = new JTextField(String.valueOf(b.getPrice()));
-		ptimetf = new JTextField(b.getPublishTime().toString());
+		
+		Calendar calendar = Calendar.getInstance();
+		Date initDate = calendar.getTime();
+	        calendar.add(Calendar.YEAR, -100);
+	        Date earliestDate = calendar.getTime();
+	        calendar.add(Calendar.YEAR, 200);
+	        Date latestDate = calendar.getTime();
+		
+		pdateModel = new SpinnerDateModel(initDate,
+                                earliestDate,
+                                latestDate,
+                                Calendar.DAY_OF_MONTH);
+		bdateModel = new SpinnerDateModel(initDate,
+                                earliestDate,
+                                latestDate,
+                                Calendar.DAY_OF_MONTH);
+		
+		ptimeSpinner = new JSpinner(pdateModel);
+		ptimeSpinner.setEditor(new JSpinner.DateEditor(
+				ptimeSpinner, "yyyy/MM/dd"));
+		((JSpinner.DefaultEditor)ptimeSpinner.getEditor())
+			.getTextField().setText(b.getPublishTime());
+		
 		publishertf = new JTextField(b.getPublisher());
-		btimetf = new JTextField(b.getBuyTime().toString());
+		
+		btimeSpinner = new JSpinner(bdateModel);
+		btimeSpinner.setEditor(new JSpinner.DateEditor(
+				btimeSpinner, "yyyy/MM/dd"));
+		((JSpinner.DefaultEditor)btimeSpinner.getEditor())
+			.getTextField().setText(b.getBuyTime());
 		bowertf = new JTextField(b.getBorrower());
 		
 		setLayout(new GridLayout(5, 4));
 		add(ISBN);add(ISBNtf);add(style);add(styletf);
 		add(name);add(nametf);add(author);add(authortf);
 		add(price);add(pricetf);add(publisher);add(publishertf);
-		add(ptime);add(ptimetf);add(btime);add(btimetf);
+		add(ptime);add(ptimeSpinner);add(btime);add(btimeSpinner);
 		add(bower);add(bowertf);
 		
 		save = new JButton("Save");
@@ -79,12 +110,14 @@ public class BookInfoShower extends JPanel implements ActionListener
 		// TODO Auto-generated method stub
 		b.setAuthor(authortf.getText());
 		b.setBorrower(bowertf.getText());
-		b.setBuyTime(btimetf.getText());
+		b.setBuyTime(((JSpinner.DefaultEditor)btimeSpinner
+				.getEditor()).getTextField().getText());
 		b.setISBN(ISBNtf.getText());
 		b.setName(nametf.getText());
 		b.setPrice(Double.valueOf(pricetf.getText()));
 		b.setPublisher(publishertf.getText());
-		b.setPublishTime(ptimetf.getText());
+		b.setPublishTime(((JSpinner.DefaultEditor)ptimeSpinner
+				.getEditor()).getTextField().getText());
 		b.setStyle(styletf.getText());
 		
 		//update the table
@@ -104,8 +137,10 @@ public class BookInfoShower extends JPanel implements ActionListener
 	private JLabel ISBN, name, style, author, price, ptime, publisher
 			, btime, bower;
 	private JTextField  ISBNtf, nametf, styletf, authortf, pricetf, 
-			ptimetf, publishertf, btimetf, bowertf;
+			publishertf, bowertf;
 	private JButton save;
+	private JSpinner ptimeSpinner, btimeSpinner;
+	private SpinnerDateModel pdateModel, bdateModel;
 	private int tabIndex; // the index of the tab
 	private Event upb = new Event("BOOKLIST_UPDATEBOOK");
 	private Event uptn = new Event("JTABBEDPANE_UPDATETABNAME");

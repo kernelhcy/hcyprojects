@@ -158,7 +158,8 @@ public class BookList extends JPanel
 				ArrayList<Book> delBooks 
 					= new ArrayList<Book>();
 				for(int c : tb.getSelectedRows()){
-					delBooks.add(tm.getBook(c));
+					delBooks.add(tm.getBook(
+						tb.convertRowIndexToModel(c)));
 				}
 				for(Book b : delBooks){
 					tm.delBook(b);

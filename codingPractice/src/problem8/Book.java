@@ -1,8 +1,5 @@
 package problem8;
 
-import java.util.Calendar;
-import java.util.Date;
-
 /**
  * 图书的编号、书名、类型、作者、价格、出版目期、出版社、购入日期、借阅人
  * @author hcy
@@ -13,8 +10,8 @@ public class Book
 	
 	public Book() {
 		// TODO Auto-generated constructor stub
-		this("", "", "", "", 0.0, ""
-				, "", "", "");
+		this("", "", "", "", 0.0, "2010/10/1"
+				, "", "2010/10/1", "");
 	}
 	
 	public Book(String iSBN, String name, String style, String author,
