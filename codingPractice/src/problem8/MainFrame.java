@@ -6,9 +6,14 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JTabbedPane;
+import javax.swing.JTextField;
 import javax.swing.JToolBar;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
 import problem8.eventagent.Event;
 import problem8.eventagent.EventAgent;
@@ -122,12 +127,17 @@ public class MainFrame extends JFrame
 				Book b = new Book();
 				BookInfoShower bis = new BookInfoShower(b);
 				bl.addBook(b);
+				
 				jtp.add("New Book", bis);
 				jtp.setSelectedIndex(jtp.getTabCount() - 1);
 				bis.setIndex(jtp.getTabCount() -1);
+				
+				selRng.clearArg();
+				selRng.addArg(bl.getBookNum() - 1);
+				selRng.addArg(bl.getBookNum() - 1);
+				EventAgent.dispatchEvent(selRng);
 			}
 		});
-		
 		
 		delBtn.addActionListener(new ActionListener()
 		{
@@ -138,6 +148,51 @@ public class MainFrame extends JFrame
 				// TODO Auto-generated method stub
 				EventAgent.dispatchEvent(delSel);
 			}
+		});
+		
+		tb.add(searchLabel);
+		searchJf = new JTextField();
+		searchCb = new JComboBox();
+		searchCb.addItem("Style");
+		searchCb.addItem("Author");
+		searchCb.addItem("Publisher");
+		searchCb.addItem("Borrower");
+		searchCb.addItem("Name");
+		tb.add(searchCb);
+		tb.add(searchJf);
+		
+		searchJf.getDocument().addDocumentListener(new DocumentListener()
+		{
+			
+			@Override
+			public void removeUpdate(DocumentEvent e)
+			{
+				// TODO Auto-generated method stub
+				doAction();
+			}
+			
+			@Override
+			public void insertUpdate(DocumentEvent e)
+			{
+				// TODO Auto-generated method stub
+				doAction();
+			}
+			
+			@Override
+			public void changedUpdate(DocumentEvent e)
+			{
+				// TODO Auto-generated method stub
+				doAction();
+			}
+			
+			private void doAction(){
+				filter.clearArg();
+				filter.addArg(searchJf.getText());
+				filter.addArg(searchCb.getSelectedItem());
+				EventAgent.dispatchEvent(filter);
+			}
+			
+			private Event filter = new Event("BOOKLIST_ROWFILTER");
 		});
 		
 		getContentPane().add(tb, BorderLayout.NORTH);
@@ -158,7 +213,11 @@ public class MainFrame extends JFrame
 
 	private JTabbedPane jtp;
 	private JButton newBtn, delBtn;
+	private JLabel searchLabel = new JLabel("Search:");
+	private JTextField searchJf;
+	private JComboBox searchCb;
 	private BookList bl;
 	
 	private Event delSel = new Event("BOOKLIST_DELSELECTED");
+	private Event selRng = new Event("BOOKLIST_SELECTRANGE");
 }

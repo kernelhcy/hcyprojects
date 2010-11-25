@@ -5,18 +5,23 @@ import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
+import java.util.List;
+
 import javax.swing.AbstractCellEditor;
 import javax.swing.JButton;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
+import javax.swing.RowFilter;
+import javax.swing.RowSorter;
+import javax.swing.SortOrder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableCellEditor;
+import javax.swing.table.TableRowSorter;
 
 import problem8.eventagent.Event;
 import problem8.eventagent.EventAgent;
@@ -31,18 +36,92 @@ public class BookList extends JPanel
 {
 	public BookList() {
 		tm = new TableModel();
+		
 		tb = new JTable(tm);
 		tb.setColumnSelectionAllowed(false);
 		tb.setRowSelectionAllowed(true);
-		//tb.setCellSelectionEnabled(false);
+
 		tb.getSelectionModel()
 			.addListSelectionListener(new RowSelectionListener());
 		tb.setSelectionMode(ListSelectionModel
 				.MULTIPLE_INTERVAL_SELECTION);
 		tb.setFillsViewportHeight(true);
+		
+		//sort by price and publish time
+		sorter = new TableRowSorter<BookList.TableModel>(tm);
+		List<RowSorter.SortKey> sortkeys 
+			= new ArrayList<RowSorter.SortKey>();
+		//sort by price
+		sortkeys.add(new RowSorter.SortKey(4, SortOrder.ASCENDING));
+		//sort by publish time
+		sortkeys.add(new RowSorter.SortKey(5, SortOrder.ASCENDING));
+		sorter.setSortKeys(sortkeys);
+		
+		tb.setRowSorter(sorter);
+		
 		JScrollPane jsp = new JScrollPane(tb);
 		setLayout(new BorderLayout());
 		add(jsp, BorderLayout.CENTER);
+		
+		//BOOKLIST_ROWFILTER event
+		//arg[0] the regex string
+		//arg[1] the column name
+		EventAgent.registerEvent(new EventResponser()
+		{
+			
+			@Override
+			public String getName()
+			{
+				// TODO Auto-generated method stub
+				return "BOOKLIST_ROWFILTER";
+			}
+			
+			@Override
+			public void doAction(Object[] args, int argc)
+			{
+				// TODO Auto-generated method stub
+				if(argc < 2){
+					return;
+				}
+				RowFilter<TableModel, Object> mf = null;
+				String regex = (String)args[0];
+				if(regex == null || regex.length() == 0){
+					sorter.setRowFilter(null);
+					return;
+				}
+				String colname = (String)args[1];
+				mf = RowFilter.regexFilter(regex
+					, tm.getColumnNameIndex(colname));
+				sorter.setRowFilter(mf);
+			}
+		});
+		
+		//BOOKLIST_SELECTRANGE event
+		//select the rows in range[arg[0], arg[1]]
+		EventAgent.registerEvent(new EventResponser()
+		{
+			
+			@Override
+			public String getName()
+			{
+				// TODO Auto-generated method stub
+				return "BOOKLIST_SELECTRANGE";
+			}
+			
+			@Override
+			public void doAction(Object[] args, int argc)
+			{
+				// TODO Auto-generated method stub
+				if(argc < 2){
+					//we need two args.
+					return;
+				}
+				
+				tb.getSelectionModel().setSelectionInterval(
+						(Integer)args[0]
+						,(Integer)args[1]);
+			}
+		});
 		
 		//BOOKLIST_DELSELECTED event
 		//delete the selected rows
@@ -136,9 +215,15 @@ public class BookList extends JPanel
 		return tm.delBook(i);
 	}
 	
+	public int getBookNum()
+	{
+		return tb.getRowCount();
+	}
+	
 	private TableModel tm;
 	private JTable tb;
 	private BookList me = this;
+	private TableRowSorter<BookList.TableModel> sorter;
 	
 	private class RowSelectionListener implements ListSelectionListener
 	{
@@ -155,12 +240,21 @@ public class BookList extends JPanel
 			Book b;
 			BookInfoShower bis;
 			//show book info on the tabbedPanel
+			
 			for(int c: tb.getSelectedRows()){
-				b = tm.getBook(c);
+				//We need the index of the model,
+				//not the view index.
+				b = tm.getBook(
+					tb.convertRowIndexToModel(c));
 				bis = new BookInfoShower(b);
 				
 				addtab.clearArg();
-				addtab.addArg(b.getName());
+				if(b.getName() == null ||
+					b.getName().length() == 0){
+					addtab.addArg("New Book");
+				}else{
+					addtab.addArg(b.getName());
+				}
 				addtab.addArg(bis);
 				EventAgent.dispatchEvent(addtab);
 			}
@@ -223,6 +317,15 @@ public class BookList extends JPanel
 	 */
 	private static class TableModel extends AbstractTableModel
 	{
+		public int getColumnNameIndex(String name)
+		{
+			for(int i = 0; i < headerNames.length; ++i){
+				if(headerNames[i].compareTo(name) == 0){
+					return i;
+				}
+			}
+			return -1;
+		}
 		public Book getBook(int i)
 		{
 			return data.get(i);
@@ -306,6 +409,17 @@ public class BookList extends JPanel
 		public Object getValueAt(int rowIndex, int columnIndex)
 		{
 			// TODO Auto-generated method stub
+			if(columnIndex >= data.size()){
+				/*
+				 * We return the String's class.
+				 * At the start time, there is no data
+				 * in the table. The sortkey need the 
+				 * class of the table column data.
+				 * So we return the String's can prevent
+				 * NullPointer exception.
+				 */
+				return "".getClass();
+			}
 			Book b = data.get(rowIndex);
 			if (b == null) {
 				return null;
@@ -327,7 +441,11 @@ public class BookList extends JPanel
 
 		public Class getColumnClass(int c)
 		{
-			return getValueAt(0, c).getClass();
+			Object o = getValueAt(0, c);
+			if(o == null){
+				return null;
+			}
+			return o.getClass();
 		}
 
 		public boolean isCellEditable(int row, int col)
