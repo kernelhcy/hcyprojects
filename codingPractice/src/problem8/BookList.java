@@ -105,6 +105,8 @@ public class BookList extends JPanel
 					sorter.setRowFilter(null);
 					return;
 				}
+				
+				//We can not filter Chinese...
 				String colname = (String)args[1];
 				mf = RowFilter.regexFilter(regex
 					, tm.getColumnNameIndex(colname));
