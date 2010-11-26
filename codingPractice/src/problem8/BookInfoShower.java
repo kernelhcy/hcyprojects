@@ -66,7 +66,7 @@ public class BookInfoShower extends JPanel implements ActionListener
 		
 		ptimeSpinner = new JSpinner(pdateModel);
 		ptimeSpinner.setEditor(new JSpinner.DateEditor(
-				ptimeSpinner, "yyyy/MM/dd"));
+				ptimeSpinner, "yyyy/M/d"));
 		((JSpinner.DefaultEditor)ptimeSpinner.getEditor())
 			.getTextField().setText(b.getPublishTime());
 		
@@ -74,7 +74,7 @@ public class BookInfoShower extends JPanel implements ActionListener
 		
 		btimeSpinner = new JSpinner(bdateModel);
 		btimeSpinner.setEditor(new JSpinner.DateEditor(
-				btimeSpinner, "yyyy/MM/dd"));
+				btimeSpinner, "yyyy/M/d"));
 		((JSpinner.DefaultEditor)btimeSpinner.getEditor())
 			.getTextField().setText(b.getBuyTime());
 		bowertf = new JTextField(b.getBorrower());

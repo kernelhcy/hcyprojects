@@ -4,7 +4,11 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 
 import javax.swing.AbstractCellEditor;
@@ -57,7 +61,19 @@ public class BookList extends JPanel
 		sortkeys.add(new RowSorter.SortKey(5, SortOrder.ASCENDING));
 		sorter.setSortKeys(sortkeys);
 		
+		//set all columns' comparator to empty comparator
+		for(int i = 0; i < tb.getColumnCount(); ++i){
+			if(i == 4){
+				//we need sort by price
+				continue;
+			}
+			sorter.setComparator(i, ec);
+		}
+		//sort by publish time
+		sorter.setComparator(5, dsc);
+		
 		tb.setRowSorter(sorter);
+		
 		
 		JScrollPane jsp = new JScrollPane(tb);
 		setLayout(new BorderLayout());
@@ -225,6 +241,8 @@ public class BookList extends JPanel
 	private JTable tb;
 	private BookList me = this;
 	private TableRowSorter<BookList.TableModel> sorter;
+	private DateStringComparator dsc = new DateStringComparator();
+	private EmptyComparetor ec = new EmptyComparetor();
 	
 	private class RowSelectionListener implements ListSelectionListener
 	{
@@ -335,7 +353,6 @@ public class BookList extends JPanel
 		public void update(Book b)
 		{
 			int i = data.indexOf(b);
-			System.out.println("Update: " + i + b);
 			if(i >= 0){
 				fireTableRowsUpdated(i, i);
 			}
@@ -459,5 +476,58 @@ public class BookList extends JPanel
 				"Buy Time", "Borrower" };
 		private ArrayList<Book> data = new ArrayList<Book>();
 
+	}
+	
+	/**
+	 * The date is stored in String.
+	 * I need to compare two date string.
+	 * @author hcy
+	 *
+	 */
+	private class DateStringComparator implements Comparator<String>
+	{
+
+		@Override
+		public int compare(String o1, String o2)
+		{
+			// TODO Auto-generated method stub
+			if(o1 == null || o2 == null){
+				return 0;
+			}
+			
+			try {
+				Date d1 = sdf.parse(o1);
+				Date d2 = sdf.parse(o2);
+				return d1.compareTo(d2);
+			}
+			catch (ParseException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			return 0;
+		}
+		
+		private SimpleDateFormat sdf 
+			= new SimpleDateFormat("yyyy/M/d");
+	}
+	
+	/**
+	 * Just an empty comparator.
+	 * Always return 0.
+	 * I only need sort the table by price and publish time.
+	 * 
+	 * @author hcy
+	 *
+	 */
+	private class EmptyComparetor implements Comparator<Object>
+	{
+
+		@Override
+		public int compare(Object o1, Object o2)
+		{
+			// TODO Auto-generated method stub
+			return 0;
+		}
+		
 	}
 }
