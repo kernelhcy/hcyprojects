@@ -2,6 +2,7 @@ package problem9;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
@@ -21,28 +22,38 @@ public class Board extends JPanel
 	public Board() {
 		setPreferredSize(new Dimension(500, 550));
 		this.addMouseListener(new MyMouseListener());
-		
+		cnt = 0;
+		start = false;
 		calculateSize();
-		restart();
 	}
 
 	//restart game
 	public void restart()
 	{
+		stop();
+		
 		vx = vy = -1;
 		cnt = 0;
+		
 		for(int i = 0; i < 8; ++i){
 			for(int j = 0; j < 8; ++j){
 				board[i][j] = false;
 				color[i][j] = Color.BLACK;
 			}
 		}
-		TimerTask task = new TimerTask()
+		drawBuffer();
+		repaint();
+		
+		start = true;
+		startTime = Calendar.getInstance().getTime();
+		task = new TimerTask()
 		{
-			
 			@Override
 			public void run()
 			{
+				passedTime = Calendar.getInstance()
+					.getTime().getTime()
+					- startTime.getTime();
 				// TODO Auto-generated method stub
 				SwingUtilities.invokeLater(new Runnable()
 				{
@@ -52,16 +63,23 @@ public class Board extends JPanel
 					{
 						// TODO Auto-generated 
 						//method stub
-						Date now = Calendar
-							.getInstance()
-							.getTime();
-						System.out.println(now);
+						drawTime();
 					}
 				});
 			}
 		};
 		timer.schedule(task, Calendar.getInstance().getTime()
 				,  500);
+	}
+	
+	public void stop()
+	{
+		if(!start){
+			return;
+		}
+		task.cancel();
+		timer.purge(); //remove the task;
+		start = false;
 	}
 	
 	public void paint(Graphics g)
@@ -81,17 +99,33 @@ public class Board extends JPanel
 	 * @param c
 	 * @return
 	 */
-	public boolean getResult(int c)
+	public boolean getResult()
 	{
-		if(c == 8 && hasPut(c)){
+		stop();
+		return getResultHelp(0);
+	}
+	
+	private boolean getResultHelp(int c)
+	{
+		if(c == 8){
 			drawBuffer();
 			return true;
 		}
+		
+		if(hasPut(c)){
+			return getResultHelp(c + 1);
+		}
+		
 		for(int i = 0; i < 8; ++i){
 			if(check(c, i)){
 				board[c][i] = true;
-				getResult(++c);
+				//Must c + 1! Can not be ++c!
+				if(getResultHelp(c + 1)){
+					return true;
+				}
+				board[c][i] = false;
 			}
+			
 		}
 		return false;
 	}
@@ -117,7 +151,8 @@ public class Board extends JPanel
 		
 		Graphics2D g2d = (Graphics2D) buffer.getGraphics();
 		//clear
-		g2d.clearRect(0, 0, gridWidth, gridHeight);
+		g2d.clearRect(0, 0, gridWidth + margin
+				, gridHeight + margin);
 		
 		g2d.setColor(Color.BLACK);
 		for (int i = 0; i < 9; ++i) {
@@ -155,6 +190,28 @@ public class Board extends JPanel
 		g2d.setColor(color[x][y]);
 		g2d.fillOval(cx, cy, radius, radius);
 		g2d.setColor(oldc);
+	}
+	
+	private void drawTime()
+	{
+		int x = margin + gridw * 3;
+		int y = 3 * margin + gridh * 8;
+		
+		int m, s;
+		s = (int)passedTime / 1000;
+		m = s / 60;
+		s %= 60;
+		
+		Graphics2D g = (Graphics2D)buffer.getGraphics();
+		
+		g.clearRect(x, y - 2 *margin + 2, gridw * 3, gridh * 2);
+
+		g.setFont(new Font("Arial", Font.BOLD, 50));
+		g.drawString("" + m, x, y);
+		g.drawString(":", x + gridw, y);
+		g.drawString("" + s, x + 2 * gridw, y);		
+		repaint();
+		
 	}
 	
 	/**
@@ -234,13 +291,16 @@ public class Board extends JPanel
 	private int margin;
 	private int infoW;
 	private Image buffer = null;
-	private Date startTime, endTime;
+	private Date startTime;
+	private long passedTime; //passed milliseconds
 	
 	private boolean[][] board = new boolean[8][8];
 	private Color[][] color = new Color[8][8];
 	private int cnt;
+	private boolean start;
 	private int vx, vy;
 	private Timer timer = new Timer(true);
+	private TimerTask task = null;
 	
 	private Board me = this;
 
@@ -251,8 +311,15 @@ public class Board extends JPanel
 			if(e.getButton() != MouseEvent.BUTTON1){
 				return;
 			}
+			if(!start){
+				return;
+			}
+			
 			int x = (e.getX() - margin) / gridw;
 			int y = (e.getY() - margin) / gridh;
+			if(x >= 8 || y >= 8 || x < 0 || y < 0){
+				return;
+			}
 			
 			board[x][y] = !board[x][y];
 			
@@ -267,7 +334,22 @@ public class Board extends JPanel
 				color[vx][vy] = Color.BLACK;
 				board[x][y] = !board[x][y];
 			}
+			
+			if(board[x][y]){
+				++cnt;
+			}else{
+				--cnt;
+			}
 			drawBuffer();
+			if(cnt == 8){
+				stop();
+				JOptionPane.showMessageDialog(me
+					, "Congradulation"
+					, "You win!\n" + "Use time:"
+					+ passedTime / 60 + "m"
+					+ passedTime % 60 + "s"
+					, JOptionPane.INFORMATION_MESSAGE);				
+			}
 		}
 
 		public void mousePressed(MouseEvent e)

@@ -27,6 +27,8 @@ public class MainFrame extends JFrame
 		getContentPane().add(board, BorderLayout.CENTER);
 		
 		startBtn = new JButton("Start");
+		stopBtn = new JButton("Stop");
+		stopBtn.setEnabled(false);
 		restartBtn = new JButton("Restart");
 		reBtn = new JButton("Get a Result");
 		JPanel p = new JPanel();
@@ -34,6 +36,7 @@ public class MainFrame extends JFrame
 		fl.setAlignment(FlowLayout.CENTER);
 		p.setLayout(fl);
 		p.add(startBtn);
+		p.add(stopBtn);
 		p.add(restartBtn);
 		p.add(reBtn);
 		
@@ -44,18 +47,56 @@ public class MainFrame extends JFrame
 			public void actionPerformed(ActionEvent e)
 			{
 				// TODO Auto-generated method stub
-				if(!board.getResult(0)){
+				if(!board.getResult()){
 					JOptionPane.showMessageDialog(me
 						, "Can not put all queues");
 				}
+				startBtn.setEnabled(true);
+				stopBtn.setEnabled(false);
 			}
 		});
 		
+		startBtn.addActionListener(new ActionListener()
+		{
+			
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				// TODO Auto-generated method stub
+				board.restart();
+				startBtn.setEnabled(false);
+				stopBtn.setEnabled(true);
+			}
+		});
+		restartBtn.addActionListener(new ActionListener()
+		{
+			
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				// TODO Auto-generated method stub
+				board.restart();
+				startBtn.setEnabled(false);
+				stopBtn.setEnabled(true);
+			}
+		});
+		stopBtn.addActionListener(new ActionListener()
+		{
+			
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				// TODO Auto-generated method stub
+				board.stop();
+				startBtn.setEnabled(true);
+				stopBtn.setEnabled(false);
+			}
+		});
 		getContentPane().add(p
 				, BorderLayout.SOUTH);
 	}
 	
-	private JButton reBtn, restartBtn, startBtn;
+	private JButton reBtn, restartBtn, startBtn, stopBtn;
 	private Board board;
 	private MainFrame me = this;
 }
