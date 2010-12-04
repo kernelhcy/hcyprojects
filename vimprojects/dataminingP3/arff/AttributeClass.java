@@ -27,6 +27,30 @@ public class AttributeClass
 	}
 	
 	/**
+	 * 获取类别值对应的标号。
+	 */
+	public int getCateIndex(String cate)
+	{
+		for(int i = 0; i < cates.size(); ++i){
+			if(cate.compareTo(cates.get(i)) == 0){
+				return i;
+			}
+		}
+		return -1;
+	}
+	
+	/*
+	 * 返回分类值对应的名称。
+	 */
+	public String getCate(int index)
+	{
+		if(index == -1){
+			return "?"; //值缺失
+		}
+		return cates.get(index);
+	}
+	
+	/**
 	 * 判断属性中是否包含有这个类别。
 	 */
 	public boolean hasCate(String cate)

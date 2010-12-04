@@ -38,7 +38,7 @@ public class ARFFParser
 			br = new BufferedReader(fr);
 			tmp = br.readLine();
 			while(tmp != null){
-				System.out.printf("%s\n", tmp);
+				//System.out.printf("%s\n", tmp);
 				parserLine(tmp);
 				tmp = br.readLine();
 			}
@@ -195,7 +195,7 @@ public class ARFFParser
 				nData = Integer.valueOf(data);
 				attr = new Attribute(ac, nData);
 			}else{
-				attr = new Attribute(ac, data);
+				attr = new Attribute(ac, ac.getCateIndex(data));
 			}
 			
 			item.addAttr(attr);
