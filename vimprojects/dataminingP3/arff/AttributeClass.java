@@ -62,6 +62,14 @@ public class AttributeClass
 		return cates.contains(cate);
 	}
 	
+	/*
+	 * 返回分类属性中属性值的个数。
+	 */
+	public int getCateNum()
+	{
+		return cates.size();
+	}
+	
 	public String toString()
 	{
 		StringBuffer sb = new StringBuffer("@Attribute ");

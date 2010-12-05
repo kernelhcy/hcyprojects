@@ -10,7 +10,7 @@ public class Main
 				, arff.aclasses.size()
 				, arff.items.size());
 		
-		KMeans km = new KMeans(arff, 3);
+		KMeans km = new KMeans(arff, 2);
 		km.run();
 		return;	
 	}

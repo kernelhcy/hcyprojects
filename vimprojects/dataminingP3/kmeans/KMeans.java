@@ -13,19 +13,16 @@ public class KMeans
 	{
 		data = d;
 		this.k = k;
-		kcenters = new int[k];
-		kgroups = new ArrayList<ArrayList<Integer>>();
+		kcenters = new Item[k];
+		kgroups = new ArrayList<ArrayList<Item>>();
 		for(int i = 0; i < k; ++i){
-			kgroups.add(new ArrayList<Integer>());
+			kgroups.add(new ArrayList<Item>());
 		}
 		size = d.items.size();
-		diff = new double[size][size];
-		for(int i = 0; i < size; ++i){
-			for(int j = 0; j < size; ++j){
-				diff[i][j] = -1.0;
-			}
-		}
+		
 		E = Double.MAX_VALUE;
+		numAttrs = d.items.get(1).attrs.size(); //属性的个数。
+		maxMin = new int[2][numAttrs];
 	}
 	
 	/**
@@ -33,13 +30,57 @@ public class KMeans
 	 */
 	public void run()
 	{
-		System.out.printf("init : Select %d centers\n", k);
+		System.out.printf("init...\n");
+		init();
+		
+		System.out.printf("Select %d centers\n", k);
 		randomSelectKCenters();
 		
-		selectGroup();
+		int cnt = 1;		
+		double olde;
+		do{
+			System.out.printf("%d:\n", cnt++);
+			selectGroup();
+			olde = E;
+			E = calculateE();
+			System.out.printf("E : %f\n", E);
+			for(int i = 0; i < k; ++i){
+				kcenters[i] = getMean(i);
+				System.out.printf("Center %d %s\n"
+						, i, kcenters[i]);	
+			}
+		}while(E < olde);
 		
-		double e = calculateE();
-		System.out.printf("E : %f\n", e);
+	}
+	
+	/*
+	 * 初始化。
+	 * 计算各个数值属性的最大值和最小值。
+	 */
+	private void init()
+	{
+		for(int i = 0; i < numAttrs; ++i){
+			maxMin[0][i] = Integer.MIN_VALUE; 	//最大值
+			maxMin[1][i] = Integer.MAX_VALUE;	//最小值
+		}
+	
+		Attribute a;
+		Item item;
+		for(int i = 0; i < size; ++i){
+			item = data.items.get(i);
+			for(int j = 0; j < numAttrs; ++j){
+				a = item.attrs.get(j);
+				if(a.aclass.type == AttributeType.NUME){
+					if(a.val > maxMin[0][j]){
+						maxMin[0][j] = a.val;
+					}
+					if(a.val < maxMin[1][j]){
+						maxMin[1][j] = a.val;
+					}
+				}
+			}
+			
+		}
 	}
 	
 	/**
@@ -55,16 +96,23 @@ public class KMeans
 		int nearestGI = 0; 	//最近的组的索引。
 		double nearest = Double.MAX_VALUE;
 		double tmp;
+		Item item;
 		
 		for(int i = 0; i < size; ++i){
+			item = data.items.get(i);
 			for(int j = 0; j < k; ++j){
-				tmp = itemDiff(i, kcenters[j]);
+				tmp = itemDiff(item, kcenters[j]);
 				if(tmp < nearest){
 					nearest = tmp;
 					nearestGI = j;
 				}
 			}
-			kgroups.get(nearestGI).add(i);
+			kgroups.get(nearestGI).add(item);
+		}
+
+		//将中心点加入组中。
+		for(int i = 0; i < k; ++i){
+			kgroups.get(i).add(kcenters[i]);
 		}
 		
 		System.out.printf("Grouping done!\n");
@@ -81,7 +129,7 @@ public class KMeans
 	{
 		double e = 0.0, tmp;
 		int size;
-		ArrayList<Integer> g;
+		ArrayList<Item> g;
 		
 		for(int i = 0; i < k; ++i){
 			g = kgroups.get(i);
@@ -103,43 +151,32 @@ public class KMeans
 		int per = size / k;
 		Random r = new Random();
 		int rand, index;
-		
 		for(int i = 0; i < k; ++i){
 			rand = r.nextInt(per);
 			index = per * i + rand;
-			kcenters[i] = index;
-			System.out.printf("Center %d: %s\n", index
-					, data.items.get(index));
+			kcenters[i] = data.items.get(i);
+			System.out.printf("Center %d: %s\n", i
+					, data.items.get(i));
 		}
 	}	
 
 	/**
 	 * 计算第i个数据项和第j个数据项的相异度。
 	 */
-	private double itemDiff(int i, int j)
+	private double itemDiff(Item i1, Item i2)
 	{
-		if(i < 0 || j < 0){
+		if(i1 == null || i2 == null){
 			return -1;
-		}
-		
-		//查看是否已经计算过了。
-		if(diff[i][j] + 1 > 0.000001){
-			return diff[i][j];
 		}
 		
 		double dis = 0.0, qf, df;
 		double up = 0.0, down = 0.0; 	//分别表示d(i,j)的分子和分母。
-		int[] maxMin = new int[2];
 		
 		Attribute t1, t2;
-		Item i1, i2;
-		i1 = data.items.get(i);
-		i2 = data.items.get(j);
-		int size = i1.attrs.size();
-		
+
 		int tmp1, tmp2, mmdiff;
 		
-		for(int ii = 0; ii < size; ++ii){
+		for(int ii = 0; ii < numAttrs; ++ii){
 			t1 = i1.attrs.get(ii);
 			t2 = i2.attrs.get(ii);
 			if(t1.aclass != t2.aclass){
@@ -147,13 +184,9 @@ public class KMeans
 					+ " attribute.");
 				return -1.0;
 			}
-			
-			//System.out.printf("Attr %d, type %s, name %s\n", ii
-			//			, t1.aclass.type
-			//			, t1.aclass.name);
 						
 			if(t1.aclass.type == AttributeType.NUME){
-				mmdiff = getMaxAndMinDiff(ii);
+				mmdiff = maxMin[0][ii] - maxMin[1][ii];
 				tmp1 = ((Integer)t1.val).intValue();
 				tmp2 = ((Integer)t2.val).intValue();
 				if(tmp1 == 0 && tmp2 == 0){
@@ -165,9 +198,6 @@ public class KMeans
 						/ (double)mmdiff;
 				up += ((double)qf * df);
 				down += qf;
-				//System.out.printf("\tMMDiff %d,val1 %d,val2 %d"
-				//	+ ", qf %f, df %f,  up %f, down %f\n"
-				//	, mmdiff, tmp1, tmp2, qf, df, up, down);
 			}else if(t1.aclass.type == AttributeType.CATE){
 				qf = 1.0;
 				if(t1.equals(t2)){
@@ -182,50 +212,80 @@ public class KMeans
 				}
 				
 				up += (qf * df);
-				down += qf;
-				//System.out.printf("\tval1 %s, val2 %s, df %f"
-				//		+ ", qf %f, up %f, down %f\n"
-				//		, t1.val, t2.val, df, qf, up
-				//		, down);
+				down += qf;;
 			}
 		}
-		diff[i][j] = up /down;
 		return up / down;
 	}
 
-	
 	/*
-	 * 计算第i个属性的最大和最小值之差
+	 * 计算第k个簇的均值点。
+	 * 对于数值类型的属性，取其均值。
+	 * 对于分类类型的属性，取最多的那个值。
 	 */
-	private int getMaxAndMinDiff(int i)
+	private Item getMean(int k)
 	{
-		if(i < 0){
-			return -1;
-		}
-		int size = data.items.size();
-		int max = Integer.MIN_VALUE;
-		int min = Integer.MAX_VALUE;
-		int tmp;
-		for(int ii = 0; ii < size; ++ii){
-			tmp = ((Integer)data.items.get(ii)
-					.attrs.get(i).val).intValue();
-			if(tmp > max){
-				max = tmp;
-			}
-			if(tmp < min){
-				min = tmp;
+		Item item;
+		Attribute a;
+		ArrayList<Item> group = kgroups.get(k);
+		int gsize = group.size();
+		
+		int sum, cnt; 	//用于求和和计数。
+		int[] indexCnt;	//记录分类属性各个值的个数。
+		
+		int[] attrs = new int[numAttrs];
+		
+		for(int i = 0; i < numAttrs; ++i){
+			a = group.get(0).attrs.get(i);
+			sum = 0;
+			cnt = 0;
+			if(a.aclass.type == AttributeType.NUME){
+				for(int j = 0; j < gsize; ++j){
+					item = group.get(j);
+					a = item.attrs.get(i);
+					sum += a.val;
+					++cnt;
+				}
+				attrs[i] = (sum / cnt);
+			}else if(a.aclass.type == AttributeType.CATE){
+				indexCnt = new int[a.aclass.getCateNum()];
+				for(int j = 0; j < gsize; ++j){
+					item = group.get(j);
+					a = item.attrs.get(i);
+					if(a.val != -1){
+						++indexCnt[a.val];
+					}
+				}
+				int max = -1, maxIndex = -1;
+				for(int j = 0; j < indexCnt.length; ++j){
+					if(max < indexCnt[j]){
+						max = indexCnt[j];
+						maxIndex = j;
+					}
+				}
+				attrs[i] = maxIndex;
+			}else{
+				attrs[i] = 0;
 			}
 		}
 		
-		return max - min;
+		//生成一个Item实例，表示均值点。
+		Item c = new Item();
+		item = data.items.get(1); 	//模板
+		for(int i = 0; i < attrs.length; ++i){
+			a = new Attribute(item.attrs.get(i).aclass, attrs[i]);
+			c.addAttr(a);
+		}
+		
+		return c;
 	}
-	
 
 	private Arff data;
 	private int k;				//分组个数。
-	private int[] kcenters; 		//k个中心的索引位置。
-	private ArrayList<ArrayList<Integer>> kgroups;//k个组。存储下标。
+	private Item[] kcenters; 		//k个中心的索引位置。
+	private ArrayList<ArrayList<Item>> kgroups;//k个组。存储下标。
 	private int size; 			//数据量
-	private double[][] diff; 		//相异度矩阵。
+	private int[][] maxMin; 		//保存各个属性的最大值和最小值
+	private int numAttrs;			//属性的个数。
 	private double E; 			//平方误差。
 }
