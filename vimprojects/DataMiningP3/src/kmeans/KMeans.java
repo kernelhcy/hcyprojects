@@ -85,10 +85,10 @@ public class KMeans
 		System.out.printf("\nE: \n\t%f\n", E);
 		System.out.printf("\nClustered Instances:\n\n");
 		for(int i = 0, s; i < k; ++i){
-			s = kgroups.get(i).size();
-			System.out.printf("\t%d\t%d\t(%d%%)\n"
+			s = kgroups.get(i).size() - 1;
+			System.out.printf("\t%d\t%d\t(%.0f%%)\n"
 					,i, s
-					, (int)((float)s/(float)size * 100));
+					, ((float)s/(float)size * 100));
 		}
 		
 		result = new String(baos.toByteArray());
