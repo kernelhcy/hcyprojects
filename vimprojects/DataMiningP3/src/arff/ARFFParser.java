@@ -88,6 +88,7 @@ public class ARFFParser
 		}
 		//第一行的没用。
 		if(line.startsWith("@relation")){
+			arff.relation = line.substring(10, line.length() - 1);
 			return true;
 		}
 		//此行包含属性信息。

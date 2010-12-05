@@ -9,6 +9,7 @@ public class Arff
 {
 	public ArrayList<AttributeClass> aclasses; 	//数据的类别和取值范围
 	public ArrayList<Item>  items;			//所有的数据项。
+	public String relation;
 	
 	public Arff()
 	{

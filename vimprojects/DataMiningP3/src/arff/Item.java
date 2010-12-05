@@ -43,7 +43,7 @@ public class Item
 	
 	public String toString()
 	{
-		StringBuffer sb = new StringBuffer("DATA: ");
+		StringBuffer sb = new StringBuffer();
 		for(Attribute a : attrs){
 			sb.append(a.toString());
 			sb.append(",");

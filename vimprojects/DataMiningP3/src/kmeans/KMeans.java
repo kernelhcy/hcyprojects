@@ -3,7 +3,7 @@ package kmeans;
 import arff.*;
 import java.util.Random;
 import java.util.ArrayList;
-
+import java.io.*;
 /**
  * KMeans 算法实现
  */
@@ -21,36 +21,87 @@ public class KMeans
 		size = d.items.size();
 		
 		E = Double.MAX_VALUE;
-		numAttrs = d.items.get(1).attrs.size(); //属性的个数。
+		numAttrs = d.items.get(0).attrs.size(); //属性的个数。
 		maxMin = new int[2][numAttrs];
 	}
 	
 	/**
 	 * 进行聚类
 	 */
-	public void run()
+	public void run() throws IOException
 	{
-		System.out.printf("init...\n");
+		ByteArrayOutputStream baos = new ByteArrayOutputStream(500);
+		PrintStream ps = new PrintStream(baos, true);
+		PrintStream oldps = System.out;
+		System.setOut(ps);
+	
+		System.out.printf("=== Run information ===\n\n");
+		System.out.printf("Scheme:\t\tKMeans -k %d\n", k);
+		System.out.printf("Relation:\t%s\n", data.relation);
+		System.out.printf("Instances:\t%d\n", data.items.size());
+		System.out.printf("Attributes:\t%d\n", numAttrs);
+		AttributeClass ac;
+		for(int i = 0; i < numAttrs; ++i){
+			ac = data.items.get(0).attrs.get(i).aclass;
+			//%-30s靠右对其，最少写30个字符。
+			System.out.printf("\t\t%-30s%s\n"
+					, ac.name, ac.type.getName());
+		}
+		
 		init();
 		
-		System.out.printf("Select %d centers\n", k);
 		randomSelectKCenters();
 		
 		int cnt = 1;		
 		double olde;
+		ArrayList<ArrayList<Item>> oldgroups;
 		do{
-			System.out.printf("%d:\n", cnt++);
+			++cnt;
+			oldgroups = kgroups;
+			kgroups = new ArrayList<ArrayList<Item>>();
+			for(int i = 0; i < k; ++i){
+				kgroups.add(new ArrayList<Item>());
+			}
+			
 			selectGroup();
 			olde = E;
 			E = calculateE();
-			System.out.printf("E : %f\n", E);
 			for(int i = 0; i < k; ++i){
 				kcenters[i] = getMean(i);
-				System.out.printf("Center %d %s\n"
-						, i, kcenters[i]);	
 			}
 		}while(E < olde);
+		kgroups = oldgroups;
+		System.out.printf("KMeans\n=====\n\n" 
+				+ "Number of iterations: %d\n\n"
+				, --cnt);
+		System.out.printf("Cluster centroids:\n\n");
+		for(int i = 0; i < k; ++i){
+			System.out.printf("Cluster %d:\n"
+					+ "\tInstances %d\n"
+					+ "\tMean: %s\n"
+					, i, kgroups.get(i).size()
+					, kcenters[i]);
+		}
+		System.out.printf("\nE: \n\t%f\n", E);
+		System.out.printf("\nClustered Instances:\n\n");
+		for(int i = 0, s; i < k; ++i){
+			s = kgroups.get(i).size();
+			System.out.printf("\t%d\t%d\t(%d%%)\n"
+					,i, s
+					, (int)((float)s/(float)size * 100));
+		}
 		
+		result = new String(baos.toByteArray());
+		baos.close();
+		ps.close();
+		
+		System.setOut(oldps);
+		System.out.println(result);		
+	}
+	
+	public String getResult()
+	{
+		return result;
 	}
 	
 	/*
@@ -108,17 +159,13 @@ public class KMeans
 				}
 			}
 			kgroups.get(nearestGI).add(item);
+			nearest = Double.MAX_VALUE;
+			nearestGI = 0;
 		}
 
 		//将中心点加入组中。
 		for(int i = 0; i < k; ++i){
 			kgroups.get(i).add(kcenters[i]);
-		}
-		
-		System.out.printf("Grouping done!\n");
-		for(int i = 0; i < k; ++i){
-			System.out.printf("Group %d has %d items\n"
-					,i ,kgroups.get(i).size());
 		}
 	}
 	
@@ -149,14 +196,12 @@ public class KMeans
 	private void randomSelectKCenters()
 	{
 		int per = size / k;
-		Random r = new Random();
+		Random r = new Random(100); //设置seed。
 		int rand, index;
 		for(int i = 0; i < k; ++i){
 			rand = r.nextInt(per);
 			index = per * i + rand;
-			kcenters[i] = data.items.get(i);
-			System.out.printf("Center %d: %s\n", i
-					, data.items.get(i));
+			kcenters[i] = data.items.get(index);
 		}
 	}	
 
@@ -288,4 +333,5 @@ public class KMeans
 	private int[][] maxMin; 		//保存各个属性的最大值和最小值
 	private int numAttrs;			//属性的个数。
 	private double E; 			//平方误差。
+	private String result;			//输出的结果。
 }
