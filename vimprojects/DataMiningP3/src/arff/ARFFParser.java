@@ -4,7 +4,6 @@
  */
 package arff;
 
-import java.util.ArrayList;
 import java.io.*;
 
 /**
@@ -183,12 +182,7 @@ public class ARFFParser
 			si = index;
 			while(index < line.length()
 				&& line.charAt(index) != ',') 
-				++index;
-				
-			//忽略换行符。
-			if(index == line.length()){
-				index -= 2;
-			}	
+				++index;	
 			
 			data = line.substring(si, index);
 

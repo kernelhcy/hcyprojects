@@ -70,9 +70,10 @@ public class AttributeClass
 		return cates.size();
 	}
 	
+	@Override
 	public String toString()
 	{
-		StringBuffer sb = new StringBuffer("@Attribute ");
+		StringBuilder sb = new StringBuilder("@Attribute ");
 		sb.append(name);
 		if(type == AttributeType.NUME){
 			sb.append(" numeric\n");

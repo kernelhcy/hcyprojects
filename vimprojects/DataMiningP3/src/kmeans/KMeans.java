@@ -71,6 +71,12 @@ public class KMeans
 			}
 		}while(E < olde);
 		kgroups = oldgroups;
+		//remove the last center.
+		for(ArrayList<Item> g : kgroups){
+			g.remove(g.size() - 1);
+		}
+
+
 		System.out.printf("KMeans\n=====\n\n" 
 				+ "Number of iterations: %d\n\n"
 				, --cnt);
@@ -85,12 +91,17 @@ public class KMeans
 		System.out.printf("\nE: \n\t%f\n", E);
 		System.out.printf("\nClustered Instances:\n\n");
 		for(int i = 0, s; i < k; ++i){
-			s = kgroups.get(i).size() - 1;
+			s = kgroups.get(i).size();
 			System.out.printf("\t%d\t%d\t(%.0f%%)\n"
 					,i, s
 					, ((float)s/(float)size * 100));
 		}
 		
+		showGroupCnt(data.items.get(0).attrs.size() - 1);
+		
+		System.out.printf("\nEntropy:\n\n\t%s\n"
+			, entropy(data.items.get(0).attrs.size() - 1));
+
 		result = new String(baos.toByteArray());
 		baos.close();
 		ps.close();
@@ -103,7 +114,41 @@ public class KMeans
 	{
 		return result;
 	}
-	
+
+	private void showGroupCnt(int attrIndex)
+	{
+		int cateNum = data.aclasses.get(attrIndex).getCateNum();
+		int[][] gcnt = new int[k][cateNum];
+		int gindex = 0;
+		Attribute a;
+		for(ArrayList<Item> g : kgroups){
+			for(Item item : g){
+				a = item.attrs.get(attrIndex);
+				for(int i = 0; i < cateNum; ++i){
+					if(a.val == i){
+						++gcnt[gindex][i];
+					}
+				}
+			}
+			++gindex;
+		}
+		System.out.printf("\n\nCluster Result according to %s\n"
+				, data.aclasses.get(attrIndex));
+		System.out.printf("\tCluster\t");
+		for(int i = 0; i < cateNum; ++i){
+			System.out.printf("\t%s"
+				, data.aclasses.get(attrIndex).getCate(i));
+		}
+		System.out.println();
+		for(int i = 0; i < k; ++i){
+			System.out.printf("\t%d\t", i);
+			for(int j = 0; j < cateNum; ++j){
+				System.out.printf("\t%d", gcnt[i][j]);
+			}
+			System.out.println();
+		}
+	}
+
 	/*
 	 * 初始化。
 	 * 计算各个数值属性的最大值和最小值。
@@ -167,6 +212,7 @@ public class KMeans
 		for(int i = 0; i < k; ++i){
 			kgroups.get(i).add(kcenters[i]);
 		}
+
 	}
 	
 	/*
@@ -175,13 +221,12 @@ public class KMeans
 	private double calculateE()
 	{
 		double e = 0.0, tmp;
-		int size;
 		ArrayList<Item> g;
-		
+		int s;
 		for(int i = 0; i < k; ++i){
 			g = kgroups.get(i);
-			size = g.size();
-			for(int j = 0; j < size; ++j){
+			s = g.size();
+			for(int j = 0; j < s; ++j){
 				tmp = itemDiff(kcenters[i], g.get(j));
 				e += (tmp * tmp);
 			}
@@ -257,7 +302,7 @@ public class KMeans
 				}
 				
 				up += (qf * df);
-				down += qf;;
+				down += qf;
 			}
 		}
 		return up / down;
@@ -325,6 +370,45 @@ public class KMeans
 		return c;
 	}
 
+	private double entropy(int attrIndex)
+	{
+		double en = 0.0, enTotal = 0.0;
+		double pr;
+		if(data.aclasses.get(attrIndex).type != AttributeType.CATE){
+			System.err.println("Please select an cate attribute.");
+			return 0.0;
+		}
+		int cateSize = data.aclasses.get(attrIndex).getCateNum();
+		for(ArrayList<Item> g : kgroups){
+			en = 0.0;
+			for(int i = 0; i < cateSize; ++i){
+				pr = proportion(attrIndex, i, g);
+				en += (pr * (Math.log(pr) / Math.log(2)));
+			}
+			en = -en;
+			enTotal += ((double)g.size() / (double)data.items.size()
+					* en );
+		}
+		return enTotal;
+	}
+
+	private double proportion(int attrIndex, int classVal
+				, ArrayList<Item> g)
+	{
+		double pr = 0.0;
+		int cjSize = g.size();
+		int ciCnt = 0;
+		Attribute a;
+		for(Item item : g){
+			a = item.attrs.get(attrIndex);
+			if(a.val == classVal){
+				++ciCnt;
+			}
+		}
+		pr = (double)ciCnt / (double)cjSize;
+		return pr;
+	}
+
 	private Arff data;
 	private int k;				//分组个数。
 	private Item[] kcenters; 		//k个中心的索引位置。
@@ -334,4 +418,5 @@ public class KMeans
 	private int numAttrs;			//属性的个数。
 	private double E; 			//平方误差。
 	private String result;			//输出的结果。
+	private int[][] groupCnt;
 }

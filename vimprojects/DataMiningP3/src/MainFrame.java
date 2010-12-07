@@ -35,6 +35,7 @@ public class MainFrame extends JFrame
 		add(p1, BorderLayout.NORTH);
 
 		resultArea = new JTextArea();
+		resultArea.setTabSize(8);
 		resultArea.setFont(new Font("Courier New", Font.PLAIN, 15));
 		JScrollPane jsp = new JScrollPane(resultArea);
 		jsp.setHorizontalScrollBarPolicy(
@@ -101,6 +102,8 @@ public class MainFrame extends JFrame
 		private void selectFile()
 		{
 			JFileChooser jfc = new JFileChooser();
+			jfc.setCurrentDirectory(new File("/home/hcy/Desktop/"
+				+ "homeworks/DataMining/project3/data/"));
 			jfc.setFileSelectionMode(JFileChooser.FILES_ONLY);
 			jfc.addChoosableFileFilter(new ArffFileFilter());
 			int rv = jfc.showOpenDialog(me);
