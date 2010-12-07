@@ -30,11 +30,11 @@ public class Item
 	/**
 	 * 获得记录对应的属性的值
 	 */
-	public Object getAttr(AttributeClass c)
+	public Attribute getAttr(AttributeClass c)
 	{
 		for(Attribute a : attrs){
 			if(a.aclass.type == c.type){
-				return a.val;
+				return a;
 			}
 		}
 		
