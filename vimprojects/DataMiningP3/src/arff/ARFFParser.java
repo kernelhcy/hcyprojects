@@ -1,5 +1,5 @@
 /**
- * arffæ–‡ä»¶è§£æå™¨ã€‚
+ * arffÎÄ¼ş½âÎöÆ÷¡£
  *
  */
 package arff;
@@ -7,8 +7,8 @@ package arff;
 import java.io.*;
 
 /**
- * ç”¨äºè§£æArffæ–‡ä»¶ã€‚
- * ä¸æ˜¯çº¿ç¨‹å®‰å…¨çš„ï¼
+ * ÓÃÓÚ½âÎöArffÎÄ¼ş¡£
+ * ²»ÊÇÏß³Ì°²È«µÄ£¡
  */
 public class ARFFParser
 {
@@ -17,7 +17,7 @@ public class ARFFParser
 	}
 	
 	/**
-	 * è¿”å›få¯¹åº”çš„arffæ–‡ä»¶å¯¹åº”çš„Arffå¯¹è±¡ã€‚
+	 * ·µ»Øf¶ÔÓ¦µÄarffÎÄ¼ş¶ÔÓ¦µÄArff¶ÔÏó¡£
 	 */
 	public static Arff parse(File f)
 	{
@@ -56,8 +56,8 @@ public class ARFFParser
 	}
 	
 	/**
-	 * æ ¹æ®æ–‡ä»¶åfileNameï¼Œè§£æä¸€ä¸ªarffæ–‡ä»¶
-	 * è¿”å›æ–‡ä»¶å¯¹åº”çš„Arffå¯¹è±¡ã€‚
+	 * ¸ù¾İÎÄ¼şÃûfileName£¬½âÎöÒ»¸öarffÎÄ¼ş
+	 * ·µ»ØÎÄ¼ş¶ÔÓ¦µÄArff¶ÔÏó¡£
 	 */
 	public static Arff parse(String fileName)
 	{
@@ -78,25 +78,25 @@ public class ARFFParser
 	}
 	
 	/**
-	 * è§£ææ–‡ä»¶ä¸­çš„ä¸€è¡Œã€‚å‡ºé”™å°±è¿”å›falseã€‚
+	 * ½âÎöÎÄ¼şÖĞµÄÒ»ĞĞ¡£³ö´í¾Í·µ»Øfalse¡£
 	 */
 	private static boolean parserLine(String line)
 	{
 		if(line == null){
 			return true;
 		}
-		//ç¬¬ä¸€è¡Œçš„æ²¡ç”¨ã€‚
+		//µÚÒ»ĞĞµÄÃ»ÓÃ¡£
 		if(line.startsWith("@relation")){
 			arff.relation = line.substring(10, line.length() - 1);
 			return true;
 		}
-		//æ­¤è¡ŒåŒ…å«å±æ€§ä¿¡æ¯ã€‚
+		//´ËĞĞ°üº¬ÊôĞÔĞÅÏ¢¡£
 		if(line.startsWith("@attribute")){
 			stage = 3;
 			parserAttribute(line);
 		}
 		
-		//æ­¤è¡Œæ˜¯æ•°æ®
+		//´ËĞĞÊÇÊı¾İ
 		if(line.startsWith("@data")){
 			stage = 4;
 			return true;
@@ -108,7 +108,7 @@ public class ARFFParser
 	}
 	
 	/**
-	 * è§£æå±æ€§è¡Œ
+	 * ½âÎöÊôĞÔĞĞ
 	 */
 	private static boolean parserAttribute(String line)
 	{
@@ -118,24 +118,24 @@ public class ARFFParser
 			return true;
 		}
 		
-		int index = 0; //å­—ç¬¦ä¸²çš„å½“å‰ä½ç½®ã€‚
-		//è·³è¿‡"@attribute"
+		int index = 0; //×Ö·û´®µÄµ±Ç°Î»ÖÃ¡£
+		//Ìø¹ı"@attribute"
 		index += "@attribute".length();
 		
-		//è·³è¿‡ç©ºç™½ã€‚
+		//Ìø¹ı¿Õ°×¡£
 		while(Character.isWhitespace(line.charAt(index))) ++index;
 		
-		//é‡åˆ°äº†å±æ€§çš„åå­—
+		//Óöµ½ÁËÊôĞÔµÄÃû×Ö
 		String name;
-		int nameStart = index; //åå­—å¼€å§‹çš„ä½ç½®ã€‚
+		int nameStart = index; //Ãû×Ö¿ªÊ¼µÄÎ»ÖÃ¡£
 		while(!Character.isWhitespace(line.charAt(index))) ++index;
-		//æ­¤æ—¶indexç›´å‘å±æ€§åå­—åé¢çš„ç©ºæ ¼ã€‚
+		//´ËÊ±indexÖ±ÏòÊôĞÔÃû×ÖºóÃæµÄ¿Õ¸ñ¡£
 		name = line.substring(nameStart, index);
 		
-		//ä¸‹é¢è§£æå±æ€§å€¼ã€‚
-		//è·³è¿‡ç©ºç™½ã€‚
+		//ÏÂÃæ½âÎöÊôĞÔÖµ¡£
+		//Ìø¹ı¿Õ°×¡£
 		while(Character.isWhitespace(line.charAt(index))) ++index;
-		if(line.charAt(index) == '{'){	//æ˜¯categoricalç±»å‹å±æ€§
+		if(line.charAt(index) == '{'){	//ÊÇcategoricalÀàĞÍÊôĞÔ
 			//@attribute sex {Female,Male}
 			AttributeClass ac = new AttributeClass(
 						AttributeType.CATE, name);
@@ -153,7 +153,7 @@ public class ARFFParser
 				ac.addCate(cateName);
 			}
 			arff.addAttrClass(ac);	
-		}else{ //æ˜¯numericç±»å‹å±æ€§
+		}else{ //ÊÇnumericÀàĞÍÊôĞÔ
 			arff.addAttrClass(
 				new AttributeClass(AttributeType.NUME, name));
 		}
@@ -162,7 +162,7 @@ public class ARFFParser
 	}
 	
 	/**
-	 * è§£ææ•°æ®è¡Œ
+	 * ½âÎöÊı¾İĞĞ
 	 */
 	private static boolean parserDate(String line)
 	{
@@ -176,7 +176,7 @@ public class ARFFParser
 		String data;
 		int nData;
 		/*
-		 * æ ¹æ®è§£æå‡ºæ¥çš„å±æ€§çš„ä¸ªæ•°å’Œç±»åˆ«ï¼Œè§£ææ•°æ®ã€‚
+		 * ¸ù¾İ½âÎö³öÀ´µÄÊôĞÔµÄ¸öÊıºÍÀà±ğ£¬½âÎöÊı¾İ¡£
 		 */
 		for(AttributeClass ac : arff.aclasses){
 			si = index;
@@ -202,11 +202,11 @@ public class ARFFParser
 	}
 	
 	/*
-	 * è®°å½•ç°åœ¨æ‰€è§£æçš„æ–‡ä»¶çš„å†…å®¹ã€‚
-	 * 1è¡¨ç¤ºå¼€å§‹è§£æï¼Œ 2è¡¨ç¤ºè§£æå…³ç³»ï¼Œ3è¡¨ç¤ºè§£æå±æ€§ï¼Œ4è¡¨ç¤ºè§£ææ•°æ®
+	 * ¼ÇÂ¼ÏÖÔÚËù½âÎöµÄÎÄ¼şµÄÄÚÈİ¡£
+	 * 1±íÊ¾¿ªÊ¼½âÎö£¬ 2±íÊ¾½âÎö¹ØÏµ£¬3±íÊ¾½âÎöÊôĞÔ£¬4±íÊ¾½âÎöÊı¾İ
 	 */
 	private static int stage; 
 	
-	//è§£æå‡ºæ¥çš„Arffå®ä¾‹ã€‚
+	//½âÎö³öÀ´µÄArffÊµÀı¡£
 	private static Arff arff;
 }

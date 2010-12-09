@@ -83,7 +83,7 @@ public class MainFrame extends JFrame
 
 	/**
 	 * Select file.
-	 * é€‰æ‹©æ–‡ä»¶çš„ç›‘å¬ç±»ã€‚
+	 * Ñ¡ÔñÎÄ¼şµÄ¼àÌıÀà¡£
 	 */
 	private class FileSelectActionListener extends MouseAdapter
 			implements ActionListener
@@ -118,7 +118,7 @@ public class MainFrame extends JFrame
 
 	/**
 	 * Arff file filter
-	 * ç”¨äºè¿‡æ»¤é€‰æ‹©çš„æ–‡ä»¶ã€‚
+	 * ÓÃÓÚ¹ıÂËÑ¡ÔñµÄÎÄ¼ş¡£
 	 */
 	private class ArffFileFilter extends javax.swing.filechooser.FileFilter
 	{

@@ -1,12 +1,12 @@
 /**
- * è¡¨ç¤ºä¸€ä¸ªå±æ€§åŠå…¶å¯¹åº”çš„å€¼ã€‚
+ * ±íÊ¾Ò»¸öÊôĞÔ¼°Æä¶ÔÓ¦µÄÖµ¡£
  */
 package arff;
 
 public class Attribute
 {
-	public AttributeClass aclass; 	//å±æ€§å¯¹åº”çš„ç±»åˆ«ã€‚
-	public int val;			//å±æ€§å€¼ã€‚å¯¹äºç±»åˆ«å±æ€§ï¼Œè¡¨ç¤ºå¯¹åº”ç±»åˆ«å€¼çš„æ ‡å·ã€‚
+	public AttributeClass aclass; 	//ÊôĞÔ¶ÔÓ¦µÄÀà±ğ¡£
+	public int val;			//ÊôĞÔÖµ¡£¶ÔÓÚÀà±ğÊôĞÔ£¬±íÊ¾¶ÔÓ¦Àà±ğÖµµÄ±êºÅ¡£
 	
 	public Attribute(AttributeClass c, int val)
 	{
@@ -15,7 +15,7 @@ public class Attribute
 	}
 	
 	/*
-	 * è®¡ç®—ä¸¤ä¸ªå±æ€§ä¹‹é—´çš„ç›¸å¼‚åº¦ã€‚
+	 * ¼ÆËãÁ½¸öÊôĞÔÖ®¼äµÄÏàÒì¶È¡£
 	 */
 	public double distance(Attribute a)
 	{

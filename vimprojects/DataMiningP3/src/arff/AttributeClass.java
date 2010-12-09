@@ -1,5 +1,5 @@
 /**
- * è¡¨ç¤ºå±æ€§ç±»åˆ«ã€‚ åŒ…æ‹¬å±æ€§ç±»å‹ï¼Œå±æ€§çš„å±ˆæŒ‡èŒƒå›´ã€‚
+ * ±íÊ¾ÊôĞÔÀà±ğ¡£ °üÀ¨ÊôĞÔÀàĞÍ£¬ÊôĞÔµÄÇüÖ¸·¶Î§¡£
  */
 package arff;
 
@@ -8,7 +8,7 @@ import java.util.ArrayList;
 public class AttributeClass
 {
 	public AttributeType type;
-	public String name; 			//å±æ€§çš„åç§°
+	public String name; 			//ÊôĞÔµÄÃû³Æ
 	
 	public AttributeClass(AttributeType type, String name)
 	{
@@ -18,8 +18,8 @@ public class AttributeClass
 	}
 	
 	/**
-	 * å¢åŠ ç±»åˆ«ã€‚cate
-	 * @parm cate : è¡¨ç¤ºç±»åˆ«çš„å­—ç¬¦ä¸²
+	 * Ôö¼ÓÀà±ğ¡£cate
+	 * @parm cate : ±íÊ¾Àà±ğµÄ×Ö·û´®
 	 */
 	public void addCate(String cate)
 	{
@@ -27,7 +27,7 @@ public class AttributeClass
 	}
 	
 	/**
-	 * è·å–ç±»åˆ«å€¼å¯¹åº”çš„æ ‡å·ã€‚
+	 * »ñÈ¡Àà±ğÖµ¶ÔÓ¦µÄ±êºÅ¡£
 	 */
 	public int getCateIndex(String cate)
 	{
@@ -40,22 +40,22 @@ public class AttributeClass
 	}
 	
 	/*
-	 * è¿”å›åˆ†ç±»å€¼å¯¹åº”çš„åç§°ã€‚
+	 * ·µ»Ø·ÖÀàÖµ¶ÔÓ¦µÄÃû³Æ¡£
 	 */
 	public String getCate(int index)
 	{
 		if(index == -1){
-			return "?"; //å€¼ç¼ºå¤±
+			return "?"; //ÖµÈ±Ê§
 		}
 		return cates.get(index);
 	}
 	
 	/**
-	 * åˆ¤æ–­å±æ€§ä¸­æ˜¯å¦åŒ…å«æœ‰è¿™ä¸ªç±»åˆ«ã€‚
+	 * ÅĞ¶ÏÊôĞÔÖĞÊÇ·ñ°üº¬ÓĞÕâ¸öÀà±ğ¡£
 	 */
 	public boolean hasCate(String cate)
 	{
-		//æ•°å€¼ç±»å‹æ€»æ˜¯è¿”å›true
+		//ÊıÖµÀàĞÍ×ÜÊÇ·µ»Øtrue
 		if(type == AttributeType.NUME){
 			return true;
 		}
@@ -63,7 +63,7 @@ public class AttributeClass
 	}
 	
 	/*
-	 * è¿”å›åˆ†ç±»å±æ€§ä¸­å±æ€§å€¼çš„ä¸ªæ•°ã€‚
+	 * ·µ»Ø·ÖÀàÊôĞÔÖĞÊôĞÔÖµµÄ¸öÊı¡£
 	 */
 	public int getCateNum()
 	{
@@ -89,6 +89,6 @@ public class AttributeClass
 		return sb.toString();
 	}
 	
-	private ArrayList<String> cates; 	//categoricalç±»å‹å¯¹åº”çš„ç±»åˆ«ã€‚
+	private ArrayList<String> cates; 	//categoricalÀàĞÍ¶ÔÓ¦µÄÀà±ğ¡£
 	
 }

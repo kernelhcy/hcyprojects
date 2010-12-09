@@ -5,7 +5,7 @@ import java.util.Random;
 import java.util.ArrayList;
 import java.io.*;
 /**
- * KMeans ç®—æ³•å®ç°
+ * KMeans Ëã·¨ÊµÏÖ
  */
 public class KMeans
 {
@@ -21,12 +21,12 @@ public class KMeans
 		size = d.items.size();
 		
 		E = Double.MAX_VALUE;
-		numAttrs = d.items.get(0).attrs.size(); //å±æ€§çš„ä¸ªæ•°ã€‚
+		numAttrs = d.items.get(0).attrs.size(); //ÊôĞÔµÄ¸öÊı¡£
 		maxMin = new int[2][numAttrs];
 	}
 	
 	/**
-	 * è¿›è¡Œèšç±»
+	 * ½øĞĞ¾ÛÀà
 	 */
 	public void run() throws IOException
 	{
@@ -43,7 +43,7 @@ public class KMeans
 		AttributeClass ac;
 		for(int i = 0; i < numAttrs; ++i){
 			ac = data.items.get(0).attrs.get(i).aclass;
-			//%-30sé å³å¯¹å…¶ï¼Œæœ€å°‘å†™30ä¸ªå­—ç¬¦ã€‚
+			//%-30s¿¿ÓÒ¶ÔÆä£¬×îÉÙĞ´30¸ö×Ö·û¡£
 			System.out.printf("\t\t%-30s%s\n"
 					, ac.name, ac.type.getName());
 		}
@@ -150,14 +150,14 @@ public class KMeans
 	}
 
 	/*
-	 * åˆå§‹åŒ–ã€‚
-	 * è®¡ç®—å„ä¸ªæ•°å€¼å±æ€§çš„æœ€å¤§å€¼å’Œæœ€å°å€¼ã€‚
+	 * ³õÊ¼»¯¡£
+	 * ¼ÆËã¸÷¸öÊıÖµÊôĞÔµÄ×î´óÖµºÍ×îĞ¡Öµ¡£
 	 */
 	private void init()
 	{
 		for(int i = 0; i < numAttrs; ++i){
-			maxMin[0][i] = Integer.MIN_VALUE; 	//æœ€å¤§å€¼
-			maxMin[1][i] = Integer.MAX_VALUE;	//æœ€å°å€¼
+			maxMin[0][i] = Integer.MIN_VALUE; 	//×î´óÖµ
+			maxMin[1][i] = Integer.MAX_VALUE;	//×îĞ¡Öµ
 		}
 	
 		Attribute a;
@@ -180,16 +180,16 @@ public class KMeans
 	}
 	
 	/**
-	 * æ•°æ®é¡¹é€‰æ‹©è·ç¦»ä¸­å¿ƒç‚¹æœ€è¿‘çš„ç»„ï¼ŒåŠ å…¥ã€‚
+	 * Êı¾İÏîÑ¡Ôñ¾àÀëÖĞĞÄµã×î½üµÄ×é£¬¼ÓÈë¡£
 	 */
 	private void selectGroup()
 	{
-		//æ¸…é™¤ç»„ä¸­çš„æ•°æ®ã€‚
+		//Çå³ı×éÖĞµÄÊı¾İ¡£
 		for(int i = 0; i < k; ++i){
 			kgroups.get(i).clear();
 		}
 		
-		int nearestGI = 0; 	//æœ€è¿‘çš„ç»„çš„ç´¢å¼•ã€‚
+		int nearestGI = 0; 	//×î½üµÄ×éµÄË÷Òı¡£
 		double nearest = Double.MAX_VALUE;
 		double tmp;
 		Item item;
@@ -208,7 +208,7 @@ public class KMeans
 			nearestGI = 0;
 		}
 
-		//å°†ä¸­å¿ƒç‚¹åŠ å…¥ç»„ä¸­ã€‚
+		//½«ÖĞĞÄµã¼ÓÈë×éÖĞ¡£
 		for(int i = 0; i < k; ++i){
 			kgroups.get(i).add(kcenters[i]);
 		}
@@ -216,7 +216,7 @@ public class KMeans
 	}
 	
 	/*
-	 * è®¡ç®—å¹³æ–¹è¯¯å·®ã€‚
+	 * ¼ÆËãÆ½·½Îó²î¡£
 	 */
 	private double calculateE()
 	{
@@ -235,13 +235,13 @@ public class KMeans
 	}
 	
 	/**
-	 * éšæœºçš„é€‰æ‹©kä¸ªåˆå§‹ä¸­å¿ƒç‚¹ã€‚
-	 * å°†æ‰€æœ‰çš„æ•°æ®åˆ†æˆkç»„ï¼Œä»æ¯ç»„ä¸­éšæœºçš„é€‰æ‹©ä¸€ä¸ªã€‚
+	 * Ëæ»úµÄÑ¡Ôñk¸ö³õÊ¼ÖĞĞÄµã¡£
+	 * ½«ËùÓĞµÄÊı¾İ·Ö³Ék×é£¬´ÓÃ¿×éÖĞËæ»úµÄÑ¡ÔñÒ»¸ö¡£
 	 */
 	private void randomSelectKCenters()
 	{
 		int per = size / k;
-		Random r = new Random(100); //è®¾ç½®seedã€‚
+		Random r = new Random(100); //ÉèÖÃseed¡£
 		int rand, index;
 		for(int i = 0; i < k; ++i){
 			rand = r.nextInt(per);
@@ -251,7 +251,7 @@ public class KMeans
 	}	
 
 	/**
-	 * è®¡ç®—ç¬¬iä¸ªæ•°æ®é¡¹å’Œç¬¬jä¸ªæ•°æ®é¡¹çš„ç›¸å¼‚åº¦ã€‚
+	 * ¼ÆËãµÚi¸öÊı¾İÏîºÍµÚj¸öÊı¾İÏîµÄÏàÒì¶È¡£
 	 */
 	private double itemDiff(Item i1, Item i2)
 	{
@@ -260,7 +260,7 @@ public class KMeans
 		}
 		
 		double dis = 0.0, qf, df;
-		double up = 0.0, down = 0.0; 	//åˆ†åˆ«è¡¨ç¤ºd(i,j)çš„åˆ†å­å’Œåˆ†æ¯ã€‚
+		double up = 0.0, down = 0.0; 	//·Ö±ğ±íÊ¾d(i,j)µÄ·Ö×ÓºÍ·ÖÄ¸¡£
 		
 		Attribute t1, t2;
 
@@ -296,7 +296,7 @@ public class KMeans
 					df = 1.0;
 				}
 				
-				//å±æ€§å€¼ç¼ºå¤±ã€‚
+				//ÊôĞÔÖµÈ±Ê§¡£
 				if(t1.val == -1 || t2.val == -1){
 					qf = 0.0;
 				}
@@ -309,9 +309,9 @@ public class KMeans
 	}
 
 	/*
-	 * è®¡ç®—ç¬¬kä¸ªç°‡çš„å‡å€¼ç‚¹ã€‚
-	 * å¯¹äºæ•°å€¼ç±»å‹çš„å±æ€§ï¼Œå–å…¶å‡å€¼ã€‚
-	 * å¯¹äºåˆ†ç±»ç±»å‹çš„å±æ€§ï¼Œå–æœ€å¤šçš„é‚£ä¸ªå€¼ã€‚
+	 * ¼ÆËãµÚk¸ö´ØµÄ¾ùÖµµã¡£
+	 * ¶ÔÓÚÊıÖµÀàĞÍµÄÊôĞÔ£¬È¡Æä¾ùÖµ¡£
+	 * ¶ÔÓÚ·ÖÀàÀàĞÍµÄÊôĞÔ£¬È¡×î¶àµÄÄÇ¸öÖµ¡£
 	 */
 	private Item getMean(int k)
 	{
@@ -320,8 +320,8 @@ public class KMeans
 		ArrayList<Item> group = kgroups.get(k);
 		int gsize = group.size();
 		
-		int sum, cnt; 	//ç”¨äºæ±‚å’Œå’Œè®¡æ•°ã€‚
-		int[] indexCnt;	//è®°å½•åˆ†ç±»å±æ€§å„ä¸ªå€¼çš„ä¸ªæ•°ã€‚
+		int sum, cnt; 	//ÓÃÓÚÇóºÍºÍ¼ÆÊı¡£
+		int[] indexCnt;	//¼ÇÂ¼·ÖÀàÊôĞÔ¸÷¸öÖµµÄ¸öÊı¡£
 		
 		int[] attrs = new int[numAttrs];
 		
@@ -359,9 +359,9 @@ public class KMeans
 			}
 		}
 		
-		//ç”Ÿæˆä¸€ä¸ªItemå®ä¾‹ï¼Œè¡¨ç¤ºå‡å€¼ç‚¹ã€‚
+		//Éú³ÉÒ»¸öItemÊµÀı£¬±íÊ¾¾ùÖµµã¡£
 		Item c = new Item();
-		item = data.items.get(1); 	//æ¨¡æ¿
+		item = data.items.get(1); 	//Ä£°å
 		for(int i = 0; i < attrs.length; ++i){
 			a = new Attribute(item.attrs.get(i).aclass, attrs[i]);
 			c.addAttr(a);
@@ -410,13 +410,13 @@ public class KMeans
 	}
 
 	private Arff data;
-	private int k;				//åˆ†ç»„ä¸ªæ•°ã€‚
-	private Item[] kcenters; 		//kä¸ªä¸­å¿ƒçš„ç´¢å¼•ä½ç½®ã€‚
-	private ArrayList<ArrayList<Item>> kgroups;//kä¸ªç»„ã€‚å­˜å‚¨ä¸‹æ ‡ã€‚
-	private int size; 			//æ•°æ®é‡
-	private int[][] maxMin; 		//ä¿å­˜å„ä¸ªå±æ€§çš„æœ€å¤§å€¼å’Œæœ€å°å€¼
-	private int numAttrs;			//å±æ€§çš„ä¸ªæ•°ã€‚
-	private double E; 			//å¹³æ–¹è¯¯å·®ã€‚
-	private String result;			//è¾“å‡ºçš„ç»“æœã€‚
+	private int k;				//·Ö×é¸öÊı¡£
+	private Item[] kcenters; 		//k¸öÖĞĞÄµÄË÷ÒıÎ»ÖÃ¡£
+	private ArrayList<ArrayList<Item>> kgroups;//k¸ö×é¡£´æ´¢ÏÂ±ê¡£
+	private int size; 			//Êı¾İÁ¿
+	private int[][] maxMin; 		//±£´æ¸÷¸öÊôĞÔµÄ×î´óÖµºÍ×îĞ¡Öµ
+	private int numAttrs;			//ÊôĞÔµÄ¸öÊı¡£
+	private double E; 			//Æ½·½Îó²î¡£
+	private String result;			//Êä³öµÄ½á¹û¡£
 	private int[][] groupCnt;
 }

@@ -1,5 +1,5 @@
 /**
- * è¡¨ç¤ºä¸€ä¸ªarffæ–‡ä»¶åŠå…¶å†…å®¹ã€‚
+ * ±íÊ¾Ò»¸öarffÎÄ¼ş¼°ÆäÄÚÈİ¡£
  */
 package arff;
 
@@ -7,8 +7,8 @@ import java.util.ArrayList;
  
 public class Arff
 {
-	public ArrayList<AttributeClass> aclasses; 	//æ•°æ®çš„ç±»åˆ«å’Œå–å€¼èŒƒå›´
-	public ArrayList<Item>  items;			//æ‰€æœ‰çš„æ•°æ®é¡¹ã€‚
+	public ArrayList<AttributeClass> aclasses; 	//Êı¾İµÄÀà±ğºÍÈ¡Öµ·¶Î§
+	public ArrayList<Item>  items;			//ËùÓĞµÄÊı¾İÏî¡£
 	public String relation;
 	
 	public Arff()
@@ -18,7 +18,7 @@ public class Arff
 	}
 	
 	/**
-	 * æ·»åŠ ä¸€ä¸ªå±æ€§ç±»åˆ«ã€‚
+	 * Ìí¼ÓÒ»¸öÊôĞÔÀà±ğ¡£
 	 */
 	public void addAttrClass(AttributeClass c)
 	{

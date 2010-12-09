@@ -1,5 +1,5 @@
 /**
- * è¡¨ç¤ºä¸€æ¡è®°å½•ã€‚
+ * ±íÊ¾Ò»Ìõ¼ÇÂ¼¡£
  */
 package arff;
 
@@ -7,10 +7,10 @@ import java.util.ArrayList;
 
 public class Item
 {
-	public static long id_tem = 1; //idæ¨¡æ¿
+	public static long id_tem = 1; //idÄ£°å
 	
-	public long id;				//è®°å½•çš„id
-	public ArrayList<Attribute> attrs;	//è®°å½•å¯¹åº”çš„å±æ€§å’Œå±æ€§å€¼ã€‚
+	public long id;				//¼ÇÂ¼µÄid
+	public ArrayList<Attribute> attrs;	//¼ÇÂ¼¶ÔÓ¦µÄÊôĞÔºÍÊôĞÔÖµ¡£
 	
 	public Item()
 	{
@@ -20,7 +20,7 @@ public class Item
 	}
 	
 	/**
-	 * å¢åŠ ä¸€ä¸ªå±æ€§å’Œå€¼ã€‚
+	 * Ôö¼ÓÒ»¸öÊôĞÔºÍÖµ¡£
 	 */
 	public void addAttr(Attribute a)
 	{
@@ -28,7 +28,7 @@ public class Item
 	}
 	
 	/**
-	 * è·å¾—è®°å½•å¯¹åº”çš„å±æ€§çš„å€¼
+	 * »ñµÃ¼ÇÂ¼¶ÔÓ¦µÄÊôĞÔµÄÖµ
 	 */
 	public Attribute getAttr(AttributeClass c)
 	{
