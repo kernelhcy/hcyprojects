@@ -9,10 +9,11 @@ import java.io.*;
  */
 public class KMeans
 {
-	public KMeans(Arff d, int k)
+	public KMeans(Arff d, int k, int seed)
 	{
 		data = d;
 		this.k = k;
+		this.seed = seed;
 		kcenters = new Item[k];
 		kgroups = new ArrayList<ArrayList<Item>>();
 		for(int i = 0; i < k; ++i){
@@ -215,7 +216,7 @@ public class KMeans
 
 	}
 	
-	/*
+	/**
 	 * 计算平方误差。
 	 */
 	private double calculateE()
@@ -241,7 +242,7 @@ public class KMeans
 	private void randomSelectKCenters()
 	{
 		int per = size / k;
-		Random r = new Random(100); //设置seed。
+		Random r = new Random(seed); //设置seed。
 		int rand, index;
 		for(int i = 0; i < k; ++i){
 			rand = r.nextInt(per);
@@ -308,7 +309,7 @@ public class KMeans
 		return up / down;
 	}
 
-	/*
+	/**
 	 * 计算第k个簇的均值点。
 	 * 对于数值类型的属性，取其均值。
 	 * 对于分类类型的属性，取最多的那个值。
@@ -370,6 +371,11 @@ public class KMeans
 		return c;
 	}
 
+	/**
+	 * 按照第attrIndex个属性计算熵值。
+	 * @param attrIndex
+	 * @return
+	 */
 	private double entropy(int attrIndex)
 	{
 		double en = 0.0, enTotal = 0.0;
@@ -391,7 +397,14 @@ public class KMeans
 		}
 		return enTotal;
 	}
-
+	
+	/**
+	 * 计算比例。
+	 * @param attrIndex
+	 * @param classVal
+	 * @param g
+	 * @return
+	 */
 	private double proportion(int attrIndex, int classVal
 				, ArrayList<Item> g)
 	{
@@ -411,6 +424,7 @@ public class KMeans
 
 	private Arff data;
 	private int k;				//分组个数。
+	private int seed;			//随机数种子
 	private Item[] kcenters; 		//k个中心的索引位置。
 	private ArrayList<ArrayList<Item>> kgroups;//k个组。存储下标。
 	private int size; 			//数据量

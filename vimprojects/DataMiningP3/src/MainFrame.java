@@ -6,6 +6,7 @@ import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
 import javax.swing.*;
+
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
@@ -50,6 +51,14 @@ public class MainFrame extends JFrame
 		runBtn = new JButton("Run");
 		runBtn.setEnabled(false);
 		JButton clrBtn = new JButton("Clear");
+		kJTF = new JTextField("2");
+		kJTF.setColumns(5);
+		seedJTF = new JTextField("100");
+		seedJTF.setColumns(5);
+		p2.add(new JLabel("K:"));
+		p2.add(kJTF);
+		p2.add(new JLabel("seed:"));
+		p2.add(seedJTF);
 		p2.add(runBtn);
 		p2.add(clrBtn);
 		add(p2, BorderLayout.SOUTH);
@@ -57,8 +66,10 @@ public class MainFrame extends JFrame
 
 			public void actionPerformed(ActionEvent e)
 			{
+				int k = Integer.valueOf(kJTF.getText());
+				int seed = Integer.valueOf(seedJTF.getText());
 				Arff arff = ARFFParser.parse(file);
-				KMeans km = new KMeans(arff, 2);
+				KMeans km = new KMeans(arff, k, seed);
 				try {
 					km.run();
 				}
@@ -147,4 +158,5 @@ public class MainFrame extends JFrame
 	private JButton runBtn;
 	private JFrame me = this;
 	private File file;
+	private JTextField kJTF, seedJTF;
 }
