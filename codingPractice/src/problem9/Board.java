@@ -63,7 +63,7 @@ public class Board extends JPanel
 					{
 						// TODO Auto-generated 
 						//method stub
-						drawTime();
+						//drawTime();
 					}
 				});
 			}
