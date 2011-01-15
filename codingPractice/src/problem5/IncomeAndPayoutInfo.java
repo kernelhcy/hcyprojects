@@ -1,6 +1,7 @@
 package problem5;
 
 import java.util.ArrayList;
+import java.util.Date;
 
 public class IncomeAndPayoutInfo
 {
@@ -20,14 +21,9 @@ public class IncomeAndPayoutInfo
 		incomes.remove(i);
 	}
 	
-	public void deleteIncome(int id)
+	public void deleteIncome(int idx)
 	{
-		for(MoneyItem i : incomes){
-			if(i.getId() == id){
-				incomes.remove(i);
-				break;
-			}
-		}
+		incomes.remove(idx);
 	}
 	
 	public void addPayout(MoneyItem i)
@@ -39,13 +35,51 @@ public class IncomeAndPayoutInfo
 		payout.remove(i);
 	}
 	
-	public void deletePayout(int id){
+	public void deletePayout(int idx){
+		payout.remove(idx);
+	}
+	
+	public MoneyItem getIncome(int idx)
+	{
+		return incomes.get(idx);
+	}
+	public MoneyItem getPayout(int idx)
+	{
+		return payout.get(idx);
+	}
+	
+	public int getIncomesCnt()
+	{
+		return incomes.size();
+	}
+	
+	public int getPayoutCnt()
+	{
+		return payout.size();
+	}
+	
+	public double staticticsPayout(Date from, Date to)
+	{
+		double sum = 0;
 		for(MoneyItem i : payout){
-			if(i.getId() == id){
-				payout.remove(i);
-				break;
+			if(i.getTime().after(from)
+					&& i.getTime().before(to)){
+				sum += i.getMoney();
 			}
 		}
+		return 0;
+	}
+	
+	public double staticticsIncome(Date from, Date to)
+	{
+		double sum = 0;
+		for(MoneyItem i : incomes){
+			if(i.getTime().after(from)
+					&& i.getTime().before(to)){
+				sum += i.getMoney();
+			}
+		}
+		return 0;
 	}
 	
 	private ArrayList<MoneyItem> incomes;
