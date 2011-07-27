@@ -125,9 +125,8 @@ SETDEFAULTS_FUNC(mod_staticfile_set_defaults)
 		p->config_storage[i] = s;
 
 		if (0 !=
-			config_insert_values_global(srv,
-										((data_config *) srv->
-										 config_context->data[i])->value, cv))
+			config_insert_values_global(srv, ((data_config *) srv->
+							 config_context->data[i])->value, cv))
 		{
 			return HANDLER_ERROR;
 		}
@@ -210,8 +209,7 @@ http_response_parse_range(server * srv, connection * con, plugin_data * p)
 
 	if (NULL !=
 		(ds =
-		 (data_string *) array_get_element(con->response.headers,
-										   "Content-Type")))
+		 (data_string *) array_get_element(con->response.headers, "Content-Type")))
 	{
 		content_type = ds->value;
 	}
@@ -388,17 +386,15 @@ http_response_parse_range(server * srv, connection * con, plugin_data * p)
 				/*
 				 * write Content-Range 
 				 */
-				buffer_append_string_len(b,
-										 CONST_STR_LEN
-										 ("\r\nContent-Range: bytes "));
+				buffer_append_string_len(b, CONST_STR_LEN
+							 ("\r\nContent-Range: bytes "));
 				buffer_append_off_t(b, start);
 				buffer_append_string_len(b, CONST_STR_LEN("-"));
 				buffer_append_off_t(b, end);
 				buffer_append_string_len(b, CONST_STR_LEN("/"));
 				buffer_append_off_t(b, sce->st.st_size);
 
-				buffer_append_string_len(b,
-										 CONST_STR_LEN("\r\nContent-Type: "));
+				buffer_append_string_len(b, CONST_STR_LEN("\r\nContent-Type: "));
 				buffer_append_string_buffer(b, content_type);
 
 				/*
@@ -441,16 +437,15 @@ http_response_parse_range(server * srv, connection * con, plugin_data * p)
 		 * set header-fields 
 		 */
 
-		buffer_copy_string_len(p->range_buf,
-							   CONST_STR_LEN
-							   ("multipart/byteranges; boundary="));
+		buffer_copy_string_len(p->range_buf, CONST_STR_LEN
+						 ("multipart/byteranges; boundary="));
 		buffer_append_string(p->range_buf, boundary);
 
 		/*
 		 * overwrite content-type 
 		 */
 		response_header_overwrite(srv, con, CONST_STR_LEN("Content-Type"),
-								  CONST_BUF_LEN(p->range_buf));
+						  CONST_BUF_LEN(p->range_buf));
 	} else
 	{
 		/*
@@ -605,25 +600,21 @@ URIHANDLER_FUNC(mod_staticfile_subrequest)
 			 * This should fix the aggressive caching of FF and the script
 			 * download seen by the first installations 
 			 */
-			response_header_overwrite(srv, con,
-									  CONST_STR_LEN("Content-Type"),
-									  CONST_STR_LEN
-									  ("application/octet-stream"));
+			response_header_overwrite(srv, con, CONST_STR_LEN("Content-Type"),
+						CONST_STR_LEN("application/octet-stream"));
 
 			allow_caching = 0;
 		} else
 		{
-			response_header_overwrite(srv, con,
-									  CONST_STR_LEN("Content-Type"),
-									  CONST_BUF_LEN(sce->content_type));
+			response_header_overwrite(srv, con,CONST_STR_LEN("Content-Type"),
+							CONST_BUF_LEN(sce->content_type));
 		}
 	}
 
 	if (con->conf.range_requests)
 	{
-		response_header_overwrite(srv, con,
-								  CONST_STR_LEN("Accept-Ranges"),
-								  CONST_STR_LEN("bytes"));
+		response_header_overwrite(srv, con, CONST_STR_LEN("Accept-Ranges"),
+							CONST_STR_LEN("bytes"));
 	}
 
 	if (allow_caching)
@@ -638,9 +629,8 @@ URIHANDLER_FUNC(mod_staticfile_subrequest)
 				 */
 				etag_mutate(con->physical.etag, sce->etag);
 
-				response_header_overwrite(srv, con,
-										  CONST_STR_LEN("ETag"),
-										  CONST_BUF_LEN(con->physical.etag));
+				response_header_overwrite(srv, con, CONST_STR_LEN("ETag"),
+							CONST_BUF_LEN(con->physical.etag));
 			}
 		}
 
@@ -650,12 +640,11 @@ URIHANDLER_FUNC(mod_staticfile_subrequest)
 		if (NULL ==
 			(ds =
 			 (data_string *) array_get_element(con->response.headers,
-											   "Last-Modified")))
+								"Last-Modified")))
 		{
 			mtime = strftime_cache_get(srv, sce->st.st_mtime);
-			response_header_overwrite(srv, con,
-									  CONST_STR_LEN("Last-Modified"),
-									  CONST_BUF_LEN(mtime));
+			response_header_overwrite(srv, con, CONST_STR_LEN("Last-Modified"),
+							CONST_BUF_LEN(mtime));
 		} else
 		{
 			mtime = ds->value;
@@ -676,8 +665,7 @@ URIHANDLER_FUNC(mod_staticfile_subrequest)
 
 		if (NULL !=
 			(ds =
-			 (data_string *) array_get_element(con->request.headers,
-											   "If-Range")))
+			 (data_string *) array_get_element(con->request.headers,"If-Range")))
 		{
 			/*
 			 * if the value is the same as our ETag, we do a Range-request,

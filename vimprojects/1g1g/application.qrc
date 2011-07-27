@@ -1,9 +1,0 @@
-<RCC>
-    <qresource prefix="/images" >
-        <file>exit.png</file>
-        <file>icon.png</file>
-        <file>mini.png</file>
-        <file>nor.png</file>
-        <file>setting.png</file>
-    </qresource>
-</RCC>

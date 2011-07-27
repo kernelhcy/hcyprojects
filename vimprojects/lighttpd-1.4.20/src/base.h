@@ -320,8 +320,8 @@ typedef struct {
 	unsigned short etag_use_mtime;
 	unsigned short etag_use_size;
 	unsigned short force_lowercase_filenames;	/* if the FS is
-												 * case-insensitive, force all
-												 * files to lower-case */
+							 * case-insensitive, force all
+							 * files to lower-case */
 	unsigned short max_request_size;
 
 	unsigned short kbytes_per_second;	/* connection kb/s limit */
